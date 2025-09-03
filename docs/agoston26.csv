@@ -1,0 +1,111 @@
+"Booking Date","Value Date","Partner Name","Partner Iban",Type,"Payment Reference","Account Name","Amount (EUR)","Original Amount","Original Currency","Exchange Rate"
+2025-08-01,2025-08-01,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Lo que me debes de Juan Andres Ojeda Alfonso","Cuenta Principal",225.00,,,
+2025-08-01,2025-08-01,"CURSOR, AI POWERED IDE",,"Presentment Refund",,"Cuenta Principal",17.37,20,USD,0.8685
+2025-08-01,2025-08-01,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.93,,,
+2025-08-01,2025-08-01,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.01,,,
+2025-08-01,2025-08-01,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.75,,,
+2025-08-01,2025-08-01,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.4,,,
+2025-08-01,2025-08-01,"Juan Andres Ojeda Alfonso",ES3630586111012720004299,"Debit Transfer","Alquiler mes en curso - casa los portales","Cuenta Principal",-450.00,,,
+2025-08-02,2025-08-02,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.1,,,
+2025-08-03,2025-08-03,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.45,,,
+2025-08-04,2025-08-03,"HDX ALFERECES",,Presentment,,"Cuenta Principal",-20.25,20.25,EUR,1
+2025-08-04,2025-08-03,"HOTEL D.MIGUEL RESTAUR",,Presentment,,"Cuenta Principal",-4.6,4.6,EUR,1
+2025-08-04,2025-08-03,"HOTEL DON MIGUEL BAR",,Presentment,,"Cuenta Principal",-16,16,EUR,1
+2025-08-04,2025-08-03,"SHUNFA 888 SCP",,Presentment,,"Cuenta Principal",-9.99,9.99,EUR,1
+2025-08-04,2025-08-03,ANASTOR,,Presentment,,"Cuenta Principal",-38.07,38.07,EUR,1
+2025-08-05,2025-08-04,"HOTEL DON MIGUEL BAR",,Presentment,,"Cuenta Principal",-16,16,EUR,1
+2025-08-05,2025-08-04,"HOTEL D.MIGUEL RESTAUR",,Presentment,,"Cuenta Principal",-4.9,4.9,EUR,1
+2025-08-05,2025-08-05,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.85,,,
+2025-08-05,2025-08-04,.,,Presentment,,"Cuenta Principal",-5.9,5.9,EUR,1
+2025-08-05,2025-08-04,"HDX ALFERECES",,Presentment,,"Cuenta Principal",-1.55,1.55,EUR,1
+2025-08-05,2025-08-04,"PUB DRAGON",,Presentment,,"Cuenta Principal",-17,17,EUR,1
+2025-08-05,2025-08-05,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.4,,,
+2025-08-06,2025-08-06,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.01,,,
+2025-08-06,2025-08-06,,,"Credit Transfer","Bizum:Alcibiades Cabral Diaz PEDIDO 506000122234","Cuenta Principal",374.830000000,,,
+2025-08-06,2025-08-06,"Cuenta de Ahorro",,"Debit Transfer","DORMITORUM M. Bizum:Alcibiades Cabral Diaz PEDIDO 506000122234","Cuenta Principal",-374.83,,,
+2025-08-06,2025-08-06,"ALCIBIADES CABRAL DIAZ",ES9801821294110202965529,"Credit Transfer","SIN CONCEPTO","Cuenta Principal",225.00,,,
+2025-08-06,2025-08-06,"Cuenta de Ahorro",,"Debit Transfer","ALCIBIADES CABRAL DIAZ SIN CONCEPTO","Cuenta Principal",-225.00,,,
+2025-08-06,2025-08-06,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.65,,,
+2025-08-06,2025-08-06,"MAPFRE INVERSION S.V., S.A.",ES3401440001310000056909,"Direct Debit","SU ORDEN NUMERO:    158.219.903","Cuenta Principal",-125.00,,,
+2025-08-06,2025-08-06,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Lo que me debes de HiperDino","Cuenta Principal",9.67,,,
+2025-08-07,2025-08-07,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.95,,,
+2025-08-07,2025-08-07,"ALCIBIADES CABRAL DIAZ",ES9801821294110202965529,"Credit Transfer","SIN CONCEPTO","Cuenta Principal",307.50,,,
+2025-08-07,2025-08-07,"Cuenta de Ahorro",,"Debit Transfer","ALCIBIADES CABRAL DIAZ SIN CONCEPTO","Cuenta Principal",-307.50,,,
+2025-08-07,2025-08-06,"DON MIGUEL RESTAURANTE",,Presentment,,"Cuenta Principal",-4.6,4.6,EUR,1
+2025-08-07,2025-08-06,"HOTEL DON MIGUEL BAR",,Presentment,,"Cuenta Principal",-16,16,EUR,1
+2025-08-07,2025-08-07,"Pepe Mobile, S.L.U.",ES4701823994070201510891,"Direct Debit","PEPEPHONE FACT.0202590005669806","Cuenta Principal",-32.63,,,
+2025-08-07,2025-08-07,"Cuenta de Ahorro",,"Credit Transfer",,"Cuenta Principal",3511.00,,,
+2025-08-07,2025-08-07,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.7,,,
+2025-08-08,2025-08-06,"HDX ALFERECES",,Presentment,,"Cuenta Principal",-16.15,16.15,EUR,1
+2025-08-08,2025-08-06,"SumUp  *Sonnys Canarie",,Presentment,,"Cuenta Principal",-12,12,EUR,1
+2025-08-08,2025-08-07,"PALMIRA SUR",,Presentment,,"Cuenta Principal",-24,24,EUR,1
+2025-08-08,2025-08-07,"ABDELLAH JALAL AROUN",,Presentment,,"Cuenta Principal",-30,30,EUR,1
+2025-08-08,2025-08-08,,,"Debit Transfer","Pisko estancia ","Cuenta Principal",-105.000000000,,,
+2025-08-08,2025-08-08,"Mapfre Alci",ES2602320105000017079370,"Debit Transfer","Alcibiades - 78493085L","Cuenta Principal",-4000.00,,,
+2025-08-08,2025-08-08,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Lo que me debes de Mercadona","Cuenta Principal",-37.66,,,
+2025-08-09,2025-08-07,"HDX ALFERECES",,Presentment,,"Cuenta Principal",-19.35,19.35,EUR,1
+2025-08-09,2025-08-08,"LOS ELEFANTES",,Presentment,,"Cuenta Principal",-1.05,1.05,EUR,1
+2025-08-09,2025-08-08,"DON MIGUEL RESTAURANTE",,Presentment,,"Cuenta Principal",-5.3,5.3,EUR,1
+2025-08-10,2025-08-09,"HOTEL DON MIGUEL BAR",,Presentment,,"Cuenta Principal",-16,16,EUR,1
+2025-08-10,2025-08-10,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.7,,,
+2025-08-11,2025-08-11,"Cuenta de Ahorro",,"Credit Transfer",,"Cuenta Principal",1284.80,,,
+2025-08-11,2025-08-11,"Mapfre Alci",ES2602320105000017079370,"Debit Transfer","Alcibiades - 78493085L","Cuenta Principal",-1300.00,,,
+2025-08-12,2025-08-11,ANASTOR,,Presentment,,"Cuenta Principal",-24.3,24.3,EUR,1
+2025-08-12,2025-08-11,"PAYPAL *MICROSOFT",,Presentment,,"Cuenta Principal",-17.99,17.99,EUR,1
+2025-08-12,2025-08-12,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.01,,,
+2025-08-12,2025-08-12,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.81,,,
+2025-08-13,2025-08-13,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Lo que me debes de HiperDino","Cuenta Principal",-7.90,,,
+2025-08-13,2025-08-13,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.8,,,
+2025-08-14,2025-08-14,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.43,,,
+2025-08-15,2025-08-14,"PAYPAL *ITUNESAPPST AP",,Presentment,,"Cuenta Principal",-0.99,0.99,EUR,1
+2025-08-15,2025-08-14,"MERCADONA SANTIDAD",,Presentment,,"Cuenta Principal",-26.2,26.2,EUR,1
+2025-08-15,2025-08-15,"PAYPAL *ALIPAY EUR",,Presentment,,"Cuenta Principal",-21.19,21.19,EUR,1
+2025-08-15,2025-08-15,"CLAUDE.AI SUBSCRIPTION",,Presentment,,"Cuenta Principal",-18,18,EUR,1
+2025-08-16,2025-08-16,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.95,,,
+2025-08-16,2025-08-16,"Cuenta de Ahorro",,"Credit Transfer","PAYPAL PCCOMPONENT","Cuenta Principal",226.05,,,
+2025-08-16,2025-08-16,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.53,,,
+2025-08-16,2025-08-15,"HD C.C. ARUCAS II",,Presentment,,"Cuenta Principal",-52.57,52.57,EUR,1
+2025-08-16,2025-08-16,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.65,,,
+2025-08-17,2025-08-17,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.42,,,
+2025-08-17,2025-08-17,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Lo que me debes de Mercadona","Cuenta Principal",13.10,,,
+2025-08-17,2025-08-17,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Lo que me debes de HiperDino","Cuenta Principal",26.28,,,
+2025-08-17,2025-08-17,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.01,,,
+2025-08-18,2025-08-17,"PIZZERIA GUAYARMINA",,Presentment,,"Cuenta Principal",-28.35,28.35,EUR,1
+2025-08-18,2025-08-18,"zooplus ES 405909790",,Presentment,,"Cuenta Principal",-113.47,113.47,EUR,1
+2025-08-19,2025-08-19,"PAYPAL *MICROSOFT",,Presentment,,"Cuenta Principal",-8.99,8.99,EUR,1
+2025-08-19,2025-08-19,"PAYPAL *PCCOMPONENT",,Presentment,,"Cuenta Principal",-226.05,226.05,EUR,1
+2025-08-19,2025-08-19,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.2,,,
+2025-08-19,2025-08-19,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.44,,,
+2025-08-19,2025-08-19,"Cuenta de Ahorro",,"Credit Transfer",,"Cuenta Principal",150.00,,,
+2025-08-20,2025-08-20,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Split the bill request for IKEA","Cuenta Principal",14.40,,,
+2025-08-20,2025-08-20,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Split the bill request for Alcampo","Cuenta Principal",26.28,,,
+2025-08-20,2025-08-20,"PAYPAL *ALIPAY EUR",,Presentment,,"Cuenta Principal",-10.58,10.58,EUR,1
+2025-08-20,2025-08-20,"PEPE ENERGY",ES1421002931960200910380,"Direct Debit","Contrato 353375 - Factura Electricidad E25PP0000337037 - PepeEnergy","Cuenta Principal",-58.68,,,
+2025-08-20,2025-08-20,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.61,,,
+2025-08-20,2025-08-20,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Lo que me debes de IKEA","Cuenta Principal",-6.50,,,
+2025-08-21,2025-08-20,"ALCAMPO TELDE",,Presentment,,"Cuenta Principal",-52.56,52.56,EUR,1
+2025-08-21,2025-08-20,"IKEA LAS PALMAS DE GC",,Presentment,,"Cuenta Principal",-28.8,28.8,EUR,1
+2025-08-21,2025-08-21,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Lo que me debes de Mercadona","Cuenta Principal",72.19,,,
+2025-08-22,2025-08-21,"MERCADONA SANTIDAD",,Presentment,,"Cuenta Principal",-144.39,144.39,EUR,1
+2025-08-24,2025-08-24,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Lo que me debes de BODEGON HIPICO","Cuenta Principal",-31.00,,,
+2025-08-26,2025-08-26,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Lo que me debes de HiperDino","Cuenta Principal",-15.66,,,
+2025-08-26,2025-08-26,"Cuenta de Ahorro",,"Credit Transfer",,"Cuenta Principal",180.00,,,
+2025-08-26,2025-08-26,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.35,,,
+2025-08-27,2025-08-27,"QUALITAS AUTO",,Presentment,,"Cuenta Principal",-180.65,180.65,EUR,1
+2025-08-29,2025-08-29,"Cuenta de Ahorro",,"Credit Transfer","Inversión ","Cuenta Principal",4000.00,,,
+2025-08-29,2025-08-29,"Ntwentysix Social Security Account",DE06100110012997336663,"Debit Transfer","PERIODO LIQUIDACION: 08/2025-08/2025","Cuenta Principal",-87.61,,,
+2025-08-29,2025-08-29,"Cuenta de Ahorro",,"Debit Transfer",,"Cuenta Principal",-3000.00,,,
+2025-08-29,2025-08-29,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.1,,,
+2025-08-30,2025-08-30,"Cuenta de Ahorro",,"Credit Transfer",💰,"Cuenta Principal",1600.00,,,
+2025-08-30,2025-08-30,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.13,,,
+2025-08-30,2025-08-30,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.1,,,
+2025-08-30,2025-08-30,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.5,,,
+2025-08-30,2025-08-30,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.64,,,
+2025-08-30,2025-08-30,"Cuenta de Ahorro",,"Debit Transfer",Redondeo,"Cuenta Principal",-0.95,,,
+2025-08-30,2025-08-30,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Split the bill request for Leroy Merlin","Cuenta Principal",40.43,,,
+2025-08-30,2025-08-30,"Isabel González Matos",ES7515632626313263454517,MoneyBeam,"Split the bill request for Udon","Cuenta Principal",25.95,,,
+2025-08-30,2025-08-30,ANTEQUERA,,Presentment,,"Cuenta Principal",-17.9,17.9,EUR,1
+2025-08-31,2025-08-31,"ALDI TAMARACEITE",,Presentment,,"Cuenta Principal",-58.05,58.05,EUR,1
+2025-08-31,2025-08-31,"LM TAMARACEITE",,Presentment,,"Cuenta Principal",-80.87,80.87,EUR,1
+2025-08-31,2025-08-31,"KIWOKO ALISIOS",,Presentment,,"Cuenta Principal",-4.36,4.36,EUR,1
+2025-08-31,2025-08-31,"PRIMOR ALISIOS",,Presentment,,"Cuenta Principal",-30.5,30.5,EUR,1

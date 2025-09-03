@@ -2,9 +2,10 @@ import type { Category } from './Category.js';
 import type { Account } from './Account.js';
 import { Money } from '../value-objects/Money.js';
 import { TransactionId } from '../value-objects/TransactionId.js';
-import { createHash } from 'crypto';
 
 export class Transaction {
+  public readonly hash: string;
+  
   constructor(
     public readonly id: TransactionId,
     public readonly bookingDate: Date,
@@ -22,17 +23,23 @@ export class Transaction {
     public readonly isRecurring: boolean = false,
     public readonly confidence: number | null = null,
     public readonly notes: string | null = null,
-    public readonly hash: string = '',
+    hash: string = '',
     public readonly createdAt: Date = new Date(),
     public readonly updatedAt: Date = new Date()
   ) {
-    if (!this.hash) {
-      this.generateHash();
-    }
+    this.hash = hash || this.generateHash();
   }
 
   get category(): Category | null {
     return this._category;
+  }
+
+  get accountId(): string {
+    return this.account.id.value;
+  }
+
+  get categoryId(): string | null {
+    return this._category?.id.value || null;
   }
 
   categorize(category: Category, confidence: number = 1.0): void {
@@ -57,10 +64,20 @@ export class Transaction {
     return searchText.includes(pattern.toLowerCase());
   }
 
-  private generateHash(): void {
+  private generateHash(): string {
     const hashString = `${this.bookingDate.getTime()}-${this.partnerName}-${this.amount.amount}-${this.type}`;
-    // @ts-ignore - We'll set this in a real implementation
-    this.hash = createHash('sha256').update(hashString).digest('hex');
+    // Browser-compatible hash generation using Web Crypto API
+    return this.simpleHash(hashString);
+  }
+
+  private simpleHash(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(16);
   }
 
   isSimilarTo(other: Transaction): boolean {

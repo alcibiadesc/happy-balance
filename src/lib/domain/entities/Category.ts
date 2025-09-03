@@ -17,7 +17,7 @@ export class Category {
     public readonly name: string,
     public readonly type: CategoryType,
     public readonly color: string = '#3B82F6',
-    public readonly icon: string = '📊',
+    public readonly icon: string = 'BarChart',
     public readonly parent: Category | null = null,
     private _rules: Rule[] = [],
     public readonly isActive: boolean = true,

@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
   expense-tracker-network:
     driver: bridge
@@ -8,6 +6,35 @@ networks:
         - subnet: 172.28.0.0/24
 
 services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile.dev
+    container_name: expense-tracker-app
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      # Bind mount source code for hot reload
+      - ..:/app
+      # Use anonymous volume for node_modules to avoid conflicts
+      - /app/node_modules
+    networks:
+      expense-tracker-network:
+        ipv4_address: 172.28.0.3
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://expense_user:expense_secure_password_2024@172.28.0.2:5432/expense_tracker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5173 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   postgres:
     image: postgres:16-alpine
     container_name: expense-tracker-db
@@ -21,7 +48,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "5433:5432"  # Use different port to avoid conflicts with NAS services
+      - "5433:5432"
     networks:
       expense-tracker-network:
         ipv4_address: 172.28.0.2
@@ -32,54 +59,6 @@ services:
       retries: 5
       start_period: 30s
 
-  app:
-    build:
-      context: ../
-      dockerfile: docker/Dockerfile
-    container_name: expense-tracker-app
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://expense_user:expense_secure_password_2024@postgres:5432/expense_tracker
-      ORIGIN: http://localhost:3000
-    ports:
-      - "3000:3000"
-    networks:
-      expense-tracker-network:
-        ipv4_address: 172.28.0.3
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ../uploads:/app/uploads  # For CSV file uploads
-      - ../logs:/app/logs        # For application logs
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Redis for caching and sessions (optional but recommended)
-  redis:
-    image: redis:7-alpine
-    container_name: expense-tracker-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    networks:
-      expense-tracker-network:
-        ipv4_address: 172.28.0.4
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
 volumes:
   postgres_data:
-    driver: local
-  redis_data:
     driver: local

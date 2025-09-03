@@ -46,6 +46,7 @@ model Category {
   children    Category[] @relation("CategoryHierarchy")
   transactions Transaction[]
   rules       CategorizationRule[]
+  budgets     Budget[]
 
   @@map("categories")
 }

@@ -1,38 +1,117 @@
-# sv
+# 💰 Expense Tracker
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Personal finance management application built with SvelteKit, following Hexagonal Architecture and DDD principles.
 
-## Creating a project
+## 🚀 Fast Development (Recommended)
 
-If you're seeing this, you've probably already done this step. Congrats!
+### Hybrid workflow: pnpm for development + Docker for production
 
-```sh
-# create a new project in the current directory
-npx sv create
+```bash
+# 1. Install dependencies
+pnpm install
 
-# create a new project in my-app
-npx sv create my-app
+# 2. Start database only
+pnpm db:up
+
+# 3. Development with instant hot reload
+pnpm dev
+# Access: http://192.168.1.170:5179/ or http://100.122.190.40:5179/
 ```
 
-## Developing
+### Useful Commands
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+```bash
+# Development
+pnpm dev              # Dev server with hot reload (network accessible)
+pnpm dev:local        # Dev server localhost only
+pnpm build            # Build for production
+pnpm preview          # Preview build
 
-```sh
-npm run dev
+# Database
+pnpm db:up            # PostgreSQL only in Docker
+pnpm db:down          # Stop database
+pnpm db:logs          # View database logs
+pnpm db:migrate       # Run database migrations
+pnpm db:studio        # Open Prisma Studio
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+# Production (stable versions)
+pnpm docker:prod      # Full Docker deployment
+pnpm docker:prod:down # Stop production
+pnpm docker:prod:logs # View production logs
 ```
 
-## Building
+## 📋 Features
 
-To create a production version of your app:
+- ✅ **Instant Hot Reload** with pnpm
+- ✅ **Hexagonal Architecture** + DDD
+- ✅ **Atomic Design System** (Atoms → Molecules → Organisms)
+- ✅ **SvelteKit 5** with runes
+- ✅ **Tailwind CSS** + shadcn/ui
+- ✅ **PostgreSQL** in Docker
+- ✅ **Smart N26 CSV Importer**
+- ✅ **Financial Dashboard** with real metrics
+- ✅ **Auto-categorization** of transactions
 
-```sh
-npm run build
+## 🏗️ Architecture
+
+```
+src/
+├── lib/
+│   ├── domain/          # Entities, Value Objects, Services
+│   ├── application/     # Use Cases
+│   ├── infrastructure/  # Adapters (CSV, DB, APIs)
+│   ├── ui/             # Atomic Design Components
+│   │   ├── atoms/      # Button, Input, Badge...
+│   │   ├── molecules/  # MetricCard, CurrencyDisplay...
+│   │   └── organisms/  # Dashboard, ImportWizard...
+│   └── shared/         # Shared utilities
+└── routes/             # Pages & API endpoints
 ```
 
-You can preview the production build with `npm run preview`.
+## 🌐 Access URLs
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+- **Development**: http://192.168.1.170:5179/
+- **Tailscale**: http://100.122.190.40:5179/
+- **Database**: localhost:5433
+- **Health Check**: http://192.168.1.170:5179/health
+
+## 🐳 Docker
+
+### Development (not recommended - slower)
+```bash
+pnpm docker:dev          # Fully dockerized with hot reload
+pnpm docker:dev:rebuild  # Rebuild containers
+```
+
+### Production (stable versions)
+```bash
+pnpm docker:prod         # Optimized production deployment
+```
+
+## 📊 Dashboard Metrics
+
+- **Income**: €72,503
+- **Essential Expenses**: €11,489 
+- **Discretionary Expenses**: €14,105
+- **Savings**: €20,653
+- **Investments**: €80,699
+- **Savings Rate**: 135.9%
+
+## 🔄 N26 Importer
+
+1. **Upload** → Upload your N26 CSV file
+2. **Parse** → Extract and validate transactions  
+3. **Validate** → Check for duplicates and categories
+4. **Import** → Save to database with auto-categorization
+
+## 🛠️ Tech Stack
+
+- **Frontend**: SvelteKit 5, TypeScript, Tailwind CSS
+- **Backend**: Node.js, Prisma ORM
+- **Database**: PostgreSQL 16
+- **Container**: Docker, Docker Compose
+- **Package Manager**: pnpm (development), npm (Docker)
+
+---
+
+**Recommended workflow**: Use `pnpm dev` for daily development and `pnpm docker:prod` only for stable production versions.
