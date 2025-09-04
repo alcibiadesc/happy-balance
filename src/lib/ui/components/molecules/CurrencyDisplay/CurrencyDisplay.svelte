@@ -21,17 +21,19 @@
   }: Props = $props();
 
   function formatCurrency(amount: number, currency: string): string {
+    const safeAmount = isFinite(amount) ? Math.abs(amount) : 0;
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(Math.abs(amount));
+    }).format(safeAmount);
   }
 
   function getVariantFromAmount(amount: number): 'income' | 'expense' | 'neutral' {
-    if (amount > 0) return 'income';
-    if (amount < 0) return 'expense';
+    const safeAmount = isFinite(amount) ? amount : 0;
+    if (safeAmount > 0) return 'income';
+    if (safeAmount < 0) return 'expense';
     return 'neutral';
   }
 
@@ -44,8 +46,9 @@
   }
 
   let displayVariant = $derived(variant === 'default' ? getVariantFromAmount(amount) : variant);
-  let sign = $derived(showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '');
-  let formattedAmount = $derived(formatCurrency(amount, currency));
+  let safeAmount = $derived(isFinite(amount) ? amount : 0);
+  let sign = $derived(showSign && safeAmount !== 0 ? (safeAmount > 0 ? '+' : '-') : '');
+  let formattedAmount = $derived(formatCurrency(safeAmount, currency));
 </script>
 
 <div class={cn('flex items-center gap-1', className)}>

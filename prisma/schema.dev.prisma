@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/dev"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Account {
+  id           String        @id @default(uuid())
+  name         String
+  type         String
+  balance      Float         @default(0)
+  currency     String        @default("EUR")
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+
+  @@map("accounts")
+}
+
+enum CategoryType {
+  INCOME
+  ESSENTIAL_EXPENSE
+  DISCRETIONARY_EXPENSE
+  DEBT_PAYMENT
+  SAVINGS
+  INVESTMENT
+  OMIT
+
+  @@map("category_type")
+}
+
+model Category {
+  id               String               @id @default(uuid())
+  name             String               @unique
+  description      String?
+  type             CategoryType
+  color            String               @default("#6B7280")
+  icon             String               @default("Tag")
+  parentId         String?
+  parent           Category?            @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children         Category[]           @relation("CategoryHierarchy")
+  transactions     Transaction[]
+  budgets          Budget[]
+  rules            CategorizationRule[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@map("categories")
+}
+
+model Transaction {
+  id                String   @id @default(uuid())
+  amount            Float
+  description       String
+  paymentReference  String?
+  counterparty      String?
+  accountId         String
+  account           Account  @relation(fields: [accountId], references: [id])
+  categoryId        String?
+  category          Category? @relation(fields: [categoryId], references: [id])
+  transactionDate   DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("transactions")
+}
+
+enum BudgetPeriod {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+
+  @@map("budget_period")
+}
+
+model Budget {
+  id         String       @id @default(uuid())
+  name       String
+  amount     Float
+  period     BudgetPeriod
+  categoryId String
+  category   Category     @relation(fields: [categoryId], references: [id])
+  startDate  DateTime
+  endDate    DateTime?
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@map("budgets")
+}
+
+model CategorizationRule {
+  id         String    @id @default(uuid())
+  name       String
+  pattern    String
+  ruleType   String
+  priority   Int       @default(0)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("categorization_rules")
+}
+
+enum SavingsAccountType {
+  EMERGENCY_FUND
+  INVESTMENT_ACCOUNT
+  RETIREMENT_ACCOUNT
+  HIGH_YIELD_SAVINGS
+  OTHER
+
+  @@map("savings_account_type")
+}
+
+model SavingsAccount {
+  id          String             @id @default(uuid())
+  name        String
+  type        SavingsAccountType
+  balance     Float
+  goalAmount  Float?
+  currency    String             @default("EUR")
+  isActive    Boolean            @default(true)
+  description String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@map("savings_accounts")
+}

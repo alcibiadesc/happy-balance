@@ -11,6 +11,7 @@ export interface TransactionFilters {
   partnerName?: string;
   type?: string;
   isRecurring?: boolean;
+  categoryType?: string;
 }
 
 export interface TransactionRepository {

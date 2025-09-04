@@ -24,11 +24,18 @@
     --color-warm-beige: #F5F3F0;
     --color-soft-beige: #EAE6E1;
     
-    /* Functional Colors */
-    --color-sage-green: #10B981;
-    --color-coral-red: #EF4444;
-    --color-amber: #F59E0B;
-    --color-indigo: #6366F1;
+    /* Functional Colors - Refined Monochromatic Palette */
+    --color-sage-green: #059669;  /* Darker, more subtle green */
+    --color-coral-red: #DC2626;   /* Refined red */
+    --color-amber: #D97706;       /* Warmer, more muted amber */
+    --color-indigo: #4F46E5;      /* Deeper indigo */
+    
+    /* Neutral Semantic Colors */
+    --color-success: var(--color-sage-green);
+    --color-error: var(--color-coral-red);
+    --color-warning: var(--color-amber);
+    --color-info: var(--color-dark-grey);
+    --color-accent: var(--color-charcoal);
     
     /* Shadows */
     --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -394,19 +401,23 @@
 
   /* Status Indicators with Enhanced Accessibility */
   .status-success {
-    color: var(--color-sage-green);
+    color: var(--color-success);
   }
   
   .status-error {
-    color: var(--color-coral-red);
+    color: var(--color-error);
   }
   
   .status-warning {
-    color: var(--color-amber);
+    color: var(--color-warning);
   }
   
   .status-info {
-    color: var(--color-indigo);
+    color: var(--color-info);
+  }
+  
+  .status-accent {
+    color: var(--color-accent);
   }
 
   /* Interactive Element Enhancements */

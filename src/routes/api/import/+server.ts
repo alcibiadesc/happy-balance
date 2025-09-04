@@ -5,6 +5,7 @@ import { PrismaTransactionRepository } from '$lib/infrastructure/repositories/Pr
 import { PrismaAccountRepository } from '$lib/infrastructure/repositories/PrismaAccountRepository.js';
 import { Account } from '$lib/domain/entities/Account.js';
 import { AccountId } from '$lib/domain/value-objects/AccountId.js';
+import { Money } from '$lib/domain/value-objects/Money.js';
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
@@ -61,9 +62,8 @@ export const POST: RequestHandler = async ({ request }) => {
         defaultAccount = new Account(
           AccountId.generate(),
           'Cuenta Principal',
-          'MAIN',
-          0,
-          'EUR',
+          'MAIN' as any,
+          new Money(0, 'EUR'),
           true
         );
         await accountRepository.save(defaultAccount);
@@ -104,20 +104,12 @@ export const POST: RequestHandler = async ({ request }) => {
     // Update account balance
     if (savedCount > 0) {
       try {
-        const newBalance = parseResult.transactions
+        const totalAmount = parseResult.transactions
           .slice(0, savedCount)
-          .reduce((sum, t) => sum + t.amount.amount, defaultAccount.balance);
+          .reduce((sum, t) => sum + t.amount.amount, 0);
         
-        defaultAccount = new Account(
-          defaultAccount.id,
-          defaultAccount.name,
-          defaultAccount.type,
-          newBalance,
-          defaultAccount.currency,
-          defaultAccount.isActive,
-          defaultAccount.createdAt,
-          new Date()
-        );
+        const newBalance = defaultAccount.balance.add(new Money(totalAmount, 'EUR'));
+        defaultAccount.updateBalance(newBalance);
         
         await accountRepository.save(defaultAccount);
       } catch (error) {

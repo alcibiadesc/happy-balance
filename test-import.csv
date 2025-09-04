@@ -1,0 +1,5 @@
+Booking Date	Value Date	Partner Name	Partner Iban	Type	Payment Reference	Account Name	Amount (EUR)	Original Amount	Original Currency	Exchange Rate
+2024-08-01	2024-08-01	Mercadona	ES1234567890123456789012	Debit Transfer	Compra supermercado	Cuenta Principal	-45.67			
+2024-08-01	2024-08-01	Empresa XYZ	ES2345678901234567890123	Credit Transfer	Nómina Agosto	Cuenta Principal	2500.00			
+2024-08-02	2024-08-02	Netflix		Debit Transfer	Suscripción mensual	Cuenta Principal	-15.99			
+2024-08-02	2024-08-02	Uber		Debit Transfer	Viaje al aeropuerto	Cuenta Principal	-23.45	-25.00	USD	0.9380

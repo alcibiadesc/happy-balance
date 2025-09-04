@@ -4,7 +4,9 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev --host 0.0.0.0 --port 5173",
+		"dev": "npm run dev:setup && vite dev --host 0.0.0.0 --port 5177",
+		"dev:setup": "node scripts/setup-dev-db.js",
+		"dev:clean": "rm -f prisma/dev.db prisma/dev.db-journal && npm run dev:setup",
 		"dev:local": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview --host 0.0.0.0",
@@ -12,9 +14,11 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"db:generate": "prisma generate",
+		"db:generate:dev": "prisma generate --schema=prisma/schema.dev.prisma",
 		"db:migrate": "prisma migrate dev",
 		"db:migrate:deploy": "prisma migrate deploy",
 		"db:studio": "prisma studio",
+		"db:studio:dev": "prisma studio --schema=prisma/schema.dev.prisma",
 		"db:up": "docker-compose -f docker/docker-compose.yml up -d",
 		"db:down": "docker-compose -f docker/docker-compose.yml down",
 		"db:logs": "docker-compose -f docker/docker-compose.yml logs -f",
@@ -41,8 +45,11 @@
 	"dependencies": {
 		"@prisma/client": "^6.15.0",
 		"@rollup/rollup-linux-x64-gnu": "^4.50.0",
+		"chart.js": "^4.5.0",
+		"chartjs-adapter-date-fns": "^3.0.0",
 		"class-variance-authority": "^0.7.0",
 		"csv-parse": "^6.1.0",
+		"date-fns": "^4.1.0",
 		"lucide-svelte": "^0.542.0",
 		"uuid": "^10.0.0"
 	}

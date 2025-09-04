@@ -1,6 +1,7 @@
 import type { IAccountRepository } from '$lib/domain/repositories/IAccountRepository.js';
 import { Account } from '$lib/domain/entities/Account.js';
 import { AccountId } from '$lib/domain/value-objects/AccountId.js';
+import { Money } from '$lib/domain/value-objects/Money.js';
 import { prisma } from '../database/prisma.js';
 
 export class PrismaAccountRepository implements IAccountRepository {
@@ -14,9 +15,8 @@ export class PrismaAccountRepository implements IAccountRepository {
     return new Account(
       new AccountId(account.id),
       account.name,
-      account.type,
-      account.balance,
-      account.currency,
+      account.type as any,
+      new Money(account.balance, account.currency),
       account.isActive,
       account.createdAt,
       account.updatedAt
@@ -35,9 +35,8 @@ export class PrismaAccountRepository implements IAccountRepository {
     return accounts.map(account => new Account(
       new AccountId(account.id),
       account.name,
-      account.type,
-      account.balance,
-      account.currency,
+      account.type as any,
+      new Money(account.balance, account.currency),
       account.isActive,
       account.createdAt,
       account.updatedAt
@@ -53,9 +52,8 @@ export class PrismaAccountRepository implements IAccountRepository {
     return accounts.map(account => new Account(
       new AccountId(account.id),
       account.name,
-      account.type,
-      account.balance,
-      account.currency,
+      account.type as any,
+      new Money(account.balance, account.currency),
       account.isActive,
       account.createdAt,
       account.updatedAt
@@ -68,8 +66,8 @@ export class PrismaAccountRepository implements IAccountRepository {
       update: {
         name: account.name,
         type: account.type,
-        balance: account.balance,
-        currency: account.currency,
+        balance: account.balance.amount,
+        currency: account.balance.currency,
         isActive: account.isActive,
         updatedAt: account.updatedAt || new Date()
       },
@@ -77,8 +75,8 @@ export class PrismaAccountRepository implements IAccountRepository {
         id: account.id.value,
         name: account.name,
         type: account.type,
-        balance: account.balance,
-        currency: account.currency,
+        balance: account.balance.amount,
+        currency: account.balance.currency,
         isActive: account.isActive,
         createdAt: account.createdAt || new Date(),
         updatedAt: account.updatedAt || new Date()

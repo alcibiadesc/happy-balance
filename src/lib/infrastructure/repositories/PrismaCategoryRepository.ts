@@ -50,6 +50,24 @@ export class PrismaCategoryRepository implements CategoryRepository {
     return results.map(this.mapToEntity);
   }
 
+  async findAllIncludingInactive(): Promise<Category[]> {
+    const results = await prisma.category.findMany({
+      include: {
+        parent: true,
+        children: true,
+        _count: {
+          select: { transactions: true }
+        }
+      },
+      orderBy: [
+        { isActive: 'desc' }, // Active categories first
+        { name: 'asc' }
+      ]
+    });
+    
+    return results.map(this.mapToEntity);
+  }
+
   async findByType(type: string): Promise<Category[]> {
     const results = await prisma.category.findMany({
       where: { 
@@ -135,11 +153,51 @@ export class PrismaCategoryRepository implements CategoryRepository {
     });
   }
 
-  async delete(id: CategoryId): Promise<void> {
-    // Soft delete by setting isActive to false
-    await prisma.category.update({
+  async updateById(id: CategoryId, data: { name?: string, type?: string, icon?: string, color?: string, isActive?: boolean }): Promise<Category> {
+    const updateData: any = {
+      updatedAt: new Date()
+    };
+
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.type !== undefined) updateData.type = data.type;
+    if (data.icon !== undefined) updateData.icon = data.icon;
+    if (data.color !== undefined) updateData.color = data.color;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+    const result = await prisma.category.update({
       where: { id: id.value },
-      data: { isActive: false }
+      data: updateData,
+      include: {
+        parent: true,
+        children: true,
+        _count: {
+          select: { transactions: true }
+        }
+      }
+    });
+    
+    return this.mapToEntity(result);
+  }
+
+  async hasTransactions(id: CategoryId): Promise<boolean> {
+    const count = await prisma.transaction.count({
+      where: { categoryId: id.value }
+    });
+    
+    return count > 0;
+  }
+
+  async delete(id: CategoryId): Promise<void> {
+    // Check if category has transactions
+    const hasTransactions = await this.hasTransactions(id);
+    
+    if (hasTransactions) {
+      throw new Error('Cannot delete category with existing transactions');
+    }
+    
+    // Hard delete if no transactions
+    await prisma.category.delete({
+      where: { id: id.value }
     });
   }
 

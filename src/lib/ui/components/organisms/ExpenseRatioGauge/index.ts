@@ -1,0 +1,1 @@
+export { default as ExpenseRatioGauge } from './ExpenseRatioGauge.svelte';

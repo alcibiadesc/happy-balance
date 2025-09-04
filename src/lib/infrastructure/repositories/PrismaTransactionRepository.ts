@@ -175,6 +175,20 @@ export class PrismaTransactionRepository implements TransactionRepository {
     });
   }
 
+  async updateCategory(id: TransactionId, categoryId: string | null): Promise<void> {
+    await prisma.transaction.update({
+      where: { id: id.value },
+      data: { categoryId }
+    });
+  }
+
+  async updateDescription(id: TransactionId, description: string | null): Promise<void> {
+    await prisma.transaction.update({
+      where: { id: id.value },
+      data: { notes: description }
+    });
+  }
+
   async count(filters?: TransactionFilters): Promise<number> {
     const where = this.buildWhereClause(filters);
     return await prisma.transaction.count({ where });
@@ -359,6 +373,12 @@ export class PrismaTransactionRepository implements TransactionRepository {
 
     if (filters.isRecurring !== undefined) {
       where.isRecurring = filters.isRecurring;
+    }
+
+    if (filters.categoryType) {
+      where.category = {
+        type: filters.categoryType
+      };
     }
 
     return where;

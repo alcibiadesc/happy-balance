@@ -1,3 +1,4 @@
+export * from './Alert/index.js';
 export * from './Button/index.js';
 export * from './Input/index.js';
 export * from './Badge/index.js';

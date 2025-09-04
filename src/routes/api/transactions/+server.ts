@@ -1,11 +1,11 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { PrismaTransactionRepository } from '$lib/infrastructure/repositories/PrismaTransactionRepository.js';
+import { RepositoryFactory } from '$lib/infrastructure/factories/RepositoryFactory.js';
 import { TransactionId } from '$lib/domain/value-objects/TransactionId.js';
 import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
 
-const transactionRepository = new PrismaTransactionRepository();
+const transactionRepository = RepositoryFactory.createTransactionRepository();
 
 // GET /api/transactions - List transactions with optional filters
 export const GET: RequestHandler = async ({ url }) => {
@@ -40,6 +40,9 @@ export const GET: RequestHandler = async ({ url }) => {
     
     const isRecurring = searchParams.get('isRecurring');
     if (isRecurring !== null) filters.isRecurring = isRecurring === 'true';
+
+    const categoryType = searchParams.get('categoryType');
+    if (categoryType) filters.categoryType = categoryType;
 
     const transactions = await transactionRepository.findAll(filters);
     
