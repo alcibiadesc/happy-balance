@@ -1,61 +1,111 @@
 version: '3.8'
 
+# Docker Compose optimizado para Dokploy
+# Combina desarrollo y producción en configuración unificada
+
 name: expense-tracker
 
 services:
+  # PostgreSQL Database - Configuración robusta para producción
   postgres:
     image: postgres:16-alpine
     container_name: expense-tracker-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: expense_tracker
-      POSTGRES_PASSWORD: secure_prod_password_2024
-      POSTGRES_DB: expense_tracker
+      POSTGRES_DB: ${POSTGRES_DB:-expense_tracker}
+      POSTGRES_USER: ${POSTGRES_USER:-expense_tracker}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./prisma/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U expense_tracker -d expense_tracker"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-expense_tracker} -d ${POSTGRES_DB:-expense_tracker}"]
+      interval: 10s
+      timeout: 5s
       retries: 5
       start_period: 30s
     networks:
       - expense-tracker-network
 
+  # Application - Multi-stage build con configuración flexible
   app:
     build:
       context: .
       dockerfile: Dockerfile
-      target: production
+      target: ${BUILD_TARGET:-production}
     container_name: expense-tracker-app
     restart: unless-stopped
     ports:
-      - "5179:3000"
+      - "${PORT:-3000}:${INTERNAL_PORT:-3000}"
     environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://expense_tracker:secure_prod_password_2024@postgres:5432/expense_tracker
-      HOST: 0.0.0.0
-      PORT: 3000
-      SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
+      # Core configuration
+      NODE_ENV: ${NODE_ENV:-production}
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${INTERNAL_PORT:-3000}
+      
+      # Database connection
+      DATABASE_URL: postgresql://${POSTGRES_USER:-expense_tracker}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-expense_tracker}
+      
+      # Security
+      SECRET_KEY: ${SECRET_KEY:-changeme_in_production}
+      
+      # Features
+      ENABLE_ANALYTICS: ${ENABLE_ANALYTICS:-true}
+      ENABLE_LOGGING: ${ENABLE_LOGGING:-true}
+      
+      # Public config
+      PUBLIC_APP_NAME: ${PUBLIC_APP_NAME:-Expense Tracker}
+      PUBLIC_APP_VERSION: ${PUBLIC_APP_VERSION:-1.0.0}
+      
+      # External APIs
+      CURRENCY_API_KEY: ${CURRENCY_API_KEY:-}
+    volumes:
+      - app_logs:/app/logs
+      # Bind mount for development (ignored in production)
+      - ${BIND_MOUNT_SOURCE:-.}:/app
+      - /app/node_modules
+      - /app/.svelte-kit
+      - /app/build
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:${INTERNAL_PORT:-3000}/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     networks:
       - expense-tracker-network
+
+  # PgAdmin - Solo para desarrollo/staging (opcional en producción)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: expense-tracker-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@expense-tracker.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_DISABLE_POSTFIX: "true"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
     volumes:
-      - app_logs:/app/logs
+      - pgadmin_data:/var/lib/pgladmin
+    depends_on:
+      - postgres
+    networks:
+      - expense-tracker-network
+    profiles:
+      - admin
+      - development
 
 volumes:
   postgres_data:
     driver: local
   app_logs:
+    driver: local
+  pgadmin_data:
     driver: local
 
 networks:
