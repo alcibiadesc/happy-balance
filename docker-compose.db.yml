@@ -1,21 +1,35 @@
+version: '3.8'
+
+name: expense-tracker-db
+
 services:
   postgres:
     image: postgres:16-alpine
     container_name: expense-tracker-db
+    restart: unless-stopped
     environment:
+      POSTGRES_USER: expense_tracker
+      POSTGRES_PASSWORD: dev_password_2024
       POSTGRES_DB: expense_tracker
-      POSTGRES_USER: dev
-      POSTGRES_PASSWORD: dev123
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
+      - ./prisma/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dev -d expense_tracker"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD-SHELL", "pg_isready -U expense_tracker -d expense_tracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - expense-tracker-network
 
 volumes:
   postgres_data:
+    driver: local
+
+networks:
+  expense-tracker-network:
+    driver: bridge

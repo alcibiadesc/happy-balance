@@ -1,13 +1,50 @@
-# Multi-stage build for production
-FROM node:22-alpine AS builder
+# Multi-stage Dockerfile for optimized builds
 
+# Base image with Node.js and Alpine for smaller size
+FROM node:22-alpine AS base
+
+# Install system dependencies
+RUN apk add --no-cache \
+    curl \
+    dumb-init
+
+# Set working directory
 WORKDIR /app
 
-# Install pnpm globally
-RUN npm install -g pnpm@10.15.0
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S expense-tracker -u 1001
 
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
+
+# Install pnpm globally
+RUN npm install -g pnpm@9.0.0
+
+# Development stage
+FROM base AS development
+
+# Install all dependencies (including dev)
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Change ownership
+RUN chown -R expense-tracker:nodejs /app
+
+# Switch to non-root user
+USER expense-tracker
+
+# Expose port
+EXPOSE 5173
+
+# Start development server
+CMD ["dumb-init", "pnpm", "dev"]
+
+# Builder stage
+FROM base AS builder
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
@@ -16,44 +53,47 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # Generate Prisma client
-RUN pnpm db:generate
+RUN npx prisma generate
 
-# Build the application
+# Build application
 RUN pnpm build
 
+# Remove dev dependencies
+RUN pnpm prune --prod
+
 # Production stage
-FROM node:22-alpine AS runner
+FROM node:22-alpine AS production
 
-WORKDIR /app
-
-# Install pnpm globally
-RUN npm install -g pnpm@10.15.0
-
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
-
-# Install only production dependencies
-RUN pnpm install --prod --frozen-lockfile && \
-    pnpm store prune
-
-# Copy built application from builder stage
-COPY --from=builder /app/build ./build
-COPY --from=builder /app/package.json ./package.json
+# Install system dependencies
+RUN apk add --no-cache \
+    curl \
+    dumb-init
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S sveltekit -u 1001
+    adduser -S expense-tracker -u 1001
 
-# Change ownership
-RUN chown -R sveltekit:nodejs /app
-USER sveltekit
+# Set working directory
+WORKDIR /app
+
+# Copy built application
+COPY --from=builder --chown=expense-tracker:nodejs /app/build ./build
+COPY --from=builder --chown=expense-tracker:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=expense-tracker:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=expense-tracker:nodejs /app/prisma ./prisma
+
+# Create logs directory
+RUN mkdir -p /app/logs && chown expense-tracker:nodejs /app/logs
+
+# Switch to non-root user
+USER expense-tracker
 
 # Expose port
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the application
-CMD ["node", "build"]
+# Start production server
+CMD ["dumb-init", "node", "build"]
