@@ -1,20 +1,20 @@
 # 💰 Expense Tracker
 
-> **Enterprise-grade personal finance management application built with SvelteKit, following Domain-Driven Design, Hexagonal Architecture, and Atomic Design principles.**
+> **Enterprise-grade personal finance management application built with SvelteKit, following Domain-Driven Design, Hexagonal Architecture, and Atomic Design principles. 100% containerized - no local dependencies needed!**
 
-## ⚡ Quick Start
+## ⚡ Quick Start (Docker Only)
 
 ```bash
-# One-command setup (recommended)
-./scripts/setup-dev.sh
+# One command setup - no local dependencies needed!
+make setup
 
-# Or manual setup
-pnpm install
-pnpm db:up
-pnpm dev
+# Or using Docker Compose directly
+docker compose -f docker-compose.dev.yml up --build
 ```
 
-**Access:** http://192.168.1.170:5179/ | http://100.122.190.40:5179/
+**🌐 Access:** http://localhost:5179 | **📊 Database Admin:** http://localhost:5050
+
+**✨ Zero local setup required - everything runs in Docker!**
 
 ## 🏗️ Architecture Overview
 
@@ -59,46 +59,68 @@ This application follows **Clean Architecture** principles with clear separation
 - **Result Pattern**: Explicit error handling without exceptions
 - **Atomic Design**: Consistent, reusable UI component hierarchy
 
-## 🚀 Development Workflows
+## 🐳 Docker-First Development
 
-### 🏃‍♂️ Fast Development (Recommended)
+**Everything runs in containers - no local Node.js, pnpm, or PostgreSQL needed!**
+
+### 🚀 Essential Commands
+
 ```bash
-pnpm dev              # Hot reload with network access
-pnpm dev:local        # Localhost only
-pnpm build            # Production build
-pnpm preview          # Preview production build
+# 🛠️ Setup & Development
+make setup            # First-time setup (builds everything)
+make dev              # Start development with hot reload
+make dev-bg           # Start development in background
+
+# 📊 Monitoring & Access  
+make status           # Show all container status
+make logs             # View application logs
+make shell            # Access container shell
+
+# 🛑 Control
+make stop             # Stop all containers
+make restart          # Restart containers
+make rebuild          # Force rebuild containers
 ```
 
-### 🗄️ Database Management
+### 🐘 Database Operations (All in Docker)
+
 ```bash
-pnpm db:up            # Start PostgreSQL in Docker
-pnpm db:down          # Stop database
-pnpm db:migrate       # Run migrations
-pnpm db:studio        # Open Prisma Studio (localhost:5555)
-pnpm db:seed          # Seed with default data
-pnpm db:reset         # Reset and reseed database
+# 🗄️ Database Access
+make db-shell         # PostgreSQL command line
+make db-admin         # PgAdmin web interface info
+make db-logs          # Database logs
+make db-reset         # ⚠️ Reset database (destroys data)
 ```
 
-### 🧪 Testing & Quality
+### 🧪 Testing & Quality (All in Docker)
+
 ```bash
-pnpm test             # Run all tests
-pnpm test:unit        # Unit tests only
-pnpm test:coverage    # Coverage report
-pnpm lint             # ESLint + Prettier
-pnpm lint:fix         # Auto-fix issues
-pnpm typecheck        # TypeScript validation
+# ✅ Testing
+make test             # Run all tests
+make test-coverage    # Coverage report
+
+# 🔍 Code Quality  
+make lint             # Check code quality
+make lint-fix         # Auto-fix issues
+make typecheck        # TypeScript validation
 ```
 
-### 🐳 Docker Operations
-```bash
-# Development (not recommended - slower)
-pnpm docker:dev       # Full development stack
-pnpm docker:dev:down  # Stop dev containers
+### 🏭 Production Deployment
 
-# Production (optimized builds)
-pnpm docker:prod      # Production deployment  
-pnpm docker:prod:down # Stop production
-pnpm docker:prod:logs # View logs
+```bash
+# 🚀 Production
+make prod             # Start production stack
+make prod-logs        # View production logs
+make prod-down        # Stop production
+```
+
+### 🧹 Maintenance
+
+```bash
+# 🧹 Cleanup
+make clean            # Remove containers & volumes
+make clean-all        # ⚠️ Nuclear option (removes images too)
+make urls             # Show all service URLs
 ```
 
 ## 🌟 Key Features
@@ -111,11 +133,11 @@ pnpm docker:prod:logs # View logs
 - **Error Handling** with Result pattern
 
 ### ✅ **Developer Experience**
-- **Instant Hot Reload** with Vite
-- **Multi-stage Docker** builds
-- **Database Seeding** and migrations
-- **Git Hooks** for quality gates
-- **Storybook** for component development
+- **🐳 100% Containerized** - No local dependencies
+- **⚡ Instant Hot Reload** with bind mounts
+- **🛠️ VS Code Dev Containers** support
+- **📊 PgAdmin Web Interface** for database management
+- **🔍 One-command setup** and teardown
 
 ### ✅ **Business Features**
 - **Smart CSV Import** (N26 + Generic formats)
@@ -171,15 +193,22 @@ if (incomeResult.isSuccess() && expensesResult.isSuccess()) {
 }
 ```
 
-## 🌐 Network Access
+## 🌐 Service Access
 
-| Environment | URL | Description |
-|-------------|-----|-------------|
-| **Development** | http://192.168.1.170:5179 | Local network access |
-| **Tailscale** | http://100.122.190.40:5179 | VPN access |
-| **Database** | localhost:5433 | PostgreSQL connection |
-| **Prisma Studio** | localhost:5555 | Database GUI |
-| **Health Check** | /health | Application status |
+| Service | URL | Credentials | Description |
+|---------|-----|-------------|-------------|
+| **🌐 Application** | http://localhost:5179 | - | Main app with hot reload |
+| **📊 PgAdmin** | http://localhost:5050 | `admin@expense-tracker.dev` / `admin` | Database web interface |
+| **🐘 PostgreSQL** | `localhost:5433` | `expense_tracker` / `dev_password_2024` | Direct database access |
+| **🔍 Health Check** | http://localhost:5179/health | - | Application status |
+
+## 💻 VS Code Integration
+
+**Open in container mode for full IDE integration:**
+
+1. **Install Extension:** `ms-vscode-remote.remote-containers`
+2. **Open in Container:** `Ctrl+Shift+P` → `Remote-Containers: Open Folder in Container`
+3. **Ready!** Full IntelliSense, debugging, and terminal access in containerized environment
 
 ## 🛠️ Tech Stack
 
@@ -221,8 +250,48 @@ if (incomeResult.isSuccess() && expensesResult.isSuccess()) {
 - **UI Components** reusable and documented
 - **Error Handling** explicit and type-safe
 
+## 🚀 Getting Started
+
+### **Prerequisites**
+- 🐳 **Docker** & **Docker Compose** (only requirement!)
+- 🛠️ **Make** (optional, for easier commands)
+
+### **First Time Setup**
+```bash
+# Clone and start everything
+git clone <your-repo>
+cd expense-tracker
+make setup          # Builds and starts all services
+```
+
+### **Daily Development**
+```bash
+make dev            # Start with hot reload
+# Code changes are reflected instantly!
+# Access: http://localhost:5179
+```
+
+### **VS Code Users**
+```bash
+# Open in dev container for full IDE integration
+code .
+# Ctrl+Shift+P → "Remote-Containers: Reopen in Container"
+```
+
 ---
 
-### 🎉 **Ready to build the future of personal finance!**
+## 📋 Development Checklist
 
-**Recommended workflow:** Use `pnpm dev` for daily development and `./scripts/setup-dev.sh` for initial setup.
+- ✅ **No local dependencies** - everything in Docker
+- ✅ **Hot reload** - instant code changes  
+- ✅ **Database included** - PostgreSQL + PgAdmin
+- ✅ **Type checking** - strict TypeScript
+- ✅ **Testing ready** - Vitest + coverage
+- ✅ **Production ready** - optimized builds
+- ✅ **VS Code integration** - dev containers
+
+---
+
+### 🎉 **Enterprise-grade containerized development made simple!**
+
+**Start coding in 30 seconds:** `make setup && make dev`

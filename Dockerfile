@@ -25,23 +25,27 @@ RUN npm install -g pnpm@9.0.0
 # Development stage
 FROM base AS development
 
+# Switch to non-root user early for security
+USER expense-tracker
+
 # Install all dependencies (including dev)
 RUN pnpm install --frozen-lockfile
 
-# Copy source code
-COPY . .
+# Create necessary directories
+RUN mkdir -p /app/logs /app/.svelte-kit /app/build
 
-# Change ownership
-RUN chown -R expense-tracker:nodejs /app
-
-# Switch to non-root user
-USER expense-tracker
+# Generate Prisma client
+RUN npx prisma generate
 
 # Expose port
 EXPOSE 5173
 
-# Start development server
-CMD ["dumb-init", "pnpm", "dev"]
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5173 || exit 1
+
+# Development entry point with database initialization
+CMD ["sh", "-c", "npx prisma db push && dumb-init pnpm dev --host 0.0.0.0 --port 5173"]
 
 # Builder stage
 FROM base AS builder
