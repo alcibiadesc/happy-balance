@@ -17,10 +17,6 @@ RUN addgroup -g 1001 -S nodejs && \
 
 # Copy package files
 COPY package*.json ./
-COPY pnpm-lock.yaml* ./
-
-# Install pnpm globally
-RUN npm install -g pnpm@9.0.0
 
 # Development stage
 FROM base AS development
@@ -29,7 +25,7 @@ FROM base AS development
 USER expense-tracker
 
 # Install all dependencies (including dev)
-RUN pnpm install --frozen-lockfile
+RUN npm install --legacy-peer-deps
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/.svelte-kit /app/build
@@ -45,13 +41,13 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5173 || exit 1
 
 # Development entry point with database initialization
-CMD ["sh", "-c", "npx prisma db push && dumb-init pnpm dev --host 0.0.0.0 --port 5173"]
+CMD ["sh", "-c", "npx prisma db push && dumb-init npm run dev -- --host 0.0.0.0 --port 5173"]
 
 # Builder stage
 FROM base AS builder
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -60,10 +56,10 @@ COPY . .
 RUN npx prisma generate
 
 # Build application
-RUN pnpm build
+RUN npx vite build
 
 # Remove dev dependencies
-RUN pnpm prune --prod
+RUN npm prune --production
 
 # Production stage
 FROM node:22-alpine AS production

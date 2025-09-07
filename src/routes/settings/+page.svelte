@@ -245,7 +245,7 @@
 
         <div class="card-editorial p-4">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 style="background-color: var(--color-background-secondary);" rounded-lg flex items-center justify-center">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--color-background-secondary);">
               <Database class="w-4 h-4 text-secondary" />
             </div>
             <div>
@@ -420,7 +420,7 @@
             </div>
             <h3 class="text-h4 mb-2 text-orange-700">Confirmación de Seguridad</h3>
             <p class="text-sm text-secondary">
-              Para continuar, escribe exactamente la palabra <code class="style="background-color: var(--color-background-secondary);" px-2 py-1 rounded text-red-600">delete</code>
+              Para continuar, escribe exactamente la palabra <code class="px-2 py-1 rounded text-red-600" style="background-color: var(--color-background-secondary);">delete</code>
             </p>
           </div>
 

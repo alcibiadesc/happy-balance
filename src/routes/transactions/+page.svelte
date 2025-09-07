@@ -1304,8 +1304,8 @@
               {#each filteredTransactions as transaction}
                 <tr class="transition-colors {selectedTransactions.has(transaction.id.value || transaction.id) ? 'bg-blue-50 border-blue-200' : ''}" 
                     style="transition: background-color var(--transition-default);"
-                    on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-background-secondary)'}
-                    on:mouseleave={(e) => e.target.style.backgroundColor = selectedTransactions.has(transaction.id.value || transaction.id) ? 'rgb(239 246 255)' : 'transparent'}>
+                    onmouseenter={(e) => e.target.style.backgroundColor = 'var(--color-background-secondary)'}
+                    onmouseleave={(e) => e.target.style.backgroundColor = selectedTransactions.has(transaction.id.value || transaction.id) ? 'rgb(239 246 255)' : 'transparent'}>
                   {#if isSelectionMode}
                     <td class="py-3 px-4">
                       <input
