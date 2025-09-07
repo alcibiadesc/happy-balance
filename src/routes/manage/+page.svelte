@@ -639,14 +639,14 @@
   <title>Gestión Financiera - Expense Tracker</title>
 </svelte:head>
 
-<div class="min-h-screen bg-soft-white">
+<div class="min-h-screen" style="background-color: var(--color-background-primary);">
   <!-- Header -->
-  <div class="glass-effect sticky top-0 z-10 border-b border-warm">
+  <div class="glass-effect sticky top-0 z-10" style="border-color: var(--color-border-primary); background-color: var(--color-background-elevated);">
     <div class="container-editorial">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4">
         <div>
-          <h1 class="text-h3">Gestión Financiera</h1>
-          <p class="text-body-small mt-1">Administra tus categorías y presupuestos de forma unificada</p>
+          <h1 class="text-h3" style="color: var(--color-text-primary);">Gestión Financiera</h1>
+          <p class="text-secondary mt-1">Administra tus categorías y presupuestos de forma unificada</p>
         </div>
         <div class="flex gap-3">
           <button
@@ -664,19 +664,19 @@
   <div class="container-editorial py-6">
     {#if isLoading}
       <div class="flex items-center justify-center py-12">
-        <div class="flex items-center gap-3 text-gray-600">
+        <div class="flex items-center gap-3 text-secondary">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-sage-green"></div>
           <span>Cargando datos...</span>
         </div>
       </div>
     {:else}
       <!-- Tab Navigation -->
-      <div class="flex flex-wrap gap-1 bg-white rounded-lg p-1 border border-warm mb-6">
+      <div class="flex flex-wrap gap-1 rounded-lg p-1 mb-6" style="background-color: var(--color-background-elevated); border-color: var(--color-border-primary);">
         <button
           onclick={() => activeTab = 'unified'}
           class="px-4 py-2 rounded-md text-sm font-medium transition-all {activeTab === 'unified' 
             ? 'bg-sage-green text-white shadow-sm' 
-            : 'text-charcoal hover:text-sage-green hover:bg-sage-green/10'}"
+            : 'text-primary hover:text-sage-green hover:bg-sage-green/10'}"
         >
           Vista Unificada
         </button>
@@ -684,7 +684,7 @@
           onclick={() => activeTab = 'categories'}
           class="px-4 py-2 rounded-md text-sm font-medium transition-all {activeTab === 'categories' 
             ? 'bg-sage-green text-white shadow-sm' 
-            : 'text-charcoal hover:text-sage-green hover:bg-sage-green/10'}"
+            : 'text-primary hover:text-sage-green hover:bg-sage-green/10'}"
         >
           Categorías ({categories.length})
         </button>
@@ -692,7 +692,7 @@
           onclick={() => activeTab = 'budgets'}
           class="px-4 py-2 rounded-md text-sm font-medium transition-all {activeTab === 'budgets' 
             ? 'bg-sage-green text-white shadow-sm' 
-            : 'text-charcoal hover:text-sage-green hover:bg-sage-green/10'}"
+            : 'text-primary hover:text-sage-green hover:bg-sage-green/10'}"
         >
           Presupuestos ({budgets.length})
         </button>
@@ -712,8 +712,8 @@
                   <Plus class="w-6 h-6 text-sage-green" />
                 </div>
                 <div>
-                  <h3 class="text-h5 group-hover:text-sage-green">Crear Conjunto</h3>
-                  <p class="text-caption mt-1">Categoría + Presupuesto</p>
+                  <h3 class="text-h5 group-hover:text-sage-green" style="color: var(--color-text-primary);">Crear Conjunto</h3>
+                  <p class="text-tertiary mt-1">Categoría + Presupuesto</p>
                 </div>
               </div>
             </button>
@@ -727,8 +727,8 @@
                   <Filter class="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 class="text-h5 group-hover:text-blue-600">Solo Categoría</h3>
-                  <p class="text-caption mt-1">Sin presupuesto</p>
+                  <h3 class="text-h5 group-hover:text-blue-600" style="color: var(--color-text-primary);">Solo Categoría</h3>
+                  <p class="text-tertiary mt-1">Sin presupuesto</p>
                 </div>
               </div>
             </button>
@@ -742,8 +742,8 @@
                   <Target class="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 class="text-h5 group-hover:text-purple-600">Solo Presupuesto</h3>
-                  <p class="text-caption mt-1">Para categoría existente</p>
+                  <h3 class="text-h5 group-hover:text-purple-600" style="color: var(--color-text-primary);">Solo Presupuesto</h3>
+                  <p class="text-tertiary mt-1">Para categoría existente</p>
                 </div>
               </div>
             </button>
@@ -751,7 +751,7 @@
 
           <!-- Categories with Budgets -->
           <div>
-            <h3 class="text-h4 mb-4">Categorías con Presupuestos</h3>
+            <h3 class="text-h4 mb-4" style="color: var(--color-text-primary);">Categorías con Presupuestos</h3>
             <div class="grid gap-4">
               {#each categories as category}
                 {@const categoryId = category.id.value || category.id}
@@ -768,8 +768,8 @@
                         <IconComponent class="w-6 h-6" />
                       </div>
                       <div>
-                        <h4 class="text-h5">{category.name}</h4>
-                        <p class="text-caption">{categoryTypes.find(t => t.value === category.type)?.label || category.type}</p>
+                        <h4 class="text-h5" style="color: var(--color-text-primary);">{category.name}</h4>
+                        <p class="text-tertiary">{categoryTypes.find(t => t.value === category.type)?.label || category.type}</p>
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -793,13 +793,13 @@
                   <!-- Associated Budgets -->
                   {#if categoryBudgets.length > 0}
                     <div class="space-y-3">
-                      <h5 class="text-sm font-medium text-gray-600">Presupuestos asociados:</h5>
+                      <h5 class="text-sm font-medium text-secondary">Presupuestos asociados:</h5>
                       {#each categoryBudgets as budget}
                         {@const spent = getCategorySpending(budget.categoryId)}
                         {@const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0}
                         {@const status = getBudgetStatus(budget)}
                         
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between p-3 rounded-lg" style="background-color: var(--color-background-secondary);">
                           <div class="flex-1">
                             <div class="flex items-center justify-between mb-2">
                               <span class="text-sm font-medium">{budget.name}</span>
@@ -834,8 +834,8 @@
                       {/each}
                     </div>
                   {:else}
-                    <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p class="text-sm text-blue-700">
+                    <div class="p-3 rounded-lg" style="background-color: var(--color-background-secondary); border-color: var(--color-border-primary);">
+                      <p class="text-sm text-secondary">
                         Esta categoría no tiene presupuestos asociados.
                         <button
                           onclick={() => {

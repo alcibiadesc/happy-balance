@@ -5,12 +5,20 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	server: {
 		host: '0.0.0.0',
-		port: 8200,
-		strictPort: true
+		port: 5173,
+		strictPort: true,
+		hmr: {
+			port: 5173
+		},
+		watch: {
+			usePolling: true,
+			interval: 1000
+		}
 	},
-	preview: {
-		host: '0.0.0.0',
-		port: 8200,
-		strictPort: true
+	build: {
+		target: 'esnext'
+	},
+	optimizeDeps: {
+		include: ['@prisma/client', 'chart.js', 'date-fns']
 	}
 });

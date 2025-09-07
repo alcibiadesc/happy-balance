@@ -46,22 +46,39 @@ export const GET: RequestHandler = async ({ url }) => {
     // Enhanced financial freedom calculations
     const enhancedFinancialFreedom = calculateEnhancedFinancialFreedom(currentMetrics, totalSavings);
     
+    // Calculate safe values with comprehensive NaN protection
+    const safeIncome = Number(currentMetrics.income) || 0;
+    const safeExpenses = Math.abs(Number(currentMetrics.expenses) || 0);
+    
+    // Calculate savings rate with protection
+    let savingsRate = 0;
+    if (safeIncome > 0) {
+      const netSavings = safeIncome - safeExpenses;
+      savingsRate = Math.max(0, Math.min(1, netSavings / safeIncome));
+    }
+    
+    // Calculate expense ratio with protection
+    let expenseRatio = 0;
+    if (safeIncome > 0) {
+      expenseRatio = Math.max(0, Math.min(1, safeExpenses / safeIncome));
+    }
+
     const analyticsData = {
-      monthlyIncome: currentMetrics.income,
-      monthlyExpenses: Math.abs(currentMetrics.expenses),
-      savingsRate: currentMetrics.income > 0 ? Math.max(0, Math.min(1, (currentMetrics.income - Math.abs(currentMetrics.expenses)) / currentMetrics.income)) : 0,
-      expenseRatio: currentMetrics.income > 0 ? Math.min(10, Math.abs(currentMetrics.expenses) / currentMetrics.income) : 0,
-      financialFreedomProgress: enhancedFinancialFreedom.progress,
+      monthlyIncome: safeIncome,
+      monthlyExpenses: safeExpenses,
+      savingsRate: isFinite(savingsRate) ? savingsRate : 0,
+      expenseRatio: isFinite(expenseRatio) ? expenseRatio : 0,
+      financialFreedomProgress: Number(enhancedFinancialFreedom.progress) || 0,
       monthlyBreakdown: [], // TODO: Implement monthly breakdown
       categoryBreakdown,
       trends,
       savingsData: {
-        totalSavings,
-        accountCount: savingsAccounts.length,
-        monthlyWithdrawCapacity: enhancedFinancialFreedom.monthlyWithdrawCapacity,
-        yearsOfExpensesCovered: enhancedFinancialFreedom.yearsOfExpensesCovered,
-        targetAmount: enhancedFinancialFreedom.targetAmount,
-        remainingToTarget: enhancedFinancialFreedom.remainingToTarget
+        totalSavings: Number(totalSavings) || 0,
+        accountCount: Number(savingsAccounts.length) || 0,
+        monthlyWithdrawCapacity: Number(enhancedFinancialFreedom.monthlyWithdrawCapacity) || 0,
+        yearsOfExpensesCovered: Number(enhancedFinancialFreedom.yearsOfExpensesCovered) || 0,
+        targetAmount: Number(enhancedFinancialFreedom.targetAmount) || 0,
+        remainingToTarget: Number(enhancedFinancialFreedom.remainingToTarget) || 0
       }
     };
     
@@ -163,16 +180,21 @@ function calculateMetrics(transactions: any[]): {
 
   const income = includedTransactions
     .filter(t => t.amount > 0)
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   const expenses = includedTransactions
     .filter(t => t.amount < 0)
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+  // Ensure all values are finite numbers
+  const safeIncome = isFinite(income) ? income : 0;
+  const safeExpenses = isFinite(expenses) ? expenses : 0;
+  const safeBalance = safeIncome + safeExpenses;
 
   return {
-    income,
-    expenses,
-    balance: income + expenses, // expenses is negative
+    income: safeIncome,
+    expenses: safeExpenses,
+    balance: isFinite(safeBalance) ? safeBalance : 0,
     transactionCount: includedTransactions.length
   };
 }

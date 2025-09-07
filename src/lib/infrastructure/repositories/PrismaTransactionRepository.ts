@@ -28,7 +28,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     const results = await prisma.transaction.findMany({
       where,
       include: { category: true, account: true },
-      orderBy: { bookingDate: 'desc' }
+      orderBy: { transactionDate: 'desc' }
     });
     
     return results.map(this.mapToEntity);
@@ -37,13 +37,13 @@ export class PrismaTransactionRepository implements TransactionRepository {
   async findByDateRange(startDate: Date, endDate: Date): Promise<Transaction[]> {
     const results = await prisma.transaction.findMany({
       where: {
-        bookingDate: {
+        transactionDate: {
           gte: startDate,
           lte: endDate
         }
       },
       include: { category: true, account: true },
-      orderBy: { bookingDate: 'desc' }
+      orderBy: { transactionDate: 'desc' }
     });
     
     return results.map(this.mapToEntity);
@@ -53,7 +53,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     const results = await prisma.transaction.findMany({
       where: { categoryId },
       include: { category: true, account: true },
-      orderBy: { bookingDate: 'desc' }
+      orderBy: { transactionDate: 'desc' }
     });
     
     return results.map(this.mapToEntity);
@@ -63,7 +63,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     const results = await prisma.transaction.findMany({
       where: { categoryId: null },
       include: { category: true, account: true },
-      orderBy: { bookingDate: 'desc' }
+      orderBy: { transactionDate: 'desc' }
     });
     
     return results.map(this.mapToEntity);
@@ -74,7 +74,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
       where: {
         partnerName: transaction.partnerName,
         amount: transaction.amount,
-        bookingDate: transaction.bookingDate,
+        transactionDate: transaction.transactionDate,
         id: { not: transaction.id.value }
       },
       include: { category: true, account: true }
@@ -87,7 +87,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     const results = await prisma.transaction.findMany({
       where: { isRecurring: true },
       include: { category: true, account: true },
-      orderBy: { bookingDate: 'desc' }
+      orderBy: { transactionDate: 'desc' }
     });
     
     return results.map(this.mapToEntity);
@@ -97,7 +97,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     await prisma.transaction.create({
       data: {
         id: transaction.id.value,
-        bookingDate: transaction.bookingDate,
+        transactionDate: transaction.transactionDate,
         valueDate: transaction.valueDate,
         partnerName: transaction.partnerName,
         partnerIban: transaction.partnerIban,
@@ -122,7 +122,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     await prisma.transaction.createMany({
       data: transactions.map(transaction => ({
         id: transaction.id.value,
-        bookingDate: transaction.bookingDate,
+        transactionDate: transaction.transactionDate,
         valueDate: transaction.valueDate,
         partnerName: transaction.partnerName,
         partnerIban: transaction.partnerIban,
@@ -148,7 +148,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     await prisma.transaction.update({
       where: { id: transaction.id.value },
       data: {
-        bookingDate: transaction.bookingDate,
+        transactionDate: transaction.transactionDate,
         valueDate: transaction.valueDate,
         partnerName: transaction.partnerName,
         partnerIban: transaction.partnerIban,
@@ -199,7 +199,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
       where: {
         categoryId,
         ...(startDate && endDate && {
-          bookingDate: {
+          transactionDate: {
             gte: startDate,
             lte: endDate
           }
@@ -214,7 +214,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
   async sumByDateRange(startDate: Date, endDate: Date): Promise<number> {
     const result = await prisma.transaction.aggregate({
       where: {
-        bookingDate: {
+        transactionDate: {
           gte: startDate,
           lte: endDate
         }
@@ -227,9 +227,9 @@ export class PrismaTransactionRepository implements TransactionRepository {
 
   async getMonthlyTotals(year: number): Promise<{ month: number; total: number }[]> {
     const results = await prisma.transaction.groupBy({
-      by: ['bookingDate'],
+      by: ['transactionDate'],
       where: {
-        bookingDate: {
+        transactionDate: {
           gte: new Date(year, 0, 1),
           lt: new Date(year + 1, 0, 1)
         }
@@ -243,7 +243,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     }));
 
     results.forEach(result => {
-      const month = result.bookingDate.getMonth();
+      const month = result.transactionDate.getMonth();
       monthlyTotals[month].total += result._sum.amount || 0;
     });
 
@@ -256,7 +256,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
       where: {
         categoryId: { not: null },
         ...(startDate && endDate && {
-          bookingDate: {
+          transactionDate: {
             gte: startDate,
             lte: endDate
           }
@@ -276,7 +276,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
       by: ['partnerName'],
       where: {
         ...(startDate && endDate && {
-          bookingDate: {
+          transactionDate: {
             gte: startDate,
             lte: endDate
           }
@@ -300,9 +300,9 @@ export class PrismaTransactionRepository implements TransactionRepository {
     startDate.setMonth(startDate.getMonth() - months);
 
     const results = await prisma.transaction.groupBy({
-      by: ['bookingDate'],
+      by: ['transactionDate'],
       where: {
-        bookingDate: { gte: startDate }
+        transactionDate: { gte: startDate }
       },
       _sum: { amount: true }
     });
@@ -311,12 +311,12 @@ export class PrismaTransactionRepository implements TransactionRepository {
     const trends = new Map<string, { date: Date; income: number; expenses: number }>();
 
     results.forEach(result => {
-      const monthKey = `${result.bookingDate.getFullYear()}-${result.bookingDate.getMonth()}`;
+      const monthKey = `${result.transactionDate.getFullYear()}-${result.transactionDate.getMonth()}`;
       const amount = result._sum.amount || 0;
 
       if (!trends.has(monthKey)) {
         trends.set(monthKey, {
-          date: new Date(result.bookingDate.getFullYear(), result.bookingDate.getMonth(), 1),
+          date: new Date(result.transactionDate.getFullYear(), result.transactionDate.getMonth(), 1),
           income: 0,
           expenses: 0
         });
@@ -339,7 +339,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     const where: any = {};
 
     if (filters.startDate && filters.endDate) {
-      where.bookingDate = {
+      where.transactionDate = {
         gte: filters.startDate,
         lte: filters.endDate
       };
@@ -387,7 +387,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
   private mapToEntity(dbTransaction: any): Transaction {
     return {
       id: { value: dbTransaction.id },
-      bookingDate: dbTransaction.bookingDate,
+      transactionDate: dbTransaction.transactionDate,
       valueDate: dbTransaction.valueDate,
       partnerName: dbTransaction.partnerName,
       partnerIban: dbTransaction.partnerIban,

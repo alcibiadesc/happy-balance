@@ -182,17 +182,17 @@
   <title>Configuración - Expense Tracker</title>
 </svelte:head>
 
-<div class="min-h-screen bg-soft-white">
+<div class="min-h-screen" style="background-color: var(--color-background-primary);">
   <!-- Header -->
-  <div class="glass-effect sticky top-0 z-10 border-b border-warm">
+  <div class="glass-effect sticky top-0 z-10" style="border-color: var(--color-border-primary); background-color: var(--color-background-elevated);">
     <div class="container-editorial">
       <div class="flex items-center gap-3 py-4">
-        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-          <Settings class="w-5 h-5 text-gray-600" />
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--color-background-secondary);">
+          <Settings class="w-5 h-5 text-secondary" />
         </div>
         <div>
-          <h1 class="text-h3">Configuración</h1>
-          <p class="text-body-small mt-1">Administra tu aplicación y datos</p>
+          <h1 class="text-h3" style="color: var(--color-text-primary);">Configuración</h1>
+          <p class="text-secondary mt-1">Administra tu aplicación y datos</p>
         </div>
       </div>
     </div>
@@ -213,8 +213,8 @@
               <span class="text-sm font-semibold text-green-600">{stats.transactions}</span>
             </div>
             <div>
-              <h3 class="text-sm font-medium text-gray-900">Transacciones</h3>
-              <p class="text-xs text-gray-500">Registros financieros</p>
+              <h3 class="text-sm font-medium text-primary">Transacciones</h3>
+              <p class="text-xs text-tertiary">Registros financieros</p>
             </div>
           </div>
         </div>
@@ -225,8 +225,8 @@
               <span class="text-sm font-semibold text-blue-600">{stats.categories}</span>
             </div>
             <div>
-              <h3 class="text-sm font-medium text-gray-900">Categorías</h3>
-              <p class="text-xs text-gray-500">Clasificaciones</p>
+              <h3 class="text-sm font-medium text-primary">Categorías</h3>
+              <p class="text-xs text-tertiary">Clasificaciones</p>
             </div>
           </div>
         </div>
@@ -237,20 +237,20 @@
               <span class="text-sm font-semibold text-purple-600">{stats.budgets}</span>
             </div>
             <div>
-              <h3 class="text-sm font-medium text-gray-900">Presupuestos</h3>
-              <p class="text-xs text-gray-500">Límites de gasto</p>
+              <h3 class="text-sm font-medium text-primary">Presupuestos</h3>
+              <p class="text-xs text-tertiary">Límites de gasto</p>
             </div>
           </div>
         </div>
 
         <div class="card-editorial p-4">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-              <Database class="w-4 h-4 text-gray-600" />
+            <div class="w-10 h-10 style="background-color: var(--color-background-secondary);" rounded-lg flex items-center justify-center">
+              <Database class="w-4 h-4 text-secondary" />
             </div>
             <div>
-              <h3 class="text-sm font-medium text-gray-900">Tamaño Total</h3>
-              <p class="text-xs text-gray-500">{stats.totalSize}</p>
+              <h3 class="text-sm font-medium text-primary">Tamaño Total</h3>
+              <p class="text-xs text-tertiary">{stats.totalSize}</p>
             </div>
           </div>
         </div>
@@ -375,7 +375,7 @@
               <AlertTriangle class="w-8 h-8 text-red-600" />
             </div>
             <h3 class="text-h4 mb-2 text-red-700">⚠️ Confirmación Requerida</h3>
-            <p class="text-sm text-gray-600">
+            <p class="text-sm text-secondary">
               Estás a punto de eliminar <strong>TODOS</strong> tus datos financieros de forma permanente.
             </p>
           </div>
@@ -419,8 +419,8 @@
               <Shield class="w-8 h-8 text-orange-600" />
             </div>
             <h3 class="text-h4 mb-2 text-orange-700">Confirmación de Seguridad</h3>
-            <p class="text-sm text-gray-600">
-              Para continuar, escribe exactamente la palabra <code class="bg-gray-100 px-2 py-1 rounded text-red-600">delete</code>
+            <p class="text-sm text-secondary">
+              Para continuar, escribe exactamente la palabra <code class="style="background-color: var(--color-background-secondary);" px-2 py-1 rounded text-red-600">delete</code>
             </p>
           </div>
 
@@ -465,7 +465,7 @@
               <Trash2 class="w-8 h-8 text-red-600" />
             </div>
             <h3 class="text-h4 mb-2 text-red-700">🚨 Última Oportunidad</h3>
-            <p class="text-sm text-gray-600">
+            <p class="text-sm text-secondary">
               Esta acción es <strong>IRREVERSIBLE</strong>. ¿Estás completamente seguro?
             </p>
           </div>

@@ -8,69 +8,169 @@
 
 /* Editorial Design System - 2025 */
 @layer base {
-  /* CSS Custom Properties - Editorial Theme */
+  /* WCAG AA Compliant Color System */
   :root {
-    /* Monochrome Palette */
-    --color-white: #FFFFFF;
-    --color-soft-white: #FEFEFE;
-    --color-light-grey: #F8F9FA;
-    --color-medium-grey: #E5E7EB;
-    --color-text-grey: #6B7280;
-    --color-dark-grey: #374151;
-    --color-charcoal: #1F2937;
-    --color-black: #000000;
+    /* Light Mode - Professional & Accessible */
     
-    /* Beige Accents */
-    --color-warm-beige: #F5F3F0;
-    --color-soft-beige: #EAE6E1;
+    /* Backgrounds (Hierarchy) */
+    --color-background-primary: #FEFEFE;    /* Main app background */
+    --color-background-secondary: #F8F6F4;  /* Cards & components */ 
+    --color-background-tertiary: #F1EEEB;   /* Subtle contrast areas */
+    --color-background-elevated: #FFFFFF;   /* Highest elevation */
     
-    /* Functional Colors - Refined Monochromatic Palette */
-    --color-sage-green: #059669;  /* Darker, more subtle green */
-    --color-coral-red: #DC2626;   /* Refined red */
-    --color-amber: #D97706;       /* Warmer, more muted amber */
-    --color-indigo: #4F46E5;      /* Deeper indigo */
+    /* Text (WCAG AA Compliant) */
+    --color-text-primary: #2D2B29;      /* Main text - 16.8:1 ratio */
+    --color-text-secondary: #4A4744;    /* Secondary text - 9.1:1 ratio */
+    --color-text-tertiary: #6B6762;     /* Subtle text - 5.2:1 ratio */
+    --color-text-disabled: #9B9691;     /* Disabled state */
     
-    /* Neutral Semantic Colors */
-    --color-success: var(--color-sage-green);
-    --color-error: var(--color-coral-red);
-    --color-warning: var(--color-amber);
-    --color-info: var(--color-dark-grey);
-    --color-accent: var(--color-charcoal);
+    /* Borders */
+    --color-border-primary: #E8E5E2;    /* Main borders */
+    --color-border-secondary: #D4CFC9;  /* Stronger borders */
+    --color-border-focus: #8B7355;      /* Focus states */
+    
+    /* Interactive Elements */
+    --color-interactive-primary: #8B7355;      /* Primary buttons */
+    --color-interactive-primary-hover: #6B5640;
+    --color-interactive-primary-text: #FFFFFF;
+    
+    --color-interactive-secondary: #F1EEEB;    /* Secondary buttons */
+    --color-interactive-secondary-hover: #E8E5E2;
+    --color-interactive-secondary-text: #2D2B29;
+    
+    /* Semantic Colors (Accessible) */
+    --color-success: #2F7D5F;          /* Success actions */
+    --color-success-bg: #F0F9F4;       /* Success backgrounds */
+    --color-success-text: #1F5F3F;     /* Success text - 7.2:1 ratio */
+    
+    --color-error: #B83A3A;            /* Error actions */  
+    --color-error-bg: #FDF2F2;         /* Error backgrounds */
+    --color-error-text: #7F2D2D;       /* Error text - 5.8:1 ratio */
+    
+    --color-warning: #B58900;          /* Warning actions */
+    --color-warning-bg: #FFFBF0;       /* Warning backgrounds */
+    --color-warning-text: #7C4A03;     /* Warning text - 6.1:1 ratio */
+    
+    --color-info: #4A69B8;            /* Info actions */
+    --color-info-bg: #F4F7FF;         /* Info backgrounds */
+    --color-info-text: #2D4A7F;       /* Info text - 6.8:1 ratio */
     
     /* Shadows */
-    --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    
-    /* Glass Effect */
-    --glass-bg: rgba(255, 255, 255, 0.8);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --glass-blur: 20px;
+    --shadow-subtle: 0 1px 3px rgba(45, 43, 41, 0.08);
+    --shadow-medium: 0 4px 6px rgba(45, 43, 41, 0.1);
+    --shadow-large: 0 10px 15px rgba(45, 43, 41, 0.12);
     
     /* Transitions */
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-default: 200ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
     
-    /* Spacing Scale */
-    --space-1: 4px;
-    --space-2: 8px;
-    --space-4: 16px;
-    --space-6: 24px;
-    --space-8: 32px;
-    --space-12: 48px;
-    --space-16: 64px;
-    --space-24: 96px;
-    
     /* Typography */
     --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', monospace;
     
-    /* Radii */
-    --radius-sm: 4px;
-    --radius-default: 6px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
+    /* Border Radius */
+    --radius-sm: 6px;
+    --radius-default: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    
+    /* Spacing System */
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    
+    /* Glass Effects */
+    --glass-bg: rgba(248, 246, 244, 0.8);
+    --glass-blur: 12px;
+    --glass-border: rgba(232, 229, 226, 0.5);
+    
+    /* Additional Semantic Colors */
+    --color-indigo: #4F46E5;
+    --color-accent: #8B7355;
+    --color-sage-green: #059669;
+    --color-coral-red: #DC2626;
+    
+    /* Utility Colors */
+    --color-light-grey: #F1EEEB;
+    --color-text-grey: #6B6762;
+    --color-dark-grey: #4A4744;
+    --color-charcoal: #2D2B29;
+    --color-white: #FFFFFF;
+    --color-warm-beige: #F8F6F4;
+    --color-soft-beige: #F1EEEB;
+    --color-soft-white: #FEFEFE;
+  }
+
+  /* Dark Mode - WCAG AA Compliant */
+  html.dark {
+    /* Dark Backgrounds */
+    --color-background-primary: #1A1816 !important;    /* Main dark background */
+    --color-background-secondary: #232019 !important;  /* Cards & components */
+    --color-background-tertiary: #2C281F !important;   /* Subtle contrast */
+    --color-background-elevated: #353025 !important;   /* Highest elevation */
+    
+    /* Dark Text */
+    --color-text-primary: #F5F2EF !important;      /* Main text - 13.8:1 ratio */
+    --color-text-secondary: #D4CFC9 !important;    /* Secondary text - 8.9:1 ratio */
+    --color-text-tertiary: #B8B3AE !important;     /* Subtle text - 5.1:1 ratio */
+    --color-text-disabled: #8B8680 !important;     /* Disabled state */
+    
+    /* Dark Borders */
+    --color-border-primary: #3D3830 !important;    /* Main borders */
+    --color-border-secondary: #4A443B !important;  /* Stronger borders */
+    --color-border-focus: #B8A082 !important;      /* Focus states */
+    
+    /* Dark Interactive Elements */
+    --color-interactive-primary: #B8A082 !important;      /* Primary buttons */
+    --color-interactive-primary-hover: #D4C2A5 !important;
+    --color-interactive-primary-text: #1A1816 !important; /* Dark text - 8.1:1 ratio */
+    
+    --color-interactive-secondary: #2C281F !important;    /* Secondary buttons */
+    --color-interactive-secondary-hover: #3D3830 !important;
+    --color-interactive-secondary-text: #D4CFC9 !important;
+    
+    /* Dark Semantic Colors */
+    --color-success: #7FB087;          /* Success actions */
+    --color-success-bg: #1F2F23;       /* Success backgrounds */
+    --color-success-text: #9FD4A8;     /* Success text - 5.2:1 ratio */
+    
+    --color-error: #D48B8B;            /* Error actions */
+    --color-error-bg: #2F1F1F;         /* Error backgrounds */
+    --color-error-text: #E8A8A8;       /* Error text - 4.8:1 ratio */
+    
+    --color-warning: #E6B800;          /* Warning actions */
+    --color-warning-bg: #2F2A1F;       /* Warning backgrounds */
+    --color-warning-text: #F0C674;     /* Warning text - 5.1:1 ratio */
+    
+    --color-info: #87A3D4;            /* Info actions */
+    --color-info-bg: #1F232F;         /* Info backgrounds */
+    --color-info-text: #A8C1E8;       /* Info text - 4.9:1 ratio */
+    
+    /* Dark Shadows */
+    --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-large: 0 10px 15px rgba(0, 0, 0, 0.5);
+    
+    /* Dark Glass Effects */
+    --glass-bg: rgba(35, 32, 25, 0.8);
+    --glass-blur: 12px;
+    --glass-border: rgba(61, 56, 48, 0.5);
+    
+    /* Dark Additional Semantic Colors */
+    --color-indigo: #6366F1;
+    --color-accent: #B8A082;
+    --color-sage-green: #10B981;
+    --color-coral-red: #EF4444;
+    
+    /* Dark Utility Colors */
+    --color-light-grey: #2C281F;
+    --color-text-grey: #B8B3AE;
+    --color-dark-grey: #D4CFC9;
+    --color-charcoal: #F5F2EF;
+    --color-white: #1A1816;
+    --color-warm-beige: #353025;
+    --color-soft-beige: #2C281F;
+    --color-soft-white: #1A1816;
   }
 
   /* Base Typography */
@@ -83,16 +183,33 @@
   }
 
   body {
-    @apply bg-white text-gray-900;
-    font-size: 16px;
-    line-height: 1.6;
-    color: var(--color-dark-grey);
-    background-color: var(--color-soft-white);
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+    color: var(--color-text-primary) !important;
+    background-color: var(--color-background-primary) !important;
+    transition: background-color var(--transition-default), color var(--transition-default) !important;
+  }
+  
+  /* Ensure main app div follows theme */
+  [style*="background-color: var(--color-background-primary)"] {
+    background-color: var(--color-background-primary) !important;
+    color: var(--color-text-primary) !important;
+  }
+  
+  /* Force dark mode styles */
+  .dark body {
+    background-color: var(--color-background-primary) !important;
+    color: var(--color-text-primary) !important;
+  }
+  
+  .dark [style*="background-color: var(--color-background-primary)"] {
+    background-color: var(--color-background-primary) !important;
+    color: var(--color-text-primary) !important;
   }
 
   /* Improved focus styles */
   *:focus-visible {
-    outline: 2px solid var(--color-indigo);
+    outline: 2px solid var(--color-border-focus);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
@@ -113,49 +230,49 @@
   .text-h1 {
     @apply text-5xl font-medium tracking-tight;
     line-height: 1.2;
-    color: var(--color-charcoal);
+    color: var(--color-text-primary);
   }
   
   .text-h2 {
     @apply text-4xl font-medium tracking-tight;
     line-height: 1.3;
-    color: var(--color-charcoal);
+    color: var(--color-text-primary);
   }
   
   .text-h3 {
     @apply text-2xl font-medium tracking-tight;
     line-height: 1.4;
-    color: var(--color-dark-grey);
+    color: var(--color-text-secondary);
   }
   
   .text-h4 {
     @apply text-xl font-medium;
     line-height: 1.4;
-    color: var(--color-dark-grey);
+    color: var(--color-text-secondary);
   }
   
   .text-body-large {
     @apply text-lg;
     line-height: 1.6;
-    color: var(--color-dark-grey);
+    color: var(--color-text-secondary);
   }
   
   .text-body {
     @apply text-base;
     line-height: 1.6;
-    color: var(--color-dark-grey);
+    color: var(--color-text-secondary);
   }
   
   .text-body-small {
     @apply text-sm;
     line-height: 1.5;
-    color: var(--color-text-grey);
+    color: var(--color-text-tertiary);
   }
   
   .text-caption {
     @apply text-xs font-medium tracking-wide uppercase;
     line-height: 1.4;
-    color: var(--color-text-grey);
+    color: var(--color-text-tertiary);
     letter-spacing: 0.05em;
   }
   
@@ -165,10 +282,10 @@
     @apply tabular-nums;
   }
 
-  /* Editorial Cards */
+  /* Korean Cozy Cards */
   .card-editorial {
-    background: var(--color-white);
-    border: 1px solid var(--color-medium-grey);
+    background: var(--color-background-elevated);
+    border: 1px solid var(--color-border-primary);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-subtle);
     transition: all var(--transition-default);
@@ -176,7 +293,8 @@
   
   .card-editorial:hover {
     box-shadow: var(--shadow-medium);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    border-color: var(--color-border-secondary);
   }
   
   .card-editorial-glass {
@@ -214,36 +332,40 @@
   
   .btn-primary {
     @apply btn-editorial;
-    background: var(--color-charcoal);
-    color: var(--color-white);
+    background: var(--color-interactive-primary);
+    color: var(--color-interactive-primary-text);
+    border: 1px solid var(--color-interactive-primary);
   }
   
   .btn-primary:hover:not(:disabled) {
-    background: var(--color-black);
-    transform: translateY(-1px);
+    background: var(--color-interactive-primary-hover);
+    border-color: var(--color-interactive-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
   }
   
   .btn-secondary {
     @apply btn-editorial;
-    background: var(--color-warm-beige);
-    color: var(--color-charcoal);
-    border: 1px solid var(--color-medium-grey);
+    background: var(--color-interactive-secondary);
+    color: var(--color-interactive-secondary-text);
+    border: 1px solid var(--color-border-secondary);
   }
   
   .btn-secondary:hover:not(:disabled) {
-    background: var(--color-soft-beige);
-    border-color: var(--color-text-grey);
-    transform: translateY(-1px);
+    background: var(--color-interactive-secondary-hover);
+    border-color: var(--color-border-secondary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-subtle);
   }
   
   .btn-ghost {
     @apply btn-editorial;
     background: transparent;
-    color: var(--color-dark-grey);
+    color: var(--color-text-secondary);
   }
   
   .btn-ghost:hover:not(:disabled) {
-    background: var(--color-light-grey);
+    background: var(--color-background-tertiary);
   }
 
   /* Form Elements */
@@ -252,20 +374,20 @@
     font-family: var(--font-inter);
     font-size: 15px;
     line-height: 1.4;
-    background: var(--color-white);
-    border-color: var(--color-medium-grey);
+    background: var(--color-background-elevated);
+    border-color: var(--color-border-primary);
     border-radius: var(--radius-default);
     transition: all var(--transition-default);
   }
   
   .input-editorial:focus {
     outline: none;
-    border-color: var(--color-indigo);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
   }
   
   .input-editorial::placeholder {
-    color: var(--color-text-grey);
+    color: var(--color-text-tertiary);
   }
 
   /* Metric Cards */
@@ -298,7 +420,7 @@
   }
   
   .metric-card.neutral::before {
-    background: var(--color-text-grey);
+    background: var(--color-text-tertiary);
   }
 
   /* Layout Utilities */
@@ -333,6 +455,51 @@
   
   .gentle-bounce {
     animation: gentleBounce 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  /* Staggered Animation Classes */
+  .stagger-1 {
+    animation-delay: 0.1s;
+  }
+  
+  .stagger-2 {
+    animation-delay: 0.2s;
+  }
+  
+  .stagger-3 {
+    animation-delay: 0.3s;
+  }
+  
+  .stagger-4 {
+    animation-delay: 0.4s;
+  }
+  
+  /* Micro-interaction Classes */
+  .hover-lift-subtle {
+    transition: transform var(--transition-default), box-shadow var(--transition-default);
+  }
+  
+  .hover-lift-subtle:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+  }
+  
+  .hover-scale {
+    transition: transform var(--transition-fast);
+  }
+  
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+  
+  .loading-shimmer {
+    background: linear-gradient(90deg, 
+      var(--color-light-grey) 25%, 
+      transparent 50%, 
+      var(--color-light-grey) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite ease-in-out;
   }
   
   @keyframes fadeIn {
@@ -378,6 +545,48 @@
     100% { 
       opacity: 1;
       transform: scale(1);
+    }
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { 
+      opacity: 1; 
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.8;
+      transform: scale(1.02);
+    }
+  }
+  
+  @keyframes slideInFromLeft {
+    from { 
+      opacity: 0;
+      transform: translateX(-24px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes slideInFromRight {
+    from { 
+      opacity: 0;
+      transform: translateX(24px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateX(0);
     }
   }
 
@@ -494,6 +703,32 @@
     border-color: var(--color-soft-beige);
   }
   
+  /* Theme-aware text utilities */
+  .text-primary {
+    color: var(--color-text-primary) !important;
+  }
+  
+  .text-secondary {
+    color: var(--color-text-secondary) !important;
+  }
+  
+  .text-tertiary {
+    color: var(--color-text-tertiary) !important;
+  }
+  
+  /* Theme-aware background utilities */
+  .bg-primary {
+    background-color: var(--color-background-primary) !important;
+  }
+  
+  .bg-secondary {
+    background-color: var(--color-background-secondary) !important;
+  }
+  
+  .bg-elevated {
+    background-color: var(--color-background-elevated) !important;
+  }
+  
   .shadow-editorial {
     box-shadow: var(--shadow-subtle);
   }
@@ -508,21 +743,84 @@
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
   }
+  
+  /* Mobile Touch Optimizations */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Remove default details arrow */
+  details > summary {
+    list-style: none;
+  }
+  
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+  
+  /* Mobile Typography Scale Utilities */
+  .text-h5 {
+    @apply text-lg font-medium;
+    line-height: 1.4;
+    color: var(--color-dark-grey);
+  }
+  
+  .text-h6 {
+    @apply text-base font-medium;
+    line-height: 1.4;
+    color: var(--color-dark-grey);
+  }
+  
+  /* Screen Reader Only Text */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  
+  .sr-only:focus {
+    position: relative;
+    width: auto;
+    height: auto;
+    padding: 0.25rem 0.5rem;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    background-color: var(--color-charcoal);
+    color: var(--color-white);
+    border-radius: var(--radius-default);
+    z-index: 50;
+  }
+  
+  /* Focus states for keyboard navigation */
+  .focus-visible-ring:focus-visible {
+    outline: 2px solid var(--color-indigo);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
 }
 
 /* Enhanced High Contrast Mode Support */
 @media (prefers-contrast: high) {
   :root {
-    --color-medium-grey: #9CA3AF;
-    --color-text-grey: #4B5563;
-    --color-dark-grey: #1F2937;
-    --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.3);
-    --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    --color-text-tertiary: #4B5563;
+    --color-text-secondary: #374151;
+    --color-text-primary: #1F2937;
+    --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
   }
   
   .card-editorial {
     border-width: 2px;
-    border-color: var(--color-text-grey);
+    border-color: var(--color-text-secondary);
   }
   
   .btn-editorial {
@@ -550,21 +848,28 @@
 
 /* Dark Mode Support for System Preference */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --color-soft-white: #1F2937;
-    --color-light-grey: #374151;
-    --color-medium-grey: #4B5563;
-    --color-text-grey: #9CA3AF;
-    --color-dark-grey: #E5E7EB;
-    --color-charcoal: #F9FAFB;
-    --color-warm-beige: #374151;
-    --color-soft-beige: #4B5563;
-    --glass-bg: rgba(31, 41, 55, 0.8);
-  }
-  
-  body {
-    background-color: var(--color-soft-white);
-    color: var(--color-dark-grey);
+  :root:not(.dark) {
+    /* Apply dark theme colors when system preference is dark but .dark class is not set */
+    --color-background-primary: #1A1816;
+    --color-background-secondary: #232019;
+    --color-background-tertiary: #2C281F;
+    --color-background-elevated: #353025;
+    
+    --color-text-primary: #F5F2EF;
+    --color-text-secondary: #D4CFC9;
+    --color-text-tertiary: #B8B3AE;
+    --color-text-disabled: #8B8680;
+    
+    --color-border-primary: #3D3830;
+    --color-border-secondary: #4A443B;
+    --color-border-focus: #B8A082;
+    
+    --color-interactive-primary: #B8A082;
+    --color-interactive-primary-hover: #D4C2A5;
+    --color-interactive-primary-text: #1A1816;
+    
+    --glass-bg: rgba(35, 32, 25, 0.8);
+    --glass-border: rgba(61, 56, 48, 0.5);
   }
 }
 

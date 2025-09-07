@@ -36,7 +36,6 @@ export class PrismaCategoryRepository implements CategoryRepository {
 
   async findAll(): Promise<Category[]> {
     const results = await prisma.category.findMany({
-      where: { isActive: true },
       include: {
         parent: true,
         children: true,
@@ -59,10 +58,7 @@ export class PrismaCategoryRepository implements CategoryRepository {
           select: { transactions: true }
         }
       },
-      orderBy: [
-        { isActive: 'desc' }, // Active categories first
-        { name: 'asc' }
-      ]
+      orderBy: { name: 'asc' }
     });
     
     return results.map(this.mapToEntity);
@@ -72,7 +68,6 @@ export class PrismaCategoryRepository implements CategoryRepository {
     const results = await prisma.category.findMany({
       where: { 
         type: type as any, // CategoryType enum
-        isActive: true 
       },
       include: {
         parent: true,
@@ -90,13 +85,10 @@ export class PrismaCategoryRepository implements CategoryRepository {
   async findRootCategories(): Promise<Category[]> {
     const results = await prisma.category.findMany({
       where: { 
-        parentId: null,
-        isActive: true 
+        parentId: null
       },
       include: {
-        children: {
-          where: { isActive: true }
-        },
+        children: true,
         _count: {
           select: { transactions: true }
         }
@@ -110,8 +102,7 @@ export class PrismaCategoryRepository implements CategoryRepository {
   async findChildren(parentId: CategoryId): Promise<Category[]> {
     const results = await prisma.category.findMany({
       where: { 
-        parentId: parentId.value,
-        isActive: true 
+        parentId: parentId.value
       },
       include: {
         children: true,
@@ -134,7 +125,6 @@ export class PrismaCategoryRepository implements CategoryRepository {
         color: category.color,
         icon: category.icon,
         parentId: category.parentId,
-        isActive: category.isActive
       }
     });
   }
@@ -148,12 +138,11 @@ export class PrismaCategoryRepository implements CategoryRepository {
         color: category.color,
         icon: category.icon,
         parentId: category.parentId,
-        isActive: category.isActive
       }
     });
   }
 
-  async updateById(id: CategoryId, data: { name?: string, type?: string, icon?: string, color?: string, isActive?: boolean }): Promise<Category> {
+  async updateById(id: CategoryId, data: { name?: string, type?: string, icon?: string, color?: string }): Promise<Category> {
     const updateData: any = {
       updatedAt: new Date()
     };
@@ -162,7 +151,6 @@ export class PrismaCategoryRepository implements CategoryRepository {
     if (data.type !== undefined) updateData.type = data.type;
     if (data.icon !== undefined) updateData.icon = data.icon;
     if (data.color !== undefined) updateData.color = data.color;
-    if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
     const result = await prisma.category.update({
       where: { id: id.value },
@@ -202,14 +190,11 @@ export class PrismaCategoryRepository implements CategoryRepository {
   }
 
   async count(): Promise<number> {
-    return await prisma.category.count({
-      where: { isActive: true }
-    });
+    return await prisma.category.count();
   }
 
   async findWithTransactionCount(): Promise<Array<Category & { transactionCount: number }>> {
     const results = await prisma.category.findMany({
-      where: { isActive: true },
       include: {
         parent: true,
         children: true,
@@ -234,7 +219,6 @@ export class PrismaCategoryRepository implements CategoryRepository {
       color: dbCategory.color,
       icon: dbCategory.icon,
       parentId: dbCategory.parentId,
-      isActive: dbCategory.isActive,
       createdAt: dbCategory.createdAt,
       updatedAt: dbCategory.updatedAt,
       // Include related entities if loaded

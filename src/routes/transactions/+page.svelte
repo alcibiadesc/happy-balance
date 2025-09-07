@@ -759,14 +759,14 @@
   <title>Transacciones - Expense Tracker</title>
 </svelte:head>
 
-<div class="min-h-screen bg-soft-white">
+<div class="min-h-screen" style="background-color: var(--color-background-primary);">
   <!-- Header -->
-  <div class="glass-effect sticky top-0 z-10 border-b border-warm">
+  <div class="glass-effect sticky top-0 z-10" style="border-color: var(--color-border-primary); background-color: var(--color-background-elevated);">
     <div class="container-editorial">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4">
         <div>
-          <h1 class="text-h3">Transacciones</h1>
-          <p class="text-body-small mt-1">
+          <h1 class="text-h3" style="color: var(--color-text-primary);">Transacciones</h1>
+          <p class="text-secondary mt-1">
             {#if isSelectionMode && selectedTransactions.size > 0}
               {selectedTransactions.size} seleccionadas de {totals.count} transacciones
             {:else}
@@ -880,7 +880,7 @@
                 customStartDate = '';
                 customEndDate = '';
               }}
-              class="text-xs text-gray-500 hover:text-red-600 underline"
+              class="text-xs text-tertiary hover:text-red-600 underline"
             >
               Limpiar
             </button>
@@ -1069,8 +1069,8 @@
             <p class="text-caption">Transacciones</p>
             <p class="text-h4 text-mono">{totals.count}</p>
           </div>
-          <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center">
-            <FileText class="w-5 h-5 text-gray-500" />
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--color-background-secondary);">
+            <FileText class="w-5 h-5 text-tertiary" />
           </div>
         </div>
       </div>
@@ -1139,7 +1139,7 @@
       </div>
       
       <!-- Table Info -->
-      <div class="text-body-small text-gray-500">
+      <div class="text-body-small text-tertiary">
         {filteredTransactions.length} de {transactions.length} transacciones
       </div>
     </div>
@@ -1165,7 +1165,7 @@
         </div>
       {:else if filteredTransactions.length === 0}
         <div class="p-8 text-center">
-          <FileText class="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <FileText class="w-12 h-12 text-tertiary mx-auto mb-4" />
           <h3 class="text-h4 mb-2">No hay transacciones</h3>
           <p class="text-body mb-4">
             {transactions.length === 0 
@@ -1201,10 +1201,10 @@
                     </span>
                   </div>
                   <div class="min-w-0 flex-1">
-                    <p class="font-medium text-gray-900 truncate" title="{transaction.partnerName}">{transaction.partnerName}</p>
-                    <p class="text-xs text-gray-500">{formatDate(transaction.bookingDate)}</p>
+                    <p class="font-medium text-primary truncate" title="{transaction.partnerName}">{transaction.partnerName}</p>
+                    <p class="text-xs text-tertiary">{formatDate(transaction.bookingDate)}</p>
                     {#if transaction.category?.name}
-                      <p class="text-xs text-gray-400 truncate" title="{transaction.category.name}">{transaction.category.name}</p>
+                      <p class="text-xs text-tertiary truncate" title="{transaction.category.name}">{transaction.category.name}</p>
                     {/if}
                   </div>
                 </div>
@@ -1237,7 +1237,7 @@
                 </div>
               </div>
               {#if transaction.notes}
-                <p class="text-sm text-gray-600">{transaction.notes}</p>
+                <p class="text-sm text-secondary">{transaction.notes}</p>
               {/if}
             </div>
           {/each}
@@ -1264,7 +1264,7 @@
                     onclick={() => handleSort('date')}
                   >
                     Fecha
-                    <ArrowUpDown class="w-4 h-4 {sortField === 'date' ? 'status-info' : 'text-gray-400'}" />
+                    <ArrowUpDown class="w-4 h-4 {sortField === 'date' ? 'status-info' : 'text-tertiary'}" />
                   </button>
                 </th>
                 <th class="text-left py-3 px-4 text-caption">
@@ -1273,7 +1273,7 @@
                     onclick={() => handleSort('partner')}
                   >
                     Concepto
-                    <ArrowUpDown class="w-4 h-4 {sortField === 'partner' ? 'status-info' : 'text-gray-400'}" />
+                    <ArrowUpDown class="w-4 h-4 {sortField === 'partner' ? 'status-info' : 'text-tertiary'}" />
                   </button>
                 </th>
                 <th class="text-left py-3 px-4 text-caption">
@@ -1282,7 +1282,7 @@
                     onclick={() => handleSort('category')}
                   >
                     Categoría
-                    <ArrowUpDown class="w-4 h-4 {sortField === 'category' ? 'status-info' : 'text-gray-400'}" />
+                    <ArrowUpDown class="w-4 h-4 {sortField === 'category' ? 'status-info' : 'text-tertiary'}" />
                   </button>
                 </th>
                 <th class="text-left py-3 px-4 text-caption">Descripción</th>
@@ -1292,17 +1292,20 @@
                     onclick={() => handleSort('amount')}
                   >
                     Importe
-                    <ArrowUpDown class="w-4 h-4 {sortField === 'amount' ? 'status-info' : 'text-gray-400'}" />
+                    <ArrowUpDown class="w-4 h-4 {sortField === 'amount' ? 'status-info' : 'text-tertiary'}" />
                   </button>
                 </th>
                 {#if !isSelectionMode}
-                  <th class="text-right py-3 px-4 font-medium text-gray-900">Acciones</th>
+                  <th class="text-right py-3 px-4 font-medium text-primary">Acciones</th>
                 {/if}
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
               {#each filteredTransactions as transaction}
-                <tr class="hover:bg-gray-50 {selectedTransactions.has(transaction.id.value || transaction.id) ? 'bg-blue-50 border-blue-200' : ''}">
+                <tr class="transition-colors {selectedTransactions.has(transaction.id.value || transaction.id) ? 'bg-blue-50 border-blue-200' : ''}" 
+                    style="transition: background-color var(--transition-default);"
+                    on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-background-secondary)'}
+                    on:mouseleave={(e) => e.target.style.backgroundColor = selectedTransactions.has(transaction.id.value || transaction.id) ? 'rgb(239 246 255)' : 'transparent'}>
                   {#if isSelectionMode}
                     <td class="py-3 px-4">
                       <input
@@ -1314,10 +1317,10 @@
                     </td>
                   {/if}
                   <td class="py-3 px-4">
-                    <p class="text-sm text-gray-900">{formatDate(transaction.bookingDate)}</p>
+                    <p class="text-sm text-primary">{formatDate(transaction.bookingDate)}</p>
                   </td>
                   <td class="py-3 px-4">
-                    <p class="font-medium text-gray-900">{transaction.partnerName}</p>
+                    <p class="font-medium text-primary">{transaction.partnerName}</p>
                   </td>
                   <td class="py-3 px-4">
                     <CategorySelector

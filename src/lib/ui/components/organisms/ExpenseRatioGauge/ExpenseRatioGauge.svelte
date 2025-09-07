@@ -9,12 +9,12 @@
   } from 'chart.js';
 
   interface Props {
-    expenseRatio: number; // Value between 0 and 1
+    ratio: number; // Value between 0 and 1
     height?: number;
     class?: string;
   }
 
-  let { expenseRatio, height = 200, class: className }: Props = $props();
+  let { ratio, height = 200, class: className }: Props = $props();
 
   let canvas: HTMLCanvasElement;
   let chart: Chart;
@@ -50,15 +50,16 @@
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Ensure ratio is within bounds
-    const safeRatio = Math.max(0, Math.min(1, expenseRatio));
-    const percentage = safeRatio * 100;
+    // Ensure ratio is within bounds with NaN protection
+    const inputRatio = Number(ratio) || 0;
+    const safeRatioValue = isFinite(inputRatio) ? Math.max(0, Math.min(1, inputRatio)) : 0;
+    const percentage = safeRatioValue * 100;
 
     const chartData = {
       datasets: [{
         data: [percentage, 100 - percentage],
         backgroundColor: [
-          getColor(safeRatio),
+          getColor(safeRatioValue),
           'rgba(229, 231, 235, 0.3)' // gray-200 with opacity
         ],
         borderWidth: 0,
@@ -95,12 +96,13 @@
   // Reactive update when ratio changes
   $effect(() => {
     if (chart) {
-      const safeRatio = Math.max(0, Math.min(1, expenseRatio));
-      const percentage = safeRatio * 100;
+      const inputRatio = Number(ratio) || 0;
+      const safeRatioValue = isFinite(inputRatio) ? Math.max(0, Math.min(1, inputRatio)) : 0;
+      const percentage = safeRatioValue * 100;
       
       chart.data.datasets[0].data = [percentage, 100 - percentage];
       chart.data.datasets[0].backgroundColor = [
-        getColor(safeRatio),
+        getColor(safeRatioValue),
         'rgba(229, 231, 235, 0.3)'
       ];
       
@@ -108,9 +110,22 @@
     }
   });
 
-  // Computed values
-  let safeRatio = $derived(Math.max(0, Math.min(1, expenseRatio)));
-  let spentPer10 = $derived((safeRatio * 10).toFixed(1));
+  // Computed values with comprehensive NaN protection
+  let safeRatio = $derived.by(() => {
+    const inputRatio = Number(ratio) || 0;
+    return isFinite(inputRatio) ? Math.max(0, Math.min(1, inputRatio)) : 0;
+  });
+  
+  let spentPer10 = $derived.by(() => {
+    const spent = safeRatio * 10;
+    return isFinite(spent) ? spent.toFixed(1) : '0.0';
+  });
+  
+  let percentageText = $derived.by(() => {
+    const percentage = safeRatio * 100;
+    return isFinite(percentage) ? percentage.toFixed(1) : '0.0';
+  });
+  
   let status = $derived(getStatus(safeRatio));
 </script>
 
@@ -139,7 +154,7 @@
       <span class="text-sm font-medium {status.color}">{status.text}</span>
     </div>
     <p class="text-xs text-gray-600">
-      Ratio de gastos: {(safeRatio * 100).toFixed(1)}%
+      Ratio de gastos: {percentageText}%
     </p>
   </div>
   

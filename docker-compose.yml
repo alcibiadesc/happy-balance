@@ -1,0 +1,47 @@
+services:
+  app:
+    image: node:22-alpine
+    container_name: expense-tracker-dev
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://dev:dev123@expense-tracker-db:5432/expense_tracker
+    command: sh -c "npm ci --prefer-offline && npm run dev"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: expense-tracker-db
+    environment:
+      POSTGRES_DB: expense_tracker
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d expense_tracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+volumes:
+  node_modules:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

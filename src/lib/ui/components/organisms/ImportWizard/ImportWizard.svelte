@@ -126,16 +126,16 @@
               w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-default shadow-subtle
               ${currentStep >= step.number 
                 ? 'bg-charcoal text-white shadow-medium' 
-                : 'bg-warm-beige text-text-grey'
+                : 'style="background-color: var(--color-background-secondary);" text-tertiary'
               }
             `}>
               {step.number}
             </div>
             <div class="mt-3 text-center max-w-20">
-              <div class={`text-sm font-medium ${currentStep >= step.number ? 'text-charcoal' : 'text-text-grey'}`}>
+              <div class={`text-sm font-medium ${currentStep >= step.number ? 'text-primary' : 'text-tertiary'}`}>
                 {step.title}
               </div>
-              <div class="text-xs text-text-grey mt-1">
+              <div class="text-xs text-tertiary mt-1">
                 {step.description}
               </div>
             </div>
@@ -158,19 +158,19 @@
     <div class="max-w-3xl mx-auto">
       <div class="card-editorial p-8 scale-in">
         <header class="text-center mb-8">
-          <div class="w-12 h-12 bg-warm-beige rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Upload class="w-6 h-6 text-charcoal" />
+          <div class="w-12 h-12 style="background-color: var(--color-background-secondary);" rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Upload class="w-6 h-6 text-primary" />
           </div>
-          <h2 class="text-h3 mb-2 text-charcoal">Upload N26 CSV File</h2>
-          <p class="text-body-small text-text-grey">Select your exported transaction file</p>
+          <h2 class="text-h3 mb-2 text-primary">Upload N26 CSV File</h2>
+          <p class="text-body-small text-tertiary">Select your exported transaction file</p>
         </header>
 
         <div class="space-y-6">
-          <div class="border-2 border-dashed border-medium-grey/50 rounded-lg p-12 text-center transition-all duration-default hover:border-charcoal/30 hover:bg-warm-beige/20">
-            <Upload class="w-16 h-16 mx-auto text-text-grey mb-6 transition-colors duration-default" />
+          <div class="border-2 border-dashed border-medium-grey/50 rounded-lg p-12 text-center transition-all duration-default hover:border-charcoal/30 hover:style="background-color: var(--color-background-secondary);"/20">
+            <Upload class="w-16 h-16 mx-auto text-tertiary mb-6 transition-colors duration-default" />
             <div class="space-y-3 mb-6">
-              <h3 class="text-h4 text-charcoal">Drag your CSV file here</h3>
-              <p class="text-body text-text-grey">or click to select from your computer</p>
+              <h3 class="text-h4 text-primary">Drag your CSV file here</h3>
+              <p class="text-body text-tertiary">or click to select from your computer</p>
             </div>
             <input
               type="file"
@@ -185,14 +185,14 @@
           </div>
 
           {#if selectedFile}
-            <div class="bg-warm-beige border border-soft-beige p-6 rounded-lg slide-up">
+            <div class="style="background-color: var(--color-background-secondary);" border border-soft-beige p-6 rounded-lg slide-up">
               <div class="flex items-center gap-4">
                 <div class="w-12 h-12 bg-charcoal/10 rounded-lg flex items-center justify-center">
-                  <FileText class="w-6 h-6 text-charcoal" />
+                  <FileText class="w-6 h-6 text-primary" />
                 </div>
                 <div class="flex-1">
-                  <div class="text-h4 text-charcoal mb-1">{selectedFile.name}</div>
-                  <div class="text-body-small text-text-grey">
+                  <div class="text-h4 text-primary mb-1">{selectedFile.name}</div>
+                  <div class="text-body-small text-tertiary">
                     {formatFileSize(selectedFile.size)} • Last modified {new Date(selectedFile.lastModified).toLocaleDateString('en-US', { 
                       year: 'numeric', month: 'short', day: 'numeric' 
                     })}
@@ -209,7 +209,7 @@
                 <AlertCircle class="w-5 h-5 text-coral-red flex-shrink-0 mt-0.5" />
                 <div>
                   <span class="text-body font-semibold text-coral-red">Error: </span>
-                  <span class="text-body text-charcoal">{error}</span>
+                  <span class="text-body text-primary">{error}</span>
                 </div>
               </div>
             </div>
@@ -245,39 +245,39 @@
           <div class="w-12 h-12 bg-sage-green/10 rounded-lg flex items-center justify-center mx-auto mb-4">
             <CheckCircle class="w-6 h-6 text-sage-green" />
           </div>
-          <h2 class="text-h3 mb-2 text-charcoal">Import Results</h2>
-          <p class="text-body-small text-text-grey">Review your transaction data before continuing</p>
+          <h2 class="text-h3 mb-2 text-primary">Import Results</h2>
+          <p class="text-body-small text-tertiary">Review your transaction data before continuing</p>
         </header>
 
         <div class="space-y-8">
           <!-- Summary Stats -->
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="bg-charcoal/5 border border-charcoal/10 p-6 rounded-lg text-center group hover:bg-charcoal/10 transition-colors duration-default">
-              <div class="text-mono text-3xl font-semibold text-charcoal mb-2">{parseResult.summary.totalRows}</div>
-              <div class="text-caption text-text-grey">Total Rows</div>
+              <div class="text-mono text-3xl font-semibold text-primary mb-2">{parseResult.summary.totalRows}</div>
+              <div class="text-caption text-tertiary">Total Rows</div>
             </div>
             <div class="bg-sage-green/5 border border-sage-green/20 p-6 rounded-lg text-center group hover:bg-sage-green/10 transition-colors duration-default">
               <div class="text-mono text-3xl font-semibold text-sage-green mb-2">{parseResult.summary.validRows}</div>
-              <div class="text-caption text-text-grey">Valid</div>
+              <div class="text-caption text-tertiary">Valid</div>
             </div>
             <div class="bg-coral-red/5 border border-coral-red/20 p-6 rounded-lg text-center group hover:bg-coral-red/10 transition-colors duration-default">
               <div class="text-mono text-3xl font-semibold text-coral-red mb-2">{parseResult.summary.errorRows}</div>
-              <div class="text-caption text-text-grey">With Errors</div>
+              <div class="text-caption text-tertiary">With Errors</div>
             </div>
             <div class="bg-amber/5 border border-amber/20 p-6 rounded-lg text-center group hover:bg-amber/10 transition-colors duration-default">
               <div class="text-mono text-3xl font-semibold text-amber mb-2">{parseResult.summary.duplicateRows}</div>
-              <div class="text-caption text-text-grey">Duplicates</div>
+              <div class="text-caption text-tertiary">Duplicates</div>
             </div>
           </div>
 
           <!-- Financial Summary -->
           {#if parseResult.transactions.length > 0}
-            <div class="bg-warm-beige border border-soft-beige rounded-lg p-6">
+            <div class="style="background-color: var(--color-background-secondary);" border border-soft-beige rounded-lg p-6">
               <header class="flex items-center gap-3 mb-6">
                 <div class="w-8 h-8 bg-charcoal/10 rounded-lg flex items-center justify-center">
-                  <TrendingUp class="w-4 h-4 text-charcoal" />
+                  <TrendingUp class="w-4 h-4 text-primary" />
                 </div>
-                <h3 class="text-h4 text-charcoal">Financial Summary</h3>
+                <h3 class="text-h4 text-primary">Financial Summary</h3>
               </header>
               
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -289,7 +289,7 @@
                     : parseResult.transactions.reduce((sum, t) => sum + t.amount.amount, 0)
                   }
                   <div class="text-center p-4 bg-white border border-soft-beige rounded-lg">
-                    <div class="text-caption mb-2 text-text-grey uppercase tracking-wider">
+                    <div class="text-caption mb-2 text-tertiary uppercase tracking-wider">
                       {type === 'income' ? 'Income' : type === 'expense' ? 'Expenses' : 'Net Balance'}
                     </div>
                     <CurrencyDisplay 
@@ -320,13 +320,13 @@
                   <div class="bg-white border border-coral-red/20 p-4 rounded-lg">
                     <div class="flex items-start justify-between gap-3">
                       <div class="flex-1">
-                        <div class="text-body-small font-semibold text-charcoal mb-1">
+                        <div class="text-body-small font-semibold text-primary mb-1">
                           Row {error.row}
                           {#if error.field}
-                            <span class="text-text-grey"> • Field: {error.field}</span>
+                            <span class="text-tertiary"> • Field: {error.field}</span>
                           {/if}
                         </div>
-                        <div class="text-body-small text-text-grey">
+                        <div class="text-body-small text-tertiary">
                           {error.message}
                         </div>
                       </div>
@@ -335,7 +335,7 @@
                 {/each}
                 {#if parseResult.errors.length > 10}
                   <div class="text-center py-2">
-                    <span class="text-body-small text-text-grey">
+                    <span class="text-body-small text-tertiary">
                       ... and {parseResult.errors.length - 10} more errors
                     </span>
                   </div>
@@ -373,8 +373,8 @@
         <div class="w-12 h-12 bg-amber/10 rounded-lg flex items-center justify-center mx-auto mb-6">
           <span class="text-2xl">🏷️</span>
         </div>
-        <h2 class="text-h3 mb-4 text-charcoal">Automatic Categorization</h2>
-        <p class="text-body text-text-grey mb-8 max-w-md mx-auto">
+        <h2 class="text-h3 mb-4 text-primary">Automatic Categorization</h2>
+        <p class="text-body text-tertiary mb-8 max-w-md mx-auto">
           Intelligent category assignment will be implemented in the next development phase
         </p>
         <div class="flex justify-center gap-4">
@@ -391,15 +391,15 @@
         <div class="w-16 h-16 bg-sage-green/10 rounded-lg flex items-center justify-center mx-auto mb-6">
           <CheckCircle class="w-10 h-10 text-sage-green" />
         </div>
-        <h2 class="text-h3 mb-4 text-charcoal">Confirm Import</h2>
-        <p class="text-body text-text-grey mb-8">
-          <span class="text-mono font-semibold text-charcoal">
+        <h2 class="text-h3 mb-4 text-primary">Confirm Import</h2>
+        <p class="text-body text-tertiary mb-8">
+          <span class="text-mono font-semibold text-primary">
             {parseResult?.summary.validRows}
           </span> valid transactions will be imported to your expense tracker
         </p>
         
-        <div class="bg-warm-beige border border-soft-beige rounded-lg p-6 mb-8 max-w-md mx-auto">
-          <p class="text-body-small text-text-grey">
+        <div class="style="background-color: var(--color-background-secondary);" border border-soft-beige rounded-lg p-6 mb-8 max-w-md mx-auto">
+          <p class="text-body-small text-tertiary">
             <strong>Note:</strong> This will add the transactions to your database. 
             You can always edit or remove them later if needed.
           </p>

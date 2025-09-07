@@ -255,14 +255,14 @@
   <title>Presupuestos por Categorías - Expense Tracker</title>
 </svelte:head>
 
-<div class="min-h-screen bg-soft-white">
+<div class="min-h-screen" style="background-color: var(--color-background-primary);">
   <!-- Header -->
-  <div class="glass-effect sticky top-0 z-10 border-b border-warm">
+  <div class="glass-effect sticky top-0 z-10" style="border-color: var(--color-border-primary); background-color: var(--color-background-elevated);">
     <div class="container-editorial">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4">
         <div>
-          <h1 class="text-h3">Presupuestos por Categorías</h1>
-          <p class="text-body-small mt-1">
+          <h1 class="text-h3" style="color: var(--color-text-primary);">Presupuestos por Categorías</h1>
+          <p class="text-secondary mt-1">
             Controla tus gastos y gestiona tus presupuestos
           </p>
         </div>
@@ -403,7 +403,7 @@
     <!-- Budget Overview Cards -->
     {#if isLoading}
       <div class="flex items-center justify-center py-12">
-        <div class="flex items-center gap-3 text-gray-600">
+        <div class="flex items-center gap-3 text-secondary">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
           <span>Cargando presupuestos...</span>
         </div>
@@ -449,8 +449,8 @@
             <div class="flex items-start justify-between mb-4">
               <div class="flex-1">
                 <h3 class="text-h5 mb-1">{budget.name}</h3>
-                <p class="text-caption text-gray-600">{getCategoryName(budget.categoryId)}</p>
-                <p class="text-xs text-gray-500 mt-1">
+                <p class="text-caption text-secondary">{getCategoryName(budget.categoryId)}</p>
+                <p class="text-xs text-tertiary mt-1">
                   {budget.period === 'MONTHLY' ? 'Mensual' : budget.period === 'QUARTERLY' ? 'Trimestral' : 'Anual'}
                 </p>
               </div>
@@ -476,7 +476,7 @@
             <!-- Budget Progress -->
             <div class="mb-4">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-gray-600">Gastado</span>
+                <span class="text-sm text-secondary">Gastado</span>
                 <span class="text-sm font-mono {status.color}">
                   {formatCurrency(spent)} / {formatCurrency(budget.amount)}
                 </span>
@@ -491,10 +491,10 @@
               </div>
               
               <div class="flex items-center justify-between mt-2">
-                <span class="text-xs text-gray-500">
+                <span class="text-xs text-tertiary">
                   {percentage.toFixed(1)}% utilizado
                 </span>
-                <span class="text-xs text-gray-500">
+                <span class="text-xs text-tertiary">
                   {percentage >= 100 ? 'Excedido' : `${formatCurrency(budget.amount - spent)} restante`}
                 </span>
               </div>

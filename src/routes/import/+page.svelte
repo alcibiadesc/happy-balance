@@ -246,19 +246,19 @@
 </svelte:head>
 
 <!-- Header -->
-<div class="glass-effect sticky top-0 z-10 border-b border-warm">
+<div class="glass-effect sticky top-0 z-10" style="border-color: var(--color-border-primary); background-color: var(--color-background-elevated);">
   <div class="container-editorial">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4">
       <div>
-        <h1 class="text-h3">Importar Transacciones</h1>
-        <p class="text-body text-muted mt-1">Importa datos desde tu archivo CSV de N26</p>
+        <h1 class="text-h3" style="color: var(--color-text-primary);">Importar Transacciones</h1>
+        <p class="text-secondary mt-1">Importa datos desde tu archivo CSV de N26</p>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Main Content -->
-<div class="container-editorial py-6">
+<div class="container-editorial py-6" style="background-color: var(--color-background-primary);">
 
     {#if !uploadResult}
       <!-- Upload Form -->
@@ -267,8 +267,8 @@
           <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
             <Upload class="w-8 h-8 text-blue-600" />
           </div>
-          <h2 class="text-xl font-semibold text-gray-900 mb-2">Sube tu archivo N26 CSV</h2>
-          <p class="text-gray-600 max-w-md mx-auto">
+          <h2 class="text-xl font-semibold text-primary mb-2">Sube tu archivo N26 CSV</h2>
+          <p class="text-secondary max-w-md mx-auto">
             Importa todas tus transacciones de N26 de una vez. El archivo debe estar en formato CSV exportado desde tu cuenta N26.
           </p>
         </div>
@@ -294,12 +294,12 @@
             </div>
             
             {#if files && files.length > 0}
-              <p class="text-sm font-medium text-gray-900 mb-2">{files[0].name}</p>
-              <p class="text-xs text-gray-500 mb-4">
+              <p class="text-sm font-medium text-primary mb-2">{files[0].name}</p>
+              <p class="text-xs text-tertiary mb-4">
                 {(files[0].size / 1024).toFixed(1)} KB
               </p>
             {:else}
-              <p class="text-sm font-medium text-gray-900 mb-2">
+              <p class="text-sm font-medium text-primary mb-2">
                 Arrastra tu archivo CSV aquí, o 
                 <button
                   onclick={() => document.getElementById('file-input')?.click()}
@@ -308,13 +308,13 @@
                   haz clic para seleccionar
                 </button>
               </p>
-              <p class="text-xs text-gray-500 mb-4">Archivos CSV hasta 5MB</p>
+              <p class="text-xs text-tertiary mb-4">Archivos CSV hasta 5MB</p>
             {/if}
 
             {#if files && files.length > 0}
               <button
                 onclick={() => document.getElementById('file-input')?.click()}
-                class="text-sm text-gray-600 hover:text-gray-500"
+                class="text-sm text-secondary hover:text-tertiary"
               >
                 Cambiar archivo
               </button>
@@ -372,9 +372,9 @@
         </div>
 
         <!-- Format Info -->
-        <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 class="text-sm font-medium text-gray-900 mb-2">Formato Soportado</h3>
-          <ul class="text-xs text-gray-600 space-y-1">
+        <div class="mt-8 p-4 rounded-lg" style="background-color: var(--color-background-secondary);">
+          <h3 class="text-sm font-medium text-primary mb-2">Formato Soportado</h3>
+          <ul class="text-xs text-secondary space-y-1">
             <li>• Archivo CSV exportado desde N26</li>
             <li>• Columnas requeridas: Booking Date, Partner Name, Amount (EUR)</li>
             <li>• Separadores: Tab o coma</li>

@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { SavingsAccount, SavingsAccountType, type SavingsAccountData } from '../../domain/entities/SavingsAccount.js';
 import { SavingsAccountId } from '../../domain/value-objects/SavingsAccountId.js';
 import { Money } from '../../domain/value-objects/Money.js';
 import type { SavingsAccountRepository } from '../../domain/repositories/SavingsAccountRepository.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../database/prisma.js';
 
 export class PrismaSavingsAccountRepository implements SavingsAccountRepository {
   

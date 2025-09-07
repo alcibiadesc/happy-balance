@@ -21,160 +21,6 @@ model Account {
   @@map("accounts")
 }
 
-model Category {
-  id           String               @id @default(uuid())
-  name         String
-  type         CategoryType
-  color        String               @default("#3B82F6")
-  icon         String               @default("📊")
-  parentId     String?
-  isActive     Boolean              @default(true)
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  budgets      Budget[]
-  parent       Category?            @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children     Category[]           @relation("CategoryHierarchy")
-  rules        CategorizationRule[]
-  transactions Transaction[]
-
-  @@map("categories")
-}
-
-model Transaction {
-  id               String           @id @default(uuid())
-  bookingDate      DateTime
-  valueDate        DateTime
-  partnerName      String
-  partnerIban      String?
-  type             String
-  paymentReference String?
-  amount           Float
-  originalAmount   Float?
-  originalCurrency String?
-  exchangeRate     Float?
-  categoryId       String?
-  accountId        String
-  isRecurring      Boolean          @default(false)
-  confidence       Float?
-  hash             String           @unique
-  importJobId      String?
-  notes            String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  tags             TransactionTag[]
-  account          Account          @relation(fields: [accountId], references: [id])
-  category         Category?        @relation(fields: [categoryId], references: [id])
-  importJob        ImportJob?       @relation(fields: [importJobId], references: [id])
-
-  @@index([bookingDate])
-  @@index([partnerName])
-  @@index([categoryId])
-  @@index([accountId])
-  @@index([hash])
-  @@map("transactions")
-}
-
-model Tag {
-  id           String           @id @default(uuid())
-  name         String           @unique
-  color        String           @default("#6B7280")
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  transactions TransactionTag[]
-
-  @@map("tags")
-}
-
-model TransactionTag {
-  transactionId String
-  tagId         String
-  createdAt     DateTime    @default(now())
-  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-
-  @@id([transactionId, tagId])
-  @@map("transaction_tags")
-}
-
-model CategorizationRule {
-  id         String    @id @default(uuid())
-  categoryId String?
-  confidence Float     @default(0.8)
-  isActive   Boolean   @default(true)
-  priority   Int       @default(0)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  pattern    String
-  ruleType   String
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  @@map("categorization_rules")
-}
-
-model ImportJob {
-  id            String        @id @default(uuid())
-  fileName      String
-  fileSize      Int
-  fileHash      String
-  format        String        @default("N26_CSV")
-  status        ImportStatus  @default(PENDING)
-  totalRows     Int?
-  validRows     Int?
-  errorRows     Int?
-  duplicateRows Int?
-  importedRows  Int?
-  errors        Json?
-  metadata      Json?
-  startedAt     DateTime?
-  completedAt   DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  transactions  Transaction[]
-
-  @@map("import_jobs")
-}
-
-model Budget {
-  id         String       @id @default(uuid())
-  name       String
-  categoryId String?
-  amount     Float
-  period     BudgetPeriod
-  startDate  DateTime
-  endDate    DateTime?
-  isActive   Boolean      @default(true)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  category   Category?    @relation(fields: [categoryId], references: [id])
-
-  @@map("budgets")
-}
-
-model Setting {
-  id        String   @id @default(uuid())
-  key       String   @unique
-  value     Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("settings")
-}
-
-model SavingsAccount {
-  id          String   @id @default(uuid())
-  name        String
-  type        SavingsAccountType
-  balance     Float
-  goalAmount  Float?
-  currency    String   @default("EUR")
-  isActive    Boolean  @default(true)
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("savings_accounts")
-}
-
 enum CategoryType {
   INCOME
   ESSENTIAL_EXPENSE
@@ -183,33 +29,84 @@ enum CategoryType {
   SAVINGS
   INVESTMENT
   OMIT
+
+  @@map("category_type")
 }
 
-enum RuleOperator {
-  EQUALS
-  CONTAINS
-  STARTS_WITH
-  ENDS_WITH
-  REGEX
-  GREATER_THAN
-  LESS_THAN
-  BETWEEN
+model Category {
+  id               String               @id @default(uuid())
+  name             String               @unique
+  description      String?
+  type             CategoryType
+  color            String               @default("#6B7280")
+  icon             String               @default("Tag")
+  parentId         String?
+  parent           Category?            @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children         Category[]           @relation("CategoryHierarchy")
+  transactions     Transaction[]
+  budgets          Budget[]
+  rules            CategorizationRule[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@map("categories")
 }
 
-enum ImportStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  CANCELLED
+model Transaction {
+  id                String   @id @default(uuid())
+  amount            Float
+  description       String
+  paymentReference  String?
+  counterparty      String?
+  accountId         String
+  account           Account  @relation(fields: [accountId], references: [id])
+  categoryId        String?
+  category          Category? @relation(fields: [categoryId], references: [id])
+  transactionDate   DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("transactions")
 }
 
 enum BudgetPeriod {
-  DAILY
   WEEKLY
   MONTHLY
   QUARTERLY
   YEARLY
+
+  @@map("budget_period")
+}
+
+model Budget {
+  id         String       @id @default(uuid())
+  name       String
+  amount     Float
+  period     BudgetPeriod
+  categoryId String
+  category   Category     @relation(fields: [categoryId], references: [id])
+  startDate  DateTime
+  endDate    DateTime?
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@map("budgets")
+}
+
+model CategorizationRule {
+  id         String    @id @default(uuid())
+  name       String
+  pattern    String
+  ruleType   String
+  priority   Int       @default(0)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("categorization_rules")
 }
 
 enum SavingsAccountType {
@@ -218,4 +115,21 @@ enum SavingsAccountType {
   RETIREMENT_ACCOUNT
   HIGH_YIELD_SAVINGS
   OTHER
+
+  @@map("savings_account_type")
+}
+
+model SavingsAccount {
+  id          String             @id @default(uuid())
+  name        String
+  type        SavingsAccountType
+  balance     Float
+  goalAmount  Float?
+  currency    String             @default("EUR")
+  isActive    Boolean            @default(true)
+  description String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@map("savings_accounts")
 }

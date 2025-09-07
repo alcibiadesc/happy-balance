@@ -5,9 +5,16 @@ declare global {
   var __prisma: PrismaClient | undefined;
 }
 
-// Prevent multiple instances during development hot-reload
-export const prisma = globalThis.__prisma || new PrismaClient();
+// Create Prisma client instance
+export const prisma = globalThis.__prisma || new PrismaClient({
+  log: dev ? ['error', 'warn', 'info'] : ['error'],
+  datasources: {
+    db: {
+      url: "file:/volume1/home/alci/github/expense-tracker/prisma/dev.db"
+    }
+  }
+});
 
-if (dev) {
+if (dev && typeof window === 'undefined') {
   globalThis.__prisma = prisma;
 }

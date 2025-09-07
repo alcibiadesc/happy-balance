@@ -254,14 +254,14 @@
   <title>Gestión de Categorías - Expense Tracker</title>
 </svelte:head>
 
-<div class="min-h-screen bg-soft-white">
+<div class="min-h-screen" style="background-color: var(--color-background-primary);">
   <!-- Header -->
-  <div class="glass-effect sticky top-0 z-10 border-b border-warm">
+  <div class="glass-effect sticky top-0 z-10" style="border-color: var(--color-border-primary); background-color: var(--color-background-elevated);">
     <div class="container-editorial">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4">
         <div>
-          <h1 class="text-h3">Gestión de Categorías</h1>
-          <p class="text-body-small mt-1">
+          <h1 class="text-h3" style="color: var(--color-text-primary);">Gestión de Categorías</h1>
+          <p class="text-secondary mt-1">
             Organiza y personaliza tus categorías de transacciones
           </p>
         </div>
@@ -291,7 +291,7 @@
             class="px-3 py-1.5 text-sm rounded-full transition-colors {
               filterType === 'all'
                 ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'text-secondary hover:text-primary'
             }"
             onclick={() => filterType = 'all'}
           >
@@ -302,7 +302,7 @@
               class="px-3 py-1.5 text-sm rounded-full transition-colors {
                 filterType === type.value
                   ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'text-secondary hover:text-primary'
               }"
               onclick={() => filterType = type.value}
             >

@@ -1,96 +1,190 @@
+import { Result } from '$lib/shared/utils/result.js';
+import { DomainError } from '$lib/shared/errors/DomainError.js';
+
+export interface Currency {
+	readonly code: string;
+	readonly symbol: string;
+	readonly decimals: number;
+}
+
+export const SUPPORTED_CURRENCIES: Record<string, Currency> = {
+	EUR: { code: 'EUR', symbol: '€', decimals: 2 },
+	USD: { code: 'USD', symbol: '$', decimals: 2 },
+	GBP: { code: 'GBP', symbol: '£', decimals: 2 },
+	JPY: { code: 'JPY', symbol: '¥', decimals: 0 }
+} as const;
+
 export class Money {
-  constructor(
-    public readonly amount: number,
-    public readonly currency: string = 'EUR'
-  ) {
-    if (!currency || currency.length !== 3) {
-      throw new Error('Currency must be a valid 3-character code');
-    }
-  }
+	private constructor(
+		private readonly _amount: number,
+		private readonly _currency: Currency
+	) {
+		Object.freeze(this);
+	}
 
-  add(other: Money): Money {
-    this.validateSameCurrency(other);
-    return new Money(this.amount + other.amount, this.currency);
-  }
+	static create(amount: number, currencyCode: string): Result<Money, DomainError> {
+		const currency = SUPPORTED_CURRENCIES[currencyCode.toUpperCase()];
+		if (!currency) {
+			return Result.failure(
+				new DomainError(`Unsupported currency: ${currencyCode}`)
+			);
+		}
 
-  subtract(other: Money): Money {
-    this.validateSameCurrency(other);
-    return new Money(this.amount - other.amount, this.currency);
-  }
+		if (!Number.isFinite(amount)) {
+			return Result.failure(
+				new DomainError('Amount must be a finite number')
+			);
+		}
 
-  multiply(factor: number): Money {
-    return new Money(this.amount * factor, this.currency);
-  }
+		const roundedAmount = Math.round(amount * Math.pow(10, currency.decimals)) / Math.pow(10, currency.decimals);
 
-  divide(divisor: number): Money {
-    if (divisor === 0) {
-      throw new Error('Cannot divide by zero');
-    }
-    return new Money(this.amount / divisor, this.currency);
-  }
+		return Result.success(new Money(roundedAmount, currency));
+	}
 
-  isPositive(): boolean {
-    return this.amount > 0;
-  }
+	static zero(currencyCode: string): Result<Money, DomainError> {
+		return Money.create(0, currencyCode);
+	}
 
-  isNegative(): boolean {
-    return this.amount < 0;
-  }
+	static parse(value: string, currencyCode: string = 'EUR'): Result<Money, DomainError> {
+		const cleanValue = value.replace(/[^\d.-]/g, '');
+		const amount = parseFloat(cleanValue);
+		
+		if (isNaN(amount)) {
+			return Result.failure(new DomainError(`Cannot parse amount: ${value}`));
+		}
+		
+		return Money.create(amount, currencyCode);
+	}
 
-  isZero(): boolean {
-    return Math.abs(this.amount) < 0.01; // Consider floating point precision
-  }
+	get amount(): number {
+		return this._amount;
+	}
 
-  abs(): Money {
-    return new Money(Math.abs(this.amount), this.currency);
-  }
+	get currency(): Currency {
+		return this._currency;
+	}
 
-  equals(other: Money): boolean {
-    return this.currency === other.currency && 
-           Math.abs(this.amount - other.amount) < 0.01;
-  }
+	get isZero(): boolean {
+		return this._amount === 0;
+	}
 
-  toString(): string {
-    return `${this.formatAmount()} ${this.currency}`;
-  }
+	get isPositive(): boolean {
+		return this._amount > 0;
+	}
 
-  formatAmount(): string {
-    return new Intl.NumberFormat('es-ES', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(this.amount);
-  }
+	get isNegative(): boolean {
+		return this._amount < 0;
+	}
 
-  toJSON() {
-    return {
-      amount: this.amount,
-      currency: this.currency
-    };
-  }
+	add(other: Money): Result<Money, DomainError> {
+		if (!this.hasSameCurrency(other)) {
+			return Result.failure(
+				new DomainError(`Cannot add different currencies: ${this._currency.code} and ${other._currency.code}`)
+			);
+		}
 
-  private validateSameCurrency(other: Money): void {
-    if (this.currency !== other.currency) {
-      throw new Error(`Cannot operate on different currencies: ${this.currency} and ${other.currency}`);
-    }
-  }
+		return Money.create(this._amount + other._amount, this._currency.code);
+	}
 
-  // Static factory methods
-  static zero(currency: string = 'EUR'): Money {
-    return new Money(0, currency);
-  }
+	subtract(other: Money): Result<Money, DomainError> {
+		if (!this.hasSameCurrency(other)) {
+			return Result.failure(
+				new DomainError(`Cannot subtract different currencies: ${this._currency.code} and ${other._currency.code}`)
+			);
+		}
 
-  static fromCents(cents: number, currency: string = 'EUR'): Money {
-    return new Money(cents / 100, currency);
-  }
+		return Money.create(this._amount - other._amount, this._currency.code);
+	}
 
-  static parse(value: string, currency: string = 'EUR'): Money {
-    const cleanValue = value.replace(/[^\d.-]/g, '');
-    const amount = parseFloat(cleanValue);
-    
-    if (isNaN(amount)) {
-      throw new Error(`Cannot parse amount: ${value}`);
-    }
-    
-    return new Money(amount, currency);
-  }
+	multiply(factor: number): Result<Money, DomainError> {
+		if (!Number.isFinite(factor)) {
+			return Result.failure(
+				new DomainError('Factor must be a finite number')
+			);
+		}
+
+		return Money.create(this._amount * factor, this._currency.code);
+	}
+
+	divide(divisor: number): Result<Money, DomainError> {
+		if (!Number.isFinite(divisor) || divisor === 0) {
+			return Result.failure(
+				new DomainError('Divisor must be a finite non-zero number')
+			);
+		}
+
+		return Money.create(this._amount / divisor, this._currency.code);
+	}
+
+	abs(): Result<Money, DomainError> {
+		return Money.create(Math.abs(this._amount), this._currency.code);
+	}
+
+	negate(): Result<Money, DomainError> {
+		return Money.create(-this._amount, this._currency.code);
+	}
+
+	equals(other: Money): boolean {
+		return this._amount === other._amount && this._currency.code === other._currency.code;
+	}
+
+	greaterThan(other: Money): boolean {
+		this.assertSameCurrency(other);
+		return this._amount > other._amount;
+	}
+
+	lessThan(other: Money): boolean {
+		this.assertSameCurrency(other);
+		return this._amount < other._amount;
+	}
+
+	greaterThanOrEqual(other: Money): boolean {
+		this.assertSameCurrency(other);
+		return this._amount >= other._amount;
+	}
+
+	lessThanOrEqual(other: Money): boolean {
+		this.assertSameCurrency(other);
+		return this._amount <= other._amount;
+	}
+
+	format(options?: { showSymbol?: boolean; showCode?: boolean }): string {
+		const { showSymbol = true, showCode = false } = options || {};
+		
+		const formattedAmount = new Intl.NumberFormat('en-US', {
+			minimumFractionDigits: this._currency.decimals,
+			maximumFractionDigits: this._currency.decimals
+		}).format(this._amount);
+
+		if (showSymbol && showCode) {
+			return `${this._currency.symbol}${formattedAmount} ${this._currency.code}`;
+		} else if (showSymbol) {
+			return `${this._currency.symbol}${formattedAmount}`;
+		} else if (showCode) {
+			return `${formattedAmount} ${this._currency.code}`;
+		} else {
+			return formattedAmount;
+		}
+	}
+
+	toString(): string {
+		return this.format();
+	}
+
+	toJSON(): { amount: number; currency: string } {
+		return {
+			amount: this._amount,
+			currency: this._currency.code
+		};
+	}
+
+	private hasSameCurrency(other: Money): boolean {
+		return this._currency.code === other._currency.code;
+	}
+
+	private assertSameCurrency(other: Money): void {
+		if (!this.hasSameCurrency(other)) {
+			throw new DomainError(`Cannot compare different currencies: ${this._currency.code} and ${other._currency.code}`);
+		}
+	}
 }
