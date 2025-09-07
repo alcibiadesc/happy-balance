@@ -1,4 +1,5 @@
 # 💰 Expense Tracker
+.
 
 > **Enterprise-grade personal finance management application built with SvelteKit, following Domain-Driven Design, Hexagonal Architecture, and Atomic Design principles. 100% containerized - no local dependencies needed!**
 
