@@ -7,12 +7,8 @@ declare global {
 
 // Create Prisma client instance
 export const prisma = globalThis.__prisma || new PrismaClient({
-  log: dev ? ['error', 'warn', 'info'] : ['error'],
-  datasources: {
-    db: {
-      url: "file:/volume1/home/alci/github/expense-tracker/prisma/dev.db"
-    }
-  }
+  log: dev ? ['error', 'warn', 'info'] : ['error']
+  // Datasource configuration is handled by Prisma from environment variables
 });
 
 if (dev && typeof window === 'undefined') {

@@ -5,34 +5,31 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "docker compose -f docker-compose.dev.yml up --build",
+		"dev": "vite dev",
+		"dev:docker": "docker compose -f docker-compose.dev.yml up --build",
 		"dev:down": "docker compose -f docker-compose.dev.yml down",
 		"dev:logs": "docker compose -f docker-compose.dev.yml logs -f app",
 		"dev:rebuild": "docker compose -f docker-compose.dev.yml up --build --force-recreate",
 		"dev:shell": "docker compose -f docker-compose.dev.yml exec app sh",
-		
 		"prod": "docker compose up -d --build",
 		"prod:down": "docker compose down",
 		"prod:logs": "docker compose logs -f",
 		"prod:rebuild": "docker compose up --build --force-recreate -d",
-		
 		"db:shell": "docker compose -f docker-compose.dev.yml exec postgres psql -U expense_tracker -d expense_tracker",
 		"db:admin": "echo 'PgAdmin: http://localhost:5050 (admin@expense-tracker.dev / admin)'",
 		"db:logs": "docker compose -f docker-compose.dev.yml logs -f postgres",
 		"db:reset": "docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d postgres",
-		
 		"test": "docker compose -f docker-compose.dev.yml exec app pnpm vitest",
 		"test:coverage": "docker compose -f docker-compose.dev.yml exec app pnpm vitest run --coverage",
 		"lint": "docker compose -f docker-compose.dev.yml exec app pnpm prettier --check . && docker compose -f docker-compose.dev.yml exec app pnpm eslint .",
 		"lint:fix": "docker compose -f docker-compose.dev.yml exec app pnpm prettier --write . && docker compose -f docker-compose.dev.yml exec app pnpm eslint . --fix",
 		"typecheck": "docker compose -f docker-compose.dev.yml exec app pnpm svelte-kit sync && docker compose -f docker-compose.dev.yml exec app pnpm tsc --noEmit",
-		
 		"setup": "docker compose -f docker-compose.dev.yml build && docker compose -f docker-compose.dev.yml up -d",
 		"clean": "docker compose -f docker-compose.dev.yml down -v && docker system prune -f",
 		"status": "docker compose -f docker-compose.dev.yml ps"
 	},
 	"dependencies": {
-		"@prisma/client": "^5.7.1",
+		"@prisma/client": "^5.22.0",
 		"@types/uuid": "^9.0.7",
 		"chart.js": "^4.4.0",
 		"chartjs-adapter-date-fns": "^3.0.0",
@@ -40,11 +37,12 @@
 		"clsx": "^2.0.0",
 		"csv-parse": "^5.5.0",
 		"date-fns": "^2.30.0",
-		"lucide-svelte": "^0.294.0",
+		"lucide-svelte": "^0.542.0",
 		"tailwind-merge": "^2.1.0",
 		"uuid": "^9.0.1"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.55.0",
 		"@sveltejs/adapter-node": "^2.0.2",
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
@@ -60,7 +58,7 @@
 		"prettier": "^3.1.0",
 		"prettier-plugin-svelte": "^3.1.2",
 		"prettier-plugin-tailwindcss": "^0.5.7",
-		"prisma": "^5.7.1",
+		"prisma": "^5.22.0",
 		"svelte": "^5.0.0-next.1",
 		"svelte-check": "^3.6.0",
 		"tailwindcss": "^3.3.6",
@@ -75,6 +73,9 @@
 		"pnpm": ">=8.0.0"
 	},
 	"packageManager": "pnpm@9.0.0",
+	"prisma": {
+		"seed": "node prisma/seed.js"
+	},
 	"keywords": [
 		"expense-tracker",
 		"finance",

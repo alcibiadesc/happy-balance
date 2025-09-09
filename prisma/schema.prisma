@@ -58,6 +58,7 @@ model Transaction {
   description       String
   paymentReference  String?
   counterparty      String?
+  hash              String?  @unique
   accountId         String
   account           Account  @relation(fields: [accountId], references: [id])
   categoryId        String?

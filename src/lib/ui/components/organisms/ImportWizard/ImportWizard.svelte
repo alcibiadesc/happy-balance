@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Card, CardHeader, CardContent, CardTitle, Button, Input } from '$lib/ui/components/atoms/index.js';
   import { CurrencyDisplay } from '$lib/ui/components/molecules/CurrencyDisplay/index.js';
-  import { N26CSVParser, type ParseResult } from '$lib/infrastructure/parsers/N26CSVParser.js';
+  import { UniversalCSVParser, type ParseResult } from '$lib/infrastructure/parsers/UniversalCSVParser.js';
   import { Account, AccountType } from '$lib/domain/entities/Account.js';
   import { AccountId } from '$lib/domain/value-objects/AccountId.js';
   import { Upload, FileText, CheckCircle, AlertCircle, TrendingUp } from 'lucide-svelte';
@@ -16,25 +16,30 @@
   let currentStep = $state(1);
   let selectedFile: File | null = $state(null);
   let parseResult: ParseResult | null = $state(null);
+  let importResult: any = $state(null);
   let isLoading = $state(false);
   let error = $state('');
 
   // Steps
   const steps = [
-    { number: 1, title: 'Upload File', description: 'Select your N26 CSV file' },
+    { number: 1, title: 'Upload File', description: 'Select your CSV file' },
     { number: 2, title: 'Validate Data', description: 'Review imported transactions' },
     { number: 3, title: 'Categorize', description: 'Assign categories to transactions' },
-    { number: 4, title: 'Confirm', description: 'Confirm the import' }
+    { number: 4, title: 'Confirm', description: 'Confirm the import' },
+    { number: 5, title: 'Complete', description: 'Import successful' }
   ];
 
-  // Default account for parsing
-  const defaultAccount = new Account(
-    AccountId.generate(),
-    'N26 - Main Account',
+  // Use existing account ID from database
+  const MAIN_ACCOUNT_ID = 'a524e6f2-647f-498f-beda-e710ff2a9423';
+  
+  // Create dummy account for parsing preview (not used for actual import)
+  const dummyAccount = new Account(
+    new AccountId(MAIN_ACCOUNT_ID),
+    'Main Account',
     AccountType.MAIN
   );
 
-  const parser = new N26CSVParser(defaultAccount);
+  const parser = new UniversalCSVParser();
 
   async function handleFileSelect(event: Event) {
     const target = event.target as HTMLInputElement;
@@ -59,31 +64,35 @@
   }
 
   async function parseCSV() {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      error = 'No file selected';
+      return;
+    }
 
     isLoading = true;
     error = '';
 
     try {
+      console.log('Parsing CSV file:', selectedFile.name);
       const content = await selectedFile.text();
+      console.log('CSV content length:', content.length);
       
-      // Validate format first
-      const validation = N26CSVParser.validateCSVFormat(content);
-      if (!validation.isValid) {
-        error = validation.errors.join('. ');
-        return;
-      }
+      // Use the UniversalCSVParser for frontend preview
+      parseResult = await parser.parseWithDetails(content);
+      
+      console.log('Parse result:', parseResult);
 
-      // Parse the CSV
-      parseResult = await parser.parse(content);
-      
+      // Move to next step based on parse result
       if (parseResult.errors.length > 0) {
-        console.warn('Parse errors:', parseResult.errors);
+        console.warn('Parse errors found:', parseResult.errors);
+        // Still proceed to show results with errors
       }
-
-      currentStep = 2;
+      
+      currentStep = 2; // Go to validation step to show parsed data
+      
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Error processing file';
+      console.error('CSV parse error:', err);
+      error = err instanceof Error ? err.message : 'Failed to parse CSV';
     } finally {
       isLoading = false;
     }
@@ -101,9 +110,65 @@
     }
   }
 
-  function completeImport() {
-    if (parseResult && onComplete) {
-      onComplete(parseResult);
+  async function completeImport() {
+    if (!selectedFile) {
+      error = 'No file selected';
+      return;
+    }
+    
+    isLoading = true;
+    error = '';
+    
+    try {
+      console.log('Starting import with file:', selectedFile.name);
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('accountId', MAIN_ACCOUNT_ID);
+      formData.append('overwriteExisting', 'false');
+      
+      // Call import API
+      const response = await fetch('/api/transactions/import', {
+        method: 'POST',
+        body: formData
+      });
+      
+      // Check HTTP status first
+      if (!response.ok) {
+        const errorText = await response.text();
+        error = `Server error (${response.status}): ${errorText}`;
+        console.error('HTTP Error:', response.status, errorText);
+        return;
+      }
+      
+      const result = await response.json();
+      console.log('Import API response:', result);
+      
+      if (!result.success) {
+        error = result.error || 'Import failed';
+        return;
+      }
+      
+      // Success! Store import result and move to success step
+      const importData = result.data;
+      
+      importResult = {
+        success: true,
+        imported: importData.imported,
+        skipped: importData.skipped,
+        errors: importData.errors,
+        warnings: importData.warnings,
+        message: importData.message
+      };
+      
+      // Move to success step
+      currentStep = 5;
+      
+    } catch (err) {
+      console.error('Import error:', err);
+      error = err instanceof Error ? err.message : 'Network error during import';
+    } finally {
+      isLoading = false;
     }
   }
 
@@ -126,7 +191,7 @@
               w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-default shadow-subtle
               ${currentStep >= step.number 
                 ? 'bg-charcoal text-white shadow-medium' 
-                : 'style="background-color: var(--color-background-secondary);" text-tertiary'
+                : 'bg-gray-100 text-tertiary'
               }
             `}>
               {step.number}
@@ -158,7 +223,7 @@
     <div class="max-w-3xl mx-auto">
       <div class="card-editorial p-8 scale-in">
         <header class="text-center mb-8">
-          <div class="w-12 h-12 style="background-color: var(--color-background-secondary);" rounded-lg flex items-center justify-center mx-auto mb-4">
+          <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
             <Upload class="w-6 h-6 text-primary" />
           </div>
           <h2 class="text-h3 mb-2 text-primary">Upload N26 CSV File</h2>
@@ -166,7 +231,7 @@
         </header>
 
         <div class="space-y-6">
-          <div class="border-2 border-dashed border-medium-grey/50 rounded-lg p-12 text-center transition-all duration-default hover:border-charcoal/30 hover:style="background-color: var(--color-background-secondary);"/20">
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center transition-all duration-default hover:border-gray-400 hover:bg-gray-50">
             <Upload class="w-16 h-16 mx-auto text-tertiary mb-6 transition-colors duration-default" />
             <div class="space-y-3 mb-6">
               <h3 class="text-h4 text-primary">Drag your CSV file here</h3>
@@ -185,7 +250,7 @@
           </div>
 
           {#if selectedFile}
-            <div class="style="background-color: var(--color-background-secondary);" border border-soft-beige p-6 rounded-lg slide-up">
+            <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg slide-up">
               <div class="flex items-center gap-4">
                 <div class="w-12 h-12 bg-charcoal/10 rounded-lg flex items-center justify-center">
                   <FileText class="w-6 h-6 text-primary" />
@@ -272,7 +337,7 @@
 
           <!-- Financial Summary -->
           {#if parseResult.transactions.length > 0}
-            <div class="style="background-color: var(--color-background-secondary);" border border-soft-beige rounded-lg p-6">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <header class="flex items-center gap-3 mb-6">
                 <div class="w-8 h-8 bg-charcoal/10 rounded-lg flex items-center justify-center">
                   <TrendingUp class="w-4 h-4 text-primary" />
@@ -398,7 +463,7 @@
           </span> valid transactions will be imported to your expense tracker
         </p>
         
-        <div class="style="background-color: var(--color-background-secondary);" border border-soft-beige rounded-lg p-6 mb-8 max-w-md mx-auto">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8 max-w-md mx-auto">
           <p class="text-body-small text-tertiary">
             <strong>Note:</strong> This will add the transactions to your database. 
             You can always edit or remove them later if needed.
@@ -406,8 +471,120 @@
         </div>
         
         <div class="flex justify-center gap-4">
-          <button class="btn-secondary" onclick={prevStep}>Previous</button>
-          <button class="btn-primary" onclick={completeImport}>Confirm Import</button>
+          <button class="btn-secondary" onclick={prevStep} disabled={isLoading}>Previous</button>
+          <button 
+            class="btn-primary transition-all duration-default disabled:opacity-50 disabled:cursor-not-allowed" 
+            onclick={completeImport}
+            disabled={isLoading}
+            aria-label={isLoading ? 'Importing transactions...' : 'Confirm import'}
+          >
+            {#if isLoading}
+              <svg class="animate-spin -ml-1 mr-3 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Importing...
+            {:else}
+              Confirm Import
+            {/if}
+          </button>
+        </div>
+      </div>
+    </div>
+
+  {:else if currentStep === 5 && importResult}
+    <!-- Step 5: Success Confirmation -->
+    <div class="max-w-4xl mx-auto">
+      <div class="card-editorial p-8 scale-in text-center">
+        <div class="w-16 h-16 bg-sage-green/10 rounded-lg flex items-center justify-center mx-auto mb-6">
+          <CheckCircle class="w-10 h-10 text-sage-green" />
+        </div>
+        
+        <h2 class="text-h3 mb-4 text-primary">Import Successful!</h2>
+        <p class="text-body text-tertiary mb-8 max-w-md mx-auto">
+          {importResult.message}
+        </p>
+
+        <!-- Import Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="bg-sage-green/5 border border-sage-green/20 p-6 rounded-lg">
+            <div class="text-mono text-3xl font-semibold text-sage-green mb-2">
+              {importResult.imported}
+            </div>
+            <div class="text-caption text-tertiary">Transactions Imported</div>
+          </div>
+          
+          {#if importResult.skipped > 0}
+            <div class="bg-amber/5 border border-amber/20 p-6 rounded-lg">
+              <div class="text-mono text-3xl font-semibold text-amber mb-2">
+                {importResult.skipped}
+              </div>
+              <div class="text-caption text-tertiary">Skipped (Duplicates)</div>
+            </div>
+          {/if}
+          
+          {#if importResult.errors.length > 0}
+            <div class="bg-coral-red/5 border border-coral-red/20 p-6 rounded-lg">
+              <div class="text-mono text-3xl font-semibold text-coral-red mb-2">
+                {importResult.errors.length}
+              </div>
+              <div class="text-caption text-tertiary">Errors</div>
+            </div>
+          {/if}
+        </div>
+
+        <!-- Warnings and Errors -->
+        {#if importResult.warnings.length > 0 || importResult.errors.length > 0}
+          <div class="bg-amber/5 border border-amber/20 rounded-lg p-6 mb-8 text-left">
+            <h3 class="text-h4 text-amber mb-4 text-center">Import Details</h3>
+            
+            {#if importResult.warnings.length > 0}
+              <div class="mb-4">
+                <h4 class="text-body font-semibold text-primary mb-2">Warnings:</h4>
+                <ul class="text-body-small text-tertiary space-y-1">
+                  {#each importResult.warnings as warning}
+                    <li>• {warning}</li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
+            
+            {#if importResult.errors.length > 0}
+              <div>
+                <h4 class="text-body font-semibold text-coral-red mb-2">Errors:</h4>
+                <ul class="text-body-small text-tertiary space-y-1">
+                  {#each importResult.errors as error}
+                    <li>• {error}</li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
+          </div>
+        {/if}
+
+        <!-- Next Steps -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
+          <h3 class="text-h4 text-primary mb-4">What's Next?</h3>
+          <div class="text-body-small text-tertiary space-y-2">
+            <p>• Your transactions have been imported and are now visible in your dashboard</p>
+            <p>• You can categorize them manually or set up automatic rules</p>
+            <p>• Review and edit any transactions as needed</p>
+          </div>
+        </div>
+        
+        <div class="flex justify-center gap-4">
+          <button 
+            class="btn-secondary" 
+            onclick={() => window.location.href = '/transactions'}
+          >
+            View Transactions
+          </button>
+          <button 
+            class="btn-primary" 
+            onclick={() => window.location.href = '/dashboard'}
+          >
+            Go to Dashboard
+          </button>
         </div>
       </div>
     </div>

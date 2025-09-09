@@ -1,5 +1,7 @@
 import { N26CSVParser } from './N26CSVParser.js';
 import { GenericCSVParser } from './GenericCSVParser.js';
+import { SimpleCSVParser } from './SimpleCSVParser.js';
+import { UniversalCSVParser } from './UniversalCSVParser.js';
 import { DomainError } from '$lib/shared/errors/DomainError.js';
 
 export interface CSVParser {
@@ -15,14 +17,8 @@ export class CSVParserFactory {
 	createParser(fileName: string): CSVParser {
 		const normalizedName = fileName.toLowerCase();
 		
-		// Detect N26 format
-		if (normalizedName.includes('n26') || normalizedName.includes('csv')) {
-			// For now, default to N26 parser since it's the main use case
-			return new N26CSVParser();
-		}
-
-		// Default to generic parser
-		return new GenericCSVParser();
+		// Use the universal parser that handles both N26 and generic formats
+		return new UniversalCSVParser();
 	}
 
 	static registerParser(key: string, parserClass: new () => CSVParser): void {

@@ -1,0 +1,96 @@
+version: '3.8'
+
+# Development Docker Compose configuration
+# Optimized for development with hot reload and debugging
+
+name: expense-tracker-dev
+
+services:
+  # PostgreSQL Database - Development configuration
+  postgres:
+    image: postgres:16-alpine
+    container_name: expense-tracker-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: expense_tracker
+      POSTGRES_USER: expense_tracker
+      POSTGRES_PASSWORD: dev_password_2024
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./prisma/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U expense_tracker -d expense_tracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - expense-tracker-dev-network
+
+  # Application - Development with hot reload
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: expense-tracker-dev-app
+    restart: unless-stopped
+    ports:
+      - "5179:5173"  # Vite dev server
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 5173
+      DATABASE_URL: postgresql://expense_tracker:dev_password_2024@postgres:5432/expense_tracker
+      SECRET_KEY: dev_secret_key_2024
+      ENABLE_ANALYTICS: false
+      ENABLE_LOGGING: true
+      PUBLIC_APP_NAME: "Expense Tracker (Dev)"
+      PUBLIC_APP_VERSION: "1.0.0-dev"
+    volumes:
+      # Bind mounts for hot reload
+      - .:/app
+      - /app/node_modules
+      - /app/.svelte-kit
+      - /app/build
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5173/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - expense-tracker-dev-network
+
+  # PgAdmin - Database web interface for development
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: expense-tracker-dev-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@expense-tracker.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DISABLE_POSTFIX: "true"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_dev_data:/var/lib/pgladmin
+    depends_on:
+      - postgres
+    networks:
+      - expense-tracker-dev-network
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  pgadmin_dev_data:
+    driver: local
+
+networks:
+  expense-tracker-dev-network:
+    driver: bridge

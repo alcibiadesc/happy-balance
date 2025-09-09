@@ -1,5 +1,12 @@
 import { env } from '$env/dynamic/public';
 
+export interface Logger {
+  debug(message: string, data?: any, context?: string): void;
+  info(message: string, data?: any, context?: string): void;
+  warn(message: string, data?: any, context?: string): void;
+  error(message: string, data?: any, context?: string): void;
+}
+
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -8,7 +15,7 @@ export enum LogLevel {
   SILENT = 4
 }
 
-class Logger {
+class ConsoleLogger implements Logger {
   private logLevel: LogLevel;
   
   constructor() {
@@ -92,4 +99,5 @@ class Logger {
   }
 }
 
-export const logger = new Logger();
+export const logger = new ConsoleLogger();
+export { ConsoleLogger };

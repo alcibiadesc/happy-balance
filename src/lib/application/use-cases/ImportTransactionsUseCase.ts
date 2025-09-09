@@ -1,8 +1,9 @@
-import { Result } from '$lib/shared/utils/result.js';
+import { Result, failure, success } from '$lib/shared/utils/result.js';
 import { DomainError } from '$lib/shared/errors/DomainError.js';
 import { ImportTransactionsCommand, ImportTransactionsCommandValidator, ImportTransactionsResult } from '../commands/ImportTransactionsCommand.js';
 import { TransactionRepository } from '$lib/domain/repositories/TransactionRepository.js';
 import { AccountRepository } from '$lib/domain/repositories/IAccountRepository.js';
+import { AccountId } from '$lib/domain/value-objects/AccountId.js';
 import { CSVParserFactory } from '$lib/infrastructure/parsers/CSVParserFactory.js';
 import { Logger } from '$lib/shared/utils/logger.js';
 import { Transaction } from '$lib/domain/entities/Transaction.js';
@@ -23,26 +24,23 @@ export class ImportTransactionsUseCase {
 		// 1. Validate command
 		const validationResult = ImportTransactionsCommandValidator.validate(command);
 		if (validationResult.isFailure()) {
-			return Result.failure(validationResult.error);
+			return failure(validationResult.error);
 		}
 
+		// 2. Verify account exists
+		const accountId = new AccountId(command.accountId);
+		const account = await this.deps.accountRepository.findById(accountId);
+		
 		try {
-			// 2. Verify account exists
-			const account = await this.deps.accountRepository.findById(command.accountId);
 			if (!account) {
-				return Result.failure(new DomainError(`Account with ID ${command.accountId} not found`));
+				return failure(new DomainError(`Account with ID ${command.accountId} not found`));
 			}
 
 			// 3. Parse CSV content
 			const parser = this.deps.csvParserFactory.createParser(command.fileName);
-			const parseResult = await parser.parse(command.csvContent);
-			
-			if (parseResult.isFailure()) {
-				return Result.failure(parseResult.error);
-			}
-
-			const parsedTransactions = parseResult.value;
+			const parsedTransactions = await parser.parse(command.csvContent);
 			this.deps.logger.info(`Parsed ${parsedTransactions.length} transactions from CSV`);
+			
 
 			// 4. Process transactions
 			let imported = 0;
@@ -56,8 +54,8 @@ export class ImportTransactionsUseCase {
 					if (!command.overwriteExisting) {
 						const existing = await this.deps.transactionRepository.findByReference(
 							parsedTx.paymentReference || parsedTx.description,
-							parsedTx.transactionDate,
-							parsedTx.amount
+							parsedTx.transactionDate.value,
+							parsedTx.amount.value
 						);
 
 						if (existing) {
@@ -67,15 +65,21 @@ export class ImportTransactionsUseCase {
 						}
 					}
 
+					// Ensure we have a valid account for each transaction
+					const currentAccount = await this.deps.accountRepository.findById(accountId);
+					if (!currentAccount || !currentAccount.id) {
+						throw new Error(`Account not found or invalid for transaction: ${parsedTx.description}`);
+					}
+
 					// Create domain transaction
 					const transactionResult = Transaction.create({
 						amount: parsedTx.amount,
 						description: parsedTx.description,
-						accountId: account.id,
+						accountId: currentAccount.id,
 						transactionDate: parsedTx.transactionDate,
 						paymentReference: parsedTx.paymentReference,
 						counterparty: parsedTx.counterparty
-					});
+					}, currentAccount);
 
 					if (transactionResult.isFailure()) {
 						errors.push(`Failed to create transaction: ${transactionResult.error.message}`);
@@ -83,7 +87,7 @@ export class ImportTransactionsUseCase {
 					}
 
 					// Save transaction
-					await this.deps.transactionRepository.save(transactionResult.value);
+					await this.deps.transactionRepository.save(transactionResult.data);
 					imported++;
 
 				} catch (error) {
@@ -111,18 +115,18 @@ export class ImportTransactionsUseCase {
 			};
 
 			this.deps.logger.info('Transaction import completed', result);
-			return Result.success(result);
+			return success(result);
 
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error during import';
 			this.deps.logger.error('Import process failed', error);
-			return Result.failure(new DomainError(errorMessage));
+			return failure(new DomainError(errorMessage));
 		}
 	}
 
-	private async updateAccountBalance(accountId: string): Promise<void> {
+	private async updateAccountBalance(accountId: AccountId): Promise<void> {
 		// Calculate new balance based on all transactions
-		const totalAmount = await this.deps.transactionRepository.calculateTotalByAccount(accountId);
+		const totalAmount = await this.deps.transactionRepository.calculateTotalByAccount(accountId.value);
 		
 		const account = await this.deps.accountRepository.findById(accountId);
 		if (!account) {

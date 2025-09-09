@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Plus, Search, Filter, ArrowUpDown, FileText, Calendar, DollarSign, Trash2, Edit, Check, X, Brain } from 'lucide-svelte';
+  import { Plus, Search, Filter, ArrowUpDown, FileText, Calendar, DollarSign, Trash2, Edit, Check, X, Brain, Eye, EyeOff } from 'lucide-svelte';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import CategorySelector from '$lib/ui/CategorySelector.svelte';
@@ -47,6 +47,7 @@
   let sortDirection = $state<'asc' | 'desc'>('desc');
   let categories = $state([]);
   let showAdvancedFilters = $state(false);
+  let hiddenTransactions = $state(new Set<string>());
 
   // Initialize with current month
   onMount(() => {
@@ -374,6 +375,16 @@
   function exitSelectionMode() {
     isSelectionMode = false;
     selectedTransactions.clear();
+  }
+
+  // Hide/Show management
+  function toggleTransactionVisibility(transactionId: string) {
+    if (hiddenTransactions.has(transactionId)) {
+      hiddenTransactions.delete(transactionId);
+    } else {
+      hiddenTransactions.add(transactionId);
+    }
+    hiddenTransactions = new Set(hiddenTransactions);
   }
 
   // Bulk actions
@@ -1184,7 +1195,7 @@
         <!-- Mobile View -->
         <div class="sm:hidden">
           {#each filteredTransactions as transaction}
-            <div class="p-4 border-b border-gray-200 last:border-b-0 {selectedTransactions.has(transaction.id.value || transaction.id) ? 'bg-blue-50 border-blue-200' : ''}">
+            <div class="p-4 border-b border-gray-200 last:border-b-0 transition-all {selectedTransactions.has(transaction.id.value || transaction.id) ? 'bg-blue-50 border-blue-200' : ''} {hiddenTransactions.has(transaction.id.value || transaction.id) ? 'opacity-40 bg-gray-50' : ''}">
               <div class="flex items-start justify-between gap-3 mb-2">
                 <div class="flex items-start gap-3 min-w-0 flex-1">
                   <div class="flex items-center gap-2 flex-shrink-0">
@@ -1215,6 +1226,17 @@
                     </p>
                   </div>
                   {#if !isSelectionMode}
+                    <button
+                      onclick={() => toggleTransactionVisibility(transaction.id.value || transaction.id)}
+                      class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                      title={hiddenTransactions.has(transaction.id.value || transaction.id) ? "Mostrar transacción" : "Ocultar transacción"}
+                    >
+                      {#if hiddenTransactions.has(transaction.id.value || transaction.id)}
+                        <EyeOff class="w-4 h-4" />
+                      {:else}
+                        <Eye class="w-4 h-4" />
+                      {/if}
+                    </button>
                     <button
                       onclick={() => showSuggestionsForTransaction(transaction)}
                       class="p-2 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
@@ -1302,10 +1324,10 @@
             </thead>
             <tbody class="divide-y divide-gray-200">
               {#each filteredTransactions as transaction}
-                <tr class="transition-colors {selectedTransactions.has(transaction.id.value || transaction.id) ? 'bg-blue-50 border-blue-200' : ''}" 
-                    style="transition: background-color var(--transition-default);"
-                    onmouseenter={(e) => e.target.style.backgroundColor = 'var(--color-background-secondary)'}
-                    onmouseleave={(e) => e.target.style.backgroundColor = selectedTransactions.has(transaction.id.value || transaction.id) ? 'rgb(239 246 255)' : 'transparent'}>
+                <tr class="transition-colors {selectedTransactions.has(transaction.id.value || transaction.id) ? 'bg-blue-50 border-blue-200' : ''} {hiddenTransactions.has(transaction.id.value || transaction.id) ? 'opacity-40 bg-gray-50' : ''}" 
+                    style="transition: all var(--transition-default);"
+                    onmouseenter={(e) => !hiddenTransactions.has(transaction.id.value || transaction.id) && (e.target.style.backgroundColor = 'var(--color-background-secondary)')}
+                    onmouseleave={(e) => e.target.style.backgroundColor = selectedTransactions.has(transaction.id.value || transaction.id) ? 'rgb(239 246 255)' : hiddenTransactions.has(transaction.id.value || transaction.id) ? 'rgb(249 250 251)' : 'transparent'}>
                   {#if isSelectionMode}
                     <td class="py-3 px-4">
                       <input
@@ -1350,6 +1372,17 @@
                   {#if !isSelectionMode}
                     <td class="py-3 px-4 text-right">
                       <div class="flex items-center justify-end gap-2">
+                        <button
+                          onclick={() => toggleTransactionVisibility(transaction.id.value || transaction.id)}
+                          class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                          title={hiddenTransactions.has(transaction.id.value || transaction.id) ? "Mostrar transacción" : "Ocultar transacción"}
+                        >
+                          {#if hiddenTransactions.has(transaction.id.value || transaction.id)}
+                            <EyeOff class="w-4 h-4" />
+                          {:else}
+                            <Eye class="w-4 h-4" />
+                          {/if}
+                        </button>
                         <button
                           onclick={() => showSuggestionsForTransaction(transaction)}
                           class="p-2 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"

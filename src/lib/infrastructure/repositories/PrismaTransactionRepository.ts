@@ -22,6 +22,19 @@ export class PrismaTransactionRepository implements TransactionRepository {
     return result ? this.mapToEntity(result) : null;
   }
 
+  async findByReference(paymentReference: string, transactionDate: Date, amount: number): Promise<Transaction | null> {
+    const result = await prisma.transaction.findFirst({
+      where: {
+        paymentReference,
+        transactionDate,
+        amount
+      },
+      include: { category: true, account: true }
+    });
+    
+    return result ? this.mapToEntity(result) : null;
+  }
+
   async findAll(filters?: TransactionFilters): Promise<Transaction[]> {
     const where = this.buildWhereClause(filters);
     
@@ -97,23 +110,14 @@ export class PrismaTransactionRepository implements TransactionRepository {
     await prisma.transaction.create({
       data: {
         id: transaction.id.value,
-        transactionDate: transaction.transactionDate,
-        valueDate: transaction.valueDate,
-        partnerName: transaction.partnerName,
-        partnerIban: transaction.partnerIban,
-        type: transaction.type,
+        transactionDate: transaction.bookingDate,
+        description: transaction.partnerName,
         paymentReference: transaction.paymentReference,
+        counterparty: transaction.partnerName,
         amount: transaction.amount.amount, // Extract amount from Money object
-        originalAmount: transaction.originalAmount?.amount || null,
-        originalCurrency: transaction.originalCurrency,
-        exchangeRate: transaction.exchangeRate,
         categoryId: transaction.categoryId || null,
         accountId: transaction.accountId,
-        isRecurring: transaction.isRecurring,
-        confidence: transaction.confidence,
-        hash: transaction.hash,
-        importJobId: transaction.importJobId || null,
-        notes: transaction.notes
+        hash: transaction.hash
       }
     });
   }

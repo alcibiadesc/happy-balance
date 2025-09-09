@@ -1,4 +1,4 @@
-import { Result } from '$lib/shared/utils/result.js';
+import { Result, success, failure } from '$lib/shared/utils/result.js';
 import { DomainError } from '$lib/shared/errors/DomainError.js';
 
 export interface Currency {
@@ -25,20 +25,20 @@ export class Money {
 	static create(amount: number, currencyCode: string): Result<Money, DomainError> {
 		const currency = SUPPORTED_CURRENCIES[currencyCode.toUpperCase()];
 		if (!currency) {
-			return Result.failure(
+			return failure(
 				new DomainError(`Unsupported currency: ${currencyCode}`)
 			);
 		}
 
 		if (!Number.isFinite(amount)) {
-			return Result.failure(
+			return failure(
 				new DomainError('Amount must be a finite number')
 			);
 		}
 
 		const roundedAmount = Math.round(amount * Math.pow(10, currency.decimals)) / Math.pow(10, currency.decimals);
 
-		return Result.success(new Money(roundedAmount, currency));
+		return success(new Money(roundedAmount, currency));
 	}
 
 	static zero(currencyCode: string): Result<Money, DomainError> {
@@ -50,7 +50,7 @@ export class Money {
 		const amount = parseFloat(cleanValue);
 		
 		if (isNaN(amount)) {
-			return Result.failure(new DomainError(`Cannot parse amount: ${value}`));
+			return failure(new DomainError(`Cannot parse amount: ${value}`));
 		}
 		
 		return Money.create(amount, currencyCode);
@@ -78,7 +78,7 @@ export class Money {
 
 	add(other: Money): Result<Money, DomainError> {
 		if (!this.hasSameCurrency(other)) {
-			return Result.failure(
+			return failure(
 				new DomainError(`Cannot add different currencies: ${this._currency.code} and ${other._currency.code}`)
 			);
 		}
@@ -88,7 +88,7 @@ export class Money {
 
 	subtract(other: Money): Result<Money, DomainError> {
 		if (!this.hasSameCurrency(other)) {
-			return Result.failure(
+			return failure(
 				new DomainError(`Cannot subtract different currencies: ${this._currency.code} and ${other._currency.code}`)
 			);
 		}
@@ -98,7 +98,7 @@ export class Money {
 
 	multiply(factor: number): Result<Money, DomainError> {
 		if (!Number.isFinite(factor)) {
-			return Result.failure(
+			return failure(
 				new DomainError('Factor must be a finite number')
 			);
 		}
@@ -108,7 +108,7 @@ export class Money {
 
 	divide(divisor: number): Result<Money, DomainError> {
 		if (!Number.isFinite(divisor) || divisor === 0) {
-			return Result.failure(
+			return failure(
 				new DomainError('Divisor must be a finite non-zero number')
 			);
 		}

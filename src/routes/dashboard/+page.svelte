@@ -30,7 +30,7 @@
 
   let isLoading = $state(true);
   let selectedPeriod = $state('current_month');
-  
+
   // Chart data
   let trendData = $state([]);
   let categoryData = $state([]);
@@ -42,18 +42,18 @@
   async function loadAnalyticsData() {
     try {
       isLoading = true;
-      
+
       // Load main analytics data
       const [analyticsResponse, categoryResponse] = await Promise.all([
         fetch(`/api/analytics/dashboard?period=${selectedPeriod}`),
         fetch(`/api/analytics/category-spending?period=${selectedPeriod}`)
       ]);
-      
+
       const [analyticsResult, categoryResult] = await Promise.all([
         analyticsResponse.json(),
         categoryResponse.json()
       ]);
-      
+
       if (analyticsResult.success && analyticsResult.data) {
         // Sanitize all numeric fields
         analyticsData = {
@@ -79,7 +79,7 @@
           }
         };
       }
-      
+
       // Load category data for pie chart
       if (categoryResult.success && categoryResult.data) {
         categoryData = categoryResult.data.map(item => ({
@@ -89,10 +89,10 @@
           color: getCategoryColor(item.categoryType)
         }));
       }
-      
+
       // Generate trend data (for now, we'll use mock data based on current analytics)
       generateTrendData();
-      
+
     } catch (error) {
       console.error('Error loading analytics data:', error);
       // Set safe default values on error
@@ -124,7 +124,7 @@
       isLoading = false;
     }
   }
-  
+
   function getCategoryColor(categoryType: string): string {
     const colorMap = {
       'INCOME': '#22C55E',
@@ -137,33 +137,33 @@
     };
     return colorMap[categoryType] || '#6B7280';
   }
-  
+
   function generateTrendData() {
     // Generate mock trend data for the last 7 days
     // In a real app, this would come from an API endpoint
     const today = new Date();
     const data = [];
-    
+
     // Ensure we have valid base values
     const safeIncome = Number(analyticsData.monthlyIncome) || 0;
     const safeExpenses = Number(analyticsData.monthlyExpenses) || 0;
-    
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      
+
       // Mock data with some variation - ensure no division by zero
       const baseIncome = safeIncome > 0 ? safeIncome / 30 : 0; // Daily average
       const baseExpenses = safeExpenses > 0 ? safeExpenses / 30 : 0; // Daily average
-      
+
       const income = baseIncome * (0.8 + Math.random() * 0.4); // ±20% variation
       const expenses = baseExpenses * (0.8 + Math.random() * 0.4); // ±20% variation
-      
+
       // Ensure all values are finite
       const safeIncomeValue = isFinite(income) ? income : 0;
       const safeExpenseValue = isFinite(expenses) ? expenses : 0;
       const balanceValue = safeIncomeValue - safeExpenseValue;
-      
+
       data.push({
         date: date.toISOString(),
         income: safeIncomeValue,
@@ -171,17 +171,17 @@
         balance: isFinite(balanceValue) ? balanceValue : 0
       });
     }
-    
+
     trendData = data;
   }
 
   function formatCurrency(amount: number): string {
     // Comprehensive protection against all invalid values
     if (amount === null || amount === undefined) return '€0,00';
-    
+
     const numAmount = Number(amount);
     if (!isFinite(numAmount) || isNaN(numAmount)) return '€0,00';
-    
+
     const safeAmount = numAmount;
     try {
       return new Intl.NumberFormat('es-ES', {
@@ -197,13 +197,13 @@
   function formatPercentage(ratio: number): string {
     // Comprehensive protection against all invalid values
     if (ratio === null || ratio === undefined) return '0,0%';
-    
+
     const numRatio = Number(ratio);
     if (!isFinite(numRatio) || isNaN(numRatio)) return '0,0%';
-    
+
     const safeRatio = Math.max(0, Math.min(1, numRatio)); // Clamp between 0 and 1
     const percentage = safeRatio * 100;
-    
+
     try {
       return `${percentage.toFixed(1).replace('.', ',')}%`;
     } catch (error) {
@@ -217,11 +217,11 @@
     // Convert to numbers and ensure they're valid
     const safeIncome = Number(analyticsData.monthlyIncome) || 0;
     const safeExpenses = Number(analyticsData.monthlyExpenses) || 0;
-    
+
     // Calculate monthly net with protection
     const monthlyNet = safeIncome - safeExpenses;
     const safeMonthlyNet = isFinite(monthlyNet) ? monthlyNet : 0;
-    
+
     // Calculate years to freedom with multiple protections
     let yearsToFreedom = 0;
     if (safeMonthlyNet > 0 && safeExpenses > 0) {
@@ -232,22 +232,22 @@
         yearsToFreedom = isFinite(calculatedYears) ? Math.min(100, Math.max(0, Math.ceil(calculatedYears))) : 0;
       }
     }
-    
+
     // Calculate emergency fund
     const emergencyFund = safeExpenses * 6;
     const safeEmergencyFund = isFinite(emergencyFund) ? Math.max(0, emergencyFund) : 0;
-    
+
     // Calculate 4% rule target
     const rule4 = safeExpenses * 12 * 25;
     const safeRule4 = isFinite(rule4) ? Math.max(0, rule4) : 0;
-    
+
     // Calculate months of expenses covered
     let monthsOfExpensesCovered = 0;
     if (safeMonthlyNet > 0 && safeExpenses > 0) {
       const monthsRatio = safeMonthlyNet / safeExpenses * 12;
       monthsOfExpensesCovered = isFinite(monthsRatio) ? Math.min(999, Math.max(0, Math.floor(monthsRatio))) : 0;
     }
-    
+
     return {
       monthlyNet: safeMonthlyNet,
       yearsToFreedom: yearsToFreedom,
@@ -281,7 +281,8 @@
       <div class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div class="min-w-0 flex-1">
           <h1 class="text-2xl font-semibold sm:text-h3" style="color: var(--color-text-primary);">Dashboard Financiero</h1>
-          <p class="text-body-small mt-1" style="color: var(--color-text-secondary);">Análisis inteligente de tus finanzas hacia la libertad financiera</p>
+          <p class="text-body-small mt-1" style="color: var(--color-text-secondary);">
+              Análisis inteligente de tus finanzas hacia la libertad financiera</p>
         </div>
         <div class="flex-shrink-0">
           <label for="period-select" class="sr-only">Seleccionar período de análisis</label>
@@ -327,7 +328,7 @@
                   <p class="text-xs sm:text-caption text-secondary">Resumen del período actual</p>
                 </div>
               </div>
-              
+
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 sm:mb-6">
                 <div class="p-3 bg-white/50 rounded-lg border border-white/60">
                   <p class="text-xs sm:text-caption text-secondary mb-1">Balance Mensual</p>
@@ -342,7 +343,7 @@
                   </p>
                 </div>
               </div>
-              
+
               <div class="flex flex-wrap gap-2">
                 {#if insights.monthlyNet > 0}
                   <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-800 text-xs rounded-full">
@@ -355,7 +356,7 @@
                     Balance negativo
                   </span>
                 {/if}
-                
+
                 {#if analyticsData.savingsRate > 0.2}
                   <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                     <Target class="w-3 h-3" />
@@ -364,7 +365,7 @@
                 {/if}
               </div>
             </div>
-            
+
             <div class="flex justify-center lg:justify-end mt-4 lg:mt-0">
               <div class="w-full max-w-sm lg:max-w-none">
                 <ExpenseRatioGauge ratio={safeExpenseRatio} />
@@ -377,7 +378,7 @@
       <!-- Quick Actions -->
       <section class="slide-up stagger-1">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" role="region" aria-label="Acciones rápidas del dashboard">
-          <a href="/transactions?filter=income" class="card-editorial p-4 sm:p-5 hover:shadow-md transition-all duration-200 text-left group block touch-manipulation hover-lift-subtle fade-in stagger-1" 
+          <a href="/transactions?filter=income" class="card-editorial p-4 sm:p-5 hover:shadow-md transition-all duration-200 text-left group block touch-manipulation hover-lift-subtle fade-in stagger-1"
              aria-label="Ver ingresos: {formatCurrency(analyticsData.monthlyIncome)} con tendencia de +{formatPercentage(analyticsData.trends.incomeGrowth)}"
              tabindex="0">
             <div class="flex items-center gap-3 mb-3 sm:mb-4">
@@ -397,7 +398,7 @@
               </span>
             </p>
           </a>
-          
+
           <a href="/transactions?filter=expenses" class="card-editorial p-4 sm:p-5 hover:shadow-md transition-all duration-200 text-left group block touch-manipulation hover-lift-subtle fade-in stagger-2"
              aria-label="Ver gastos: {formatCurrency(analyticsData.monthlyExpenses)} con tendencia de +{formatPercentage(analyticsData.trends.expenseGrowth)}"
              tabindex="0">
@@ -418,7 +419,7 @@
               </span>
             </p>
           </a>
-          
+
           <a href="/savings" class="card-editorial p-4 sm:p-5 hover:shadow-md transition-all duration-200 text-left group block touch-manipulation hover-lift-subtle fade-in stagger-3">
             <div class="flex items-center gap-3 mb-3 sm:mb-4">
               <div class="w-10 h-10 sm:w-11 sm:h-11 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors hover-scale">
@@ -434,7 +435,7 @@
               {analyticsData.savingsData.accountCount} cuentas
             </p>
           </a>
-          
+
           <a href="/budgets" class="card-editorial p-4 sm:p-5 hover:shadow-md transition-all duration-200 text-left group block touch-manipulation hover-lift-subtle fade-in stagger-4">
             <div class="flex items-center gap-3 mb-3 sm:mb-4">
               <div class="w-10 h-10 sm:w-11 sm:h-11 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors hover-scale">
@@ -466,7 +467,7 @@
               <p class="text-xs sm:text-caption text-secondary">Recomendaciones basadas en tus datos</p>
             </div>
           </div>
-          
+
           <div class="space-y-3 sm:space-y-4">
             {#if insights.monthlyNet < 0}
               <div class="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-100">
@@ -474,7 +475,7 @@
                 <div>
                   <p class="text-sm font-medium text-red-800">Gastos superiores a ingresos</p>
                   <p class="text-xs text-red-700 mt-1">
-                    Tus gastos superan tus ingresos en {formatCurrency(Math.abs(insights.monthlyNet))}. 
+                    Tus gastos superan tus ingresos en {formatCurrency(Math.abs(insights.monthlyNet))}.
                     Revisa tus categorías de gastos para identificar oportunidades de ahorro.
                   </p>
                 </div>
@@ -485,7 +486,7 @@
                 <div>
                   <p class="text-sm font-medium text-yellow-800">Tasa de ahorro baja</p>
                   <p class="text-xs text-yellow-700 mt-1">
-                    Tu tasa de ahorro es del {formatPercentage(analyticsData.savingsRate)}. 
+                    Tu tasa de ahorro es del {formatPercentage(analyticsData.savingsRate)}.
                     Intenta alcanzar al menos el 20% para una salud financiera óptima.
                   </p>
                 </div>
@@ -496,13 +497,13 @@
                 <div>
                   <p class="text-sm font-medium text-green-800">¡Excelente gestión financiera!</p>
                   <p class="text-xs text-green-700 mt-1">
-                    Con una tasa de ahorro del {formatPercentage(analyticsData.savingsRate)}, 
+                    Con una tasa de ahorro del {formatPercentage(analyticsData.savingsRate)},
                     estás en camino hacia la libertad financiera.
                   </p>
                 </div>
               </div>
             {/if}
-            
+
             {#if insights.yearsToFreedom > 0 && insights.yearsToFreedom <= 25}
               <div class="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <Target class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -542,7 +543,7 @@
             <div class="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-gray-100">
               <div class="mt-4">
                 {#if categoryData.length > 0}
-                  <CategoryPieChart 
+                  <CategoryPieChart
                     data={categoryData}
                     height={250}
                   />
@@ -555,7 +556,7 @@
               </div>
             </div>
           </details>
-          
+
           <!-- Savings Progress -->
           <details class="card-editorial overflow-hidden hover-lift-subtle fade-in stagger-2">
             <summary class="p-4 sm:p-6 cursor-pointer hover:bg-secondary transition-colors flex items-center justify-between touch-manipulation list-none">
@@ -596,7 +597,7 @@
                   <p class="text-xs text-tertiary mt-1">al ritmo actual</p>
                 </div>
               </div>
-              
+
               {#if analyticsData.savingsData.targetAmount > 0}
                 <div class="mt-4 p-4 bg-blue-50 rounded-lg">
                   <div class="flex justify-between items-center mb-2">
@@ -606,7 +607,7 @@
                     </span>
                   </div>
                   <div class="w-full bg-blue-200 rounded-full h-2">
-                    <div 
+                    <div
                       class="bg-blue-500 h-2 rounded-full transition-all duration-500"
                       style="width: {Math.min(100, (analyticsData.savingsData.totalSavings / analyticsData.savingsData.targetAmount) * 100)}%"
                     ></div>
@@ -618,7 +619,7 @@
               {/if}
             </div>
           </details>
-          
+
           <!-- Trends Analysis -->
           <details class="card-editorial overflow-hidden hover-lift-subtle fade-in stagger-3">
             <summary class="p-4 sm:p-6 cursor-pointer hover:bg-secondary transition-colors flex items-center justify-between touch-manipulation list-none">
@@ -642,7 +643,7 @@
             <div class="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-gray-100">
               <div class="mt-4">
                 {#if trendData.length > 0}
-                  <TrendChart 
+                  <TrendChart
                     data={trendData}
                     height={250}
                   />

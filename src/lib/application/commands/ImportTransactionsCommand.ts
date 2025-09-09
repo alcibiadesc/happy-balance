@@ -1,4 +1,4 @@
-import { Result } from '$lib/shared/utils/result.js';
+import { Result, failure, success } from '$lib/shared/utils/result.js';
 import { DomainError, ValidationError } from '$lib/shared/errors/DomainError.js';
 
 export interface ImportTransactionsCommand {
@@ -18,27 +18,27 @@ export interface ImportTransactionsResult {
 export class ImportTransactionsCommandValidator {
 	static validate(command: ImportTransactionsCommand): Result<void, ValidationError> {
 		if (!command.csvContent || command.csvContent.trim().length === 0) {
-			return Result.failure(new ValidationError('CSV content is required'));
+			return failure(new ValidationError('CSV content is required'));
 		}
 
 		if (!command.accountId || command.accountId.trim().length === 0) {
-			return Result.failure(new ValidationError('Account ID is required'));
+			return failure(new ValidationError('Account ID is required'));
 		}
 
 		if (!command.fileName || command.fileName.trim().length === 0) {
-			return Result.failure(new ValidationError('File name is required'));
+			return failure(new ValidationError('File name is required'));
 		}
 
 		if (!command.fileName.toLowerCase().endsWith('.csv')) {
-			return Result.failure(new ValidationError('File must be a CSV file'));
+			return failure(new ValidationError('File must be a CSV file'));
 		}
 
 		// Basic CSV validation - should have headers
 		const lines = command.csvContent.trim().split('\n');
 		if (lines.length < 2) {
-			return Result.failure(new ValidationError('CSV file must contain at least headers and one data row'));
+			return failure(new ValidationError('CSV file must contain at least headers and one data row'));
 		}
 
-		return Result.success(undefined);
+		return success(undefined);
 	}
 }
