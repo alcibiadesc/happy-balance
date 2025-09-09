@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { cn } from '$lib/shared/utils/cn.js';
+  import { cn } from '$lib/shared/utils/cn';
 
   interface Props {
     class?: string;

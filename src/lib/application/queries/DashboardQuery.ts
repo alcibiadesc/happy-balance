@@ -1,4 +1,4 @@
-import { Result } from '$lib/shared/utils/result.js';
+import { Result } from '$lib/shared/utils/result';
 import { DomainError } from '$lib/shared/errors/DomainError.js';
 import { Money } from '$lib/domain/value-objects/Money.js';
 import { TransactionDate } from '$lib/domain/value-objects/TransactionDate.js';

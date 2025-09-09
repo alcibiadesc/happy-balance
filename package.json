@@ -35,7 +35,7 @@
 		"chartjs-adapter-date-fns": "^3.0.0",
 		"class-variance-authority": "^0.7.0",
 		"clsx": "^2.0.0",
-		"csv-parse": "^5.5.0",
+		"csv-parse": "^5.6.0",
 		"date-fns": "^2.30.0",
 		"lucide-svelte": "^0.542.0",
 		"tailwind-merge": "^2.1.0",

@@ -1,8 +1,8 @@
-import { parse } from 'csv-parse/sync';
-import { Money } from '$lib/domain/value-objects/Money.js';
-import { TransactionDate } from '$lib/domain/value-objects/TransactionDate.js';
-import { ParsedTransaction } from '$lib/shared/types/ParsedTransaction.js';
-import { CSVParser } from './CSVParserFactory.js';
+// Use dynamic import for csv-parse to work in both browser and Node.js
+import { Money } from "$lib/domain/value-objects/Money.js";
+import { TransactionDate } from "$lib/domain/value-objects/TransactionDate.js";
+import { ParsedTransaction } from "$lib/shared/types/ParsedTransaction.js";
+import { CSVParser } from "./CSVParserFactory.js";
 
 export interface ParseResult {
   transactions: ParsedTransaction[];
@@ -39,28 +39,45 @@ export class UniversalCSVParser implements CSVParser {
   private readonly columnMappings: ColumnMappings = {
     date: [
       // N26 format
-      'Booking Date', 'booking date',
+      "Booking Date",
+      "booking date",
       // Generic formats
-      'Date', 'date', 'fecha', 'Transaction Date', 'transaction date'
+      "Date",
+      "date",
+      "fecha",
+      "Transaction Date",
+      "transaction date",
     ],
     amount: [
       // N26 format
-      'Amount (EUR)', 'amount (eur)',
+      "Amount (EUR)",
+      "amount (eur)",
       // Generic formats
-      'Amount', 'amount', 'importe', 'valor'
+      "Amount",
+      "amount",
+      "importe",
+      "valor",
     ],
     description: [
       // N26 format
-      'Partner Name', 'partner name',
+      "Partner Name",
+      "partner name",
       // Generic formats
-      'Description', 'description', 'concepto', 'descripción'
+      "Description",
+      "description",
+      "concepto",
+      "descripción",
     ],
     reference: [
       // N26 format
-      'Payment Reference', 'payment reference',
+      "Payment Reference",
+      "payment reference",
       // Generic formats
-      'Reference', 'reference', 'referencia', 'ref'
-    ]
+      "Reference",
+      "reference",
+      "referencia",
+      "ref",
+    ],
   };
 
   constructor() {}
@@ -81,56 +98,61 @@ export class UniversalCSVParser implements CSVParser {
     try {
       // Detect delimiter (tab or comma)
       const delimiter = this.detectDelimiter(csvContent);
-      
-      // Parse CSV with flexible options
-      const records: CSVRow[] = parse(csvContent, {
-        columns: true,
-        skip_empty_lines: true,
-        delimiter,
-        trim: true,
-        bom: true,
-        quote: '"',
-        escape: '"',
-        relaxColumnCount: true,
-        relaxQuotes: true
-      });
 
-      if (records.length === 0) {
-        throw new Error('CSV file contains no data rows');
+      // Simple CSV parsing for browser compatibility
+      const lines = csvContent.split("\n").filter((line) => line.trim());
+
+      if (lines.length < 2) {
+        throw new Error(
+          "CSV file must have at least a header and one data row",
+        );
       }
 
-      // Detect column mapping from first record
-      const columnMapping = this.detectColumnMapping(records[0]);
+      // Parse header
+      const headers = this.parseCsvLine(lines[0], delimiter);
+
+      // Map column headers for this specific CSV
+      const columnMapping = this.detectColumnMapping(headers);
       if (!columnMapping) {
-        throw new Error('Could not identify required columns. Expected columns for date, amount, and description.');
+        throw new Error(
+          "Could not identify required columns. Expected columns for date, amount, and description.",
+        );
       }
 
-      totalRows = records.length;
+      totalRows = lines.length - 1; // Exclude header
 
-      for (let i = 0; i < records.length; i++) {
-        const row = records[i];
-        
+      // Parse each data row
+      for (let i = 1; i < lines.length; i++) {
+        const values = this.parseCsvLine(lines[i], delimiter);
+
+        // Create row object from headers and values
+        const row: CSVRow = {};
+        headers.forEach((header, index) => {
+          row[header] = values[index] || "";
+        });
+
         try {
-          const transaction = this.parseRow(row, columnMapping, i + 2);
+          const transaction = this.parseRow(row, columnMapping, i + 1);
           transactions.push(transaction);
           validRows++;
         } catch (error) {
           errors.push({
-            row: i + 2,
-            field: error instanceof Error && error.message.includes('field') ? 
-              error.message.split("'")[1] : undefined,
-            message: error instanceof Error ? error.message : 'Unknown error',
-            data: row
+            row: i + 1,
+            field:
+              error instanceof Error && error.message.includes("field")
+                ? error.message.split("'")[1]
+                : undefined,
+            message: error instanceof Error ? error.message : "Unknown error",
+            data: row,
           });
           errorRows++;
         }
       }
-
     } catch (error) {
       errors.push({
         row: 0,
-        message: `CSV parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        data: null
+        message: `CSV parsing failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        data: null,
       });
       errorRows = 1;
     }
@@ -144,28 +166,70 @@ export class UniversalCSVParser implements CSVParser {
         totalRows,
         validRows,
         errorRows,
-        duplicateRows
-      }
+        duplicateRows,
+      },
     };
   }
 
-  private detectDelimiter(csvContent: string): string {
-    const firstLine = csvContent.split('\n')[0];
-    
-    const tabCount = (firstLine.match(/\t/g) || []).length;
-    const commaCount = (firstLine.match(/,/g) || []).length;
-    
-    return tabCount > commaCount ? '\t' : ',';
+  private parseCsvLine(line: string, delimiter: string): string[] {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          // Escaped quote
+          current += '"';
+          i++; // Skip next quote
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+        }
+      } else if (char === delimiter && !inQuotes) {
+        // Found delimiter outside quotes
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+
+    // Add the last field
+    result.push(current.trim());
+
+    return result;
   }
 
-  private detectColumnMapping(firstRow: CSVRow): { date: string; amount: string; description: string; reference?: string } | null {
-    const headers = Object.keys(firstRow).map(h => h.trim());
-    
+  private detectDelimiter(csvContent: string): string {
+    const firstLine = csvContent.split("\n")[0];
+
+    const tabCount = (firstLine.match(/\t/g) || []).length;
+    const commaCount = (firstLine.match(/,/g) || []).length;
+
+    return tabCount > commaCount ? "\t" : ",";
+  }
+
+  private detectColumnMapping(
+    headers: string[],
+  ): {
+    date: string;
+    amount: string;
+    description: string;
+    reference?: string;
+  } | null {
+    const cleanHeaders = headers.map((h) => h.trim());
+
     const findColumn = (mappings: string[]): string | undefined => {
-      for (const header of headers) {
-        if (mappings.some(mapping => 
-          mapping.toLowerCase() === header.toLowerCase()
-        )) {
+      for (const header of cleanHeaders) {
+        if (
+          mappings.some(
+            (mapping) => mapping.toLowerCase() === header.toLowerCase(),
+          )
+        ) {
           return header;
         }
       }
@@ -185,16 +249,25 @@ export class UniversalCSVParser implements CSVParser {
       date: dateColumn,
       amount: amountColumn,
       description: descriptionColumn,
-      reference: referenceColumn
+      reference: referenceColumn,
     };
   }
 
-  private parseRow(row: CSVRow, mapping: { date: string; amount: string; description: string; reference?: string }, rowNumber: number): ParsedTransaction {
+  private parseRow(
+    row: CSVRow,
+    mapping: {
+      date: string;
+      amount: string;
+      description: string;
+      reference?: string;
+    },
+    rowNumber: number,
+  ): ParsedTransaction {
     // Extract values using detected column mapping
     const dateStr = row[mapping.date]?.trim();
     const amountStr = row[mapping.amount]?.trim();
     const description = row[mapping.description]?.trim();
-    const reference = mapping.reference ? row[mapping.reference]?.trim() : '';
+    const reference = mapping.reference ? row[mapping.reference]?.trim() : "";
 
     // Validate required fields
     if (!dateStr) {
@@ -209,14 +282,14 @@ export class UniversalCSVParser implements CSVParser {
 
     // Parse date - support multiple formats
     const bookingDate = this.parseDate(dateStr, rowNumber);
-    
+
     // Parse amount - handle both positive and negative values
     const amount = this.parseAmount(amountStr, rowNumber);
 
     // Create ParsedTransaction
     const transaction: ParsedTransaction = {
       transactionDate: new TransactionDate(bookingDate),
-      amount: new Money(amount, 'EUR'),
+      amount: new Money(amount, "EUR"),
       description: description,
       paymentReference: reference || undefined,
       counterparty: description, // Use description as counterparty
@@ -224,8 +297,8 @@ export class UniversalCSVParser implements CSVParser {
         date: dateStr,
         amount: amountStr,
         description: description,
-        reference: reference || ''
-      }
+        reference: reference || "",
+      },
     };
 
     return transaction;
@@ -239,7 +312,7 @@ export class UniversalCSVParser implements CSVParser {
       // European format: 01.12.2023 or 01/12/2023
       /^\d{1,2}[.\/]\d{1,2}\.\d{4}$/,
       // US format: 12/01/2023
-      /^\d{1,2}\/\d{1,2}\/\d{4}$/
+      /^\d{1,2}\/\d{1,2}\/\d{4}$/,
     ];
 
     let date: Date;
@@ -252,7 +325,11 @@ export class UniversalCSVParser implements CSVParser {
       const parts = dateStr.split(/[.\/]/);
       if (parts.length === 3) {
         // Assume DD.MM.YYYY or DD/MM/YYYY format (European)
-        date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        date = new Date(
+          parseInt(parts[2]),
+          parseInt(parts[1]) - 1,
+          parseInt(parts[0]),
+        );
       } else {
         throw new Error(`Invalid date format in row ${rowNumber}: ${dateStr}`);
       }
@@ -270,46 +347,51 @@ export class UniversalCSVParser implements CSVParser {
 
   private parseAmount(amountStr: string, rowNumber: number): number {
     // Remove currency symbols and spaces
-    const cleanAmount = amountStr.replace(/[€$£¥\s]/g, '');
-    
+    const cleanAmount = amountStr.replace(/[€$£¥\s]/g, "");
+
     // Handle negative amounts in parentheses: (10.50) -> -10.50
     const isNegativeParens = /^\(.*\)$/.test(cleanAmount);
     let numericStr = isNegativeParens ? cleanAmount.slice(1, -1) : cleanAmount;
-    
+
     // Replace comma with dot for European format
-    numericStr = numericStr.replace(',', '.');
-    
+    numericStr = numericStr.replace(",", ".");
+
     const amount = parseFloat(numericStr);
-    
+
     if (isNaN(amount)) {
-      throw new Error(`Invalid amount format in row ${rowNumber}: ${amountStr}`);
+      throw new Error(
+        `Invalid amount format in row ${rowNumber}: ${amountStr}`,
+      );
     }
-    
+
     return isNegativeParens ? -amount : amount;
   }
 
   private formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   }
 
-  static validateCSVFormat(csvContent: string): { isValid: boolean; errors: string[] } {
+  static validateCSVFormat(csvContent: string): {
+    isValid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
-    
+
     if (!csvContent || csvContent.trim().length === 0) {
-      errors.push('CSV content is empty');
+      errors.push("CSV content is empty");
       return { isValid: false, errors };
     }
 
-    const lines = csvContent.trim().split('\n');
+    const lines = csvContent.trim().split("\n");
     if (lines.length < 2) {
-      errors.push('CSV must contain at least a header row and one data row');
+      errors.push("CSV must contain at least a header row and one data row");
       return { isValid: false, errors };
     }
 
     // Basic format validation - just check that we have some content
     const firstLine = lines[0];
     if (!firstLine || firstLine.trim().length === 0) {
-      errors.push('CSV header row is empty');
+      errors.push("CSV header row is empty");
       return { isValid: false, errors };
     }
 

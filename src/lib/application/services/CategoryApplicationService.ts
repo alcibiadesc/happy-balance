@@ -1,4 +1,4 @@
-import { Result, success, failure } from '$lib/shared/utils/result.js';
+import { Result, success, failure } from '$lib/shared/utils/result';
 import { CategoryValidator } from '$lib/domain/validation/CategoryValidator.js';
 import { CategoryRepository } from '$lib/domain/repositories/CategoryRepository.js';
 import { Category, CategoryType } from '$lib/domain/entities/Category.js';

@@ -1,4 +1,4 @@
-import { Result } from '$lib/shared/utils/result.js';
+import { Result } from '$lib/shared/utils/result';
 import { ValidationError } from '$lib/shared/errors/DomainError.js';
 
 export class Email {

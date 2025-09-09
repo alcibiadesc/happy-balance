@@ -1,4 +1,4 @@
-import { Result, success, failure } from '$lib/shared/utils/result.js';
+import { Result, success, failure } from '$lib/shared/utils/result';
 import { DomainError } from '$lib/shared/errors/DomainError.js';
 
 export interface Currency {

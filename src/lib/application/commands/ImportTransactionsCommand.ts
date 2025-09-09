@@ -1,4 +1,4 @@
-import { Result, failure, success } from '$lib/shared/utils/result.js';
+import { Result, failure, success } from '$lib/shared/utils/result';
 import { DomainError, ValidationError } from '$lib/shared/errors/DomainError.js';
 
 export interface ImportTransactionsCommand {

@@ -4,7 +4,7 @@ import { Money } from '../value-objects/Money.js';
 import { TransactionId } from '../value-objects/TransactionId.js';
 import { AccountId } from '../value-objects/AccountId.js';
 import { TransactionDate } from '../value-objects/TransactionDate.js';
-import { Result, success, failure } from '$lib/shared/utils/result.js';
+import { Result, success, failure } from '$lib/shared/utils/result';
 import { DomainError } from '$lib/shared/errors/DomainError.js';
 
 export class Transaction {

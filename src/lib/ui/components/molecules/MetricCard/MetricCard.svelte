@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Card, CardHeader, CardContent, CardTitle } from '$lib/ui/components/atoms/index.js';
   import { CurrencyDisplay } from '$lib/ui/components/molecules/CurrencyDisplay/index.js';
-  import { cn } from '$lib/shared/utils/cn.js';
+  import { cn } from '$lib/shared/utils/cn';
 
   interface Props {
     title: string;

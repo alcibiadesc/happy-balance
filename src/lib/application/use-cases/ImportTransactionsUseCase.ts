@@ -1,4 +1,4 @@
-import { Result, failure, success } from '$lib/shared/utils/result.js';
+import { Result, failure, success } from '$lib/shared/utils/result';
 import { DomainError } from '$lib/shared/errors/DomainError.js';
 import { ImportTransactionsCommand, ImportTransactionsCommandValidator, ImportTransactionsResult } from '../commands/ImportTransactionsCommand.js';
 import { TransactionRepository } from '$lib/domain/repositories/TransactionRepository.js';

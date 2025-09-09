@@ -1,6 +1,6 @@
 import { AccountId } from '../value-objects/AccountId.js';
 import { Money } from '../value-objects/Money.js';
-import { Result } from '$lib/shared/utils/result.js';
+import { Result } from '$lib/shared/utils/result';
 import { DomainError, ValidationError, InvariantViolationError } from '$lib/shared/errors/DomainError.js';
 
 export enum AccountType {

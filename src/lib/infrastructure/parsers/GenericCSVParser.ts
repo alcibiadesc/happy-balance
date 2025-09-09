@@ -1,4 +1,4 @@
-import { Result } from '$lib/shared/utils/result.js';
+import { Result } from '$lib/shared/utils/result';
 import { DomainError, ValidationError } from '$lib/shared/errors/DomainError.js';
 import { ParsedTransaction, CSVColumn } from '$lib/shared/types/ParsedTransaction.js';
 import { Money } from '$lib/domain/value-objects/Money.js';
