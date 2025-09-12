@@ -179,7 +179,7 @@
 </script>
 
 <svelte:head>
-  <title>Configuración - Expense Tracker</title>
+  <title>Configuración - Happy Balance</title>
 </svelte:head>
 
 <div class="min-h-screen" style="background-color: var(--color-background-primary);">

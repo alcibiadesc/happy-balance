@@ -107,7 +107,7 @@
 </script>
 
 <svelte:head>
-  <title>Ahorros - Expense Tracker</title>
+  <title>Ahorros - Happy Balance</title>
 </svelte:head>
 
 <div class="container mx-auto px-4 py-8">

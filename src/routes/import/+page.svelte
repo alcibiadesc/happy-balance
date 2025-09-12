@@ -30,7 +30,7 @@
 </script>
 
 <svelte:head>
-  <title>Importar Transacciones - Expense Tracker</title>
+  <title>Importar Transacciones - Happy Balance</title>
   <meta name="description" content="Importa transacciones desde archivos CSV de forma rápida y segura" />
 </svelte:head>
 

@@ -1,7 +1,7 @@
 {
-	"name": "expense-tracker",
+	"name": "happy-balance",
 	"version": "1.0.0",
-	"description": "Personal finance management application built with SvelteKit, following DDD and Hexagonal Architecture",
+	"description": "Happy Balance - Personal finance management for a happier financial life. Built with SvelteKit, following DDD and Hexagonal Architecture",
 	"type": "module",
 	"private": true,
 	"scripts": {

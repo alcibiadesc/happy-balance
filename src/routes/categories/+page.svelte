@@ -251,7 +251,7 @@
 </script>
 
 <svelte:head>
-  <title>Gestión de Categorías - Expense Tracker</title>
+  <title>Gestión de Categorías - Happy Balance</title>
 </svelte:head>
 
 <div class="min-h-screen" style="background-color: var(--color-background-primary);">

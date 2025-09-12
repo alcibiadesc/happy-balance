@@ -128,7 +128,7 @@
 </script>
 
 <svelte:head>
-	<title>Nueva Transacción - Expense Tracker</title>
+	<title>Nueva Transacción - Happy Balance</title>
 </svelte:head>
 
 <div class="min-h-screen bg-gray-50">

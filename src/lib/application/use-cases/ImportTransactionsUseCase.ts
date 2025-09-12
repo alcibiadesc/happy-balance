@@ -42,29 +42,16 @@ export class ImportTransactionsUseCase {
 			this.deps.logger.info(`Parsed ${parsedTransactions.length} transactions from CSV`);
 			
 
-			// 4. Process transactions
+			// 4. Process transactions - Batch processing for better performance
 			let imported = 0;
 			let skipped = 0;
 			const errors: string[] = [];
 			const warnings: string[] = [];
+			const validTransactions: Transaction[] = [];
 
+			// First pass: validate and create all transactions
 			for (const parsedTx of parsedTransactions) {
 				try {
-					// Check if transaction already exists (prevent duplicates)
-					if (!command.overwriteExisting) {
-						const existing = await this.deps.transactionRepository.findByReference(
-							parsedTx.paymentReference || parsedTx.description,
-							parsedTx.transactionDate.value,
-							parsedTx.amount.value
-						);
-
-						if (existing) {
-							skipped++;
-							warnings.push(`Transaction already exists: ${parsedTx.description}`);
-							continue;
-						}
-					}
-
 					// Ensure we have a valid account for each transaction
 					const currentAccount = await this.deps.accountRepository.findById(accountId);
 					if (!currentAccount || !currentAccount.id) {
@@ -86,14 +73,42 @@ export class ImportTransactionsUseCase {
 						continue;
 					}
 
-					// Save transaction
-					await this.deps.transactionRepository.save(transactionResult.data);
-					imported++;
+					validTransactions.push(transactionResult.data);
 
 				} catch (error) {
 					const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 					errors.push(`Error processing transaction: ${errorMessage}`);
 					this.deps.logger.error('Transaction processing error', error);
+				}
+			}
+
+			// Second pass: save all valid transactions in batch (with duplicate handling)
+			if (validTransactions.length > 0) {
+				try {
+					await this.deps.transactionRepository.saveMany(validTransactions);
+					imported = validTransactions.length;
+					this.deps.logger.info(`Successfully saved ${imported} transactions`);
+				} catch (error) {
+					// If batch save fails due to duplicates, try individual saves
+					this.deps.logger.warn('Batch save failed, trying individual saves', error);
+					
+					for (const transaction of validTransactions) {
+						try {
+							// Check if transaction already exists by hash
+							const existing = await this.deps.transactionRepository.findByHash(transaction.hash);
+							if (existing) {
+								skipped++;
+								warnings.push(`Transaction already exists: ${transaction.partnerName}`);
+								continue;
+							}
+
+							await this.deps.transactionRepository.save(transaction);
+							imported++;
+						} catch (saveError) {
+							const errorMessage = saveError instanceof Error ? saveError.message : 'Unknown save error';
+							errors.push(`Error saving transaction: ${errorMessage}`);
+						}
+					}
 				}
 			}
 

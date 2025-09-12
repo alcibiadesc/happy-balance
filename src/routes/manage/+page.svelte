@@ -636,7 +636,7 @@
 </script>
 
 <svelte:head>
-  <title>Gestión Financiera - Expense Tracker</title>
+  <title>Gestión Financiera - Happy Balance</title>
 </svelte:head>
 
 <div class="min-h-screen" style="background-color: var(--color-background-primary);">

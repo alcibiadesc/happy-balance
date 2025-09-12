@@ -71,7 +71,7 @@
 </script>
 
 <svelte:head>
-  <title>Debug Import - Expense Tracker</title>
+  <title>Debug Import - Happy Balance</title>
 </svelte:head>
 
 <div class="container mx-auto p-8 max-w-4xl">

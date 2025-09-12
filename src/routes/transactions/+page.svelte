@@ -1,11 +1,9 @@
 <script lang="ts">
-  import { Plus, Search, Filter, ArrowUpDown, FileText, Calendar, DollarSign, Trash2, Edit, Check, X, Brain, Eye, EyeOff } from 'lucide-svelte';
+  import { Plus, Search, Filter, ArrowUpDown, FileText, Calendar, DollarSign, Trash2, Check, X, Eye, EyeOff } from 'lucide-svelte';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import CategorySelector from '$lib/ui/CategorySelector.svelte';
   import InlineTextEditor from '$lib/ui/InlineTextEditor.svelte';
-  import IntelligentSuggestions from '$lib/ui/IntelligentSuggestions.svelte';
-  import OmitAction from '$lib/ui/OmitAction.svelte';
   import { ConfirmationDialog } from '$lib/ui/components/molecules/ConfirmationDialog/index.js';
   import { AlertDialog } from '$lib/ui/components/molecules/AlertDialog/index.js';
 
@@ -21,8 +19,6 @@
   let customStartDate = $state('');
   let customEndDate = $state('');
   let presetPeriod = $state('');
-  let showIntelligentSuggestions = $state(false);
-  let selectedTransactionForSuggestions = $state(null);
   
   // Dialog states
   let showConfirmDialog = $state(false);
@@ -49,10 +45,11 @@
   let showAdvancedFilters = $state(false);
   let hiddenTransactions = $state(new Set<string>());
 
-  // Initialize with current month
+  // Initialize without date filter to show all transactions
   onMount(() => {
     const now = new Date();
     selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    dateFilterType = ''; // No filter by default to show all transactions
     loadTransactions();
     loadCategories();
   });
@@ -107,6 +104,12 @@
       
       if (result.success) {
         transactions = result.data;
+        // Update hiddenTransactions set based on database state
+        hiddenTransactions = new Set(
+          result.data
+            .filter((t: any) => t.isHidden)
+            .map((t: any) => t.id.value || t.id)
+        );
       } else {
         error = result.error || 'Error al cargar transacciones';
       }
@@ -378,13 +381,37 @@
   }
 
   // Hide/Show management
-  function toggleTransactionVisibility(transactionId: string) {
-    if (hiddenTransactions.has(transactionId)) {
-      hiddenTransactions.delete(transactionId);
-    } else {
-      hiddenTransactions.add(transactionId);
+  async function toggleTransactionVisibility(transactionId: string) {
+    const isCurrentlyHidden = hiddenTransactions.has(transactionId);
+    const newHiddenState = !isCurrentlyHidden;
+    
+    try {
+      const response = await fetch(`/api/transactions/${transactionId}/visibility`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ isHidden: newHiddenState })
+      });
+
+      if (response.ok) {
+        // Update local state
+        if (newHiddenState) {
+          hiddenTransactions.add(transactionId);
+        } else {
+          hiddenTransactions.delete(transactionId);
+        }
+        hiddenTransactions = new Set(hiddenTransactions);
+        
+        // Update totals since hidden transactions affect calculations
+        await loadTransactions();
+      } else {
+        showAlert('Error al actualizar la visibilidad de la transacción', 'error');
+      }
+    } catch (err) {
+      console.error('Error updating transaction visibility:', err);
+      showAlert('Error al actualizar la visibilidad de la transacción', 'error');
     }
-    hiddenTransactions = new Set(hiddenTransactions);
   }
 
   // Bulk actions
@@ -409,102 +436,6 @@
     }
   }
 
-  async function handleOmitTransaction(detail: any) {
-    const { transaction, action } = detail;
-    const transactionId = transaction.id.value || transaction.id;
-    
-    try {
-      switch (action) {
-        case 'single':
-          // Just omit this transaction
-          await omitSingleTransaction(transactionId);
-          break;
-          
-        case 'similar_future':
-          // Create rule for similar future transactions and omit current
-          await createOmitRule(transaction, 'similar');
-          await omitSingleTransaction(transactionId);
-          break;
-          
-        case 'all_future':
-          // Create rule for all future transactions from this partner and omit current
-          await createOmitRule(transaction, 'partner');
-          await omitSingleTransaction(transactionId);
-          break;
-      }
-      
-      // Log the omit action for learning
-      await logUserAction(transactionId, `omit_${action}`);
-      
-    } catch (error) {
-      console.error('Error omitting transaction:', error);
-      alert('Error al omitir la transacción');
-    }
-  }
-  
-  async function omitSingleTransaction(transactionId: string) {
-    // Find or create an OMIT category
-    let omitCategory = categories.find(cat => cat.type === 'OMIT');
-    
-    if (!omitCategory) {
-      // Create default OMIT category if it doesn't exist
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: 'Omitir',
-          type: 'OMIT',
-          icon: 'X',
-          color: '#6B7280'
-        })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          omitCategory = result.data;
-          await loadCategories(); // Refresh categories
-        }
-      }
-    }
-    
-    if (!omitCategory) {
-      throw new Error('No se pudo crear la categoría de omisión');
-    }
-    
-    // Apply OMIT category to transaction
-    await updateTransactionCategory(transactionId, omitCategory);
-  }
-  
-  async function createOmitRule(referenceTransaction: any, ruleType: 'similar' | 'partner') {
-    try {
-      const response = await fetch('/api/intelligence/omit-rules', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ruleType,
-          pattern: {
-            partnerName: referenceTransaction.partnerName,
-            amountRange: ruleType === 'similar' ? {
-              min: referenceTransaction.amount * 0.8,
-              max: referenceTransaction.amount * 1.2
-            } : null
-          }
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create omit rule');
-      }
-    } catch (error) {
-      console.error('Error creating omit rule:', error);
-      throw error;
-    }
-  }
 
   // Sort and filter transactions
   function sortTransactions(transactionList: any[]) {
@@ -513,24 +444,24 @@
       
       switch (sortField) {
         case 'date':
-          aValue = new Date(a.bookingDate).getTime();
-          bValue = new Date(b.bookingDate).getTime();
+          aValue = new Date(a.transactionDate || a.bookingDate).getTime();
+          bValue = new Date(b.transactionDate || b.bookingDate).getTime();
           break;
         case 'amount':
           aValue = Math.abs(a.amount);
           bValue = Math.abs(b.amount);
           break;
         case 'partner':
-          aValue = a.partnerName.toLowerCase();
-          bValue = b.partnerName.toLowerCase();
+          aValue = (a.partnerName || a.paymentReference || '').toLowerCase();
+          bValue = (b.partnerName || b.paymentReference || '').toLowerCase();
           break;
         case 'category':
           aValue = a.category?.name?.toLowerCase() || 'zzz'; // Put uncategorized at end
           bValue = b.category?.name?.toLowerCase() || 'zzz';
           break;
         default:
-          aValue = new Date(a.bookingDate).getTime();
-          bValue = new Date(b.bookingDate).getTime();
+          aValue = new Date(a.transactionDate || a.bookingDate).getTime();
+          bValue = new Date(b.transactionDate || b.bookingDate).getTime();
       }
       
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
@@ -548,174 +479,12 @@
     }
   }
 
-  // Intelligent suggestions functions
-  function showSuggestionsForTransaction(transaction: any) {
-    selectedTransactionForSuggestions = transaction;
-    showIntelligentSuggestions = true;
-  }
-
-  function handleApplySuggestion(event: any) {
-    const { suggestion, transactionId } = event.detail;
-    console.log('Applying suggestion:', suggestion, 'to transaction:', transactionId);
-    
-    // Apply the suggested action based on type
-    if (suggestion.type === 'category' && suggestion.categoryId) {
-      // Apply category suggestion
-      updateTransactionCategory(transactionId, { id: suggestion.categoryId });
-    } else if (suggestion.type === 'bulk') {
-      // Handle bulk action
-      // TODO: Implement bulk category application
-    }
-    
-    // Log the user action for learning
-    logUserAction(transactionId, 'categorize', suggestion.categoryId);
-    
-    showIntelligentSuggestions = false;
-  }
-
-  function handleSmartAction(event: any) {
-    const { action, transactionId } = event.detail;
-    console.log('Executing smart action:', action, 'for transaction:', transactionId);
-    
-    switch (action) {
-      case 'learn':
-        // Create a rule based on this action
-        // TODO: Implement rule creation
-        break;
-      case 'apply_similar':
-        // Find and apply to similar transactions
-        // TODO: Implement similarity search and bulk apply
-        break;
-      case 'suggest_only':
-        // Just remember this pattern for future suggestions
-        // TODO: Store pattern for future use
-        break;
-    }
-    
-    showIntelligentSuggestions = false;
-  }
-
-  async function logUserAction(transactionId: string, action: string, categoryId?: string) {
-    try {
-      await fetch('/api/intelligence/actions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          transactionId,
-          action,
-          categoryId
-        })
-      });
-    } catch (error) {
-      console.error('Error logging user action:', error);
-    }
-  }
-  
-  async function handleSmartCategorySelection(detail: any) {
-    const { category, action, transaction } = detail;
-    const transactionId = transaction.id.value || transaction.id;
-    
-    try {
-      switch (action) {
-        case 'single':
-          // Apply to this transaction only
-          await updateTransactionCategory(transactionId, category);
-          break;
-          
-        case 'similar_existing':
-          // Apply to all similar existing transactions
-          await applyCategoryToSimilar(category, transaction, true, false);
-          break;
-          
-        case 'similar_future':
-          // Create rule for similar future transactions
-          await createCategoryRule(category, transaction, 'similar');
-          await updateTransactionCategory(transactionId, category);
-          break;
-          
-        case 'all_future':
-          // Create rule for all future transactions from this partner
-          await createCategoryRule(category, transaction, 'partner');
-          await updateTransactionCategory(transactionId, category);
-          break;
-      }
-      
-      // Log the smart action for learning
-      await logUserAction(transactionId, `smart_${action}`, category.id.value || category.id);
-      
-    } catch (error) {
-      console.error('Error applying smart category selection:', error);
-      alert('Error al aplicar la categorización inteligente');
-    }
-  }
-  
-  async function applyCategoryToSimilar(category: any, referenceTransaction: any, applyToExisting: boolean, applyToFuture: boolean) {
-    try {
-      const response = await fetch('/api/intelligence/apply-similar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          categoryId: category.id.value || category.id,
-          referenceTransaction: {
-            partnerName: referenceTransaction.partnerName,
-            amount: referenceTransaction.amount
-          },
-          applyToExisting,
-          applyToFuture
-        })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && applyToExisting) {
-          // Reload transactions to show updates
-          await loadTransactions();
-        }
-      }
-    } catch (error) {
-      console.error('Error applying category to similar transactions:', error);
-      throw error;
-    }
-  }
-  
-  async function createCategoryRule(category: any, referenceTransaction: any, ruleType: 'similar' | 'partner') {
-    try {
-      const response = await fetch('/api/intelligence/rules', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          categoryId: category.id.value || category.id,
-          ruleType,
-          pattern: {
-            partnerName: referenceTransaction.partnerName,
-            amountRange: ruleType === 'similar' ? {
-              min: referenceTransaction.amount * 0.8,
-              max: referenceTransaction.amount * 1.2
-            } : null
-          }
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create categorization rule');
-      }
-    } catch (error) {
-      console.error('Error creating category rule:', error);
-      throw error;
-    }
-  }
 
   const filteredTransactions = $derived(
     sortTransactions(
       transactions.filter(transaction => {
         const matchesSearch = !searchTerm || 
-          transaction.partnerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (transaction.partnerName || transaction.paymentReference || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
           transaction.notes?.toLowerCase().includes(searchTerm.toLowerCase());
         
         return matchesSearch;
@@ -767,7 +536,7 @@
 </script>
 
 <svelte:head>
-  <title>Transacciones - Expense Tracker</title>
+  <title>Transacciones - Happy Balance</title>
 </svelte:head>
 
 <div class="min-h-screen" style="background-color: var(--color-background-primary);">
@@ -830,11 +599,12 @@
             class="input-editorial"
             onchange={() => {
               if (dateFilterType === 'preset') {
-                presetPeriod = 'last30Days';
+                presetPeriod = 'thisYear';
               }
               loadTransactions();
             }}
           >
+            <option value="">Todas las transacciones</option>
             <option value="month">Este mes</option>
             <option value="preset">Periodo personalizado</option>
           </select>
@@ -1115,27 +885,6 @@
                 Eliminar
               </button>
               
-              <button 
-                class="btn-ghost gap-1 text-sm px-3 py-1 status-warning hover:bg-orange-50"
-                onclick={async () => {
-                  if (selectedTransactions.size === 0) return;
-                  
-                  if (confirm(`¿Deseas omitir ${selectedTransactions.size} transacciones seleccionadas?`)) {
-                    try {
-                      for (const transactionId of selectedTransactions) {
-                        await omitSingleTransaction(transactionId);
-                      }
-                      exitSelectionMode();
-                    } catch (error) {
-                      alert('Error al omitir las transacciones seleccionadas');
-                    }
-                  }
-                }}
-                disabled={selectedTransactions.size === 0}
-              >
-                <X class="w-3 h-3" />
-                Omitir
-              </button>
             </div>
             
             <button 
@@ -1212,8 +961,8 @@
                     </span>
                   </div>
                   <div class="min-w-0 flex-1">
-                    <p class="font-medium text-primary truncate" title="{transaction.partnerName}">{transaction.partnerName}</p>
-                    <p class="text-xs text-tertiary">{formatDate(transaction.bookingDate)}</p>
+                    <p class="font-medium text-primary truncate" title="{transaction.partnerName || transaction.paymentReference}">{transaction.partnerName || transaction.paymentReference}</p>
+                    <p class="text-xs text-tertiary">{formatDate(transaction.transactionDate || transaction.bookingDate)}</p>
                     {#if transaction.category?.name}
                       <p class="text-xs text-tertiary truncate" title="{transaction.category.name}">{transaction.category.name}</p>
                     {/if}
@@ -1237,17 +986,6 @@
                         <Eye class="w-4 h-4" />
                       {/if}
                     </button>
-                    <button
-                      onclick={() => showSuggestionsForTransaction(transaction)}
-                      class="p-2 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                      title="Sugerencias IA"
-                    >
-                      <Brain class="w-4 h-4" />
-                    </button>
-                    <OmitAction
-                      transaction={transaction}
-                      on:omit={handleOmitTransaction}
-                    />
                     <button
                       class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       onclick={() => deleteTransaction(transaction.id.value || transaction.id)}
@@ -1339,10 +1077,10 @@
                     </td>
                   {/if}
                   <td class="py-3 px-4">
-                    <p class="text-sm text-primary">{formatDate(transaction.bookingDate)}</p>
+                    <p class="text-sm text-primary">{formatDate(transaction.transactionDate || transaction.bookingDate)}</p>
                   </td>
                   <td class="py-3 px-4">
-                    <p class="font-medium text-primary">{transaction.partnerName}</p>
+                    <p class="font-medium text-primary">{transaction.partnerName || transaction.paymentReference}</p>
                   </td>
                   <td class="py-3 px-4">
                     <CategorySelector
@@ -1384,17 +1122,6 @@
                           {/if}
                         </button>
                         <button
-                          onclick={() => showSuggestionsForTransaction(transaction)}
-                          class="p-2 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                          title="Sugerencias IA"
-                        >
-                          <Brain class="w-4 h-4" />
-                        </button>
-                        <OmitAction
-                          transaction={transaction}
-                          on:omit={handleOmitTransaction}
-                        />
-                        <button
                           class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onclick={() => deleteTransaction(transaction.id.value || transaction.id)}
                           title="Eliminar transacción"
@@ -1414,14 +1141,7 @@
   </div>
 </div>
 
-<!-- Intelligent Suggestions Modal -->
-<IntelligentSuggestions 
-  transaction={selectedTransactionForSuggestions}
-  isVisible={showIntelligentSuggestions}
-  on:close={() => showIntelligentSuggestions = false}
-  on:applySuggestion={handleApplySuggestion}
-  on:smartAction={handleSmartAction}
-/>
+<!-- Legacy IntelligentSuggestions removed - not properly implemented -->
 
 <!-- Confirmation Dialog -->
 <ConfirmationDialog

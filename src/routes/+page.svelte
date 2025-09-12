@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head>
-  <title>Expense Tracker</title>
+  <title>Happy Balance</title>
 </svelte:head>
 
 <div class="min-h-screen bg-soft-white flex items-center justify-center">

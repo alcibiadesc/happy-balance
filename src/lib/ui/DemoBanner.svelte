@@ -2,7 +2,7 @@
   import { ExternalLink, Github, Info, CreditCard, Tag, BarChart3, Target, TrendingUp, Upload } from 'lucide-svelte';
 </script>
 
-<div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
+<div class="bg-gradient-to-r from-happy-teal to-happy-gold text-white shadow-lg">
   <div class="px-6 py-4">
     <div class="flex items-center justify-between flex-wrap gap-4">
       <div class="flex items-center gap-3">
@@ -11,9 +11,9 @@
         </div>
         <div class="flex-1 min-w-0">
           <p class="text-lg font-semibold">
-            Modo Demo - Expense Tracker
+            Modo Demo - Happy Balance
           </p>
-          <p class="text-purple-100 text-sm mt-1">
+          <p class="text-white/80 text-sm mt-1">
             Estás viendo datos de ejemplo. Los cambios no se guardarán permanentemente.
           </p>
         </div>
@@ -21,7 +21,7 @@
       
       <div class="flex items-center gap-3">
         <a 
-          href="https://github.com/yourusername/expense-tracker" 
+          href="https://github.com/yourusername/happy-balance" 
           target="_blank" 
           rel="noopener noreferrer"
           class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium text-white transition-colors backdrop-blur-sm"

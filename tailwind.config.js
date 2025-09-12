@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Editorial Monochrome Palette
+        // Happy Balance Color Palette
         white: '#FFFFFF',
         'soft-white': '#FEFEFE',
         'light-grey': '#F8F9FA',
@@ -14,16 +14,18 @@ export default {
         charcoal: '#1F2937',
         black: '#000000',
         
-        // Beige Accents
-        'warm-beige': '#F5F3F0',
-        'soft-beige': '#EAE6E1',
+        // Happy Balance Brand Colors
+        'happy-gold': '#F6BD61',      // Primary brand color
+        'happy-coral': '#EF817F',     // Secondary/accent color
+        'happy-teal': '#49A9A6',      // Calm, stable color
+        'happy-mint': '#A3E8DC',      // Light, fresh accent
         
-        // Financial Colors (Refined)
-        income: '#10B981', // Sage green
-        expense: '#EF4444', // Coral red
-        savings: '#6366F1', // Indigo
-        investment: '#8B5CF6', // Purple
-        debt: '#F59E0B', // Amber
+        // Financial Colors (Happy Balance themed)
+        income: '#49A9A6',    // Happy teal - positive growth
+        expense: '#EF817F',   // Happy coral - warm but noticeable
+        savings: '#A3E8DC',   // Happy mint - fresh and growing
+        investment: '#F6BD61', // Happy gold - valuable
+        debt: '#EF817F',      // Happy coral - attention needed
         
         // System Colors
         border: 'var(--color-medium-grey)',
@@ -33,24 +35,24 @@ export default {
         foreground: 'var(--color-dark-grey)',
         
         primary: {
-          DEFAULT: 'var(--color-charcoal)',
-          foreground: 'var(--color-white)',
+          DEFAULT: '#49A9A6', // Happy teal
+          foreground: '#FFFFFF',
         },
         secondary: {
-          DEFAULT: 'var(--color-warm-beige)',
-          foreground: 'var(--color-charcoal)',
+          DEFAULT: '#A3E8DC', // Happy mint
+          foreground: '#374151',
         },
         destructive: {
-          DEFAULT: 'var(--color-coral-red)',
-          foreground: 'var(--color-white)',
+          DEFAULT: '#EF817F', // Happy coral
+          foreground: '#FFFFFF',
         },
         muted: {
-          DEFAULT: 'var(--color-light-grey)',
-          foreground: 'var(--color-text-grey)',
+          DEFAULT: '#F8F9FA',
+          foreground: '#6B7280',
         },
         accent: {
-          DEFAULT: 'var(--color-warm-beige)',
-          foreground: 'var(--color-charcoal)',
+          DEFAULT: '#F6BD61', // Happy gold
+          foreground: '#374151',
         },
         card: {
           DEFAULT: 'var(--color-white)',

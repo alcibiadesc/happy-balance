@@ -276,8 +276,11 @@ export class UniversalCSVParser implements CSVParser {
     if (!amountStr) {
       throw new Error(`Missing amount in row ${rowNumber}`);
     }
-    if (!description) {
-      throw new Error(`Missing description in row ${rowNumber}`);
+    
+    // If description (Partner Name) is empty, use Payment Reference or fallback
+    let finalDescription = description;
+    if (!finalDescription || finalDescription.trim() === '') {
+      finalDescription = reference || row['Type'] || 'Unknown Transaction';
     }
 
     // Parse date - support multiple formats
@@ -290,13 +293,13 @@ export class UniversalCSVParser implements CSVParser {
     const transaction: ParsedTransaction = {
       transactionDate: new TransactionDate(bookingDate),
       amount: new Money(amount, "EUR"),
-      description: description,
+      description: finalDescription,
       paymentReference: reference || undefined,
-      counterparty: description, // Use description as counterparty
+      counterparty: finalDescription, // Use final description as counterparty
       rawData: {
         date: dateStr,
         amount: amountStr,
-        description: description,
+        description: finalDescription,
         reference: reference || "",
       },
     };

@@ -85,7 +85,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
   async findDuplicates(transaction: Transaction): Promise<Transaction[]> {
     const results = await prisma.transaction.findMany({
       where: {
-        partnerName: transaction.partnerName,
+        counterparty: transaction.partnerName,
         amount: transaction.amount,
         transactionDate: transaction.transactionDate,
         id: { not: transaction.id.value }
@@ -97,13 +97,9 @@ export class PrismaTransactionRepository implements TransactionRepository {
   }
 
   async findRecurring(): Promise<Transaction[]> {
-    const results = await prisma.transaction.findMany({
-      where: { isRecurring: true },
-      include: { category: true, account: true },
-      orderBy: { transactionDate: 'desc' }
-    });
-    
-    return results.map(this.mapToEntity);
+    // Since isRecurring field doesn't exist in schema, return empty array
+    // TODO: Implement recurring transaction logic based on pattern analysis
+    return [];
   }
 
   async save(transaction: Transaction): Promise<void> {
@@ -117,6 +113,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
         amount: transaction.amount.amount, // Extract amount from Money object
         categoryId: transaction.categoryId || null,
         accountId: transaction.accountId,
+        isHidden: transaction.isHidden || false,
         hash: transaction.hash
       }
     });
@@ -126,23 +123,15 @@ export class PrismaTransactionRepository implements TransactionRepository {
     await prisma.transaction.createMany({
       data: transactions.map(transaction => ({
         id: transaction.id.value,
-        transactionDate: transaction.transactionDate,
-        valueDate: transaction.valueDate,
-        partnerName: transaction.partnerName,
-        partnerIban: transaction.partnerIban,
-        type: transaction.type,
+        transactionDate: transaction.bookingDate,
+        description: transaction.partnerName,
         paymentReference: transaction.paymentReference,
+        counterparty: transaction.partnerName,
         amount: transaction.amount.amount, // Extract amount from Money object
-        originalAmount: transaction.originalAmount?.amount || null,
-        originalCurrency: transaction.originalCurrency,
-        exchangeRate: transaction.exchangeRate,
         categoryId: transaction.categoryId || null,
         accountId: transaction.accountId,
-        isRecurring: transaction.isRecurring,
-        confidence: transaction.confidence,
-        hash: transaction.hash,
-        importJobId: transaction.importJobId || null,
-        notes: transaction.notes
+        isHidden: transaction.isHidden || false,
+        hash: transaction.hash
       })),
       skipDuplicates: true
     });
@@ -152,23 +141,15 @@ export class PrismaTransactionRepository implements TransactionRepository {
     await prisma.transaction.update({
       where: { id: transaction.id.value },
       data: {
-        transactionDate: transaction.transactionDate,
-        valueDate: transaction.valueDate,
-        partnerName: transaction.partnerName,
-        partnerIban: transaction.partnerIban,
-        type: transaction.type,
+        transactionDate: transaction.bookingDate,
+        description: transaction.partnerName,
         paymentReference: transaction.paymentReference,
+        counterparty: transaction.partnerName,
         amount: transaction.amount.amount, // Extract amount from Money object
-        originalAmount: transaction.originalAmount?.amount || null,
-        originalCurrency: transaction.originalCurrency,
-        exchangeRate: transaction.exchangeRate,
         categoryId: transaction.categoryId || null,
         accountId: transaction.accountId,
-        isRecurring: transaction.isRecurring,
-        confidence: transaction.confidence,
-        hash: transaction.hash,
-        importJobId: transaction.importJobId || null,
-        notes: transaction.notes
+        isHidden: transaction.isHidden || false,
+        hash: transaction.hash
       }
     });
   }
@@ -189,7 +170,14 @@ export class PrismaTransactionRepository implements TransactionRepository {
   async updateDescription(id: TransactionId, description: string | null): Promise<void> {
     await prisma.transaction.update({
       where: { id: id.value },
-      data: { notes: description }
+      data: { description: description || '' }
+    });
+  }
+
+  async updateHidden(id: TransactionId, isHidden: boolean): Promise<void> {
+    await prisma.transaction.update({
+      where: { id: id.value },
+      data: { isHidden }
     });
   }
 
@@ -277,7 +265,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
 
   async findTopPartners(limit = 10, startDate?: Date, endDate?: Date): Promise<{ partnerName: string; total: number; count: number }[]> {
     const results = await prisma.transaction.groupBy({
-      by: ['partnerName'],
+      by: ['counterparty'],
       where: {
         ...(startDate && endDate && {
           transactionDate: {
@@ -293,7 +281,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     });
 
     return results.map(result => ({
-      partnerName: result.partnerName,
+      partnerName: result.counterparty || 'Unknown',
       total: result._sum.amount || 0,
       count: result._count.id
     }));
@@ -337,6 +325,15 @@ export class PrismaTransactionRepository implements TransactionRepository {
     return Array.from(trends.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
   }
 
+  async calculateTotalByAccount(accountId: string): Promise<number> {
+    const result = await prisma.transaction.aggregate({
+      where: { accountId },
+      _sum: { amount: true }
+    });
+
+    return result._sum.amount || 0;
+  }
+
   private buildWhereClause(filters?: TransactionFilters) {
     if (!filters) return {};
 
@@ -365,7 +362,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     }
 
     if (filters.partnerName) {
-      where.partnerName = {
+      where.counterparty = {
         contains: filters.partnerName,
         mode: 'insensitive'
       };
@@ -375,9 +372,8 @@ export class PrismaTransactionRepository implements TransactionRepository {
       where.type = filters.type;
     }
 
-    if (filters.isRecurring !== undefined) {
-      where.isRecurring = filters.isRecurring;
-    }
+    // isRecurring field not available in current schema
+    // TODO: Implement recurring logic based on pattern analysis
 
     if (filters.categoryType) {
       where.category = {
@@ -388,31 +384,26 @@ export class PrismaTransactionRepository implements TransactionRepository {
     return where;
   }
 
-  private mapToEntity(dbTransaction: any): Transaction {
+  private mapToEntity(dbTransaction: any): any {
+    // Map to a structure that the frontend expects, not the domain entity
     return {
-      id: { value: dbTransaction.id },
+      id: dbTransaction.id,
       transactionDate: dbTransaction.transactionDate,
-      valueDate: dbTransaction.valueDate,
-      partnerName: dbTransaction.partnerName,
-      partnerIban: dbTransaction.partnerIban,
-      type: dbTransaction.type,
+      bookingDate: dbTransaction.transactionDate,
+      partnerName: dbTransaction.counterparty || dbTransaction.description,
+      description: dbTransaction.description,
+      counterparty: dbTransaction.counterparty,
       paymentReference: dbTransaction.paymentReference,
-      amount: dbTransaction.amount,
-      originalAmount: dbTransaction.originalAmount,
-      originalCurrency: dbTransaction.originalCurrency,
-      exchangeRate: dbTransaction.exchangeRate,
+      amount: dbTransaction.amount, // Numeric value for frontend
       categoryId: dbTransaction.categoryId,
       accountId: dbTransaction.accountId,
-      isRecurring: dbTransaction.isRecurring,
-      confidence: dbTransaction.confidence,
+      isHidden: dbTransaction.isHidden || false,
       hash: dbTransaction.hash,
-      importJobId: dbTransaction.importJobId,
-      notes: dbTransaction.notes,
       createdAt: dbTransaction.createdAt,
       updatedAt: dbTransaction.updatedAt,
       // Include related entities if loaded
       category: dbTransaction.category,
       account: dbTransaction.account
-    } as Transaction;
+    };
   }
 }
