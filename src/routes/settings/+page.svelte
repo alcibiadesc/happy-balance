@@ -143,7 +143,7 @@
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `expense-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `happy-balance-backup-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
