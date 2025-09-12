@@ -327,7 +327,10 @@ export class PrismaTransactionRepository implements TransactionRepository {
 
   async calculateTotalByAccount(accountId: string): Promise<number> {
     const result = await prisma.transaction.aggregate({
-      where: { accountId },
+      where: { 
+        accountId,
+        isHidden: false // Exclude hidden transactions from balance calculations
+      },
       _sum: { amount: true }
     });
 

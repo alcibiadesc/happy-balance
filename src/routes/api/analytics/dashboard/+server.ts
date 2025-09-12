@@ -172,8 +172,9 @@ function calculateMetrics(transactions: any[]): {
   balance: number;
   transactionCount: number;
 } {
-  // Filter out OMIT transactions (by type or name)
+  // Filter out OMIT transactions and hidden transactions
   const includedTransactions = transactions.filter(t => 
+    !t.isHidden && // Exclude hidden transactions
     t.category?.name !== 'Omitir' && 
     t.category?.type !== 'OMIT'
   );
@@ -229,8 +230,9 @@ function calculateTrends(current: any, previous: any): {
 async function getCategoryBreakdown(transactions: any[]): Promise<any[]> {
   const categoryTotals = new Map<string, { amount: number; count: number; category: any }>();
 
-  // Filter out OMIT transactions and group by category
+  // Filter out OMIT transactions and hidden transactions, then group by category
   const includedTransactions = transactions.filter(t => 
+    !t.isHidden && // Exclude hidden transactions
     t.category?.name !== 'Omitir' &&
     t.category?.type !== 'OMIT'
   );

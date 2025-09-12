@@ -492,10 +492,11 @@
     )
   );
 
-  // Calculate totals (excluding OMIT transactions)
+  // Calculate totals (excluding OMIT transactions and hidden transactions)
   const totals = $derived.by(() => {
     const omitCategory = categories.find(c => c.name === 'Omitir');
     const includedTransactions = transactions.filter(t => 
+      !t.isHidden && // Exclude hidden transactions
       t.category?.name !== 'Omitir' && 
       t.category?.type !== 'OMIT' &&
       t.categoryId !== omitCategory?.id?.value &&
