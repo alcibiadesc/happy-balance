@@ -357,11 +357,15 @@ export class PrismaTransactionRepository implements TransactionRepository {
       where.accountId = { in: filters.accountIds };
     }
 
-    if (filters.minAmount !== undefined && filters.maxAmount !== undefined) {
-      where.amount = {
-        gte: filters.minAmount,
-        lte: filters.maxAmount
-      };
+    // Handle amount filters individually
+    if (filters.minAmount !== undefined || filters.maxAmount !== undefined) {
+      where.amount = {};
+      if (filters.minAmount !== undefined) {
+        where.amount.gte = filters.minAmount;
+      }
+      if (filters.maxAmount !== undefined) {
+        where.amount.lte = filters.maxAmount;
+      }
     }
 
     if (filters.partnerName) {
