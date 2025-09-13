@@ -1,0 +1,124 @@
+{
+  "common": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "save": "Guardar",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "reset": "Resetear",
+    "apply": "Aplicar",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "transactions": "Transacciones",
+    "categories": "Categorías",
+    "reports": "Informes",
+    "settings": "Configuración",
+    "import": "Importar",
+    "export": "Exportar"
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "spending_summary": "Gastas {amount} de cada 10 euros que ingresas",
+    "periods": {
+      "week": "Semana",
+      "month": "Mes",
+      "quarter": "Trimestre", 
+      "year": "Año"
+    },
+    "metrics": {
+      "income": "Ingresos",
+      "expenses": "Gastos",
+      "investments": "Inversiones",
+      "balance": "Balance",
+      "essential_expenses": "Gastos esenciales",
+      "discretionary_expenses": "Gastos discrecionales",
+      "saved_percentage": "{percentage}% ahorrado"
+    },
+    "charts": {
+      "temporal_evolution": "Evolución temporal",
+      "expense_distribution": "Distribución de gastos e inversiones",
+      "temporal_evolution_subtitle": "Tendencias de ingresos y gastos a lo largo del tiempo",
+      "expense_distribution_subtitle": "Comparación mensual de gastos esenciales, discrecionales e inversiones",
+      "income_evolution": "Evolución de Ingresos",
+      "expense_evolution": "Evolución de Gastos"
+    },
+    "categories": {
+      "title": "Distribución de gastos",
+      "food": "Alimentación",
+      "transport": "Transporte", 
+      "utilities": "Servicios",
+      "shopping": "Compras",
+      "entertainment": "Entretenimiento",
+      "health": "Salud"
+    },
+    "status": {
+      "excellent_control": "Excelente control",
+      "moderate_control": "Control moderado", 
+      "high_spending": "Gasto elevado"
+    }
+  },
+  "transactions": {
+    "title": "Transacciones",
+    "add_transaction": "Añadir Transacción",
+    "edit_transaction": "Editar Transacción",
+    "description": "Descripción",
+    "amount": "Cantidad",
+    "category": "Categoría",
+    "date": "Fecha",
+    "type": {
+      "income": "Ingreso",
+      "expense": "Gasto",
+      "investment": "Inversión"
+    },
+    "no_transactions": "No hay transacciones",
+    "delete_confirmation": "¿Estás seguro de que quieres eliminar esta transacción?"
+  },
+  "categories": {
+    "title": "Categorías",
+    "add_category": "Añadir Categoría",
+    "edit_category": "Editar Categoría",
+    "name": "Nombre",
+    "color": "Color",
+    "icon": "Icono",
+    "type": "Tipo",
+    "no_categories": "No hay categorías",
+    "delete_confirmation": "¿Estás seguro de que quieres eliminar esta categoría?"
+  },
+  "settings": {
+    "title": "Configuración",
+    "language": "Idioma",
+    "currency": "Moneda",
+    "theme": "Tema",
+    "themes": {
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema"
+    },
+    "data": "Datos",
+    "export_data": "Exportar Datos",
+    "import_data": "Importar Datos",
+    "clear_data": "Limpiar Datos",
+    "clear_data_confirmation": "¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer."
+  },
+  "errors": {
+    "generic": "Ha ocurrido un error",
+    "network": "Error de conexión",
+    "validation": "Error de validación",
+    "not_found": "No encontrado",
+    "unauthorized": "No autorizado",
+    "forbidden": "Prohibido"
+  },
+  "success": {
+    "saved": "Guardado exitosamente",
+    "deleted": "Eliminado exitosamente",
+    "imported": "Importado exitosamente",
+    "exported": "Exportado exitosamente"
+  }
+}

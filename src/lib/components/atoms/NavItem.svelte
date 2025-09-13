@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { ComponentType } from 'svelte';
+  import { LayoutDashboard, Settings } from 'lucide-svelte';
   
   interface Props {
     href: string;
-    icon: ComponentType;
-    label: string;
+    icon: string; // Icon name as string
+    children: any; // For slot content
     isActive?: boolean;
     isImportant?: boolean;
     onclick?: () => void;
@@ -12,12 +12,20 @@
   
   let { 
     href, 
-    icon: Icon, 
-    label, 
+    icon,
+    children,
     isActive = false, 
     isImportant = false,
     onclick 
   }: Props = $props();
+  
+  // Icon mapping
+  const iconMap = {
+    'layout-dashboard': LayoutDashboard,
+    'settings': Settings
+  };
+  
+  const IconComponent = iconMap[icon as keyof typeof iconMap];
 </script>
 
 <a 
@@ -29,10 +37,12 @@
   aria-current={isActive ? 'page' : undefined}
 >
   <div class="nav-item__icon">
-    <Icon size={18} strokeWidth={2} />
+    {#if IconComponent}
+      <IconComponent size={18} strokeWidth={2} />
+    {/if}
   </div>
   <span class="nav-item__label">
-    {label}
+    {@render children?.()}
   </span>
   {#if isImportant}
     <div class="nav-item__badge"></div>
@@ -132,8 +142,13 @@
     box-shadow: 0 0 0 2px var(--primary-light), 0 0 0 4px rgba(2, 60, 70, 0.1);
   }
   
-  /* Spacing between items */
-  .nav-item + .nav-item {
-    margin-top: var(--space-xs);
+  /* Dark mode */
+  html.dark .nav-item--active {
+    color: var(--acapulco);
+    background-color: rgba(122, 186, 165, 0.1);
+  }
+  
+  html.dark .nav-item--active::before {
+    background: var(--acapulco);
   }
 </style>
