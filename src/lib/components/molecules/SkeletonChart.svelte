@@ -10,7 +10,7 @@
   let { height = 280, title = true, subtitle = true }: Props = $props();
 </script>
 
-<div class="chart-skeleton" style="min-height: {height + 120}px;">
+<div class="chart-skeleton">
   {#if title}
     <div class="skeleton-header">
       <Skeleton width="200px" height="14px" class="skeleton-title" />
@@ -19,7 +19,7 @@
       {/if}
     </div>
   {/if}
-  <div class="chart-content" style="height: {height}px;">
+  <div class="chart-content" style="height: {height}px; min-height: {height}px;">
     <!-- Chart area skeleton -->
     <div class="chart-area">
       <!-- Y-axis labels -->

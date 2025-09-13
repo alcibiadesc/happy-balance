@@ -40,12 +40,12 @@
       { name: $t('dashboard.categories.health'), amount: 200, percentage: 11.1 }
     ],
     monthlyTrend: [
-      { month: 'Ene', income: 2800, expenses: 1600 },
-      { month: 'Feb', income: 2900, expenses: 1750 },
-      { month: 'Mar', income: 3000, expenses: 1650 },
-      { month: 'Abr', income: 3100, expenses: 1900 },
-      { month: 'May', income: 2950, expenses: 1700 },
-      { month: 'Jun', income: 3000, expenses: 1800 }
+      { month: 'Ene', income: 2800, expenses: 1600, balance: 1200 },
+      { month: 'Feb', income: 2900, expenses: 1750, balance: 1150 },
+      { month: 'Mar', income: 3000, expenses: 1650, balance: 1350 },
+      { month: 'Abr', income: 3100, expenses: 1900, balance: 1200 },
+      { month: 'May', income: 2950, expenses: 1700, balance: 1250 },
+      { month: 'Jun', income: 3000, expenses: 1800, balance: 1200 }
     ],
     // More detailed monthly data for bar charts
     monthlyBarData: [
@@ -89,6 +89,10 @@
           previousIncome: 34000,
           previousExpenses: 20400,
           previousInvestments: 4800,
+          monthlyTrend: [
+            { month: '2023', income: 34000, expenses: 20400, balance: 13600 },
+            { month: '2024', income: 36000, expenses: 21600, balance: 14400 }
+          ],
           monthlyBarData: [
             { month: '2023', income: 34000, essentialExpenses: 13600, discretionaryExpenses: 6800, investments: 4800 },
             { month: '2024', income: 36000, essentialExpenses: 14400, discretionaryExpenses: 7200, investments: 6000 }
@@ -106,6 +110,11 @@
           previousIncome: 8400,
           previousExpenses: 4950,
           previousInvestments: 1200,
+          monthlyTrend: [
+            { month: 'Abr', income: 3100, expenses: 1900, balance: 1200 },
+            { month: 'May', income: 2950, expenses: 1700, balance: 1250 },
+            { month: 'Jun', income: 3000, expenses: 1800, balance: 1200 }
+          ],
           monthlyBarData: [
             { month: 'Abr', income: 3100, essentialExpenses: 1270, discretionaryExpenses: 630, investments: 480 },
             { month: 'May', income: 2950, essentialExpenses: 1140, discretionaryExpenses: 560, investments: 460 },
@@ -125,6 +134,13 @@
           previousExpenses: 412,
           previousInvestments: 100,
           categories: data.categories.map(c => ({ ...c, amount: Math.round(c.amount / 4) })),
+          monthlyTrend: [
+            { month: 'Lun', income: 150, expenses: 90, balance: 60 },
+            { month: 'Mar', income: 150, expenses: 97, balance: 53 },
+            { month: 'Mié', income: 150, expenses: 87, balance: 63 },
+            { month: 'Jue', income: 150, expenses: 93, balance: 57 },
+            { month: 'Vie', income: 150, expenses: 83, balance: 67 }
+          ],
           monthlyBarData: [
             { month: 'Lun', income: 150, essentialExpenses: 60, discretionaryExpenses: 30, investments: 25 },
             { month: 'Mar', income: 150, essentialExpenses: 65, discretionaryExpenses: 32, investments: 25 },
@@ -146,6 +162,14 @@
           previousIncome: 2800,
           previousExpenses: 1650,
           previousInvestments: 400,
+          monthlyTrend: [
+            { month: 'Ene', income: 2800, expenses: 1600, balance: 1200 },
+            { month: 'Feb', income: 2900, expenses: 1750, balance: 1150 },
+            { month: 'Mar', income: 3000, expenses: 1650, balance: 1350 },
+            { month: 'Abr', income: 3100, expenses: 1900, balance: 1200 },
+            { month: 'May', income: 2950, expenses: 1700, balance: 1250 },
+            { month: 'Jun', income: 3000, expenses: 1800, balance: 1200 }
+          ],
           monthlyBarData: [
             { month: 'Ene', income: 2800, essentialExpenses: 1070, discretionaryExpenses: 530, investments: 400 },
             { month: 'Feb', income: 2900, essentialExpenses: 1170, discretionaryExpenses: 580, investments: 420 },

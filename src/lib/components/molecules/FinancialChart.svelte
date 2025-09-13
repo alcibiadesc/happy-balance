@@ -8,6 +8,7 @@
     month: string;
     income: number;
     expenses: number;
+    balance: number;
   }
   
   interface Props {
@@ -25,11 +26,13 @@
     const translations = {
       en: {
         income: 'Income',
-        expenses: 'Expenses'
+        expenses: 'Expenses',
+        balance: 'Balance'
       },
       es: {
         income: 'Ingresos',
-        expenses: 'Gastos'
+        expenses: 'Gastos',
+        balance: 'Balance'
       }
     };
     
@@ -79,6 +82,20 @@
             pointRadius: 4,
             pointHoverRadius: 6,
             pointBackgroundColor: '#f5796c',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+          },
+          {
+            label: labels.balance,
+            data: data.map(d => d.balance),
+            borderColor: '#fecd2c',
+            backgroundColor: 'rgba(254, 205, 44, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#fecd2c',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
           }
@@ -178,6 +195,7 @@
       chart.data.labels = data.map(d => d.month);
       chart.data.datasets[0].data = data.map(d => d.income);
       chart.data.datasets[1].data = data.map(d => d.expenses);
+      chart.data.datasets[2].data = data.map(d => d.balance);
       chart.update();
     }
   });
@@ -197,6 +215,7 @@
       const labels = getLabels($currentLanguage);
       chart.data.datasets[0].label = labels.income;
       chart.data.datasets[1].label = labels.expenses;
+      chart.data.datasets[2].label = labels.balance;
       chart.update();
     }
   });
