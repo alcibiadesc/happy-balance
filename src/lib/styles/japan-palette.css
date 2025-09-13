@@ -1,0 +1,114 @@
+/*
+ * japan palette - Pure minimalist color system
+ */
+
+:root {
+    /* Primary Japan Colors */
+    --evening-sea: #023c46;
+    --froly: #f5796c;
+    --bridesmaid: #fef7ee;
+    --acapulco: #7abaa5;
+    --sunglow: #fecd2c;
+    
+    /* Semantic Mapping */
+    --primary: var(--evening-sea);
+    --primary-hover: #034a57;
+    --primary-light: #e6f0f2;
+    
+    --accent: var(--froly);
+    --accent-hover: #f46456;
+    --accent-light: #fef0ee;
+    
+    --surface: var(--bridesmaid);
+    --surface-elevated: #ffffff;
+    --surface-muted: #f9f1e8;
+    
+    --success: var(--acapulco);
+    --success-hover: #6ba696;
+    --success-light: #f0f8f5;
+    
+    --warning: var(--sunglow);
+    --warning-hover: #fec107;
+    --warning-light: #fffbf0;
+    
+    /* Neutral Grays */
+    --gray-50: #fafaf9;
+    --gray-100: #f5f5f4;
+    --gray-200: #e7e5e4;
+    --gray-300: #d6d3d1;
+    --gray-400: #a8a29e;
+    --gray-500: #78716c;
+    --gray-600: #57534e;
+    --gray-700: #44403c;
+    --gray-800: #292524;
+    --gray-900: #1c1917;
+    
+    /* Typography */
+    --text-primary: var(--evening-sea);
+    --text-secondary: var(--gray-600);
+    --text-muted: var(--gray-500);
+    --text-inverse: var(--bridesmaid);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(2, 60, 70, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(2, 60, 70, 0.1), 0 2px 4px -2px rgba(2, 60, 70, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(2, 60, 70, 0.1), 0 4px 6px -4px rgba(2, 60, 70, 0.1);
+    
+    /* Ma - Spacing system */
+    --space-minimal: 0.125rem;  /* 2px */
+    --space-xs: 0.25rem;        /* 4px */
+    --space-sm: 0.5rem;         /* 8px */
+    --space-md: 1rem;           /* 16px */
+    --space-lg: 1.5rem;         /* 24px */
+    --space-xl: 2rem;           /* 32px */
+    --space-2xl: 3rem;          /* 48px */
+    --space-3xl: 4rem;          /* 64px */
+    
+    /* Border radius */
+    --radius-xs: 0.125rem;      /* 2px */
+    --radius-sm: 0.25rem;       /* 4px */
+    --radius-md: 0.375rem;      /* 6px */
+    --radius-lg: 0.5rem;        /* 8px */
+    --radius-xl: 0.75rem;       /* 12px */
+}
+
+/* Display-P3 color space support */
+@supports (color: color(display-p3 1 1 1)) {
+    :root {
+        --evening-sea: color(display-p3 0.008 0.235 0.276 / 1.0);
+        --froly: color(display-p3 0.96 0.475 0.422 / 1.0);
+        --bridesmaid: color(display-p3 0.997 0.968 0.934 / 1.0);
+        --acapulco: color(display-p3 0.477 0.728 0.647 / 1.0);
+        --sunglow: color(display-p3 0.995 0.804 0.174 / 1.0);
+    }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --surface: var(--gray-900);
+        --surface-elevated: var(--gray-800);
+        --surface-muted: var(--gray-850);
+        --text-primary: var(--bridesmaid);
+        --text-secondary: var(--gray-300);
+        --text-muted: var(--gray-400);
+        --text-inverse: var(--evening-sea);
+    }
+}
+
+/* Utility classes */
+.text-light {
+    font-weight: 300;
+    letter-spacing: 0.025em;
+    line-height: 1.7;
+}
+
+.text-emphasis {
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.text-subtle {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
