@@ -10,8 +10,8 @@
   let { isMobile = false, onItemClick }: Props = $props();
   
   const navItems = [
-    { href: '/', icon: 'layout-dashboard', labelKey: 'nav.dashboard' },
-    { href: '/settings', icon: 'settings', labelKey: 'nav.settings' }
+    { href: '/', icon: 'layout-dashboard', labelKey: 'navigation.dashboard' },
+    { href: '/settings', icon: 'settings', labelKey: 'navigation.settings' }
   ];
 </script>
 

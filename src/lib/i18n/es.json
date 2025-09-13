@@ -16,12 +16,7 @@
   },
   "navigation": {
     "dashboard": "Panel",
-    "transactions": "Transacciones",
-    "categories": "Categorías",
-    "reports": "Informes",
-    "settings": "Configuración",
-    "import": "Importar",
-    "export": "Exportar"
+    "settings": "Configuración"
   },
   "dashboard": {
     "title": "Panel de Control",

@@ -5,7 +5,6 @@
 
   import Brand from '../atoms/Brand.svelte';
   import ThemeToggle from '../atoms/ThemeToggle.svelte';
-  import ImportButton from '../atoms/ImportButton.svelte';
   import NavList from '../molecules/NavList.svelte';
 
   // Mobile sidebar state
@@ -63,7 +62,6 @@
     </div>
 
     <div class="mobile-header__end">
-      <ImportButton href="/import" size="sm" />
       <ThemeToggle size="sm" />
     </div>
   </div>
@@ -83,10 +81,6 @@
       <NavList />
     </div>
 
-    <!-- Import Action -->
-    <div class="sidebar-action">
-      <ImportButton href="/import" size="md" />
-    </div>
 
     <!-- Sidebar Footer -->
   </div>
@@ -126,10 +120,6 @@
       <NavList />
     </div>
 
-    <!-- Mobile Import Action -->
-    <div class="mobile-sidebar__action">
-      <ImportButton href="/import" size="md" onclick={closeMobileSidebar} />
-    </div>
 
   </div>
 </aside>
@@ -256,14 +246,6 @@
     opacity: 0.3;
   }
 
-  .sidebar-action {
-    display: flex;
-    justify-content: center;
-    margin: var(--space-lg) 0;
-    padding: var(--space-lg) 0;
-    border-top: 1px solid rgba(2, 60, 70, 0.08);
-    border-bottom: 1px solid rgba(2, 60, 70, 0.08);
-  }
 
   .sidebar-footer {
     margin-top: var(--space-lg);
@@ -343,12 +325,6 @@
     overflow-y: auto;
   }
 
-  .mobile-sidebar__action {
-    margin: var(--space-md) 0;
-    padding: var(--space-md) 0;
-    border-top: 1px solid rgba(2, 60, 70, 0.08);
-    border-bottom: 1px solid rgba(2, 60, 70, 0.08);
-  }
 
   .mobile-sidebar__footer {
     margin-top: var(--space-md);
@@ -424,10 +400,8 @@
     }
 
     .sidebar-header,
-    .sidebar-action,
     .sidebar-footer,
     .mobile-sidebar__header,
-    .mobile-sidebar__action,
     .mobile-sidebar__footer {
       border-color: rgba(254, 247, 238, 0.1);
     }

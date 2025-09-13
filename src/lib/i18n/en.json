@@ -16,12 +16,7 @@
   },
   "navigation": {
     "dashboard": "Dashboard",
-    "transactions": "Transactions",
-    "categories": "Categories",
-    "reports": "Reports",
-    "settings": "Settings",
-    "import": "Import",
-    "export": "Export"
+    "settings": "Settings"
   },
   "dashboard": {
     "title": "Dashboard",
