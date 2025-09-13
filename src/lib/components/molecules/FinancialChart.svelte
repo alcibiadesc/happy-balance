@@ -38,6 +38,18 @@
     
     return translations[lang as keyof typeof translations] || translations.en;
   }
+
+  // Function to get theme-aware colors
+  function getThemeColors() {
+    const isDark = document.documentElement.classList.contains('dark');
+    return {
+      income: {
+        border: isDark ? '#7ABAA5' : '#7abaa5',
+        background: isDark ? 'rgba(122, 186, 165, 0.1)' : 'rgba(122, 186, 165, 0.1)',
+        point: isDark ? '#7ABAA5' : '#7abaa5'
+      }
+    };
+  }
   
   function initChart() {
     if (!canvas) return;
@@ -52,6 +64,8 @@
     
     // Create new chart
     const labels = getLabels($currentLanguage);
+    const colors = getThemeColors();
+    
     chart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -60,14 +74,14 @@
           {
             label: labels.income,
             data: data.map(d => d.income),
-            borderColor: '#7abaa5',
-            backgroundColor: 'rgba(122, 186, 165, 0.1)',
+            borderColor: colors.income.border,
+            backgroundColor: colors.income.background,
             borderWidth: 2,
             tension: 0.4,
             fill: true,
             pointRadius: 4,
             pointHoverRadius: 6,
-            pointBackgroundColor: '#7abaa5',
+            pointBackgroundColor: colors.income.point,
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
           },
@@ -246,6 +260,14 @@
       }
       if (chart.options.plugins?.legend?.labels) {
         chart.options.plugins.legend.labels.color = legendColor;
+      }
+      
+      // Update income colors based on theme
+      const colors = getThemeColors();
+      if (chart.data.datasets[0]) {
+        chart.data.datasets[0].borderColor = colors.income.border;
+        chart.data.datasets[0].backgroundColor = colors.income.background;
+        chart.data.datasets[0].pointBackgroundColor = colors.income.point;
       }
       
       chart.update();

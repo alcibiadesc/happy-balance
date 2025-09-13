@@ -123,6 +123,9 @@ html.dark {
     --text-secondary: var(--gray-300);
     --text-muted: var(--gray-400);
     --text-inverse: var(--evening-sea);
+    
+    /* Override primary to acapulco in dark mode for better visibility */
+    --primary: var(--acapulco);
 }
 
 /* Dark mode utility classes */
@@ -136,6 +139,17 @@ html.dark .text-emphasis {
 
 html.dark .text-subtle {
     color: var(--text-muted);
+}
+
+/* Fix text selection in dark mode */
+html.dark ::selection {
+    background-color: var(--acapulco);
+    color: var(--gray-900);
+}
+
+html.dark ::-moz-selection {
+    background-color: var(--acapulco);
+    color: var(--gray-900);
 }
 
 /* Import Button Success Colors */

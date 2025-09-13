@@ -477,6 +477,12 @@
     color: var(--primary);
   }
   
+  /* Dark mode - investments icon uses acapulco */
+  html.dark .metric-icon.investments {
+    background: rgba(122, 186, 165, 0.1);
+    color: var(--acapulco);
+  }
+  
   .metric-icon.balance {
     background: rgba(254, 205, 44, 0.1);
     color: var(--warning);
@@ -646,12 +652,9 @@
   }
   
   html.dark .category-progress {
-    background: var(--acapulco);
+    background: var(--primary);
   }
   
-  html.dark .metric-icon.investments {
-    color: var(--acapulco);
-  }
   
   /* Light mode */
   html:not(.dark) .metric-card,

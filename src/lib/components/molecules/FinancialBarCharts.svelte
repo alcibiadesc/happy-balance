@@ -46,7 +46,7 @@
     return {
       investments: {
         background: isDark ? 'rgba(122, 186, 165, 0.8)' : 'rgba(2, 60, 70, 0.8)',
-        border: isDark ? '#7abaa5' : '#023c46'
+        border: isDark ? '#7ABAA5' : '#023c46'
       }
     };
   }
