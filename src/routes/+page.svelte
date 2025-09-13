@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Calendar, TrendingUp, TrendingDown, Wallet, PiggyBank } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
+  import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import SpendingIndicator from '$lib/components/molecules/SpendingIndicator.svelte';
   import ExpensesCard from '$lib/components/molecules/ExpensesCard.svelte';
   import FinancialChart from '$lib/components/molecules/FinancialChart.svelte';
@@ -163,13 +164,9 @@
     loadData(period);
   }
   
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(Math.abs(amount));
+  // Use the global currency formatter
+  function formatCurrencyAmount(amount: number): string {
+    return formatCurrency(amount, $currentCurrency);
   }
   
   function formatTrend(value: number): string {
@@ -240,7 +237,7 @@
             <span class="metric-label">{$t('dashboard.metrics.income')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrency(data.income)}</div>
+            <div class="metric-value">{formatCurrencyAmount(data.income)}</div>
             <div 
               class="metric-trend"
               style="color: {getTrendColor(trends.income, 'income')}"
@@ -256,7 +253,7 @@
           essentialExpenses={data.essentialExpenses}
           discretionaryExpenses={data.discretionaryExpenses}
           trend={trends.expenses}
-          {formatCurrency}
+          formatCurrency={formatCurrencyAmount}
           {formatTrend}
           {getTrendColor}
         />
@@ -270,7 +267,7 @@
             <span class="metric-label">{$t('dashboard.metrics.investments')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrency(data.investments)}</div>
+            <div class="metric-value">{formatCurrencyAmount(data.investments)}</div>
             <div 
               class="metric-trend"
               style="color: {getTrendColor(trends.investments, 'investments')}"
@@ -289,7 +286,7 @@
             <span class="metric-label">{$t('dashboard.metrics.balance')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrency(data.balance)}</div>
+            <div class="metric-value">{formatCurrencyAmount(data.balance)}</div>
             <div class="metric-subtext">
               {@html $t('dashboard.metrics.saved_percentage', { percentage: savingsRate.toFixed(1) })}
             </div>
@@ -324,7 +321,7 @@
           <div class="category-card">
             <div class="category-header">
               <span class="category-name">{category.name}</span>
-              <span class="category-amount">{formatCurrency(category.amount)}</span>
+              <span class="category-amount">{formatCurrencyAmount(category.amount)}</span>
             </div>
             <div class="category-bar">
               <div 
@@ -398,7 +395,7 @@
   
   .period-button.active {
     background: var(--primary);
-    color: var(--text-inverse) !important;
+    color: white !important;
   }
   
   .period-button:disabled {
@@ -628,16 +625,16 @@
   }
   
   html.dark .period-button {
-    color: var(--text-secondary);
+    color: var(--text-secondary) !important;
   }
   
   html.dark .period-button:hover:not(.active) {
-    background: var(--gray-700);
-    color: var(--text-primary);
+    background: var(--gray-700) !important;
+    color: var(--text-primary) !important;
   }
   
   html.dark .period-button.active {
-    background: var(--acapulco);
+    background: var(--acapulco) !important;
     color: var(--gray-900) !important;
   }
   
@@ -663,9 +660,18 @@
     border-color: rgba(2, 60, 70, 0.06);
   }
   
-  html:not(.dark) .category-bar,
-  html:not(.dark) .period-button:hover:not(.active) {
+  html:not(.dark) .category-bar {
     background: var(--gray-100);
+  }
+  
+  html:not(.dark) .period-button:hover:not(.active) {
+    background: var(--gray-100) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  html:not(.dark) .period-button.active {
+    background: var(--primary) !important;
+    color: white !important;
   }
   
   html:not(.dark) .metric-card:hover,

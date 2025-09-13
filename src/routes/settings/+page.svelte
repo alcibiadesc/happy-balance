@@ -3,24 +3,22 @@
   import ThemeToggle from '$lib/components/atoms/ThemeToggle.svelte';
   import LanguageSelect from '$lib/components/atoms/LanguageSelect.svelte';
   import { t, currentLanguage, setLanguage } from '$lib/stores/i18n';
+  import { currentCurrency, currencies, setCurrency } from '$lib/stores/currency';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
   
-  let selectedCurrency = $state('EUR');
-  
-  const currencies = [
-    { value: 'EUR', label: '€ Euro', symbol: '€' },
-    { value: 'USD', label: '$ US Dollar', symbol: '$' },
-    { value: 'GBP', label: '£ British Pound', symbol: '£' },
-    { value: 'JPY', label: '¥ Japanese Yen', symbol: '¥' }
-  ];
+  const currencyOptions = Object.values(currencies).map(curr => ({
+    value: curr.code,
+    label: `${curr.symbol} ${curr.name}`,
+    symbol: curr.symbol
+  }));
   
   function handleExportData() {
     // Create a sample data export
     const data = {
       expenses: [],
       settings: {
-        currency: selectedCurrency,
+        currency: $currentCurrency,
         language: $currentLanguage,
         exportDate: new Date().toISOString()
       }
@@ -59,20 +57,8 @@
   
   function handleCurrencyChange(event: Event) {
     const target = event.target as HTMLSelectElement;
-    selectedCurrency = target.value;
-    if (browser) {
-      localStorage.setItem('expense-tracker-currency', selectedCurrency);
-    }
+    setCurrency(target.value);
   }
-  
-  onMount(() => {
-    if (browser) {
-      const savedCurrency = localStorage.getItem('expense-tracker-currency');
-      if (savedCurrency) {
-        selectedCurrency = savedCurrency;
-      }
-    }
-  });
 </script>
 
 <svelte:head>
@@ -121,10 +107,10 @@
           <span class="setting-label">{$t('settings.currency')}</span>
           <select 
             class="currency-select"
-            bind:value={selectedCurrency}
+            value={$currentCurrency}
             onchange={handleCurrencyChange}
           >
-            {#each currencies as currency}
+            {#each currencyOptions as currency}
               <option value={currency.value}>{currency.label}</option>
             {/each}
           </select>

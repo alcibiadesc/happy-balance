@@ -1,9 +1,18 @@
 <script>
+  import { onMount } from 'svelte';
   import '../app.css';
   import '../lib/styles/japan-palette.css';
   import Navbar from '../lib/components/organisms/Navbar.svelte';
+  import { initLanguage } from '$lib/stores/i18n';
+  import { initCurrency } from '$lib/stores/currency';
   
   let { children } = $props();
+  
+  // Initialize i18n and currency on mount
+  onMount(() => {
+    initLanguage();
+    initCurrency();
+  });
 </script>
 
 <div class="app-shell">
@@ -25,13 +34,13 @@
   
   .main-content {
     margin-left: 0;
-    padding-top: 64px; /* Mobile header height */
+    padding-top: 64px;
     min-height: 100vh;
   }
   
   @media (min-width: 1024px) {
     .main-content {
-      margin-left: 280px; /* Desktop sidebar width */
+      margin-left: 280px;
       padding-top: 0;
     }
   }
