@@ -169,26 +169,5 @@
     box-shadow: 0 0 0 2px var(--acapulco), 0 0 0 4px rgba(122, 186, 165, 0.2);
   }
   
-  /* Dark mode specific styles */
-  html.dark .theme-toggle {
-    background: var(--surface-elevated);
-    border-color: rgba(122, 186, 165, 0.3);
-  }
-  
-  html.dark .theme-toggle:hover:not(:disabled) {
-    background: var(--warning-light);
-    color: var(--warning);
-    border-color: var(--warning);
-  }
-  
-  html.dark .theme-toggle--collapsed {
-    background: var(--surface-muted);
-    border-color: rgba(122, 186, 165, 0.4);
-  }
-  
-  html.dark .theme-toggle--collapsed:hover:not(:disabled) {
-    background: var(--warning-light);
-    border-color: var(--warning);
-    box-shadow: 0 4px 12px rgba(254, 205, 44, 0.3);
-  }
+  /* Removed dark mode specific styles - now handled by CSS custom properties */
 </style>

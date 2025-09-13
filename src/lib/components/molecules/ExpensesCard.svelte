@@ -206,46 +206,4 @@
     border-radius: 12px;
   }
   
-  /* Dark mode */
-  html.dark .expenses-card {
-    background: var(--gray-800);
-  }
-  
-  html.dark .expenses-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-  
-  html.dark .expand-button:hover {
-    background: var(--gray-700);
-  }
-  
-  html.dark .expenses-breakdown {
-    border-color: rgba(254, 247, 238, 0.08);
-  }
-  
-  html.dark .breakdown-percentage {
-    background: var(--gray-700);
-  }
-  
-  /* Light mode */
-  html:not(.dark) .expenses-card {
-    background: white;
-    border-color: rgba(2, 60, 70, 0.08);
-  }
-  
-  html:not(.dark) .expenses-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  }
-  
-  html:not(.dark) .expand-button:hover {
-    background: var(--gray-100);
-  }
-  
-  html:not(.dark) .expenses-breakdown {
-    border-color: rgba(2, 60, 70, 0.08);
-  }
-  
-  html:not(.dark) .breakdown-percentage {
-    background: var(--gray-100);
-  }
 </style>

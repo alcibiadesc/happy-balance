@@ -42,6 +42,7 @@
     --gray-600: #57534e;
     --gray-700: #44403c;
     --gray-800: #292524;
+    --gray-850: #1f1e1c;
     --gray-900: #1c1917;
     
     /* Typography */
@@ -50,10 +51,17 @@
     --text-muted: var(--gray-500);
     --text-inverse: var(--bridesmaid);
     
+    /* Border colors for light mode */
+    --border-color: var(--gray-200);
+    --border-color-hover: var(--gray-300);
+
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(2, 60, 70, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(2, 60, 70, 0.1), 0 2px 4px -2px rgba(2, 60, 70, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(2, 60, 70, 0.1), 0 4px 6px -4px rgba(2, 60, 70, 0.1);
+
+    /* Smooth transitions for theme switching */
+    --transition-theme: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     
     /* Ma - Spacing system */
     --space-minimal: 0.125rem;  /* 2px */
@@ -84,16 +92,17 @@
     }
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --surface: var(--gray-900);
-        --surface-elevated: var(--gray-800);
-        --surface-muted: var(--gray-850);
-        --text-primary: var(--bridesmaid);
-        --text-secondary: var(--gray-300);
-        --text-muted: var(--gray-400);
-        --text-inverse: var(--evening-sea);
+/* Dark mode disabled - using manual toggle only */
+
+/* Global theme transition for smooth switching */
+* {
+    transition: var(--transition-theme);
+}
+
+/* Disable transitions on prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
     }
 }
 
@@ -116,16 +125,39 @@
 
 /* Dark mode styles - triggered by html.dark class */
 html.dark {
+    /* Surface colors for dark mode */
     --surface: var(--gray-900);
     --surface-elevated: var(--gray-800);
     --surface-muted: var(--gray-700);
+
+    /* Text colors for dark mode */
     --text-primary: var(--bridesmaid);
     --text-secondary: var(--gray-300);
     --text-muted: var(--gray-400);
     --text-inverse: var(--evening-sea);
-    
-    /* Override primary to acapulco in dark mode for better visibility */
+
+    /* Primary color adjusted for better visibility in dark mode */
     --primary: var(--acapulco);
+    --primary-hover: #8fc4af;
+    --primary-light: rgba(122, 186, 165, 0.1);
+
+    /* Accent colors adjusted for dark mode */
+    --accent-light: rgba(245, 121, 108, 0.1);
+
+    /* Border colors for dark mode */
+    --border-color: var(--gray-700);
+    --border-color-hover: var(--gray-600);
+
+    /* Success colors adjusted for dark mode */
+    --success-light: rgba(122, 186, 165, 0.1);
+
+    /* Warning colors adjusted for dark mode */
+    --warning-light: rgba(254, 205, 44, 0.1);
+
+    /* Shadows adjusted for dark mode */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
 }
 
 /* Dark mode utility classes */

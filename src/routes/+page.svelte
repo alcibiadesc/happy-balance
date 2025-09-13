@@ -8,7 +8,6 @@
   import ExpensesCard from '$lib/components/molecules/ExpensesCard.svelte';
   import FinancialChart from '$lib/components/molecules/FinancialChart.svelte';
   import FinancialBarCharts from '$lib/components/molecules/FinancialBarCharts.svelte';
-  import DashboardSkeleton from '$lib/components/organisms/DashboardSkeleton.svelte';
   
   // Period options - using i18n
   let periods = $derived([
@@ -42,11 +41,7 @@
   );
   
   // Load data based on period
-  async function loadData(period: string) {
-    loading = true;
-    
-    // Simulate API call
-    setTimeout(() => {
+  function loadData(period: string) {
       // Update data based on period (this would come from API)
       if (period === 'year') {
         data = {
@@ -151,9 +146,7 @@
           ]
         };
       }
-        loading = false;
-      }, 400);
-    }
+  }
   
   // Generate period-based data from transactions
   function generatePeriodData(allTransactions: any[], period: string) {
@@ -232,7 +225,6 @@
             class="period-button"
             class:active={selectedPeriod === period.value}
             onclick={() => handlePeriodChange(period.value)}
-            disabled={loading}
           >
             {period.label}
           </button>
@@ -241,9 +233,6 @@
     </div>
   </header>
   
-  {#if loading}
-    <DashboardSkeleton />
-  {:else}
     <!-- Simple Spending Summary -->
     <SpendingIndicator 
       income={currentStats.income} 
@@ -359,7 +348,6 @@
         {/each}
       </div>
     </section>
-  {/if}
 </main>
 
 <style>
@@ -479,11 +467,6 @@
     color: var(--primary);
   }
   
-  /* Dark mode - investments icon uses acapulco */
-  html.dark .metric-icon.investments {
-    background: rgba(122, 186, 165, 0.1);
-    color: var(--acapulco);
-  }
   
   .metric-icon.balance {
     background: rgba(254, 205, 44, 0.1);
@@ -617,83 +600,6 @@
   }
   
   
-  /* Dark mode */
-  html.dark .metric-card,
-  html.dark .chart-section,
-  html.dark .categories-section,
-  html.dark .period-selector {
-    background: var(--gray-800);
-  }
-  
-  html.dark .category-card {
-    background: var(--gray-900);
-    border-color: rgba(254, 247, 238, 0.06);
-  }
-  
-  html.dark .metric-card:hover,
-  html.dark .category-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-  
-  html.dark .period-button {
-    color: var(--text-secondary) !important;
-  }
-  
-  html.dark .period-button:hover:not(.active) {
-    background: var(--gray-700) !important;
-    color: var(--text-primary) !important;
-  }
-  
-  html.dark .period-button.active {
-    background: var(--acapulco) !important;
-    color: var(--gray-900) !important;
-  }
-  
-  html.dark .category-bar {
-    background: var(--gray-700);
-  }
-  
-  html.dark .category-progress {
-    background: var(--primary);
-  }
-  
-  
-  /* Light mode */
-  html:not(.dark) .metric-card,
-  html:not(.dark) .chart-section,
-  html:not(.dark) .categories-section {
-    background: white;
-    border-color: rgba(2, 60, 70, 0.08);
-  }
-  
-  html:not(.dark) .period-selector {
-    background: white;
-    border: 1px solid rgba(2, 60, 70, 0.08);
-  }
-  
-  html:not(.dark) .category-card {
-    background: var(--gray-50);
-    border-color: rgba(2, 60, 70, 0.06);
-  }
-  
-  html:not(.dark) .category-bar {
-    background: var(--gray-100);
-  }
-  
-  html:not(.dark) .period-button:hover:not(.active) {
-    background: var(--gray-100) !important;
-    color: var(--text-primary) !important;
-  }
-  
-  html:not(.dark) .period-button.active {
-    background: var(--primary) !important;
-    color: white !important;
-  }
-  
-  html:not(.dark) .metric-card:hover,
-  html:not(.dark) .category-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  }
   
   /* Responsive */
   @media (max-width: 768px) {

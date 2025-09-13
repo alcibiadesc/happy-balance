@@ -71,16 +71,6 @@
     font-weight: 700;
   }
   
-  /* Dark mode */
-  html.dark .spending-summary {
-    background: var(--gray-800);
-  }
-  
-  /* Light mode */
-  html:not(.dark) .spending-summary {
-    background: white;
-    border-color: rgba(2, 60, 70, 0.08);
-  }
   
   /* Responsive */
   @media (max-width: 768px) {

@@ -140,16 +140,6 @@
   
   .nav-item:focus {
     outline: none;
-    box-shadow: 0 0 0 2px var(--primary-light), 0 0 0 4px rgba(2, 60, 70, 0.1);
-  }
-  
-  /* Dark mode */
-  html.dark .nav-item--active {
-    color: var(--acapulco);
-    background-color: rgba(122, 186, 165, 0.1);
-  }
-  
-  html.dark .nav-item--active::before {
-    background: var(--acapulco);
+    box-shadow: 0 0 0 2px var(--primary-light), 0 0 0 4px var(--primary-light);
   }
 </style>

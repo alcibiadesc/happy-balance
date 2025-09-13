@@ -267,16 +267,6 @@
     height: 100% !important;
   }
   
-  /* Dark mode */
-  html.dark .chart-card {
-    background: var(--gray-800);
-  }
-  
-  /* Light mode */
-  html:not(.dark) .chart-card {
-    background: white;
-    border-color: rgba(2, 60, 70, 0.08);
-  }
   
   /* Responsive */
   @media (max-width: 768px) {

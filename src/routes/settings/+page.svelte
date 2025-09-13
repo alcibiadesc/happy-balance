@@ -19,7 +19,13 @@
 
   // Theme state
   $: isDark = $effectiveTheme === 'dark';
-  
+
+  // Theme toggle function
+  function toggleTheme() {
+    const newTheme = isDark ? 'light' : 'dark';
+    setTheme(newTheme);
+  }
+
   // Import/Export state
   let importStatus = '';
   let importError = '';
@@ -305,10 +311,10 @@
             <div class="theme-option {!isDark ? 'active' : ''}">
               ☀️
             </div>
-            <input 
-              type="checkbox" 
-              bind:checked={isDark}
-              onclick={toggleTheme}
+            <input
+              type="checkbox"
+              checked={isDark}
+              onchange={toggleTheme}
               class="toggle toggle-primary toggle-lg"
             />
             <div class="theme-option {isDark ? 'active' : ''}">

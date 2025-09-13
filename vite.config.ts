@@ -19,7 +19,7 @@ export default defineConfig({
 		target: 'esnext'
 	},
 	optimizeDeps: {
-		include: ['@prisma/client', 'chart.js', 'date-fns']
+		include: ['@prisma/client', 'chart.js']
 	},
 	test: {
 		environment: 'jsdom',

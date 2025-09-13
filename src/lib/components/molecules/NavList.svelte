@@ -133,8 +133,4 @@
     box-shadow: 0 0 0 3px rgba(122, 186, 165, 0.3);
   }
   
-  /* Dark mode adjustments */
-  html.dark .import-divider {
-    background: rgba(254, 247, 238, 0.1);
-  }
 </style>
