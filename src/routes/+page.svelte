@@ -3,6 +3,7 @@
   import { Calendar, TrendingUp, TrendingDown, Wallet, PiggyBank } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
+  import { transactions, categories, transactionStats } from '$lib/stores/transactions';
   import SpendingIndicator from '$lib/components/molecules/SpendingIndicator.svelte';
   import ExpensesCard from '$lib/components/molecules/ExpensesCard.svelte';
   import FinancialChart from '$lib/components/molecules/FinancialChart.svelte';
@@ -19,55 +20,25 @@
   
   let selectedPeriod = $state('month');
   let loading = $state(true);
-  
-  // Example data structure
-  let data = $state({
-    income: 3000,
-    expenses: 1800,
-    essentialExpenses: 1200, // 67% of expenses
-    discretionaryExpenses: 600, // 33% of expenses
-    investments: 500,
-    balance: 700,
-    previousIncome: 2800,
-    previousExpenses: 1650,
-    previousInvestments: 400,
-    categories: [
-      { name: $t('dashboard.categories.food'), amount: 450, percentage: 25 },
-      { name: $t('dashboard.categories.transport'), amount: 280, percentage: 15.5 },
-      { name: $t('dashboard.categories.utilities'), amount: 350, percentage: 19.4 },
-      { name: $t('dashboard.categories.shopping'), amount: 320, percentage: 17.8 },
-      { name: $t('dashboard.categories.entertainment'), amount: 200, percentage: 11.1 },
-      { name: $t('dashboard.categories.health'), amount: 200, percentage: 11.1 }
-    ],
-    monthlyTrend: [
-      { month: 'Ene', income: 2800, expenses: 1600, balance: 1200 },
-      { month: 'Feb', income: 2900, expenses: 1750, balance: 1150 },
-      { month: 'Mar', income: 3000, expenses: 1650, balance: 1350 },
-      { month: 'Abr', income: 3100, expenses: 1900, balance: 1200 },
-      { month: 'May', income: 2950, expenses: 1700, balance: 1250 },
-      { month: 'Jun', income: 3000, expenses: 1800, balance: 1200 }
-    ],
-    // More detailed monthly data for bar charts
-    monthlyBarData: [
-      { month: 'Ene', income: 2800, essentialExpenses: 1070, discretionaryExpenses: 530, investments: 400 },
-      { month: 'Feb', income: 2900, essentialExpenses: 1170, discretionaryExpenses: 580, investments: 420 },
-      { month: 'Mar', income: 3000, essentialExpenses: 1100, discretionaryExpenses: 550, investments: 450 },
-      { month: 'Abr', income: 3100, essentialExpenses: 1270, discretionaryExpenses: 630, investments: 480 },
-      { month: 'May', income: 2950, essentialExpenses: 1140, discretionaryExpenses: 560, investments: 460 },
-      { month: 'Jun', income: 3000, essentialExpenses: 1200, discretionaryExpenses: 600, investments: 500 }
-    ]
+  let realData = $state({
+    monthlyTrend: [] as any[],
+    monthlyBarData: [] as any[],
+    categories: [] as any[]
   });
   
-  // Calculate trends
+  // Get current stats from store
+  let currentStats = $derived($transactionStats);
+  
+  // Calculate trends (simplified for now - can be enhanced later)
   let trends = $derived({
-    income: ((data.income - data.previousIncome) / data.previousIncome * 100),
-    expenses: ((data.expenses - data.previousExpenses) / data.previousExpenses * 100),
-    investments: ((data.investments - data.previousInvestments) / data.previousInvestments * 100)
+    income: 7.1, // Mock data - will be calculated from historical data
+    expenses: 9.1,
+    investments: 25.0
   });
   
   // Calculate savings rate
   let savingsRate = $derived(
-    data.income > 0 ? ((data.income - data.expenses) / data.income * 100) : 0
+    currentStats.income > 0 ? ((currentStats.balance) / currentStats.income * 100) : 0
   );
   
   // Load data based on period
@@ -180,8 +151,41 @@
           ]
         };
       }
-      loading = false;
-    }, 400);
+        loading = false;
+      }, 400);
+    }
+  }
+  
+  // Generate period-based data from transactions
+  function generatePeriodData(allTransactions: any[], period: string) {
+    // For now, return mock data - this will be enhanced with real transaction processing
+    return {
+      monthlyTrend: [
+        { month: 'Ene', income: 2800, expenses: 1600, balance: 1200 },
+        { month: 'Feb', income: 2900, expenses: 1750, balance: 1150 },
+        { month: 'Mar', income: 3000, expenses: 1650, balance: 1350 },
+        { month: 'Abr', income: 3100, expenses: 1900, balance: 1200 },
+        { month: 'May', income: 2950, expenses: 1700, balance: 1250 },
+        { month: 'Jun', income: 3000, expenses: 1800, balance: 1200 }
+      ],
+      monthlyBarData: [
+        { month: 'Ene', income: 2800, essentialExpenses: 1070, discretionaryExpenses: 530, investments: 400 },
+        { month: 'Feb', income: 2900, essentialExpenses: 1170, discretionaryExpenses: 580, investments: 420 },
+        { month: 'Mar', income: 3000, essentialExpenses: 1100, discretionaryExpenses: 550, investments: 450 },
+        { month: 'Abr', income: 3100, essentialExpenses: 1270, discretionaryExpenses: 630, investments: 480 },
+        { month: 'May', income: 2950, essentialExpenses: 1140, discretionaryExpenses: 560, investments: 460 },
+        { month: 'Jun', income: 3000, essentialExpenses: 1200, discretionaryExpenses: 600, investments: 500 }
+      ],
+      categories: [
+        { name: $t('dashboard.categories.food'), amount: 450, percentage: 25 },
+        { name: $t('dashboard.categories.transport'), amount: 280, percentage: 15.5 },
+        { name: $t('dashboard.categories.utilities'), amount: 350, percentage: 19.4 },
+        { name: $t('dashboard.categories.shopping'), amount: 320, percentage: 17.8 },
+        { name: $t('dashboard.categories.entertainment'), amount: 200, percentage: 11.1 },
+        { name: $t('dashboard.categories.health'), amount: 200, percentage: 11.1 }
+      ]
+    };
+  }
   }
   
   function handlePeriodChange(period: string) {
@@ -244,8 +248,8 @@
   {:else}
     <!-- Simple Spending Summary -->
     <SpendingIndicator 
-      income={data.income} 
-      expenses={data.expenses} 
+      income={currentStats.income} 
+      expenses={currentStats.expenses} 
     />
     
     <!-- Main Metrics Grid -->
@@ -260,7 +264,7 @@
             <span class="metric-label">{$t('dashboard.metrics.income')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(data.income)}</div>
+            <div class="metric-value">{formatCurrencyAmount(currentStats.income)}</div>
             <div 
               class="metric-trend"
               style="color: {getTrendColor(trends.income, 'income')}"
@@ -272,9 +276,9 @@
         
         <!-- Expenses Card with Breakdown -->
         <ExpensesCard 
-          totalExpenses={data.expenses}
-          essentialExpenses={data.essentialExpenses}
-          discretionaryExpenses={data.discretionaryExpenses}
+          totalExpenses={currentStats.expenses}
+          essentialExpenses={currentStats.expenses * 0.67}
+          discretionaryExpenses={currentStats.expenses * 0.33}
           trend={trends.expenses}
           formatCurrency={formatCurrencyAmount}
           {formatTrend}
@@ -290,7 +294,7 @@
             <span class="metric-label">{$t('dashboard.metrics.investments')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(data.investments)}</div>
+            <div class="metric-value">{formatCurrencyAmount(500)}</div>
             <div 
               class="metric-trend"
               style="color: {getTrendColor(trends.investments, 'investments')}"
@@ -309,7 +313,7 @@
             <span class="metric-label">{$t('dashboard.metrics.balance')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(data.balance)}</div>
+            <div class="metric-value">{formatCurrencyAmount(currentStats.balance)}</div>
             <div class="metric-subtext">
               {@html $t('dashboard.metrics.saved_percentage', { percentage: savingsRate.toFixed(1) })}
             </div>
@@ -324,7 +328,7 @@
       <p class="chart-subtitle">{$t('dashboard.charts.temporal_evolution_subtitle')}</p>
       <div class="chart-wrapper">
         <FinancialChart 
-          data={data.monthlyTrend} 
+          data={realData.monthlyTrend} 
           height={280}
         />
       </div>
@@ -332,7 +336,7 @@
     
     <!-- Bar Charts Section - SECOND (with grouped bars, not stacked) -->
     <FinancialBarCharts 
-      data={data.monthlyBarData} 
+      data={realData.monthlyBarData} 
       height={250}
     />
     
@@ -340,7 +344,7 @@
     <section class="categories-section">
       <h2 class="section-title">{$t('dashboard.categories.title')}</h2>
       <div class="categories-grid">
-        {#each data.categories as category}
+        {#each realData.categories as category}
           <div class="category-card">
             <div class="category-header">
               <span class="category-name">{category.name}</span>

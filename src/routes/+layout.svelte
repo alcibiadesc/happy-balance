@@ -6,6 +6,7 @@
   import { initLanguage } from '$lib/stores/i18n';
   import { initCurrency } from '$lib/stores/currency';
   import { theme, applyTheme } from '$lib/stores/theme';
+  import { transactions, categories } from '$lib/stores/transactions';
   
   let { children } = $props();
   
@@ -13,6 +14,9 @@
   onMount(() => {
     initLanguage();
     initCurrency();
+    
+    // Load transaction data
+    transactions.load();
     
     // Apply the current theme (this ensures consistency with the inline script)
     theme.subscribe(currentTheme => {

@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  id               String   @id @default(cuid())
+  amount           Float
+  description      String
+  merchant         String
+  date             DateTime
+  categoryId       String?
+  category         Category? @relation(fields: [categoryId], references: [id])
+  
+  // Import metadata
+  importHash       String?  // Hash of the original CSV row to prevent duplicates
+  confidence       Float    @default(1.0) // AI confidence in categorization
+  verified         Boolean  @default(false) // User has verified this transaction
+  
+  // Pattern matching
+  patternHash      String?  // Hash for grouping similar transactions
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([date])
+  @@index([categoryId])
+  @@index([patternHash])
+  @@index([importHash])
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  type         CategoryType
+  color        String        @default("#7abaa5")
+  icon         String        @default("📁")
+  
+  transactions Transaction[]
+  rules        CategoryRule[]
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model CategoryRule {
+  id           String      @id @default(cuid())
+  categoryId   String
+  category     Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  // Rule matching
+  merchantPattern     String?  // Regex pattern for merchant matching
+  descriptionPattern  String?  // Regex pattern for description matching
+  amountMin          Float?   // Minimum amount
+  amountMax          Float?   // Maximum amount
+  
+  // Rule metadata
+  priority           Int      @default(0) // Higher priority rules are checked first
+  isActive           Boolean  @default(true)
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  @@index([categoryId])
+  @@index([priority])
+}
+
+enum CategoryType {
+  INCOME
+  ESSENTIAL
+  DISCRETIONARY
+  INVESTMENT
+}
