@@ -27,11 +27,11 @@
     /* Borders */
     --color-border-primary: #E8E5E2;    /* Main borders */
     --color-border-secondary: #D4CFC9;  /* Stronger borders */
-    --color-border-focus: #8B7355;      /* Focus states */
+    --color-border-focus: #49A9A6;      /* Focus states - Teal */
     
     /* Interactive Elements */
-    --color-interactive-primary: #8B7355;      /* Primary buttons */
-    --color-interactive-primary-hover: #6B5640;
+    --color-interactive-primary: #49A9A6;      /* Primary buttons - Teal */
+    --color-interactive-primary-hover: #3d8d8a;
     --color-interactive-primary-text: #FFFFFF;
     
     --color-interactive-secondary: #F1EEEB;    /* Secondary buttons */
@@ -84,11 +84,15 @@
     --glass-blur: 12px;
     --glass-border: rgba(232, 229, 226, 0.5);
     
-    /* Additional Semantic Colors */
-    --color-indigo: #4F46E5;
-    --color-accent: #8B7355;
+    /* Additional Semantic Colors - Happy Balance */
+    --color-dusty-pink: #EF817F;  /* Coral/salmon */
+    --color-coral-pastel: #EF817F; /* Coral/salmon */
+    --color-golden-yellow: #F6BD61; /* Warm yellow/gold */
+    --color-mint-green: #49A9A6;   /* Teal/mint */
+    --color-seafoam: #A3E8DC;     /* Light mint/seafoam */
+    --color-accent: #49A9A6;      /* Primary teal */
     --color-sage-green: #059669;
-    --color-coral-red: #DC2626;
+    --color-coral-red: #EF817F;
     
     /* Utility Colors */
     --color-light-grey: #F1EEEB;
@@ -118,11 +122,11 @@
     /* Dark Borders */
     --color-border-primary: #3D3830 !important;    /* Main borders */
     --color-border-secondary: #4A443B !important;  /* Stronger borders */
-    --color-border-focus: #B8A082 !important;      /* Focus states */
+    --color-border-focus: #A3E8DC !important;      /* Focus states - Light mint */
     
     /* Dark Interactive Elements */
-    --color-interactive-primary: #B8A082 !important;      /* Primary buttons */
-    --color-interactive-primary-hover: #D4C2A5 !important;
+    --color-interactive-primary: #A3E8DC !important;      /* Primary buttons - Light seafoam */
+    --color-interactive-primary-hover: #8fd9d0 !important;
     --color-interactive-primary-text: #1A1816 !important; /* Dark text - 8.1:1 ratio */
     
     --color-interactive-secondary: #2C281F !important;    /* Secondary buttons */
@@ -156,11 +160,15 @@
     --glass-blur: 12px;
     --glass-border: rgba(61, 56, 48, 0.5);
     
-    /* Dark Additional Semantic Colors */
-    --color-indigo: #6366F1;
-    --color-accent: #B8A082;
+    /* Dark Additional Semantic Colors - Happy Balance */
+    --color-dusty-pink: #f5a5a3;  /* Light coral for dark mode */
+    --color-coral-pastel: #f5a5a3; /* Light coral for dark mode */
+    --color-golden-yellow: #f9d08a; /* Light yellow for dark mode */
+    --color-mint-green: #A3E8DC;   /* Light mint for dark mode */
+    --color-seafoam: #8fd9d0;     /* Darker seafoam for contrast */
+    --color-accent: #A3E8DC;      /* Light mint accent */
     --color-sage-green: #10B981;
-    --color-coral-red: #EF4444;
+    --color-coral-red: #EF817F;
     
     /* Dark Utility Colors */
     --color-light-grey: #2C281F;
@@ -320,7 +328,7 @@
   }
   
   .btn-editorial:focus-visible {
-    outline: 2px solid var(--color-indigo);
+    outline: 2px solid var(--color-mint-green);
     outline-offset: 2px;
   }
   
@@ -341,7 +349,7 @@
     background: var(--color-interactive-primary-hover);
     border-color: var(--color-interactive-primary-hover);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-medium);
+    box-shadow: 0 8px 16px rgba(73, 169, 166, 0.3);
   }
   
   .btn-secondary {
@@ -383,7 +391,7 @@
   .input-editorial:focus {
     outline: none;
     border-color: var(--color-border-focus);
-    box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+    box-shadow: 0 0 0 3px rgba(73, 169, 166, 0.1);
   }
   
   .input-editorial::placeholder {
@@ -412,11 +420,11 @@
   }
   
   .metric-card.income::before {
-    background: var(--color-sage-green);
+    background: var(--color-mint-green);
   }
   
   .metric-card.expense::before {
-    background: var(--color-coral-red);
+    background: var(--color-dusty-pink);
   }
   
   .metric-card.neutral::before {
@@ -660,7 +668,7 @@
   }
   
   .focus-ring:focus-visible::after {
-    border-color: var(--color-indigo);
+    border-color: var(--color-mint-green);
   }
   
   /* Subtle Pulse for Loading States */
@@ -802,7 +810,7 @@
   
   /* Focus states for keyboard navigation */
   .focus-visible-ring:focus-visible {
-    outline: 2px solid var(--color-indigo);
+    outline: 2px solid var(--color-mint-green);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
@@ -848,8 +856,8 @@
 
 /* Dark Mode Support for System Preference */
 @media (prefers-color-scheme: dark) {
-  :root:not(.dark) {
-    /* Apply dark theme colors when system preference is dark but .dark class is not set */
+  :root:not(.light):not(.dark) {
+    /* Apply dark theme colors when system preference is dark and no manual theme is set */
     --color-background-primary: #1A1816;
     --color-background-secondary: #232019;
     --color-background-tertiary: #2C281F;
@@ -862,11 +870,19 @@
     
     --color-border-primary: #3D3830;
     --color-border-secondary: #4A443B;
-    --color-border-focus: #B8A082;
+    --color-border-focus: #A3E8DC;
     
-    --color-interactive-primary: #B8A082;
-    --color-interactive-primary-hover: #D4C2A5;
+    --color-interactive-primary: #A3E8DC;
+    --color-interactive-primary-hover: #8fd9d0;
     --color-interactive-primary-text: #1A1816;
+    
+    /* Happy Balance dark colors for system preference */
+    --color-dusty-pink: #f5a5a3;
+    --color-coral-pastel: #f5a5a3;
+    --color-golden-yellow: #f9d08a;
+    --color-mint-green: #A3E8DC;
+    --color-seafoam: #8fd9d0;
+    --color-accent: #A3E8DC;
     
     --glass-bg: rgba(35, 32, 25, 0.8);
     --glass-border: rgba(61, 56, 48, 0.5);

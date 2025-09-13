@@ -148,7 +148,7 @@ export class Transaction {
         params.transactionDate.value, // value date (same as booking for now)
         params.counterparty || params.description, // partner name
         null, // partner IBAN
-        params.amount.value < 0 ? 'Debit Transfer' : 'Credit Transfer', // type
+        params.amount.amount < 0 ? 'Debit Transfer' : 'Credit Transfer', // type
         params.paymentReference || null,
         params.amount,
         null, // original amount

@@ -1,94 +1,59 @@
 <script lang="ts">
-  import { type VariantProps, cva } from '$lib/utils/cva.js';
-  import { cn } from '$lib/shared/utils/cn';
+  import { createEventDispatcher } from 'svelte';
 
-  const buttonVariants = cva(
-    'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-    {
-      variants: {
-        variant: {
-          primary: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm',
-          secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm',
-          destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm',
-          outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm',
-          ghost: 'hover:bg-accent hover:text-accent-foreground',
-          link: 'text-primary underline-offset-4 hover:underline',
-          success: 'bg-green-600 text-white hover:bg-green-700 shadow-sm',
-          warning: 'bg-yellow-600 text-white hover:bg-yellow-700 shadow-sm',
-        },
-        size: {
-          default: 'h-10 px-4 py-2',
-          sm: 'h-9 rounded-md px-3 text-xs',
-          lg: 'h-11 rounded-md px-8',
-          icon: 'h-10 w-10',
-        },
-      },
-      defaultVariants: {
-        variant: 'primary',
-        size: 'default',
-      },
+  export let variant: 'primary' | 'secondary' | 'success' | 'danger' | 'ghost' | 'outline' = 'primary';
+  export let size: 'sm' | 'md' | 'lg' = 'md';
+  export let disabled: boolean = false;
+  export let loading: boolean = false;
+  export let fullWidth: boolean = false;
+  export let type: 'button' | 'submit' | 'reset' = 'button';
+  export let onclick: (() => void) | undefined = undefined;
+
+  const dispatch = createEventDispatcher();
+
+  // Variant styles
+  const variantConfig = {
+    primary: 'bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500 disabled:bg-blue-300',
+    secondary: 'bg-gray-500 text-white hover:bg-gray-600 focus:ring-gray-500 disabled:bg-gray-300',
+    success: 'bg-green-500 text-white hover:bg-green-600 focus:ring-green-500 disabled:bg-green-300',
+    danger: 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500 disabled:bg-red-300',
+    ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500 disabled:text-gray-400',
+    outline: 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500 disabled:border-gray-200 disabled:text-gray-400'
+  };
+
+  // Size styles
+  const sizeConfig = {
+    sm: 'px-3 py-2 text-sm',
+    md: 'px-4 py-2 text-sm',
+    lg: 'px-6 py-3 text-base'
+  };
+
+  $: baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed';
+  $: variantClasses = variantConfig[variant];
+  $: sizeClasses = sizeConfig[size];
+  $: widthClasses = fullWidth ? 'w-full' : '';
+  $: isDisabled = disabled || loading;
+
+  function handleClick() {
+    if (!isDisabled) {
+      if (onclick) {
+        onclick();
+      }
+      dispatch('click');
     }
-  );
-
-  interface Props extends VariantProps<typeof buttonVariants> {
-    class?: string;
-    type?: 'button' | 'submit' | 'reset';
-    disabled?: boolean;
-    loading?: boolean;
-    onclick?: () => void;
-    children?: import('svelte').Snippet;
-    'aria-label'?: string;
   }
-
-  let {
-    class: className,
-    variant = 'primary',
-    size = 'default',
-    type = 'button',
-    disabled = false,
-    loading = false,
-    onclick,
-    children,
-    'aria-label': ariaLabel,
-    ...props
-  }: Props = $props();
-
-  const isDisabled = $derived(disabled || loading);
 </script>
 
 <button
   {type}
-  class={cn(buttonVariants({ variant, size }), className)}
   disabled={isDisabled}
-  onclick={onclick}
-  aria-label={ariaLabel}
-  {...props}
+  class="{baseClasses} {variantClasses} {sizeClasses} {widthClasses}"
+  onclick={handleClick}
 >
   {#if loading}
-    <svg 
-      class="mr-2 h-4 w-4 animate-spin" 
-      xmlns="http://www.w3.org/2000/svg" 
-      fill="none" 
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle 
-        class="opacity-25" 
-        cx="12" 
-        cy="12" 
-        r="10" 
-        stroke="currentColor" 
-        stroke-width="4"
-      ></circle>
-      <path 
-        class="opacity-75" 
-        fill="currentColor" 
-        d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      ></path>
-    </svg>
-  {/if}
-  
-  {#if children}
-    {@render children()}
+    <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+    <slot name="loading">Cargando...</slot>
+  {:else}
+    <slot />
   {/if}
 </button>

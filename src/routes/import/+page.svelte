@@ -1,219 +1,410 @@
 <script lang="ts">
-  import { ImportWizard } from '$lib/ui/components/organisms/ImportWizard/index.js';
   import { goto } from '$app/navigation';
-  import { CheckCircle, ArrowLeft, Upload, FileText, AlertTriangle } from 'lucide-svelte';
+  import { CheckCircle, ArrowLeft, Upload, FileText, AlertTriangle, Eye } from 'lucide-svelte';
   import { onMount } from 'svelte';
+  import ImportPreview from '$lib/ui/ImportPreview.svelte';
 
   // State management
-  let importComplete = $state(false);
-  let importResult = $state<any>(null);
+  let currentStep = $state('upload'); // 'upload', 'preview', 'complete'
+  let selectedFile = $state(null);
+  let isUploading = $state(false);
+  let isImporting = $state(false);
+  let previewData = $state(null);
+  let importResult = $state(null);
+  let errorMessage = $state('');
   let mounted = $state(false);
+  let selectedAccountId = $state('a524e6f2-647f-498f-beda-e710ff2a9423'); // Default account
 
   onMount(() => {
     mounted = true;
   });
 
-  function handleImportComplete(result: any) {
-    console.log('Import completed with result:', result);
-    importResult = result;
-    importComplete = true;
+  // Handle file selection
+  function handleFileSelect(event) {
+    const file = event.target.files?.[0];
+    if (file) {
+      selectedFile = file;
+      errorMessage = '';
+    }
   }
 
+  // Handle drag and drop
+  function handleDragOver(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (file && file.name.toLowerCase().endsWith('.csv')) {
+      selectedFile = file;
+      errorMessage = '';
+    } else {
+      errorMessage = 'Por favor, selecciona un archivo CSV válido';
+    }
+  }
+
+  // Generate preview
+  async function generatePreview() {
+    if (!selectedFile) return;
+
+    isUploading = true;
+    errorMessage = '';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('accountId', selectedAccountId);
+
+      const response = await fetch('/api/import/preview', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Error al generar la previsualización');
+      }
+
+      previewData = result.data;
+      currentStep = 'preview';
+
+    } catch (error) {
+      console.error('Preview error:', error);
+      errorMessage = error.message || 'Error al procesar el archivo';
+    } finally {
+      isUploading = false;
+    }
+  }
+
+  // Confirm import
+  async function confirmImport(event) {
+    const { transactions } = event.detail;
+
+    isImporting = true;
+    errorMessage = '';
+
+    try {
+      const response = await fetch('/api/import/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          accountId: selectedAccountId,
+          transactions: transactions.map(tx => ({
+            id: tx.id,
+            date: tx.date,
+            description: tx.description,
+            amount: tx.amount,
+            paymentReference: tx.paymentReference,
+            counterparty: tx.counterparty,
+            categoryId: tx.categoryId,
+            willBeHidden: tx.willBeHidden,
+            originalData: tx.originalData
+          }))
+        })
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Error al importar las transacciones');
+      }
+
+      importResult = result.data;
+      currentStep = 'complete';
+
+    } catch (error) {
+      console.error('Import error:', error);
+      errorMessage = error.message || 'Error al importar las transacciones';
+    } finally {
+      isImporting = false;
+    }
+  }
+
+  // Cancel preview and go back to upload
+  function cancelPreview() {
+    currentStep = 'upload';
+    previewData = null;
+    selectedFile = null;
+    errorMessage = '';
+  }
+
+  // Start new import
   function startNewImport() {
-    importComplete = false;
+    currentStep = 'upload';
+    previewData = null;
     importResult = null;
+    selectedFile = null;
+    errorMessage = '';
   }
 
+  // Go back to dashboard
   function handleGoBack() {
     goto('/dashboard');
+  }
+
+  // Format file size
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
 </script>
 
 <svelte:head>
   <title>Importar Transacciones - Happy Balance</title>
-  <meta name="description" content="Importa transacciones desde archivos CSV de forma rápida y segura" />
+  <meta name="description" content="Importa transacciones desde archivos CSV con previsualización" />
 </svelte:head>
 
 <!-- Header -->
-<div class="glass-effect sticky top-0 z-10 border-b" style="border-color: var(--color-border-primary); background-color: var(--color-background-elevated);">
+<div class="glass-effect sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur">
   <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4">
+    <div class="flex items-center justify-between py-4">
       <div class="flex items-center gap-4">
         <button
-          class="btn-ghost p-2"
+          class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           onclick={handleGoBack}
           aria-label="Volver al dashboard"
         >
           <ArrowLeft class="w-5 h-5" />
         </button>
         <div>
-          <h1 class="text-2xl font-bold" style="color: var(--color-text-primary);">Importar Transacciones</h1>
-          <p class="text-sm opacity-70 mt-1">Importa transacciones desde tu archivo CSV</p>
+          <h1 class="text-2xl font-bold text-gray-900">
+            {currentStep === 'upload' ? 'Importar Transacciones' :
+             currentStep === 'preview' ? 'Previsualización' :
+             'Importación Completada'}
+          </h1>
+          <p class="text-gray-600">
+            {currentStep === 'upload' ? 'Importa transacciones desde tu archivo CSV' :
+             currentStep === 'preview' ? 'Revisa y edita antes de importar' :
+             'Tus transacciones han sido importadas'}
+          </p>
         </div>
       </div>
 
-      {#if !importComplete}
-        <div class="flex items-center gap-2 text-sm opacity-60">
-          <Upload class="w-4 h-4" />
-          <span>Formatos soportados: CSV</span>
+      <!-- Step indicator -->
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium {currentStep === 'upload' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}">1</div>
+          <span class="text-sm text-gray-600">Subir</span>
         </div>
-      {/if}
+        <div class="w-4 h-px bg-gray-300"></div>
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium {currentStep === 'preview' ? 'bg-blue-500 text-white' : currentStep === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}">2</div>
+          <span class="text-sm text-gray-600">Previsualizar</span>
+        </div>
+        <div class="w-4 h-px bg-gray-300"></div>
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium {currentStep === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}">3</div>
+          <span class="text-sm text-gray-600">Completar</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Main Content -->
-<main class="min-h-screen py-8" style="background-color: var(--color-background-primary);">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  {#if currentStep === 'upload'}
+    <!-- Upload Step -->
+    <div class="max-w-2xl mx-auto space-y-6">
+      <!-- File Upload Area -->
+      <div class="bg-white rounded-xl shadow-sm border-2 border-dashed border-gray-300 p-8 text-center hover:border-blue-400 transition-colors"
+           ondragover={handleDragOver}
+           ondrop={handleDrop}>
 
-    {#if !mounted}
-      <!-- Loading state -->
-      <div class="flex items-center justify-center py-12">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-
-    {:else if !importComplete}
-      <!-- Import Wizard -->
-      <div class="max-w-4xl mx-auto">
-        <!-- Progress Info -->
-        <div class="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
-          <div class="flex items-start gap-3">
-            <FileText class="w-5 h-5 text-blue-600 mt-0.5" />
+        {#if selectedFile}
+          <!-- File Selected State -->
+          <div class="space-y-4">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+              <FileText class="w-8 h-8 text-green-600" />
+            </div>
             <div>
-              <h3 class="font-semibold text-blue-900 mb-2">Información importante</h3>
-              <ul class="text-sm text-blue-800 space-y-1">
-                <li>• Asegúrate de que tu archivo CSV tenga columnas para fecha, cantidad y descripción</li>
-                <li>• Se detectarán automáticamente formatos de N26 y CSVs genéricos</li>
-                <li>• Las transacciones duplicadas serán omitidas automáticamente</li>
-              </ul>
+              <h3 class="text-lg font-medium text-gray-900">{selectedFile.name}</h3>
+              <p class="text-gray-500">{formatFileSize(selectedFile.size)}</p>
             </div>
+            <button
+              onclick={() => selectedFile = null}
+              class="text-sm text-gray-500 hover:text-gray-700 underline"
+            >
+              Seleccionar otro archivo
+            </button>
           </div>
-        </div>
-
-        <ImportWizard onComplete={handleImportComplete} />
+        {:else}
+          <!-- Upload State -->
+          <div class="space-y-4">
+            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+              <Upload class="w-8 h-8 text-blue-600" />
+            </div>
+            <div>
+              <h3 class="text-lg font-medium text-gray-900">Arrastra tu archivo CSV aquí</h3>
+              <p class="text-gray-500">o selecciónalo desde tu dispositivo</p>
+            </div>
+            <label class="inline-block">
+              <input
+                type="file"
+                accept=".csv"
+                onchange={handleFileSelect}
+                class="hidden"
+              />
+              <span class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer">
+                Seleccionar Archivo
+              </span>
+            </label>
+          </div>
+        {/if}
       </div>
 
-    {:else}
-      <!-- Success State -->
-      <div class="max-w-4xl mx-auto">
-        <div class="bg-white border border-gray-200 rounded-lg p-8 text-center shadow-sm">
-
-          <!-- Success Icon -->
-          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle class="w-10 h-10 text-green-600" />
-          </div>
-
-          <!-- Success Message -->
-          <h2 class="text-2xl font-bold text-gray-900 mb-4">¡Importación Completada!</h2>
-          <p class="text-gray-600 mb-8 max-w-md mx-auto">
-            {importResult?.message || 'La importación se ha completado exitosamente'}
-          </p>
-
-          <!-- Import Summary -->
-          {#if importResult}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-
-              <!-- Imported Count -->
-              <div class="bg-green-50 border border-green-200 p-6 rounded-lg">
-                <div class="text-3xl font-bold text-green-600 mb-2">
-                  {importResult.imported || importResult.data?.imported || 0}
-                </div>
-                <div class="text-sm text-green-700">Transacciones Importadas</div>
-              </div>
-
-              <!-- Skipped Count -->
-              {#if (importResult.skipped || importResult.data?.skipped || 0) > 0}
-                <div class="bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
-                  <div class="text-3xl font-bold text-yellow-600 mb-2">
-                    {importResult.skipped || importResult.data?.skipped || 0}
-                  </div>
-                  <div class="text-sm text-yellow-700">Duplicadas (Omitidas)</div>
-                </div>
-              {/if}
-
-              <!-- Errors Count -->
-              {#if (importResult.errors?.length || importResult.data?.errors?.length || 0) > 0}
-                <div class="bg-red-50 border border-red-200 p-6 rounded-lg">
-                  <div class="text-3xl font-bold text-red-600 mb-2">
-                    {importResult.errors?.length || importResult.data?.errors?.length || 0}
-                  </div>
-                  <div class="text-sm text-red-700">Errores</div>
-                </div>
-              {/if}
-
-            </div>
-
-            <!-- Error Details -->
-            {#if importResult.errors?.length > 0 || importResult.data?.errors?.length > 0}
-              <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 text-left">
-                <div class="flex items-center gap-2 mb-3">
-                  <AlertTriangle class="w-5 h-5 text-red-600" />
-                  <h4 class="font-semibold text-red-900">Errores encontrados:</h4>
-                </div>
-                <div class="space-y-2 text-sm text-red-800">
-                  {#each (importResult.errors || importResult.data?.errors || []) as error}
-                    <div class="bg-white p-2 rounded border border-red-200">
-                      {error.message || error}
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-          {/if}
-
-          <!-- Next Steps -->
-          <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8 text-left">
-            <h3 class="font-semibold text-gray-900 mb-4">¿Qué sigue?</h3>
-            <div class="text-sm text-gray-700 space-y-2">
-              <p>• Tus transacciones están ahora disponibles en el dashboard</p>
-              <p>• Puedes categorizarlas manualmente o configurar reglas automáticas</p>
-              <p>• Revisa y edita cualquier transacción según sea necesario</p>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex flex-col sm:flex-row justify-center gap-3">
-            <button
-              class="btn-primary px-6 py-3"
-              onclick={() => goto('/dashboard')}
-            >
-              Ir al Dashboard
-            </button>
-            <button
-              class="btn-secondary px-6 py-3"
-              onclick={() => goto('/transactions')}
-            >
-              Ver Transacciones
-            </button>
-            <button
-              class="btn-ghost px-6 py-3"
-              onclick={startNewImport}
-            >
-              <ArrowLeft class="w-4 h-4 mr-2" />
-              Nueva Importación
-            </button>
-          </div>
+      <!-- Error Message -->
+      {#if errorMessage}
+        <div class="flex items-center space-x-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <AlertTriangle class="w-5 h-5 text-red-600" />
+          <p class="text-red-800">{errorMessage}</p>
         </div>
+      {/if}
+
+      <!-- File Info -->
+      <div class="bg-gray-50 rounded-lg p-4">
+        <h4 class="font-medium text-gray-900 mb-2">Formatos soportados:</h4>
+        <ul class="text-sm text-gray-600 space-y-1">
+          <li>• Archivos CSV con columnas estándar (Fecha, Descripción, Importe)</li>
+          <li>• Formato N26 admitido</li>
+          <li>• Tamaño máximo: 5MB</li>
+          <li>• Codificación UTF-8 recomendada</li>
+        </ul>
+      </div>
+
+      <!-- Action Button -->
+      <div class="flex justify-center">
+        <button
+          onclick={generatePreview}
+          disabled={!selectedFile || isUploading}
+          class="px-8 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-3"
+        >
+          {#if isUploading}
+            <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <span>Procesando...</span>
+          {:else}
+            <Eye class="w-5 h-5" />
+            <span>Generar Previsualización</span>
+          {/if}
+        </button>
+      </div>
+    </div>
+
+  {:else if currentStep === 'preview'}
+    <!-- Preview Step -->
+    <ImportPreview
+      transactions={previewData.transactions}
+      summary={previewData.summary}
+      fileName={previewData.fileName}
+      loading={isImporting}
+      on:confirm={confirmImport}
+      on:cancel={cancelPreview}
+    />
+
+    {#if errorMessage}
+      <div class="mt-6 flex items-center space-x-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <AlertTriangle class="w-5 h-5 text-red-600" />
+        <p class="text-red-800">{errorMessage}</p>
       </div>
     {/if}
-  </div>
-</main>
 
-<style>
-  .btn-primary {
-    @apply bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors;
-  }
+  {:else if currentStep === 'complete'}
+    <!-- Completion Step -->
+    <div class="max-w-2xl mx-auto text-center space-y-6">
+      <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+        <CheckCircle class="w-10 h-10 text-green-600" />
+      </div>
 
-  .btn-secondary {
-    @apply bg-gray-100 text-gray-900 font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors;
-  }
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">¡Importación Completada!</h2>
+        <p class="text-gray-600">Tus transacciones han sido importadas exitosamente</p>
+      </div>
 
-  .btn-ghost {
-    @apply text-gray-700 font-medium rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors;
-  }
+      {#if importResult}
+        <div class="bg-green-50 border border-green-200 rounded-xl p-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div>
+              <div class="text-3xl font-bold text-green-600">{importResult.imported}</div>
+              <div class="text-sm text-gray-600">Transacciones Importadas</div>
+            </div>
+            {#if importResult.skipped > 0}
+              <div>
+                <div class="text-3xl font-bold text-yellow-600">{importResult.skipped}</div>
+                <div class="text-sm text-gray-600">Omitidas (duplicados)</div>
+              </div>
+            {/if}
+            {#if importResult.errors?.length > 0}
+              <div>
+                <div class="text-3xl font-bold text-red-600">{importResult.errors.length}</div>
+                <div class="text-sm text-gray-600">Errores</div>
+              </div>
+            {/if}
+          </div>
+        </div>
 
-  .glass-effect {
-    backdrop-filter: blur(8px);
-    background-color: rgba(255, 255, 255, 0.95);
-  }
-</style>
+        {#if importResult.errors?.length > 0}
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h4 class="font-medium text-red-800 mb-2">Errores encontrados:</h4>
+            <ul class="text-sm text-red-700 space-y-1">
+              {#each importResult.errors as error}
+                <li>• {error}</li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+
+        {#if importResult.warnings?.length > 0}
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 class="font-medium text-yellow-800 mb-2">Advertencias:</h4>
+            <ul class="text-sm text-yellow-700 space-y-1">
+              {#each importResult.warnings as warning}
+                <li>• {warning}</li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+      {/if}
+
+      <!-- Next Steps -->
+      <div class="bg-gray-50 rounded-xl p-6">
+        <h3 class="font-medium text-gray-900 mb-4">¿Qué sigue?</h3>
+        <ul class="text-sm text-gray-600 space-y-2">
+          <li>• Tus transacciones están ahora disponibles en el dashboard</li>
+          <li>• Puedes categorizarlas manualmente o configurar reglas automáticas</li>
+          <li>• Revisa y edita cualquier transacción según sea necesario</li>
+        </ul>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button
+          onclick={() => goto('/dashboard')}
+          class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          Ir al Dashboard
+        </button>
+
+        <button
+          onclick={() => goto('/transactions')}
+          class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+        >
+          Ver Transacciones
+        </button>
+
+        <button
+          onclick={startNewImport}
+          class="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          Nueva Importación
+        </button>
+      </div>
+    </div>
+  {/if}
+</div>

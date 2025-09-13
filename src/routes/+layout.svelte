@@ -1,6 +1,6 @@
 <script lang="ts">
   import '../app.css';
-  import { Home, BarChart2, CreditCard, Upload, Tag, Menu, X, TrendingUp, ChevronLeft, ChevronRight, Target, Settings, Cog, PiggyBank } from 'lucide-svelte';
+  import { Home, BarChart2, CreditCard, Upload, Tag, Menu, X, TrendingUp, ChevronLeft, ChevronRight, Target, Settings, Cog, PiggyBank, Brain } from 'lucide-svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
@@ -83,6 +83,12 @@
       ]
     },
     { 
+      name: 'Inteligencia', 
+      href: '/intelligence', 
+      icon: Brain,
+      description: 'Categorización automática y reglas inteligentes'
+    },
+    { 
       name: 'Configuración', 
       href: '/settings', 
       icon: Cog,
@@ -142,7 +148,7 @@
               <TrendingUp class="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 class="text-lg font-bold" style="color: var(--color-text-primary);">ExpenseTracker</h1>
+              <h1 class="text-lg font-bold" style="color: var(--color-text-primary);">Happy Balance</h1>
               <p class="text-xs" style="color: var(--color-text-tertiary);">Gestión Financiera</p>
             </div>
           </div>
@@ -248,7 +254,7 @@
           <TrendingUp class="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 class="text-lg font-bold text-gray-900">ExpenseTracker</h1>
+          <h1 class="text-lg font-bold text-gray-900">Happy Balance</h1>
           <p class="text-xs text-gray-500">Gestión Financiera</p>
         </div>
       </div>

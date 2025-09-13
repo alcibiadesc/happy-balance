@@ -1,134 +1,174 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
-import { RepositoryFactory } from '$lib/infrastructure/factories/RepositoryFactory.js';
+import type { RequestHandler } from './$types.js';
+import { ImportTransactionsUseCase } from '$lib/application/use-cases/ImportTransactionsUseCase.js';
+import { PrismaTransactionRepository } from '$lib/infrastructure/repositories/PrismaTransactionRepository.js';
+import { PrismaAccountRepository } from '$lib/infrastructure/repositories/PrismaAccountRepository.js';
+import { CSVParserFactory } from '$lib/infrastructure/parsers/CSVParserFactory.js';
+import { ConsoleLogger } from '$lib/shared/utils/logger.js';
+import { Transaction } from '$lib/domain/entities/Transaction.js';
 import { TransactionId } from '$lib/domain/value-objects/TransactionId.js';
 import { AccountId } from '$lib/domain/value-objects/AccountId.js';
-import { CategoryId } from '$lib/domain/value-objects/CategoryId.js';
-import { Transaction } from '$lib/domain/entities/Transaction.js';
+import { Money } from '$lib/domain/value-objects/Money.js';
+import { TransactionDate } from '$lib/domain/value-objects/TransactionDate.js';
 
-const transactionRepository = RepositoryFactory.createTransactionRepository();
+export interface ConfirmImportRequest {
+  accountId: string;
+  transactions: Array<{
+    id: string; // Preview ID
+    date: string;
+    description: string;
+    amount: number;
+    paymentReference?: string;
+    counterparty?: string;
+    categoryId?: string;
+    willBeHidden: boolean;
+    originalData: any;
+  }>;
+}
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
-    const body = await request.json();
-    const { fileName, transactions } = body;
-
-    if (!fileName || !transactions || !Array.isArray(transactions)) {
-      return json(
-        { success: false, error: 'Invalid request data' },
-        { status: 400 }
-      );
+    const body: ConfirmImportRequest = await request.json();
+    
+    if (!body.accountId || !Array.isArray(body.transactions)) {
+      return json({
+        success: false,
+        error: 'Invalid request data',
+        code: 'INVALID_REQUEST'
+      }, { status: 400 });
     }
 
-    const results = {
-      fileName,
-      summary: {
-        totalRows: transactions.length,
-        savedRows: 0,
-        duplicateRows: 0,
-        errorRows: 0,
-        skippedRows: 0
-      },
-      errors: [] as string[]
-    };
+    // Initialize dependencies
+    const transactionRepository = new PrismaTransactionRepository();
+    const accountRepository = new PrismaAccountRepository();
+    const logger = new ConsoleLogger();
 
-    // Get default account ID (assuming first account or create if none exists)
-    const defaultAccountId = new AccountId('default-account-001');
+    // Verify account exists
+    const accountId = new AccountId(body.accountId);
+    const account = await accountRepository.findById(accountId);
+    
+    if (!account) {
+      return json({
+        success: false,
+        error: 'Account not found',
+        code: 'ACCOUNT_NOT_FOUND'
+      }, { status: 404 });
+    }
 
-    for (let i = 0; i < transactions.length; i++) {
-      const transactionData = transactions[i];
-      
+    // Process selected transactions
+    let imported = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const validTransactions: Transaction[] = [];
+
+    for (const previewTx of body.transactions) {
       try {
-        // Create transaction entity
-        const transactionId = TransactionId.generate();
-        const categoryId = transactionData.categoryId ? new CategoryId(transactionData.categoryId) : null;
-        
-        const transaction = new Transaction(
-          transactionId,
-          defaultAccountId,
-          transactionData.amount,
-          transactionData.partnerName || 'Unknown',
-          new Date(transactionData.bookingDate),
-          categoryId
-        );
+        // Create domain transaction from preview data
+        const transactionResult = Transaction.create({
+          amount: new Money(previewTx.amount, 'EUR'),
+          description: previewTx.description,
+          accountId: account.id,
+          transactionDate: new TransactionDate(new Date(previewTx.date)),
+          paymentReference: previewTx.paymentReference,
+          counterparty: previewTx.counterparty || previewTx.description
+        }, account);
 
-        // Set additional properties
-        transaction.valueDate = new Date(transactionData.valueDate || transactionData.bookingDate);
-        transaction.partnerIban = transactionData.partnerIban || null;
-        transaction.paymentReference = transactionData.paymentReference || null;
-        transaction.originalAmount = transactionData.originalAmount || transactionData.amount;
-        transaction.originalCurrency = transactionData.originalCurrency || 'EUR';
-        transaction.exchangeRate = transactionData.exchangeRate || 1.0;
-
-        // Check for duplicates
-        const isDuplicate = await checkForDuplicate(transaction);
-        
-        if (isDuplicate) {
-          results.summary.duplicateRows++;
+        if (transactionResult.isFailure()) {
+          errors.push(`Failed to create transaction "${previewTx.description}": ${transactionResult.error.message}`);
           continue;
         }
 
-        // Save transaction
-        await transactionRepository.save(transaction);
-        results.summary.savedRows++;
+        const transaction = transactionResult.data;
+        
+        // Set visibility based on preview selection
+        transaction.isHidden = previewTx.willBeHidden;
+        
+        // Set category if provided
+        if (previewTx.categoryId) {
+          transaction.categoryId = previewTx.categoryId;
+        }
+
+        validTransactions.push(transaction);
 
       } catch (error) {
-        const errorMessage = `Row ${transactionData.rowNumber || i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-        results.errors.push(errorMessage);
-        results.summary.errorRows++;
-        console.error('Transaction import error:', errorMessage);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        errors.push(`Error processing transaction "${previewTx.description}": ${errorMessage}`);
+        logger.error('Transaction processing error', error);
       }
     }
 
-    // Calculate skipped rows
-    results.summary.skippedRows = results.summary.totalRows - 
-      results.summary.savedRows - 
-      results.summary.duplicateRows - 
-      results.summary.errorRows;
+    // Save all valid transactions in batch
+    if (validTransactions.length > 0) {
+      try {
+        await transactionRepository.saveMany(validTransactions);
+        imported = validTransactions.length;
+        logger.info(`Successfully imported ${imported} transactions`);
+      } catch (error) {
+        // If batch save fails, try individual saves with duplicate handling
+        logger.warn('Batch save failed, trying individual saves', error);
+        
+        imported = 0;
+        for (const transaction of validTransactions) {
+          try {
+            // Check if transaction already exists by hash
+            const existing = await transactionRepository.findByHash(transaction.hash);
+            if (existing) {
+              skipped++;
+              warnings.push(`Transaction already exists: ${transaction.partnerName}`);
+              continue;
+            }
+
+            await transactionRepository.save(transaction);
+            imported++;
+          } catch (saveError) {
+            const errorMessage = saveError instanceof Error ? saveError.message : 'Unknown save error';
+            errors.push(`Error saving transaction: ${errorMessage}`);
+          }
+        }
+      }
+    }
+
+    // Update account balance if needed
+    if (imported > 0) {
+      try {
+        const totalAmount = await transactionRepository.calculateTotalByAccount(account.id.value);
+        const balanceResult = account.setBalance(totalAmount);
+        
+        if (balanceResult.isFailure()) {
+          warnings.push('Failed to update account balance');
+        } else {
+          await accountRepository.update(account);
+        }
+      } catch (error) {
+        warnings.push('Failed to update account balance');
+        logger.error('Account balance update error', error);
+      }
+    }
+
+    const result = {
+      imported,
+      skipped,
+      errors,
+      warnings,
+      total: body.transactions.length
+    };
+
+    logger.info('Transaction import completed', result);
 
     return json({
       success: true,
-      data: results,
-      message: `Import completed. ${results.summary.savedRows} transactions imported successfully.`
+      data: result,
+      message: `Successfully imported ${imported} of ${body.transactions.length} transactions${skipped > 0 ? ` (${skipped} skipped)` : ''}`
     });
 
   } catch (error) {
-    console.error('Error confirming import:', error);
-    return json(
-      {
-        success: false,
-        error: 'Failed to confirm import',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    console.error('Confirm import error:', error);
+    
+    return json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Internal server error',
+      code: 'INTERNAL_ERROR'
+    }, { status: 500 });
   }
 };
-
-async function checkForDuplicate(transaction: Transaction): Promise<boolean> {
-  try {
-    // Check for transactions with same amount, partner, and date (within same day)
-    const startOfDay = new Date(transaction.bookingDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(transaction.bookingDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const existingTransactions = await transactionRepository.findAll({
-      startDate: startOfDay,
-      endDate: endOfDay
-    });
-
-    // Check for exact matches
-    const isDuplicate = existingTransactions.some(existing => 
-      Math.abs(existing.amount - transaction.amount) < 0.01 && // Same amount (accounting for floating point precision)
-      existing.partnerName === transaction.partnerName &&
-      existing.bookingDate.toDateString() === transaction.bookingDate.toDateString()
-    );
-
-    return isDuplicate;
-  } catch (error) {
-    console.warn('Error checking for duplicates:', error);
-    return false; // If we can't check, allow the import
-  }
-}

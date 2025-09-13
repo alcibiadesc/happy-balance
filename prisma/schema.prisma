@@ -64,6 +64,7 @@ model Transaction {
   categoryId        String?
   category          Category? @relation(fields: [categoryId], references: [id])
   isHidden          Boolean  @default(false)
+  confidence        Int?     // Confidence score for automatic categorization (0-100)
   transactionDate   DateTime
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -109,6 +110,19 @@ model CategorizationRule {
   updatedAt  DateTime  @updatedAt
 
   @@map("categorization_rules")
+}
+
+model HidingRule {
+  id        String   @id @default(uuid())
+  name      String
+  pattern   String   // JSON string containing rule pattern
+  ruleType  String   // counterparty, paymentReference, amount, description, keyword
+  priority  Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("hiding_rules")
 }
 
 enum SavingsAccountType {
