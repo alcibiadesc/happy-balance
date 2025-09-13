@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
-  import { t } from '$lib/stores/i18n';
+  import { t, currentLanguage } from '$lib/stores/i18n';
   
   interface MonthlyData {
     month: string;
@@ -21,6 +21,15 @@
   
   let canvas: HTMLCanvasElement;
   let chart: Chart | null = null;
+  
+  // Helper to get translations
+  function getLabels() {
+    return {
+      essential_expenses: $t('charts.labels.essential_expenses'),
+      discretionary_expenses: $t('charts.labels.discretionary_expenses'),
+      investments: $t('charts.labels.investments')
+    };
+  }
   
   function initChart() {
     if (!canvas) return;
@@ -110,13 +119,14 @@
     };
     
     // Single Chart: Expense Breakdown + Investments (Grouped bars - not stacked)
+    const labels = getLabels();
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: data.map(d => d.month),
         datasets: [
           {
-            label: $t('charts.labels.essential_expenses'),
+            label: labels.essential_expenses,
             data: data.map(d => d.essentialExpenses),
             backgroundColor: 'rgba(245, 121, 108, 0.8)',
             borderColor: '#f5796c',
@@ -125,7 +135,7 @@
             borderSkipped: false,
           },
           {
-            label: $t('charts.labels.discretionary_expenses'),
+            label: labels.discretionary_expenses,
             data: data.map(d => d.discretionaryExpenses),
             backgroundColor: 'rgba(254, 205, 44, 0.8)',
             borderColor: '#fecd2c',
@@ -134,7 +144,7 @@
             borderSkipped: false,
           },
           {
-            label: $t('charts.labels.investments'),
+            label: labels.investments,
             data: data.map(d => d.investments),
             backgroundColor: 'rgba(2, 60, 70, 0.8)',
             borderColor: '#023c46',
@@ -169,11 +179,12 @@
   
   // Update chart when language changes
   $effect(() => {
-    if (chart) {
+    if (chart && $currentLanguage) {
       // Update dataset labels
-      chart.data.datasets[0].label = $t('charts.labels.essential_expenses');
-      chart.data.datasets[1].label = $t('charts.labels.discretionary_expenses');
-      chart.data.datasets[2].label = $t('charts.labels.investments');
+      const labels = getLabels();
+      chart.data.datasets[0].label = labels.essential_expenses;
+      chart.data.datasets[1].label = labels.discretionary_expenses;
+      chart.data.datasets[2].label = labels.investments;
       chart.update();
     }
   });

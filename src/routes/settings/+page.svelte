@@ -290,15 +290,15 @@
   
   .action-button.export {
     background: transparent;
-    border-color: var(--success);
-    color: var(--success);
+    border-color: var(--success-soft);
+    color: var(--success-soft);
   }
   
   .action-button.export:hover {
-    background: var(--success);
+    background: var(--success-soft);
     color: white;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(122, 186, 165, 0.25);
+    box-shadow: 0 2px 8px rgba(154, 199, 179, 0.25);
   }
   
   .action-button.delete {

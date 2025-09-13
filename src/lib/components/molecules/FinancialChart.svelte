@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
-  import { t } from '$lib/stores/i18n';
+  import { t, currentLanguage } from '$lib/stores/i18n';
   
   interface DataPoint {
     month: string;
@@ -20,6 +20,14 @@
   let canvas: HTMLCanvasElement;
   let chart: Chart | null = null;
   
+  // Helper to get translations
+  function getLabels() {
+    return {
+      income: $t('charts.labels.income'),
+      expenses: $t('charts.labels.expenses')
+    };
+  }
+  
   function initChart() {
     if (!canvas) return;
     
@@ -32,13 +40,14 @@
     }
     
     // Create new chart
+    const labels = getLabels();
     chart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: data.map(d => d.month),
         datasets: [
           {
-            label: $t('charts.labels.income'),
+            label: labels.income,
             data: data.map(d => d.income),
             borderColor: '#7abaa5',
             backgroundColor: 'rgba(122, 186, 165, 0.1)',
@@ -52,7 +61,7 @@
             pointBorderWidth: 2,
           },
           {
-            label: $t('charts.labels.expenses'),
+            label: labels.expenses,
             data: data.map(d => d.expenses),
             borderColor: '#f5796c',
             backgroundColor: 'rgba(245, 121, 108, 0.1)',
@@ -175,10 +184,11 @@
   
   // Update chart when language changes
   $effect(() => {
-    if (chart) {
+    if (chart && $currentLanguage) {
       // Update dataset labels
-      chart.data.datasets[0].label = $t('charts.labels.income');
-      chart.data.datasets[1].label = $t('charts.labels.expenses');
+      const labels = getLabels();
+      chart.data.datasets[0].label = labels.income;
+      chart.data.datasets[1].label = labels.expenses;
       chart.update();
     }
   });

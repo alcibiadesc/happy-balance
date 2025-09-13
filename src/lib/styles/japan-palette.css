@@ -26,6 +26,7 @@
     --success: var(--acapulco);
     --success-hover: #6ba696;
     --success-light: #f0f8f5;
+    --success-soft: #9ac7b3;
     
     --warning: var(--sunglow);
     --warning-hover: #fec107;
@@ -135,4 +136,28 @@ html.dark .text-emphasis {
 
 html.dark .text-subtle {
     color: var(--text-muted);
+}
+
+/* Import Button Success Colors */
+:root {
+    --success-bg: rgba(122, 186, 165, 0.1);
+    --success-text: var(--success);
+    --success-border: var(--success);
+    --success-bg-hover: var(--success);
+    --success-text-hover: var(--surface-elevated);
+    --success-border-hover: var(--success-hover);
+    --success-focus-ring: rgba(122, 186, 165, 0.4);
+    --success-focus-ring-outer: rgba(122, 186, 165, 0.1);
+}
+
+/* Dark mode success colors */
+html.dark {
+    --success-bg: rgba(122, 186, 165, 0.15);
+    --success-text: var(--acapulco);
+    --success-border: var(--acapulco);
+    --success-bg-hover: var(--acapulco);
+    --success-text-hover: var(--gray-900);
+    --success-border-hover: #8fc4af;
+    --success-focus-ring: rgba(122, 186, 165, 0.5);
+    --success-focus-ring-outer: rgba(122, 186, 165, 0.2);
 }
