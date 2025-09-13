@@ -1,4 +1,4 @@
-# Happy Balance - Sistema de Diseño Minimalista Japonés
+# Happy Balance - Sistema de Diseño Minimalista
 
 ## 📋 Índice
 1. [Filosofía de Diseño](#filosofía-de-diseño)
@@ -6,8 +6,8 @@
 3. [Paleta de Colores Japan](#paleta-de-colores-japan)
 4. [Atomic Design](#atomic-design)
 5. [Principios Minimalistas](#principios-minimalistas)
-6. [Sistema de Espaciado Ma (間)](#sistema-de-espaciado-ma)
-7. [Tipografía Zen](#tipografía-zen)
+6. [Sistema de Espaciado Ma](#sistema-de-espaciado-ma)
+7. [Tipografía](#tipografía)
 8. [Componentes Base](#componentes-base)
 9. [Dashboard - Métricas Clave](#dashboard---métricas-clave)
 10. [Guías de Implementación](#guías-de-implementación)
@@ -17,14 +17,14 @@
 ## 🎨 Filosofía de Diseño
 
 ### Principios Fundamentales
-- **Wabi-Sabi (侘寂)**: Belleza en la imperfección y simplicidad
-- **Ma (間)**: El poder del espacio vacío como elemento de diseño
-- **Kanso (簡素)**: Simplicidad y eliminación de elementos innecesarios
-- **Shizen (自然)**: Naturalidad sin artificialidad forzada
-- **Kokō (考)**: Sustitución de lo ornamental por la elegancia austera
+- **Simplicidad**: Eliminar elementos innecesarios
+- **Espacio en blanco**: El poder del espacio vacío como elemento de diseño
+- **Claridad**: Información directa y sin ruido visual
+- **Funcionalidad**: Cada elemento tiene un propósito específico
+- **Elegancia**: Belleza a través de la restraint
 
 ### Objetivo del Usuario
-> Crear una experiencia que permita al usuario entender su salud financiera de un vistazo, con métricas clave como el ratio de gasto (ej: "2 de cada 10 euros gastas") e información sobre inversiones, todo presentado con la serenidad del diseño japonés.
+> Crear una experiencia que permita al usuario entender su salud financiera de un vistazo, con métricas clave como el ratio de gasto (ej: "2 de cada 10 euros gastas") e información sobre inversiones, todo presentado con serenidad minimalista.
 
 ---
 
@@ -117,8 +117,8 @@ interface BrandProps {
   size?: 'sm' | 'md' | 'lg';
 }
 ```
-- Logo con gradiente japan
-- Texto japonés: "和の家計簿" (Wa no Kakeibo)
+- Logo con gradiente Japan
+- Texto simple de marca
 - Variaciones de tamaño
 
 #### MetricCard
@@ -145,24 +145,24 @@ interface ButtonProps {
 #### ThemeToggle
 - Cambio smooth entre modos
 - Iconos Moon/Sun con rotación
-- Estados hover zen
+- Estados hover sutiles
 
 ### Moléculas (Molecules)
 
 #### NavList
 - Agrupación semántica de NavItems
-- Separadores minimalistas con gradientes
-- Secciones: メイン (Main), 管理 (Management)
+- Separadores minimalistas
+- Secciones: Principal, Gestión
 
 #### MetricGrid
 - Grid responsivo de MetricCards
-- Espaciado Ma (間) entre elementos
+- Espaciado consistente entre elementos
 - Auto-reorganización mobile-first
 
 #### ImportButton
 - Botón destacado con indicador visual
 - Micro-animaciones sutiles
-- Estado de "importante" diferenciado
+- Estado "importante" diferenciado
 
 ### Organismos (Organisms)
 
@@ -170,12 +170,12 @@ interface ButtonProps {
 - Desktop: Sidebar fijo 280px
 - Mobile: Overlay deslizante
 - Header móvil con backdrop blur
-- Citas zen en footer
+- Footer minimalista
 
 #### Dashboard
 - Métricas clave en grid
 - Gráficos minimalistas
-- Información contextual japonesa
+- Información contextual clara
 
 ---
 
@@ -184,25 +184,25 @@ interface ButtonProps {
 ### Regla de Reducción
 1. **¿Es esencial para la función?** Si no, eliminar
 2. **¿Mejora la comprensión?** Si no, simplificar  
-3. **¿Respeta el Ma (間)?** Debe tener espacio para respirar
+3. **¿Respeta el espacio?** Debe tener respiración visual
 
 ### Jerarquía Visual
 ```
 1. Información crítica: Métricas principales
 2. Navegación: Acceso rápido a funciones
 3. Contexto: Información de soporte
-4. Decoración: Elementos zen mínimos
+4. Decoración: Elementos mínimos
 ```
 
 ### Interacciones Sutiles
 - **Hover**: Transformaciones ligeras (2-4px)
-- **Focus**: Sombras suaves con colores japan
+- **Focus**: Sombras suaves con colores Japan
 - **Loading**: Animaciones orgánicas, no mecánicas
 - **Transiciones**: Easing natural (cubic-bezier)
 
 ---
 
-## 📏 Sistema de Espaciado Ma (間)
+## 📏 Sistema de Espaciado Ma
 
 ### Escala de Espaciado
 ```css
@@ -213,10 +213,10 @@ interface ButtonProps {
 --space-lg: 1.5rem;         /* 24px - Entre secciones */
 --space-xl: 2rem;           /* 32px - Respiración principal */
 --space-2xl: 3rem;          /* 48px - Separación mayor */
---space-3xl: 4rem;          /* 64px - Espacios contemplativos */
+--space-3xl: 4rem;          /* 64px - Espacios amplios */
 ```
 
-### Aplicación del Ma
+### Aplicación del Espaciado
 - **Entre componentes**: space-lg mínimo
 - **Dentro de componentes**: space-sm a space-md
 - **Secciones principales**: space-xl a space-2xl
@@ -224,16 +224,16 @@ interface ButtonProps {
 
 ---
 
-## ✒️ Tipografía Zen
+## ✒️ Tipografía
 
 ### Fuente Principal
 ```css
-font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 ```
 
 ### Escalas Tipográficas
 ```css
-.text-zen {
+.text-light {
   font-weight: 300;           /* Peso ligero */
   letter-spacing: 0.025em;    /* Espaciado sutil */
   line-height: 1.7;           /* Altura de línea relajada */
@@ -249,14 +249,6 @@ font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
   font-size: 0.875rem;       /* Tamaño reducido */
 }
 ```
-
-### Elementos Japoneses
-- **Títulos de sección**: Kanji + traducción
-  - メイン (Main)
-  - 管理 (Management) 
-  - 和 (Harmony)
-- **Citas zen**: Frases inspiradoras en footer
-- **Placeholder text**: Contexto cultural japonés
 
 ---
 
@@ -278,7 +270,7 @@ let currentTheme = $state('light');
 - Sidebar desktop con navegación completa
 - Overlay móvil con animación slide-in
 - ThemeToggle integrado
-- Citas zen en footer
+- Footer simple
 
 ### Dashboard Metrics
 
@@ -343,7 +335,7 @@ interface FinancialHealthProps {
   - 20% Control gastos fijos
   - 10% Crecimiento tendencia
 - **Visualización**: Círculo de progreso minimalista
-- **Estados**: 優秀 (Excelente), 良好 (Bueno), 改善 (Mejorar)
+- **Estados**: Excelente, Bueno, Mejorable
 
 #### 3. Inversiones Dashboard
 - **Total invertido**: Valor actual
@@ -382,7 +374,7 @@ interface FinancialHealthProps {
 ### Accessibility (A11y)
 - **Contraste**: Mínimo 4.5:1 en todos los textos
 - **Focus management**: Orden lógico de tabulación
-- **ARIA labels**: En japonés e inglés
+- **ARIA labels**: Descriptivos y claros
 - **Keyboard navigation**: Acceso completo sin ratón
 - **Screen readers**: Contexto para métricas numéricas
 
@@ -391,30 +383,6 @@ interface FinancialHealthProps {
 - **Largest Contentful Paint**: < 2.5s
 - **Time to Interactive**: < 3.5s
 - **Bundle size**: < 150KB (gzipped)
-
----
-
-## 🎌 Elementos Culturales Japoneses
-
-### Frases Zen para Footer
-```
-シンプルは美しい (Simple wa utsukushii) - "Simplicity is beautiful"
-和 (Wa) - "Harmony"  
-間 (Ma) - "The power of space"
-一期一会 (Ichigo ichie) - "One time, one meeting"
-```
-
-### Iconografía
-- **Colores naturales**: Inspirados en estaciones japonesas
-- **Formas orgánicas**: Bordes suavemente redondeados
-- **Sombras sutiles**: Como luz filtrada por shoji
-- **Transiciones**: Movimientos de agua, no mecánicos
-
-### Estados de la Aplicación
-- **Loading**: "読み込み中..." (Loading...)
-- **Empty states**: "空 - Kara" (Empty) con sugerencias zen
-- **Success**: "完了 - Kanryō" (Complete)
-- **Error**: "少々お待ちください" (Please wait a moment)
 
 ---
 
@@ -444,13 +412,13 @@ xl: 1280px  /* Desktop large */
 
 ### Animation Easing
 ```css
---ease-zen: cubic-bezier(0.25, 0.46, 0.45, 0.94);
---ease-gentle: cubic-bezier(0.4, 0, 0.2, 1);
+--ease-gentle: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+--ease-natural: cubic-bezier(0.4, 0, 0.2, 1);
 --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 ```
 
 ---
 
 *Documento creado: 2025-09-13*  
-*Versión: 1.0*  
-*"シンプルは美しい - La simplicidad es hermosa"*
+*Versión: 1.1*  
+*"La simplicidad es la máxima sofisticación"*
