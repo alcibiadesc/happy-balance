@@ -40,6 +40,17 @@
     return translations[lang as keyof typeof translations] || translations.en;
   }
   
+  // Function to get theme-aware colors
+  function getThemeColors() {
+    const isDark = document.documentElement.classList.contains('dark');
+    return {
+      investments: {
+        background: isDark ? 'rgba(122, 186, 165, 0.8)' : 'rgba(2, 60, 70, 0.8)',
+        border: isDark ? '#7abaa5' : '#023c46'
+      }
+    };
+  }
+
   function initChart() {
     if (!canvas) return;
     
@@ -129,6 +140,8 @@
     
     // Single Chart: Expense Breakdown + Investments (Grouped bars - not stacked)
     const labels = getLabels($currentLanguage);
+    const colors = getThemeColors();
+    
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -155,8 +168,8 @@
           {
             label: labels.investments,
             data: data.map(d => d.investments),
-            backgroundColor: 'rgba(2, 60, 70, 0.8)',
-            borderColor: '#023c46',
+            backgroundColor: colors.investments.background,
+            borderColor: colors.investments.border,
             borderWidth: 1,
             borderRadius: 4,
             borderSkipped: false,
@@ -224,6 +237,13 @@
       }
       if (chart.options.plugins?.legend?.labels) {
         chart.options.plugins.legend.labels.color = legendColor;
+      }
+      
+      // Update investment colors based on theme
+      const colors = getThemeColors();
+      if (chart.data.datasets[2]) {
+        chart.data.datasets[2].backgroundColor = colors.investments.background;
+        chart.data.datasets[2].borderColor = colors.investments.border;
       }
       
       chart.update();

@@ -645,6 +645,14 @@
     background: var(--gray-700);
   }
   
+  html.dark .category-progress {
+    background: var(--acapulco);
+  }
+  
+  html.dark .metric-icon.investments {
+    color: var(--acapulco);
+  }
+  
   /* Light mode */
   html:not(.dark) .metric-card,
   html:not(.dark) .chart-section,
