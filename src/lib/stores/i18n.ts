@@ -25,6 +25,7 @@ const translations = {
       done: "Done"
     },
     navigation: {
+      transactions: "Transactions",
       dashboard: "Dashboard",
       settings: "Settings",
       import: "Import"
@@ -197,6 +198,8 @@ const translations = {
       done: "Hecho"
     },
     navigation: {
+      transactions: "Transactions",
+      transactions: "Transacciones",
       dashboard: "Panel",
       settings: "Configuración",
       import: "Importar"

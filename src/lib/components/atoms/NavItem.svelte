@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { LayoutDashboard, Settings } from 'lucide-svelte';
+  import { LayoutDashboard, Settings, Receipt } from 'lucide-svelte';
   
   interface Props {
     href: string;
@@ -22,6 +22,7 @@
   // Icon mapping
   const iconMap = {
     'layout-dashboard': LayoutDashboard,
+    'receipt': Receipt,
     'settings': Settings
   };
   
