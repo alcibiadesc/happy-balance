@@ -54,7 +54,9 @@ const translations = {
         temporal_evolution_subtitle: "Income and expense trends over time",
         expense_distribution_subtitle: "Monthly comparison of essential, discretionary expenses and investments",
         income_evolution: "Income Evolution",
-        expense_evolution: "Expense Evolution"
+        expense_evolution: "Expense Evolution",
+        detailed_breakdown: "Detailed breakdown",
+        detailed_breakdown_subtitle: "Monthly expense analysis by category"
       },
       categories: {
         title: "Expense breakdown",
@@ -227,7 +229,9 @@ const translations = {
         temporal_evolution_subtitle: "Tendencias de ingresos y gastos a lo largo del tiempo",
         expense_distribution_subtitle: "Comparación mensual de gastos esenciales, discrecionales e inversiones",
         income_evolution: "Evolución de Ingresos",
-        expense_evolution: "Evolución de Gastos"
+        expense_evolution: "Evolución de Gastos",
+        detailed_breakdown: "Desglose detallado",
+        detailed_breakdown_subtitle: "Análisis mensual de gastos por categoría"
       },
       categories: {
         title: "Desglose de gastos",
