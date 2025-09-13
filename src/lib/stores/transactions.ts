@@ -9,29 +9,45 @@ function createTransactionStore() {
   return {
     subscribe,
     
-    // Load transactions from DB
+    // Load transactions from localStorage
     async load() {
       if (!browser) return;
-      
+
       try {
-        const response = await fetch('/api/transactions');
-        const data = await response.json();
-        set(data);
+        // Load from localStorage
+        const stored = localStorage.getItem('transactions');
+        if (stored) {
+          const transactions = JSON.parse(stored);
+          console.log('Loaded transactions from localStorage');
+          set(transactions);
+          return;
+        }
       } catch (error) {
-        console.error('Failed to load transactions:', error);
+        console.warn('Failed to load from localStorage:', error);
       }
+
+      // If localStorage fails or is empty, use empty array
+      console.log('Starting with empty transactions');
+      set([]);
     },
     
     // Add new transaction
     async add(transaction: Omit<Transaction, 'id' | 'createdAt'>) {
-      const response = await fetch('/api/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(transaction)
-      });
-      
-      if (response.ok) {
-        const newTransaction = await response.json();
+      const newTransaction = {
+        ...transaction,
+        id: crypto.randomUUID?.() || `tx-${Date.now()}-${Math.random()}`,
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        const existing = JSON.parse(localStorage.getItem('transactions') || '[]');
+        const updated = [newTransaction, ...existing];
+        localStorage.setItem('transactions', JSON.stringify(updated));
+        update(transactions => [newTransaction, ...transactions]);
+        return newTransaction;
+      } catch (error) {
+        console.warn('Failed to save to localStorage:', error);
+        // At least update the store
         update(transactions => [newTransaction, ...transactions]);
         return newTransaction;
       }
@@ -39,68 +55,61 @@ function createTransactionStore() {
     
     // Update transaction
     async update(id: string, updates: Partial<Transaction>) {
-      const response = await fetch(`/api/transactions/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
+      update(transactions => {
+        const updated = transactions.map(t => t.id === id ? { ...t, ...updates } : t);
+        try {
+          localStorage.setItem('transactions', JSON.stringify(updated));
+        } catch (error) {
+          console.warn('Failed to save to localStorage:', error);
+        }
+        return updated;
       });
-      
-      if (response.ok) {
-        const updated = await response.json();
-        update(transactions => 
-          transactions.map(t => t.id === id ? updated : t)
-        );
-      }
     },
     
     // Delete transaction
     async delete(id: string) {
-      const response = await fetch(`/api/transactions/${id}`, {
-        method: 'DELETE'
+      update(transactions => {
+        const updated = transactions.filter(t => t.id !== id);
+        try {
+          localStorage.setItem('transactions', JSON.stringify(updated));
+        } catch (error) {
+          console.warn('Failed to save to localStorage:', error);
+        }
+        return updated;
       });
-      
-      if (response.ok) {
-        update(transactions => 
-          transactions.filter(t => t.id !== id)
-        );
-      }
     },
     
     // Bulk actions
     async bulkUpdate(ids: string[], updates: Partial<Transaction>) {
-      const response = await fetch('/api/transactions/bulk', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids, updates })
-      });
-      
-      if (response.ok) {
-        update(transactions => 
-          transactions.map(t => 
-            ids.includes(t.id) ? { ...t, ...updates } : t
-          )
+      update(transactions => {
+        const updated = transactions.map(t =>
+          ids.includes(t.id) ? { ...t, ...updates } : t
         );
-      }
+        try {
+          localStorage.setItem('transactions', JSON.stringify(updated));
+        } catch (error) {
+          console.warn('Failed to save to localStorage:', error);
+        }
+        return updated;
+      });
     },
     
     // Apply category to all similar transactions
     async applyCategoryToPattern(transaction: Transaction, categoryId: string) {
       const patternHash = generatePatternHash(transaction);
-      
-      const response = await fetch('/api/transactions/categorize-pattern', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          patternHash, 
-          categoryId,
-          merchant: transaction.merchant 
-        })
+      update(transactions => {
+        const updated = transactions.map(t =>
+          generatePatternHash(t) === patternHash
+            ? { ...t, categoryId }
+            : t
+        );
+        try {
+          localStorage.setItem('transactions', JSON.stringify(updated));
+        } catch (error) {
+          console.warn('Failed to save to localStorage:', error);
+        }
+        return updated;
       });
-      
-      if (response.ok) {
-        const updated = await response.json();
-        set(updated);
-      }
     }
   };
 }
@@ -121,31 +130,18 @@ function createCategoryStore() {
     subscribe,
     
     async add(category: Omit<Category, 'id'>) {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(category)
-      });
-      
-      if (response.ok) {
-        const newCategory = await response.json();
-        update(categories => [...categories, newCategory]);
-        return newCategory;
-      }
+      const newCategory = {
+        ...category,
+        id: crypto.randomUUID?.() || `cat-${Date.now()}-${Math.random()}`
+      };
+      update(categories => [...categories, newCategory]);
+      return newCategory;
     },
-    
+
     async update(id: string, updates: Partial<Category>) {
-      const response = await fetch(`/api/categories/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-      
-      if (response.ok) {
-        update(categories => 
-          categories.map(c => c.id === id ? { ...c, ...updates } : c)
-        );
-      }
+      update(categories =>
+        categories.map(c => c.id === id ? { ...c, ...updates } : c)
+      );
     }
   };
 }
@@ -158,23 +154,17 @@ function createCategoryRulesStore() {
     subscribe,
     
     async load() {
-      const response = await fetch('/api/category-rules');
-      const rules = await response.json();
-      set(rules);
+      // For now, just set empty rules - we can add localStorage support later if needed
+      set([]);
     },
-    
+
     async add(rule: Omit<CategoryRule, 'id'>) {
-      const response = await fetch('/api/category-rules', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rule)
-      });
-      
-      if (response.ok) {
-        const newRule = await response.json();
-        update(rules => [...rules, newRule]);
-        return newRule;
-      }
+      const newRule = {
+        ...rule,
+        id: crypto.randomUUID?.() || `rule-${Date.now()}-${Math.random()}`
+      };
+      update(rules => [...rules, newRule]);
+      return newRule;
     }
   };
 }

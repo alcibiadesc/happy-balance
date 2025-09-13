@@ -19,7 +19,7 @@
   ]);
   
   let selectedPeriod = $state('month');
-  let loading = $state(true);
+  let loading = $state(false);
   let realData = $state({
     monthlyTrend: [] as any[],
     monthlyBarData: [] as any[],
@@ -154,7 +154,6 @@
         loading = false;
       }, 400);
     }
-  }
   
   // Generate period-based data from transactions
   function generatePeriodData(allTransactions: any[], period: string) {
@@ -185,7 +184,6 @@
         { name: $t('dashboard.categories.health'), amount: 200, percentage: 11.1 }
       ]
     };
-  }
   }
   
   function handlePeriodChange(period: string) {

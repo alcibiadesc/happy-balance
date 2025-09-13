@@ -5,6 +5,24 @@
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script>
+			// Theme initialization (must run before page render to prevent flash)
+			const initTheme = () => {
+				const saved = localStorage.getItem('theme') || 'system';
+				const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				const isDark = saved === 'dark' || (saved === 'system' && systemDark);
+
+				if (isDark) {
+					document.documentElement.classList.add('dark');
+					document.documentElement.setAttribute('data-theme', 'dark');
+				} else {
+					document.documentElement.classList.remove('dark');
+					document.documentElement.setAttribute('data-theme', 'light');
+				}
+			};
+
+			// Apply theme immediately
+			initTheme();
+
 			// Update body class based on sidebar state
 			const updateSidebarClass = () => {
 				const sidebarCollapsed = JSON.parse(localStorage.getItem('sidebar-collapsed') || 'false');
@@ -18,6 +36,8 @@
 			window.addEventListener('storage', (e) => {
 				if (e.key === 'sidebar-collapsed') {
 					updateSidebarClass();
+				} else if (e.key === 'theme') {
+					initTheme();
 				}
 			});
 		</script>

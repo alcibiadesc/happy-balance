@@ -198,7 +198,6 @@ const translations = {
       done: "Hecho"
     },
     navigation: {
-      transactions: "Transactions",
       transactions: "Transacciones",
       dashboard: "Panel",
       settings: "Configuración",

@@ -14,10 +14,13 @@
   onMount(() => {
     initLanguage();
     initCurrency();
-    
-    // Load transaction data
-    transactions.load();
-    
+
+    // Load transaction data only once
+    if (typeof window !== 'undefined' && !window.__transactions_loaded__) {
+      transactions.load();
+      window.__transactions_loaded__ = true;
+    }
+
     // Apply the current theme (this ensures consistency with the inline script)
     theme.subscribe(currentTheme => {
       applyTheme(currentTheme);
