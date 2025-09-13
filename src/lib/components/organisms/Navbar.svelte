@@ -6,7 +6,7 @@
   import Brand from '../atoms/Brand.svelte';
   import ThemeToggle from '../atoms/ThemeToggle.svelte';
   import NavList from '../molecules/NavList.svelte';
-import { sidebarCollapsed, toggleSidebar, initSidebar } from '$lib/stores/sidebar';
+  import { sidebarCollapsed, toggleSidebar, initSidebar } from '$lib/stores/sidebar';
 
   // Mobile sidebar state
   let isMobileSidebarOpen = $state(false);
@@ -77,29 +77,39 @@ import { sidebarCollapsed, toggleSidebar, initSidebar } from '$lib/stores/sideba
     <header class="sidebar-header">
       {#if !$sidebarCollapsed}
         <Brand size="md" />
-      {/if}
-      <div class="sidebar-controls">
-        {#if !$sidebarCollapsed}
+        <div class="sidebar-header-controls">
           <ThemeToggle size="sm" />
-        {/if}
-        <button
-          class="sidebar-collapse-toggle"
-          onclick={toggleSidebar}
-          aria-label={$sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {#if $sidebarCollapsed}
-            <ChevronRight size={18} strokeWidth={2} />
-          {:else}
+          <button
+            class="sidebar-collapse-toggle"
+            onclick={toggleSidebar}
+            aria-label="Collapse sidebar"
+          >
             <ChevronLeft size={18} strokeWidth={2} />
-          {/if}
+          </button>
+        </div>
+      {:else}
+        <button
+          class="sidebar-expand-toggle"
+          onclick={toggleSidebar}
+          aria-label="Expand sidebar"
+          title="Expand sidebar"
+        >
+          <ChevronRight size={18} strokeWidth={2} />
         </button>
-      </div>
+      {/if}
     </header>
 
     <!-- Navigation -->
     <div class="sidebar-content">
       <NavList collapsed={$sidebarCollapsed} />
     </div>
+
+    <!-- Sidebar Footer (solo cuando está colapsado) -->
+    {#if $sidebarCollapsed}
+      <div class="sidebar-footer">
+        <ThemeToggle size="sm" collapsed={true} />
+      </div>
+    {/if}
   </div>
 </aside>
 
@@ -140,7 +150,7 @@ import { sidebarCollapsed, toggleSidebar, initSidebar } from '$lib/stores/sideba
 </aside>
 
 <!-- Handle keyboard events -->
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 <style>
   /* Mobile Header */
@@ -244,15 +254,17 @@ import { sidebarCollapsed, toggleSidebar, initSidebar } from '$lib/stores/sideba
     border-bottom: 1px solid rgba(2, 60, 70, 0.08);
     margin-bottom: var(--space-lg);
     min-height: 60px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .sidebar-controls {
+  .sidebar-header-controls {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
-  .sidebar-collapse-toggle {
+  .sidebar-collapse-toggle,
+  .sidebar-expand-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -267,7 +279,15 @@ import { sidebarCollapsed, toggleSidebar, initSidebar } from '$lib/stores/sideba
     flex-shrink: 0;
   }
 
-  .sidebar-collapse-toggle:hover {
+  .sidebar-expand-toggle {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-lg);
+    margin: 0 auto;
+  }
+
+  .sidebar-collapse-toggle:hover,
+  .sidebar-expand-toggle:hover {
     background: var(--surface-muted);
     color: var(--text-primary);
     border-color: var(--acapulco);
@@ -275,7 +295,8 @@ import { sidebarCollapsed, toggleSidebar, initSidebar } from '$lib/stores/sideba
     box-shadow: 0 2px 8px rgba(122, 186, 165, 0.15);
   }
 
-  .sidebar-collapse-toggle:focus {
+  .sidebar-collapse-toggle:focus,
+  .sidebar-expand-toggle:focus {
     outline: none;
     box-shadow: 0 0 0 2px var(--acapulco), 0 0 0 4px rgba(122, 186, 165, 0.2);
   }
@@ -301,6 +322,14 @@ import { sidebarCollapsed, toggleSidebar, initSidebar } from '$lib/stores/sideba
     background: var(--text-muted);
     border-radius: 2px;
     opacity: 0.3;
+  }
+
+  .sidebar-footer {
+    padding-top: var(--space-md);
+    border-top: 1px solid rgba(2, 60, 70, 0.08);
+    display: flex;
+    justify-content: center;
+    margin-top: auto;
   }
 
   /* Mobile Overlay */
@@ -376,73 +405,20 @@ import { sidebarCollapsed, toggleSidebar, initSidebar } from '$lib/stores/sideba
     overflow-y: auto;
   }
 
-  /* Responsive Design */
-  @media (max-width: 1023px) {
+  /* Responsive visibility */
+  @media (min-width: 1024px) {
     .mobile-header {
+      display: none;
+    }
+    
+    .desktop-sidebar {
       display: block;
     }
+  }
 
+  @media (max-width: 1023px) {
     .desktop-sidebar {
       display: none;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .mobile-header {
-      display: none;
-    }
-
-    .desktop-sidebar {
-      display: flex;
-    }
-
-    .mobile-sidebar,
-    .mobile-overlay {
-      display: none;
-    }
-  }
-
-  /* Animation for mobile sidebar */
-  .mobile-sidebar__container {
-    animation: slideInFromLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  @keyframes slideInFromLeft {
-    from {
-      transform: translateX(-20px);
-      opacity: 0.8;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  /* Dark mode adjustments */
-  @media (prefers-color-scheme: dark) {
-    .desktop-sidebar,
-    .mobile-sidebar {
-      border-color: rgba(254, 247, 238, 0.1);
-    }
-
-    .sidebar-header,
-    .mobile-sidebar__header {
-      border-color: rgba(254, 247, 238, 0.1);
-    }
-  }
-
-  /* Layout adjustments for collapsed sidebar */
-  :global(main) {
-    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  @media (min-width: 1024px) {
-    :global(main) {
-      margin-left: 280px;
-    }
-
-    :global(.desktop-sidebar--collapsed ~ main) {
-      margin-left: 80px;
     }
   }
 </style>

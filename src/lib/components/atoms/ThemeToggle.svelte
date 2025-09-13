@@ -6,9 +6,10 @@
   
   interface Props {
     size?: 'sm' | 'md';
+    collapsed?: boolean;
   }
   
-  let { size = 'md' }: Props = $props();
+  let { size = 'md', collapsed = false }: Props = $props();
   
   let mounted = $state(false);
   
@@ -42,6 +43,7 @@
 
 <button 
   class="theme-toggle theme-toggle--{size}"
+  class:theme-toggle--collapsed={collapsed}
   onclick={toggleTheme}
   aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
   title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -92,6 +94,13 @@
     height: 2.5rem;
   }
   
+  .theme-toggle--collapsed {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    border-radius: var(--radius-lg) !important;
+    margin: 0 auto;
+  }
+  
   .theme-toggle:hover:not(:disabled) {
     background: var(--success-light);
     color: var(--success);
@@ -100,9 +109,18 @@
     box-shadow: var(--shadow-md);
   }
   
+  .theme-toggle--collapsed:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.25);
+  }
+  
   .theme-toggle:active:not(:disabled) {
     transform: translateY(0);
     box-shadow: var(--shadow-sm);
+  }
+  
+  .theme-toggle--collapsed:active:not(:disabled) {
+    transform: translateY(-1px) scale(1.02);
   }
   
   .theme-toggle--active {
@@ -121,6 +139,10 @@
   
   .theme-toggle:hover:not(:disabled) .theme-toggle__icon {
     transform: rotate(15deg);
+  }
+  
+  .theme-toggle--collapsed:hover:not(:disabled) .theme-toggle__icon {
+    transform: rotate(25deg) scale(1.1);
   }
   
   .theme-toggle__loading {
@@ -143,6 +165,10 @@
     box-shadow: 0 0 0 2px var(--primary-light), 0 0 0 4px rgba(2, 60, 70, 0.1);
   }
   
+  .theme-toggle--collapsed:focus {
+    box-shadow: 0 0 0 2px var(--acapulco), 0 0 0 4px rgba(122, 186, 165, 0.2);
+  }
+  
   /* Dark mode specific styles */
   html.dark .theme-toggle {
     background: var(--surface-elevated);
@@ -153,5 +179,16 @@
     background: var(--warning-light);
     color: var(--warning);
     border-color: var(--warning);
+  }
+  
+  html.dark .theme-toggle--collapsed {
+    background: var(--surface-muted);
+    border-color: rgba(122, 186, 165, 0.4);
+  }
+  
+  html.dark .theme-toggle--collapsed:hover:not(:disabled) {
+    background: var(--warning-light);
+    border-color: var(--warning);
+    box-shadow: 0 4px 12px rgba(254, 205, 44, 0.3);
   }
 </style>
