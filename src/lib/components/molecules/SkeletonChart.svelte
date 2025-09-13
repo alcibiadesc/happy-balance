@@ -10,7 +10,7 @@
   let { height = 280, title = true, subtitle = true }: Props = $props();
 </script>
 
-<div class="chart-skeleton">
+<div class="chart-skeleton" style="min-height: {height + 120}px;">
   {#if title}
     <div class="skeleton-header">
       <Skeleton width="200px" height="14px" class="skeleton-title" />

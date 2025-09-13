@@ -19,6 +19,7 @@
     border-radius: 10px;
     padding: 1rem;
     border: 1px solid var(--border-color, transparent);
+    min-height: 88px; /* Match real category card height */
   }
   
   .skeleton-header {

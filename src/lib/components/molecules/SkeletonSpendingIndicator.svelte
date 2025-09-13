@@ -3,7 +3,7 @@
 </script>
 
 <div class="spending-summary-skeleton">
-  <Skeleton width="300px" height="18px" class="spending-text-skeleton" />
+  <Skeleton width="320px" height="22px" class="spending-text-skeleton" />
 </div>
 
 <style>
@@ -40,7 +40,7 @@
     }
     
     .spending-text-skeleton {
-      width: 250px !important;
+      width: 280px !important;
     }
   }
 </style>

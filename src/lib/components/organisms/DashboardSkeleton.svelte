@@ -45,11 +45,8 @@
 
 <style>
   .dashboard-skeleton {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1.5rem;
-    min-height: 100vh;
-    background: var(--surface);
+    /* Remove padding and dimensions to match parent container */
+    width: 100%;
   }
   
   .metrics-section-skeleton {
