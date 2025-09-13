@@ -101,13 +101,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: 50% !important;
     border: 1px solid rgba(122, 186, 165, 0.2);
     background: var(--surface-elevated);
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: var(--shadow-sm);
+    aspect-ratio: 1 / 1;
   }
   
   .theme-toggle:disabled {
