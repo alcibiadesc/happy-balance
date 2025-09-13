@@ -19,11 +19,6 @@ export default defineConfig({
 		target: 'esnext'
 	},
 	optimizeDeps: {
-		include: ['@prisma/client', 'chart.js']
-	},
-	test: {
-		environment: 'jsdom',
-		globals: true,
-		setupFiles: ['./src/test-setup.ts']
+		include: ['chart.js']
 	}
 });

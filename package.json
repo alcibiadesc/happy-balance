@@ -1,41 +1,24 @@
 {
 	"name": "happy-balance",
 	"version": "1.0.0",
-	"description": "Happy Balance - Personal finance management for a happier financial life. Built with SvelteKit, following DDD and Hexagonal Architecture",
+	"description": "Happy Balance - Personal finance management for a happier financial life. Built with SvelteKit",
 	"type": "module",
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",
-		"dev:docker": "docker compose -f docker-compose.dev.yml up --build",
-		"dev:down": "docker compose -f docker-compose.dev.yml down",
-		"dev:logs": "docker compose -f docker-compose.dev.yml logs -f app",
-		"dev:rebuild": "docker compose -f docker-compose.dev.yml up --build --force-recreate",
-		"dev:shell": "docker compose -f docker-compose.dev.yml exec app sh",
-		"prod": "docker compose up -d --build",
-		"prod:down": "docker compose down",
-		"prod:logs": "docker compose logs -f",
-		"prod:rebuild": "docker compose up --build --force-recreate -d",
-		"test": "docker compose -f docker-compose.dev.yml exec app pnpm vitest",
-		"test:coverage": "docker compose -f docker-compose.dev.yml exec app pnpm vitest run --coverage",
-		"lint": "docker compose -f docker-compose.dev.yml exec app pnpm prettier --check . && docker compose -f docker-compose.dev.yml exec app pnpm eslint .",
-		"lint:fix": "docker compose -f docker-compose.dev.yml exec app pnpm prettier --write . && docker compose -f docker-compose.dev.yml exec app pnpm eslint . --fix",
-		"typecheck": "docker compose -f docker-compose.dev.yml exec app pnpm svelte-kit sync && docker compose -f docker-compose.dev.yml exec app pnpm tsc --noEmit",
-		"setup": "docker compose -f docker-compose.dev.yml build && docker compose -f docker-compose.dev.yml up -d",
-		"clean": "docker compose -f docker-compose.dev.yml down -v && docker system prune -f",
-		"status": "docker compose -f docker-compose.dev.yml ps",
-		"prisma:prepare": "prisma generate && prisma db push && prisma db seed",
-		"db:generate": "prisma generate",
-		"db:push": "prisma db push",
-		"db:seed": "prisma db seed",
-		"db:studio": "prisma studio",
-		"db:reset": "prisma migrate reset --force"
+		"build": "vite build",
+		"preview": "vite preview",
+		"test": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"lint": "prettier --check . && eslint .",
+		"lint:fix": "prettier --write . && eslint . --fix",
+		"typecheck": "svelte-kit sync && tsc --noEmit",
+		"check": "svelte-check --tsconfig ./tsconfig.json"
 	},
 	"dependencies": {
-		"@prisma/client": "^5.22.0",
 		"chart.js": "^4.5.0",
 		"lucide-svelte": "^0.542.0",
-		"svelte-i18n": "^4.0.1",
-		"uuid": "^9.0.1"
+		"svelte-i18n": "^4.0.1"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.55.0",
@@ -44,11 +27,9 @@
 		"@sveltejs/vite-plugin-svelte": "^6.2.0",
 		"@tailwindcss/typography": "^0.5.10",
 		"@types/node": "^20.10.4",
-		"@types/uuid": "^9.0.7",
 		"@typescript-eslint/eslint-plugin": "^6.13.1",
 		"@typescript-eslint/parser": "^6.13.1",
 		"autoprefixer": "^10.4.16",
-		"concurrently": "^9.2.1",
 		"daisyui": "^5.1.10",
 		"eslint": "^8.55.0",
 		"eslint-config-prettier": "^9.1.0",
@@ -58,35 +39,25 @@
 		"prettier": "^3.1.0",
 		"prettier-plugin-svelte": "^3.4.0",
 		"prettier-plugin-tailwindcss": "^0.5.7",
-		"prisma": "^5.22.0",
 		"svelte": "^5.38.10",
 		"svelte-check": "^4.3.1",
 		"tailwindcss": "^3.3.6",
 		"tslib": "^2.6.2",
-		"tsx": "^4.6.2",
 		"typescript": "^5.3.3",
 		"vite": "^6.3.6",
-		"vite-bundle-analyzer": "^0.7.0",
-		"vitest": "^1.0.4",
-		"wait-on": "^8.0.5"
+		"vitest": "^1.0.4"
 	},
 	"engines": {
 		"node": ">=20.0.0",
 		"pnpm": ">=8.0.0"
 	},
 	"packageManager": "pnpm@9.0.0",
-	"prisma": {
-		"seed": "tsx prisma/seed.ts"
-	},
 	"keywords": [
 		"expense-tracker",
 		"finance",
 		"svelte",
 		"sveltekit",
-		"typescript",
-		"ddd",
-		"hexagonal-architecture",
-		"docker"
+		"typescript"
 	],
 	"author": "Claude Code",
 	"license": "MIT",

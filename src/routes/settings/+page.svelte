@@ -248,11 +248,6 @@
     setCurrency(target.value);
   }
 
-  function toggleTheme() {
-    const newTheme = isDark ? 'light' : 'dark';
-    setTheme(newTheme);
-  }
-
   // Clear status messages after some time
   $: if (importError) {
     setTimeout(() => {
