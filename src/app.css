@@ -2,564 +2,70 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Japanese Minimalist Design System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;600&display=swap');
-
-/*
- * Japanese Color Palette - Inspired by nature and traditional aesthetics
- * Based on the provided japan theme
- */
-:root {
-  /* Japanese Color Palette */
-  --evening-sea: #023c46;      /* Deep teal - primary dark */
-  --froly: #f5796c;           /* Coral salmon - accent warm */
-  --bridesmaid: #fef7ee;      /* Warm cream - background */
-  --acapulco: #7abaa5;        /* Sage green - accent cool */
-  --sunglow: #fecd2c;         /* Golden yellow - accent bright */
-  
-  /* Extended Neutral Palette */
-  --snow: #fefefe;
-  --paper: #fcfcfc;
-  --ash: #f8f8f8;
-  --stone: #f0f0f0;
-  --pebble: #e8e8e8;
-  --cloud: #d4d4d4;
-  --mist: #a8a8a8;
-  --slate: #737373;
-  --charcoal: #4a4a4a;
-  --ink: #2a2a2a;
-  --void: #1a1a1a;
-  
-  /* Japanese Design Tokens */
-  --ma-xs: 0.125rem;    /* 2px - minimal breathing room */
-  --ma-sm: 0.25rem;     /* 4px - small elements */
-  --ma-base: 0.5rem;    /* 8px - base spacing unit */
-  --ma-md: 1rem;        /* 16px - comfortable spacing */
-  --ma-lg: 1.5rem;      /* 24px - section spacing */
-  --ma-xl: 2rem;        /* 32px - large spacing */
-  --ma-2xl: 3rem;       /* 48px - major sections */
-  --ma-3xl: 4rem;       /* 64px - page sections */
-  --ma-4xl: 6rem;       /* 96px - hero spacing */
-  
-  /* Typography Scale - Refined and Minimal */
-  --text-xs: 0.75rem;    /* 12px */
-  --text-sm: 0.875rem;   /* 14px */
-  --text-base: 1rem;     /* 16px */
-  --text-lg: 1.125rem;   /* 18px */
-  --text-xl: 1.25rem;    /* 20px */
-  --text-2xl: 1.5rem;    /* 24px */
-  --text-3xl: 1.875rem;  /* 30px */
-  --text-4xl: 2.25rem;   /* 36px */
-  
-  /* Subtle Shadows - Very minimal */
-  --shadow-whisper: 0 1px 2px 0 rgb(0 0 0 / 0.02);
-  --shadow-breath: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
-  --shadow-gentle: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.06);
-  
-  /* Minimal Border Radius */
-  --radius-none: 0;
-  --radius-subtle: 2px;
-  --radius-soft: 4px;
-  --radius-smooth: 6px;
-  --radius-round: 8px;
-  
-  /* Refined Transitions */
-  --ease-gentle: 200ms cubic-bezier(0.4, 0, 0.6, 1);
-  --ease-smooth: 300ms cubic-bezier(0.4, 0, 0.6, 1);
-  
-  /* Typography */
-  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-japanese: 'Noto Sans JP', 'Inter', sans-serif;
-  --font-mono: 'SF Mono', Consolas, 'Liberation Mono', monospace;
+/* Base styles */
+html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  scroll-behavior: smooth;
 }
 
-@supports (color: color(display-p3 1 1 1)) {
-  :root {
-    --evening-sea: color(display-p3 0.008 0.235 0.276 / 1.0);
-    --froly: color(display-p3 0.96 0.475 0.422 / 1.0);
-    --bridesmaid: color(display-p3 0.997 0.968 0.934 / 1.0);
-    --acapulco: color(display-p3 0.477 0.728 0.647 / 1.0);
-    --sunglow: color(display-p3 0.995 0.804 0.174 / 1.0);
-  }
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Dark Theme - Respectful of light sensitivity */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bridesmaid: #1a1a1a;
-    --snow: #2a2a2a;
-    --paper: #252525;
-    --ash: #2f2f2f;
-    --stone: #3a3a3a;
-    --ink: #e0e0e0;
-    --charcoal: #b0b0b0;
-  }
+/* Prevent flash of unstyled content */
+html:not(.dark) {
+  color-scheme: light;
 }
 
-/* Base Styles - Japanese Minimalism */
-@layer base {
-  * {
-    border-color: var(--pebble);
-  }
-
-  html {
-    font-family: var(--font-main);
-    font-size: 16px;
-    line-height: 1.6;
-    scroll-behavior: smooth;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-  }
-
-  body {
-    background-color: #fef7ee;
-    color: var(--evening-sea);
-    font-weight: 400;
-    letter-spacing: -0.01em;
-    transition: background-color var(--ease-smooth), color var(--ease-smooth);
-  }
-
-  /* Remove all default margins and paddings for clean slate */
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  /* Focus states - Subtle but clear */
-  *:focus-visible {
-    outline: 2px solid var(--acapulco);
-    outline-offset: 2px;
-    border-radius: var(--radius-subtle);
-  }
-
-  /* Clean list styles */
-  ul, ol {
-    list-style: none;
-  }
-
-  /* Responsive images */
-  img, picture {
-    max-width: 100%;
-    height: auto;
-    display: block;
-  }
-
-  /* Form elements inherit typography */
-  input, button, textarea, select {
-    font: inherit;
-    color: inherit;
-  }
-
-  /* Selection color */
-  ::selection {
-    background-color: var(--acapulco);
-    color: var(--snow);
-  }
+html.dark {
+  color-scheme: dark;
 }
 
-/* Component Layer - Japanese Aesthetic */
-@layer components {
-  
-  /* Typography Classes */
-  .text-whisper { 
-    font-size: var(--text-xs); 
-    color: var(--mist);
-    font-weight: 400;
-  }
-  
-  .text-breath { 
-    font-size: var(--text-sm); 
-    color: var(--slate);
-    font-weight: 400;
-  }
-  
-  .text-speak { 
-    font-size: var(--text-base); 
-    color: var(--charcoal);
-    font-weight: 400;
-  }
-  
-  .text-voice { 
-    font-size: var(--text-lg); 
-    color: var(--ink);
-    font-weight: 500;
-  }
-  
-  .text-call { 
-    font-size: var(--text-xl); 
-    color: var(--evening-sea);
-    font-weight: 500;
-  }
-  
-  .text-shout { 
-    font-size: var(--text-2xl); 
-    color: var(--evening-sea);
-    font-weight: 600;
-  }
-  
-  .text-announce { 
-    font-size: var(--text-3xl); 
-    color: var(--evening-sea);
-    font-weight: 600;
-    line-height: 1.2;
-  }
-  
-  .text-proclaim { 
-    font-size: var(--text-4xl); 
-    color: var(--evening-sea);
-    font-weight: 600;
-    line-height: 1.1;
-  }
-
-  /* Container System - Generous spacing */
-  .container-breath {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 var(--ma-lg);
-  }
-  
-  .container-gentle {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 0 var(--ma-lg);
-  }
-  
-  .container-intimate {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 0 var(--ma-lg);
-  }
-
-  /* Button System - Pure Colors, No Gradients */
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2;
-    background-color: var(--evening-sea);
-    color: var(--snow);
-    padding: var(--ma-md) var(--ma-lg);
-    border: none;
-    border-radius: var(--radius-smooth);
-    font-size: var(--text-base);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--ease-gentle);
-    text-decoration: none;
-    letter-spacing: -0.01em;
-  }
-  
-  .btn-primary:hover {
-    background-color: var(--acapulco);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-gentle);
-  }
-  
-  .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2;
-    background-color: transparent;
-    color: var(--evening-sea);
-    border: 1px solid var(--pebble);
-    padding: var(--ma-md) var(--ma-lg);
-    border-radius: var(--radius-smooth);
-    font-size: var(--text-base);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--ease-gentle);
-    text-decoration: none;
-  }
-  
-  .btn-secondary:hover {
-    background-color: var(--ash);
-    border-color: var(--cloud);
-  }
-  
-  .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2;
-    background-color: transparent;
-    color: var(--slate);
-    border: none;
-    padding: var(--ma-md) var(--ma-lg);
-    border-radius: var(--radius-smooth);
-    font-size: var(--text-base);
-    cursor: pointer;
-    transition: all var(--ease-gentle);
-    text-decoration: none;
-  }
-  
-  .btn-ghost:hover {
-    color: var(--evening-sea);
-    background-color: var(--ash);
-  }
-
-  /* Accent Button - Using sunglow color */
-  .btn-accent {
-    @apply inline-flex items-center justify-center gap-2;
-    background-color: var(--sunglow);
-    color: var(--evening-sea);
-    padding: var(--ma-md) var(--ma-lg);
-    border: none;
-    border-radius: var(--radius-smooth);
-    font-size: var(--text-base);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--ease-gentle);
-    text-decoration: none;
-    letter-spacing: -0.01em;
-  }
-  
-  .btn-accent:hover {
-    background-color: var(--froly);
-    color: var(--snow);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-gentle);
-  }
-
-  /* Button Sizes */
-  .btn-small {
-    padding: var(--ma-sm) var(--ma-md);
-    font-size: var(--text-sm);
-    border-radius: var(--radius-soft);
-  }
-
-  .btn-large {
-    padding: var(--ma-lg) var(--ma-xl);
-    font-size: var(--text-lg);
-    border-radius: var(--radius-round);
-  }
-
-  /* Card System - Clean and Subtle */
-  .card-breath {
-    background-color: var(--snow);
-    border: 1px solid var(--stone);
-    border-radius: var(--radius-round);
-    box-shadow: var(--shadow-whisper);
-    transition: all var(--ease-gentle);
-  }
-  
-  .card-breath:hover {
-    box-shadow: var(--shadow-breath);
-    transform: translateY(-1px);
-  }
-  
-  .card-gentle {
-    background-color: var(--paper);
-    border: 1px solid var(--pebble);
-    border-radius: var(--radius-round);
-    box-shadow: var(--shadow-breath);
-  }
-  
-  .card-float {
-    background-color: var(--snow);
-    border: none;
-    border-radius: var(--radius-round);
-    box-shadow: var(--shadow-gentle);
-  }
-
-  /* Input System - Clean and Minimal */
-  .input-clean {
-    width: 100%;
-    padding: var(--ma-md);
-    border: 1px solid var(--pebble);
-    border-radius: var(--radius-smooth);
-    background-color: var(--snow);
-    font-size: var(--text-base);
-    color: var(--evening-sea);
-    transition: all var(--ease-gentle);
-  }
-  
-  .input-clean::placeholder {
-    color: var(--mist);
-  }
-  
-  .input-clean:focus {
-    outline: none;
-    border-color: var(--acapulco);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--acapulco) 10%, transparent);
-  }
-
-  /* Spacing System - Ma (間) - Japanese concept of negative space */
-  .ma-xs { margin: var(--ma-xs); }
-  .ma-sm { margin: var(--ma-sm); }
-  .ma-base { margin: var(--ma-base); }
-  .ma-md { margin: var(--ma-md); }
-  .ma-lg { margin: var(--ma-lg); }
-  .ma-xl { margin: var(--ma-xl); }
-  .ma-2xl { margin: var(--ma-2xl); }
-  .ma-3xl { margin: var(--ma-3xl); }
-  .ma-4xl { margin: var(--ma-4xl); }
-
-  .mt-xs { margin-top: var(--ma-xs); }
-  .mt-sm { margin-top: var(--ma-sm); }
-  .mt-base { margin-top: var(--ma-base); }
-  .mt-md { margin-top: var(--ma-md); }
-  .mt-lg { margin-top: var(--ma-lg); }
-  .mt-xl { margin-top: var(--ma-xl); }
-  .mt-2xl { margin-top: var(--ma-2xl); }
-  .mt-3xl { margin-top: var(--ma-3xl); }
-  .mt-4xl { margin-top: var(--ma-4xl); }
-
-  .mb-xs { margin-bottom: var(--ma-xs); }
-  .mb-sm { margin-bottom: var(--ma-sm); }
-  .mb-base { margin-bottom: var(--ma-base); }
-  .mb-md { margin-bottom: var(--ma-md); }
-  .mb-lg { margin-bottom: var(--ma-lg); }
-  .mb-xl { margin-bottom: var(--ma-xl); }
-  .mb-2xl { margin-bottom: var(--ma-2xl); }
-  .mb-3xl { margin-bottom: var(--ma-3xl); }
-  .mb-4xl { margin-bottom: var(--ma-4xl); }
-
-  /* Padding System */
-  .pa-xs { padding: var(--ma-xs); }
-  .pa-sm { padding: var(--ma-sm); }
-  .pa-base { padding: var(--ma-base); }
-  .pa-md { padding: var(--ma-md); }
-  .pa-lg { padding: var(--ma-lg); }
-  .pa-xl { padding: var(--ma-xl); }
-  .pa-2xl { padding: var(--ma-2xl); }
-  .pa-3xl { padding: var(--ma-3xl); }
-  .pa-4xl { padding: var(--ma-4xl); }
-
-  /* Status Colors - Subtle and Harmonious */
-  .status-success { color: var(--acapulco); }
-  .status-warning { color: var(--sunglow); }
-  .status-error { color: var(--froly); }
-  .status-info { color: var(--evening-sea); }
-
-  /* Badge System */
-  .badge-gentle {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--ma-sm) var(--ma-md);
-    background-color: var(--ash);
-    color: var(--charcoal);
-    border-radius: var(--radius-smooth);
-    font-size: var(--text-xs);
-    font-weight: 500;
-    letter-spacing: 0.025em;
-    text-transform: uppercase;
-  }
-  
-  .badge-success {
-    background-color: color-mix(in srgb, var(--acapulco) 15%, var(--bridesmaid));
-    color: var(--acapulco);
-  }
-  
-  .badge-warning {
-    background-color: color-mix(in srgb, var(--sunglow) 15%, var(--bridesmaid));
-    color: var(--sunglow);
-  }
-  
-  .badge-error {
-    background-color: color-mix(in srgb, var(--froly) 15%, var(--bridesmaid));
-    color: var(--froly);
-  }
-
-  /* Animation System - Subtle and Respectful */
-  .fade-in {
-    animation: fadeIn 0.6s var(--ease-smooth) both;
-  }
-  
-  .slide-up {
-    animation: slideUp 0.5s var(--ease-smooth) both;
-  }
-  
-  .breathe {
-    transition: all var(--ease-gentle);
-  }
-  
-  .breathe:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-breath);
-  }
-
-  /* Dividers - Subtle separation */
-  .divider-whisper {
-    height: 1px;
-    background-color: var(--stone);
-    border: none;
-  }
-  
-  .divider-breath {
-    height: 1px;
-    background-color: var(--pebble);
-    border: none;
-  }
-
-  /* Loading States */
-  .loading-gentle {
-    background: linear-gradient(90deg, var(--ash) 25%, var(--stone) 50%, var(--ash) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite ease-in-out;
-    border-radius: var(--radius-smooth);
-  }
-
-  /* Scrollbar - Minimal */
-  .scroll-gentle {
-    scrollbar-width: thin;
-    scrollbar-color: var(--cloud) transparent;
-  }
-  
-  .scroll-gentle::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  .scroll-gentle::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .scroll-gentle::-webkit-scrollbar-thumb {
-    background: var(--cloud);
-    border-radius: 2px;
-  }
-  
-  .scroll-gentle::-webkit-scrollbar-thumb:hover {
-    background: var(--mist);
-  }
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+::-webkit-scrollbar-track {
+  background: var(--surface-muted);
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
-/* Responsive Design - Mobile-first approach */
-@media (max-width: 768px) {
-  .container-breath,
-  .container-gentle,
-  .container-intimate {
-    padding: 0 var(--ma-md);
-  }
-  
-  .text-proclaim {
-    font-size: var(--text-3xl);
-  }
-  
-  .text-announce {
-    font-size: var(--text-2xl);
-  }
+/* Firefox scrollbar */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) var(--surface-muted);
 }
 
-/* Reduced Motion Support */
+/* Focus styles */
+*:focus {
+  outline: none;
+}
+
+/* Selection styles */
+::selection {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+html.dark ::selection {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+/* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -567,56 +73,33 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
   }
 }
 
-/* Japanese Background Override - Ensure bridesmaid color is used */
-.bg-bridesmaid {
-  background-color: #fef7ee !important;
+/* Print styles */
+@media print {
+  .mobile-header,
+  .desktop-sidebar,
+  .mobile-sidebar,
+  .mobile-overlay {
+    display: none !important;
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+  }
 }
 
-/* Global background for light mode */
-html {
-  background-color: #fef7ee;
-}
-
-body {
-  background-color: #fef7ee !important;
-}
-
-/* Japanese Background Fix - Global application */
-html, body {
-  background-color: #fef7ee !important;
-  min-height: 100vh;
-  width: 100%;
-}
-
-/* Dark mode backgrounds */
-html.dark, body.dark, .dark {
-  background-color: #1a1a1a !important;
-}
-
-.dark html, .dark body {
-  background-color: #1a1a1a !important;
-}
-
-/* Dark mode cards and components */
-.dark .card-breath {
-  background-color: #2a2a2a !important;
-  border-color: #3a3a3a !important;
-}
-
-.dark .bg-ash {
-  background-color: #2f2f2f !important;
-}
-
-/* Ensure full coverage */
-#svelte {
-  min-height: 100vh;
-  background-color: inherit;
-}
-
-main {
-  background-color: inherit !important;
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  :root {
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+  }
 }

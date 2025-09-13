@@ -10,6 +10,7 @@
   let { size = 'md' }: Props = $props();
   
   let isDark = $state(false);
+  let mounted = $state(false);
   
   const iconSizes = {
     sm: 16,
@@ -19,39 +20,56 @@
   function toggleTheme() {
     isDark = !isDark;
     
-    if (browser) {
-      // Toggle dark class on document
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+    if (browser && mounted) {
+      // Apply theme immediately
+      document.documentElement.classList.toggle('dark', isDark);
       
       // Save preference
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
       
-      // Debug log
-      console.log('Theme toggled to:', isDark ? 'dark' : 'light');
+      // Debug feedback
+      console.log('🌓 Theme changed to:', isDark ? 'dark' : 'light');
+      
+      // Visual feedback - briefly change the button
+      const button = document.querySelector('.theme-toggle');
+      button?.classList.add('theme-toggle--active');
+      setTimeout(() => {
+        button?.classList.remove('theme-toggle--active');
+      }, 200);
     }
   }
   
   onMount(() => {
     if (browser) {
-      // Check saved theme
+      // Get saved theme or detect system preference
       const savedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       
       // Determine initial state
-      isDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+      isDark = savedTheme ? savedTheme === 'dark' : systemPrefersDark;
       
-      // Apply initial theme
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      // Apply theme
+      document.documentElement.classList.toggle('dark', isDark);
       
-      console.log('Initial theme:', isDark ? 'dark' : 'light');
+      // Listen to system theme changes
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+        if (!localStorage.getItem('theme')) {
+          isDark = e.matches;
+          document.documentElement.classList.toggle('dark', isDark);
+        }
+      };
+      
+      mediaQuery.addEventListener('change', handleSystemThemeChange);
+      
+      mounted = true;
+      
+      console.log('🎨 Theme initialized:', isDark ? 'dark' : 'light');
+      
+      // Cleanup
+      return () => {
+        mediaQuery.removeEventListener('change', handleSystemThemeChange);
+      };
     }
   });
 </script>
@@ -60,13 +78,19 @@
   class="theme-toggle theme-toggle--{size}"
   onclick={toggleTheme}
   aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-  title={isDark ? 'Light mode' : 'Dark mode'}
+  title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+  disabled={!mounted}
 >
   <div class="theme-toggle__icon">
-    {#if isDark}
-      <Sun size={iconSizes[size]} strokeWidth={2} />
+    {#if mounted}
+      {#if isDark}
+        <Sun size={iconSizes[size]} strokeWidth={2} />
+      {:else}
+        <Moon size={iconSizes[size]} strokeWidth={2} />
+      {/if}
     {:else}
-      <Moon size={iconSizes[size]} strokeWidth={2} />
+      <!-- Loading state -->
+      <div class="theme-toggle__loading"></div>
     {/if}
   </div>
 </button>
@@ -86,6 +110,11 @@
     box-shadow: var(--shadow-sm);
   }
   
+  .theme-toggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
   .theme-toggle--sm {
     width: 2rem;
     height: 2rem;
@@ -96,7 +125,7 @@
     height: 2.5rem;
   }
   
-  .theme-toggle:hover {
+  .theme-toggle:hover:not(:disabled) {
     background: var(--success-light);
     color: var(--success);
     border-color: var(--success);
@@ -104,25 +133,58 @@
     box-shadow: var(--shadow-md);
   }
   
-  .theme-toggle:active {
+  .theme-toggle:active:not(:disabled) {
     transform: translateY(0);
     box-shadow: var(--shadow-sm);
+  }
+  
+  .theme-toggle--active {
+    background: var(--warning-light) !important;
+    color: var(--warning) !important;
+    border-color: var(--warning) !important;
+    transform: scale(1.1) !important;
   }
   
   .theme-toggle__icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s ease;
+    transition: transform 0.3s ease;
   }
   
-  .theme-toggle:hover .theme-toggle__icon {
+  .theme-toggle:hover:not(:disabled) .theme-toggle__icon {
     transform: rotate(15deg);
+  }
+  
+  .theme-toggle__loading {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--text-muted);
+    border-top: 2px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
   
   /* Focus state */
   .theme-toggle:focus {
     outline: none;
     box-shadow: 0 0 0 2px var(--primary-light), 0 0 0 4px rgba(2, 60, 70, 0.1);
+  }
+  
+  /* Dark mode specific styles */
+  html.dark .theme-toggle {
+    background: var(--surface-elevated);
+    border-color: rgba(122, 186, 165, 0.3);
+  }
+  
+  html.dark .theme-toggle:hover:not(:disabled) {
+    background: var(--warning-light);
+    color: var(--warning);
+    border-color: var(--warning);
   }
 </style>

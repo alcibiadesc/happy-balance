@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { Upload, BarChart3 } from 'lucide-svelte';
+  import { Upload, BarChart3, Settings } from 'lucide-svelte';
   import { page } from '$app/stores';
   import NavItem from '../atoms/NavItem.svelte';
   
-  // Simplified navigation items - only what we're rebuilding
+  // Navigation items - only what we're rebuilding
   const navigationItems = [
     {
       href: '/',
@@ -16,7 +16,13 @@
       icon: Upload,
       label: 'Import',
       section: 'main',
-      isImportant: true // Emphasized as requested
+      isImportant: true
+    },
+    {
+      href: '/settings',
+      icon: Settings,
+      label: 'Settings',
+      section: 'main'
     }
   ];
   
