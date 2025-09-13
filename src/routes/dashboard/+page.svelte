@@ -90,8 +90,8 @@
         }));
       }
 
-      // Generate trend data (for now, we'll use mock data based on current analytics)
-      generateTrendData();
+      // Use real monthly breakdown data for trend chart
+      processTrendData();
 
     } catch (error) {
       console.error('Error loading analytics data:', error);
@@ -138,41 +138,50 @@
     return colorMap[categoryType] || '#6B7280';
   }
 
-  function generateTrendData() {
-    // Generate mock trend data for the last 7 days
-    // In a real app, this would come from an API endpoint
-    const today = new Date();
-    const data = [];
-
-    // Ensure we have valid base values
-    const safeIncome = Number(analyticsData.monthlyIncome) || 0;
-    const safeExpenses = Number(analyticsData.monthlyExpenses) || 0;
-
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-
-      // Mock data with some variation - ensure no division by zero
-      const baseIncome = safeIncome > 0 ? safeIncome / 30 : 0; // Daily average
-      const baseExpenses = safeExpenses > 0 ? safeExpenses / 30 : 0; // Daily average
-
-      const income = baseIncome * (0.8 + Math.random() * 0.4); // ±20% variation
-      const expenses = baseExpenses * (0.8 + Math.random() * 0.4); // ±20% variation
-
-      // Ensure all values are finite
-      const safeIncomeValue = isFinite(income) ? income : 0;
-      const safeExpenseValue = isFinite(expenses) ? expenses : 0;
-      const balanceValue = safeIncomeValue - safeExpenseValue;
-
-      data.push({
-        date: date.toISOString(),
-        income: safeIncomeValue,
-        expenses: -safeExpenseValue, // Negative for expenses
-        balance: isFinite(balanceValue) ? balanceValue : 0
-      });
+  function processTrendData() {
+    // Use real monthly breakdown data from API
+    if (!analyticsData.monthlyBreakdown || analyticsData.monthlyBreakdown.length === 0) {
+      trendData = [];
+      return;
     }
 
-    trendData = data;
+    // Transform monthlyBreakdown data to trendData format
+    trendData = analyticsData.monthlyBreakdown.map(monthData => {
+      // Ensure all values are finite numbers
+      const safeIncome = Number(monthData.income) || 0;
+      const safeExpenses = Number(monthData.expenses) || 0;
+      const safeBalance = Number(monthData.balance) || 0;
+
+      // Create a date from the month label (e.g., "ene 2024" -> Date)
+      const monthDate = parseMonthLabel(monthData.month);
+
+      return {
+        date: monthDate.toISOString(),
+        income: safeIncome,
+        expenses: -safeExpenses, // Negative for chart display
+        balance: safeBalance
+      };
+    });
+  }
+
+  function parseMonthLabel(monthLabel: string): Date {
+    // Handle Spanish month format like "ene 2024", "feb 2024", etc.
+    try {
+      const [monthStr, yearStr] = monthLabel.split(' ');
+      const year = parseInt(yearStr) || new Date().getFullYear();
+      
+      // Spanish month abbreviations mapping
+      const monthMap = {
+        'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
+        'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11
+      };
+      
+      const month = monthMap[monthStr.toLowerCase()] ?? 0;
+      return new Date(year, month, 1);
+    } catch (error) {
+      console.warn('Error parsing month label:', monthLabel, error);
+      return new Date();
+    }
   }
 
   function formatCurrency(amount: number): string {
