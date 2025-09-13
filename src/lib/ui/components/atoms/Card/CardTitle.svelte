@@ -13,6 +13,6 @@
   }: Props = $props();
 </script>
 
-<h3 class={cn('text-lg font-semibold leading-none tracking-tight', className)} {...props}>
+<h3 class={cn('card-title', className)} {...props}>
   {@render children?.()}
 </h3>

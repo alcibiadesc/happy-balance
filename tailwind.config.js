@@ -131,8 +131,8 @@ export default {
           "error-content": "#ffffff",
         },
         dark: {
-          "primary": "#49A9A6",           // happy-teal
-          "primary-content": "#ffffff",
+          "primary": "#2DD4BF",           // teal-400 for excellent contrast
+          "primary-content": "#1F2937",   // dark text for better contrast
           "secondary": "#A3E8DC",         // happy-mint
           "secondary-content": "#1F2937",
           "accent": "#F6BD61",            // happy-gold
@@ -141,16 +141,16 @@ export default {
           "neutral-content": "#E5E7EB",
           "base-100": "#1F2937",          // charcoal
           "base-200": "#374151",          // dark-grey
-          "base-300": "#6B7280",          // text-grey
-          "base-content": "#E5E7EB",      // medium-grey
-          "info": "#49A9A6",              // happy-teal
-          "info-content": "#ffffff",
-          "success": "#A3E8DC",           // happy-mint
+          "base-300": "#4B5563",          // darker text-grey for better contrast
+          "base-content": "#F3F4F6",      // lighter content for better contrast
+          "info": "#60A5FA",              // blue-400 for better contrast
+          "info-content": "#1F2937",
+          "success": "#22C55E",           // green-500 for better contrast
           "success-content": "#1F2937",
-          "warning": "#F6BD61",           // happy-gold
+          "warning": "#FBBF24",           // amber-400 for better contrast
           "warning-content": "#1F2937",
-          "error": "#EF817F",             // happy-coral
-          "error-content": "#ffffff",
+          "error": "#F87171",             // red-400 for better contrast
+          "error-content": "#1F2937",    // dark text for better contrast
         }
       }
     ],

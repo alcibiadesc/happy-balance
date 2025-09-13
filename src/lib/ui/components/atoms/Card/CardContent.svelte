@@ -13,6 +13,6 @@
   }: Props = $props();
 </script>
 
-<div class={cn('p-6 pt-0', className)} {...props}>
+<div class={cn('card-body', className)} {...props}>
   {@render children?.()}
 </div>

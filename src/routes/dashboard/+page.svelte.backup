@@ -30,7 +30,7 @@
   });
 
   let isLoading = $state(true);
-  let selectedPeriod = $state("last_6_months");
+  let selectedPeriod = $state('current_month');
 
   // Chart data
   let trendData = $state([]);
@@ -342,7 +342,7 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 sm:mb-6">
                 <div class="p-3 bg-white/50 rounded-lg border border-white/60">
                   <p class="text-xs sm:text-caption text-secondary mb-1">Balance Mensual</p>
-                  <p class="text-xl sm:text-h3 text-mono font-semibold {insights.monthlyNet >= 0 ? 'status-success' : 'status-error'}">
+                  <p class="text-xl sm:text-h3 text-mono font-semibold {insights.monthlyNet >= 0 ? 'text-green-600' : 'text-red-600'}">
                     {formatCurrency(insights.monthlyNet)}
                   </p>
                 </div>
@@ -393,14 +393,14 @@
              tabindex="0">
             <div class="flex items-center gap-3 mb-3 sm:mb-4">
               <div class="w-10 h-10 sm:w-11 sm:h-11 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors hover-scale" aria-hidden="true">
-                <DollarSign class="w-5 h-5 sm:w-5.5 sm:h-5.5 status-success" />
+                <DollarSign class="w-5 h-5 sm:w-5.5 sm:h-5.5 text-green-600" />
               </div>
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium text-primary truncate">Ingresos</p>
                 <p class="text-xs text-tertiary">Ver detalles</p>
               </div>
             </div>
-            <p class="text-lg sm:text-xl font-bold status-success text-mono truncate" aria-label="Ingresos totales: {formatCurrency(analyticsData.monthlyIncome)}">{formatCurrency(analyticsData.monthlyIncome)}</p>
+            <p class="text-lg sm:text-xl font-bold text-green-600 text-mono truncate" aria-label="Ingresos totales: {formatCurrency(analyticsData.monthlyIncome)}">{formatCurrency(analyticsData.monthlyIncome)}</p>
             <p class="text-xs text-gray-400 mt-1">
               <span class="inline-flex items-center gap-1" aria-label="Crecimiento: {formatPercentage(analyticsData.trends.incomeGrowth)}">
                 <TrendingUp class="w-3 h-3" aria-hidden="true" />
@@ -414,14 +414,14 @@
              tabindex="0">
             <div class="flex items-center gap-3 mb-3 sm:mb-4">
               <div class="w-10 h-10 sm:w-11 sm:h-11 bg-red-50 rounded-lg flex items-center justify-center group-hover:bg-red-100 transition-colors hover-scale" aria-hidden="true">
-                <TrendingDown class="w-5 h-5 sm:w-5.5 sm:h-5.5 status-error" />
+                <TrendingDown class="w-5 h-5 sm:w-5.5 sm:h-5.5 text-red-600" />
               </div>
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium text-primary truncate">Gastos</p>
                 <p class="text-xs text-tertiary">Ver categorías</p>
               </div>
             </div>
-            <p class="text-lg sm:text-xl font-bold status-error text-mono truncate" aria-label="Gastos totales: {formatCurrency(analyticsData.monthlyExpenses)}">{formatCurrency(analyticsData.monthlyExpenses)}</p>
+            <p class="text-lg sm:text-xl font-bold text-red-600 text-mono truncate" aria-label="Gastos totales: {formatCurrency(analyticsData.monthlyExpenses)}">{formatCurrency(analyticsData.monthlyExpenses)}</p>
             <p class="text-xs text-gray-400 mt-1">
               <span class="inline-flex items-center gap-1" aria-label="Crecimiento: {formatPercentage(analyticsData.trends.expenseGrowth)}">
                 <TrendingDown class="w-3 h-3" aria-hidden="true" />
@@ -481,7 +481,7 @@
           <div class="space-y-3 sm:space-y-4">
             {#if insights.monthlyNet < 0}
               <div class="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-100">
-                <AlertCircle class="w-5 h-5 status-error flex-shrink-0 mt-0.5" />
+                <AlertCircle class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p class="text-sm font-medium text-red-800">Gastos superiores a ingresos</p>
                   <p class="text-xs text-red-700 mt-1">
@@ -503,7 +503,7 @@
               </div>
             {:else}
               <div class="flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-100">
-                <TrendingUp class="w-5 h-5 status-success flex-shrink-0 mt-0.5" />
+                <TrendingUp class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p class="text-sm font-medium text-green-800">¡Excelente gestión financiera!</p>
                   <p class="text-xs text-green-700 mt-1">
@@ -538,7 +538,7 @@
             <summary class="p-4 sm:p-6 cursor-pointer hover:bg-secondary transition-colors flex items-center justify-between touch-manipulation list-none">
               <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div class="w-8 h-8 sm:w-9 sm:h-9 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <PieChart class="w-4 h-4 sm:w-5 sm:h-5 status-error" />
+                  <PieChart class="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
                 </div>
                 <div class="min-w-0 flex-1">
                   <h3 class="text-sm sm:text-base font-medium text-primary truncate">Análisis de Gastos</h3>
@@ -546,7 +546,7 @@
                 </div>
               </div>
               <div class="flex items-center gap-3">
-                <div class="text-lg sm:text-2xl font-bold status-error flex-shrink-0">
+                <div class="text-lg sm:text-2xl font-bold text-red-600 flex-shrink-0">
                   <span class="block sm:hidden">{formatCurrency(analyticsData.monthlyExpenses).replace(',00', '')}</span>
                   <span class="hidden sm:block">{formatCurrency(analyticsData.monthlyExpenses)}</span>
                 </div>
@@ -650,7 +650,7 @@
               </div>
               <div class="flex items-center gap-3">
                 <div class="text-right flex-shrink-0">
-                  <div class="text-base sm:text-lg font-bold {insights.monthlyNet >= 0 ? 'status-success' : 'status-error'}">
+                  <div class="text-base sm:text-lg font-bold {insights.monthlyNet >= 0 ? 'text-green-600' : 'text-red-600'}">
                     <span class="block sm:hidden">{formatCurrency(insights.monthlyNet).replace(',00', '')}</span>
                     <span class="hidden sm:block">{formatCurrency(insights.monthlyNet)}</span>
                   </div>

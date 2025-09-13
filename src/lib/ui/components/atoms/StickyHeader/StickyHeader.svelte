@@ -9,7 +9,7 @@
 
   let { class: className = '', style = '', children }: Props = $props();
   
-  $: ({ sidebarCollapsed } = $layoutStore);
+  let sidebarCollapsed = $derived($layoutStore.sidebarCollapsed);
 </script>
 
 <!-- Responsive sticky header that accounts for sidebar -->

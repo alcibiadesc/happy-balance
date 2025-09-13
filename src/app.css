@@ -133,22 +133,22 @@
     --color-interactive-secondary-hover: #3D3830 !important;
     --color-interactive-secondary-text: #D4CFC9 !important;
     
-    /* Dark Semantic Colors */
-    --color-success: #7FB087;          /* Success actions */
+    /* Dark Semantic Colors - Enhanced contrast */
+    --color-success: #22C55E;          /* Success actions - improved contrast */
     --color-success-bg: #1F2F23;       /* Success backgrounds */
-    --color-success-text: #9FD4A8;     /* Success text - 5.2:1 ratio */
+    --color-success-text: #4ADE80;     /* Success text - improved 6.1:1 ratio */
     
-    --color-error: #D48B8B;            /* Error actions */
+    --color-error: #F87171;            /* Error actions - improved contrast */
     --color-error-bg: #2F1F1F;         /* Error backgrounds */
-    --color-error-text: #E8A8A8;       /* Error text - 4.8:1 ratio */
+    --color-error-text: #FCA5A5;       /* Error text - improved 5.8:1 ratio */
     
-    --color-warning: #E6B800;          /* Warning actions */
+    --color-warning: #FBBF24;          /* Warning actions - improved contrast */
     --color-warning-bg: #2F2A1F;       /* Warning backgrounds */
-    --color-warning-text: #F0C674;     /* Warning text - 5.1:1 ratio */
+    --color-warning-text: #FCD34D;     /* Warning text - improved 6.2:1 ratio */
     
-    --color-info: #87A3D4;            /* Info actions */
+    --color-info: #60A5FA;            /* Info actions - improved contrast */
     --color-info-bg: #1F232F;         /* Info backgrounds */
-    --color-info-text: #A8C1E8;       /* Info text - 4.9:1 ratio */
+    --color-info-text: #93C5FD;       /* Info text - improved 5.9:1 ratio */
     
     /* Dark Shadows */
     --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -922,3 +922,88 @@
     margin-bottom: 1rem;
   }
 }
+  /* Status Background Classes */
+  .status-success-bg {
+    background-color: var(--color-success-bg);
+  }
+  
+  .status-error-bg {
+    background-color: var(--color-error-bg);
+  }
+  
+  .status-warning-bg {
+    background-color: var(--color-warning-bg);
+  }
+  
+  .status-info-bg {
+    background-color: var(--color-info-bg);
+  }
+  
+  /* Status Text Classes for Backgrounds */
+  .status-success-text {
+    color: var(--color-success-text);
+  }
+  
+  .status-error-text {
+    color: var(--color-error-text);
+  }
+  
+  .status-warning-text {
+    color: var(--color-warning-text);
+  }
+  
+  .status-info-text {
+    color: var(--color-info-text);
+  }
+  
+  /* Status Border Classes */
+  .status-success-border {
+    border-color: var(--color-success);
+  }
+  
+  .status-error-border {
+    border-color: var(--color-error);
+  }
+  
+  .status-warning-border {
+    border-color: var(--color-warning);
+  }
+  
+  .status-info-border {
+    border-color: var(--color-info);
+  }
+
+  /* SVG Icon Fixes */
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+    fill: currentColor;
+    stroke: currentColor;
+  }
+  
+  /* Ensure Lucide icons render properly */
+  svg[data-lucide] {
+    width: 1em;
+    height: 1em;
+    stroke-width: 2;
+    stroke: currentColor;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  
+  /* Fix for icons that might appear as squares */
+  .icon, [class*="w-"][class*="h-"] > svg {
+    display: block;
+    flex-shrink: 0;
+  }
+  
+  /* Ensure proper icon sizing */
+  .w-3 svg, .h-3 svg { width: 0.75rem; height: 0.75rem; }
+  .w-4 svg, .h-4 svg { width: 1rem; height: 1rem; }
+  .w-5 svg, .h-5 svg { width: 1.25rem; height: 1.25rem; }
+  .w-6 svg, .h-6 svg { width: 1.5rem; height: 1.5rem; }
+  .w-8 svg, .h-8 svg { width: 2rem; height: 2rem; }
+  .w-10 svg, .h-10 svg { width: 2.5rem; height: 2.5rem; }
+  .w-12 svg, .h-12 svg { width: 3rem; height: 3rem; }
+  .w-16 svg, .h-16 svg { width: 4rem; height: 4rem; }

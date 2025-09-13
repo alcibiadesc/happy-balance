@@ -13,6 +13,6 @@
   }: Props = $props();
 </script>
 
-<div class={cn('rounded-lg border bg-card text-card-foreground shadow-sm', className)} {...props}>
+<div class={cn('card bg-base-100 shadow-xl', className)} {...props}>
   {@render children?.()}
 </div>

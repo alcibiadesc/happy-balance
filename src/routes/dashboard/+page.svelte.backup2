@@ -30,7 +30,7 @@
   });
 
   let isLoading = $state(true);
-  let selectedPeriod = $state("last_6_months");
+  let selectedPeriod = $state('current_month');
 
   // Chart data
   let trendData = $state([]);

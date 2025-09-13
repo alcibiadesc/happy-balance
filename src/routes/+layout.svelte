@@ -126,254 +126,132 @@
   let isDemoMode = $derived(env.PUBLIC_DEMO_MODE === 'true');
 </script>
 
-<div class="min-h-screen" style="background-color: var(--color-background-primary); color: var(--color-text-primary);">
-  <!-- Desktop Navigation Sidebar -->
-  <div class="hidden md:fixed md:inset-y-0 md:flex {sidebarCollapsed ? 'md:w-20' : 'md:w-64'} md:flex-col transition-all duration-300">
-    <div class="flex min-h-0 flex-1 flex-col border-r" style="background-color: var(--color-background-elevated); border-color: var(--color-border-primary);">
-      <!-- Logo and Collapse Button -->
-      <div class="flex h-16 items-center justify-between {sidebarCollapsed ? 'px-4' : 'px-6'} border-b" style="border-color: var(--color-border-primary);">
-        {#if !sidebarCollapsed}
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" style="background: linear-gradient(135deg, var(--color-dusty-pink) 0%, var(--color-coral-pastel) 100%);">
-              <TrendingUp class="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 class="text-lg font-bold" style="color: var(--color-text-primary);">Happy Balance</h1>
-              <p class="text-xs" style="color: var(--color-text-tertiary);">Gestión Financiera</p>
-            </div>
-          </div>
-        {:else}
-          <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" style="background: linear-gradient(135deg, var(--color-dusty-pink) 0%, var(--color-coral-pastel) 100%);">
+<!-- DaisyUI Drawer System -->
+<div class="drawer lg:drawer-open min-h-screen">
+  <!-- Mobile drawer toggle -->
+  <input id="mobile-drawer" type="checkbox" class="drawer-toggle" bind:checked={mobileMenuOpen} />
+  
+  <!-- Main content -->
+  <div class="drawer-content flex flex-col">
+    <!-- Mobile navbar -->
+    <div class="navbar bg-base-100 border-b lg:hidden">
+      <div class="navbar-start">
+        <label for="mobile-drawer" class="btn btn-square btn-ghost drawer-button">
+          <Menu class="w-6 h-6" />
+        </label>
+        <div class="flex items-center gap-3 ml-2">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-primary to-secondary shadow-sm">
             <TrendingUp class="w-5 h-5 text-white" />
           </div>
-        {/if}
-        <div class="flex items-center gap-1">
-          <ThemeToggle />
-          <button
-            onclick={layoutStore.toggleSidebar}
-            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            title={sidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-          >
-            {#if sidebarCollapsed}
-              <ChevronRight class="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            {:else}
-              <ChevronLeft class="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            {/if}
-          </button>
-        </div>
-      </div>
-      
-      <!-- Navigation -->
-      <nav class="flex-1 {sidebarCollapsed ? 'px-2' : 'px-4'} py-6 space-y-1">
-        {#each navigation as item}
-          <div class="space-y-1">
-            <!-- Main Navigation Item -->
-            <div class="flex items-center">
-              <button
-                onclick={() => {
-                  if (item.subItems && !sidebarCollapsed) {
-                    toggleExpanded(item.name);
-                  } else {
-                    goto(item.href);
-                  }
-                }}
-                class="flex-1 flex items-center {sidebarCollapsed ? 'justify-center px-3 py-3' : 'gap-3 px-3 py-2'} text-sm font-medium rounded-lg transition-colors {
-                  isActive(item.href, item.subItems)
-                    ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }"
-                title={sidebarCollapsed ? `${item.name} - ${item.description}` : item.description}
-              >
-                <item.icon class="w-5 h-5 flex-shrink-0" />
-                {#if !sidebarCollapsed}
-                  <span class="truncate flex-1 text-left">{item.name}</span>
-                  {#if item.subItems}
-                    <svg class="w-4 h-4 transition-transform {expandedItems.has(item.name) ? 'rotate-90' : ''}" 
-                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  {/if}
-                {/if}
-              </button>
-              
-              <!-- Quick Access Button for items with subitems -->
-              {#if item.subItems && !sidebarCollapsed}
-                <button
-                  onclick={() => goto(item.href)}
-                  class="ml-1 p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
-                  title="Ir a {item.name}"
-                  aria-label="Ir a {item.name}"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </button>
-              {/if}
-            </div>
-            
-            <!-- Sub Navigation Items -->
-            {#if item.subItems && !sidebarCollapsed && expandedItems.has(item.name)}
-              <div class="ml-6 space-y-1 border-l border-gray-200 pl-4">
-                {#each item.subItems as subItem}
-                  <button
-                    onclick={() => goto(subItem.href)}
-                    class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors {
-                      $page.url.pathname === subItem.href || $page.url.pathname.startsWith(subItem.href + '/')
-                        ? 'bg-blue-50 text-blue-600 font-medium'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }"
-                  >
-                    <div class="w-1.5 h-1.5 rounded-full bg-current opacity-50"></div>
-                    <span class="truncate">{subItem.name}</span>
-                  </button>
-                {/each}
-              </div>
-            {/if}
+          <div>
+            <h1 class="text-lg font-bold">Happy Balance</h1>
           </div>
-        {/each}
-      </nav>
-    </div>
-  </div>
-
-  <!-- Mobile Navigation -->
-  <div class="md:hidden">
-    <!-- Mobile header -->
-    <div class="flex h-16 items-center justify-between px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-          <TrendingUp class="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 class="text-lg font-bold text-gray-900">Happy Balance</h1>
-          <p class="text-xs text-gray-500">Gestión Financiera</p>
         </div>
       </div>
-      <button
-        onclick={layoutStore.toggleMobileMenu}
-        class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
-      >
-        {#if mobileMenuOpen}
-          <X class="w-6 h-6" />
-        {:else}
-          <Menu class="w-6 h-6" />
-        {/if}
-      </button>
-    </div>
-
-    <!-- Mobile menu overlay -->
-    {#if mobileMenuOpen}
-      <div 
-        class="fixed inset-0 z-20 bg-black bg-opacity-25" 
-        onclick={layoutStore.closeMobileMenu}
-        onkeydown={(e) => e.key === 'Escape' && layoutStore.closeMobileMenu()}
-        role="button"
-        aria-label="Close mobile menu"
-        tabindex="0"
-      ></div>
-    {/if}
-
-    <!-- Mobile menu -->
-    <div class="fixed top-0 right-0 z-30 h-full w-64 bg-white transform transition-transform {
-      mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-    }">
-      <div class="flex h-16 items-center justify-between px-4 border-b border-gray-200">
-        <h1 class="text-lg font-semibold text-gray-900">Menú</h1>
-        <button
-          onclick={layoutStore.closeMobileMenu}
-          class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
-        >
-          <X class="w-5 h-5" />
-        </button>
+      <div class="navbar-end">
+        <ThemeToggle />
       </div>
-      <nav class="px-4 py-6 space-y-1">
-        {#each navigation as item}
-          <div class="space-y-1">
-            <!-- Main Navigation Item -->
-            <div class="flex items-center">
-              <button
-                onclick={() => {
-                  if (item.subItems) {
-                    toggleExpanded(item.name);
-                  } else {
-                    goto(item.href);
-                    layoutStore.closeMobileMenu();
-                  }
-                }}
-                class="flex-1 flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors {
-                  isActive(item.href, item.subItems)
-                    ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }"
-              >
-                <item.icon class="w-5 h-5 flex-shrink-0" />
-                <span class="truncate flex-1 text-left">{item.name}</span>
-                {#if item.subItems}
-                  <svg class="w-4 h-4 transition-transform {expandedItems.has(item.name) ? 'rotate-90' : ''}" 
-                       fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                  </svg>
-                {/if}
-              </button>
-              
-              <!-- Quick Access Button -->
-              {#if item.subItems}
-                <button
-                  onclick={() => {
-                    goto(item.href);
-                    layoutStore.closeMobileMenu();
-                  }}
-                  class="ml-1 p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
-                  title="Ir a {item.name}"
-                  aria-label="Ir a {item.name}"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </button>
-              {/if}
-            </div>
-            
-            <!-- Sub Navigation Items -->
-            {#if item.subItems && expandedItems.has(item.name)}
-              <div class="ml-6 space-y-1 border-l border-gray-200 pl-4">
-                {#each item.subItems as subItem}
-                  <button
-                    onclick={() => {
-                      goto(subItem.href);
-                      layoutStore.closeMobileMenu();
-                    }}
-                    class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors {
-                      $page.url.pathname === subItem.href || $page.url.pathname.startsWith(subItem.href + '/')
-                        ? 'bg-blue-50 text-blue-600 font-medium'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }"
-                  >
-                    <div class="w-1.5 h-1.5 rounded-full bg-current opacity-50"></div>
-                    <span class="truncate">{subItem.name}</span>
-                  </button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/each}
-      </nav>
     </div>
-  </div>
-
-  <!-- Main content -->
-  <div class="{sidebarCollapsed ? 'md:pl-20' : 'md:pl-64'} transition-all duration-300">
     <!-- Demo Banner -->
     {#if isDemoMode}
       <DemoBanner />
     {/if}
     
-    {#if mobileMenuOpen}
-      <!-- Overlay to prevent interaction when mobile menu is open -->
-      <div class="md:hidden"></div>
-    {/if}
-    {@render children?.()}
+    <!-- Page content -->
+    <main class="flex-1 overflow-auto">
+      {@render children?.()}
+    </main>
   </div>
+  
+  <!-- Drawer sidebar -->
+  <div class="drawer-side">
+    <label for="mobile-drawer" class="drawer-overlay"></label>
+    <aside class="w-64 lg:w-{sidebarCollapsed ? '20' : '64'} min-h-full bg-base-200 transition-all duration-300">
+      <!-- Desktop sidebar header -->
+      <div class="navbar bg-base-100 border-b lg:flex hidden">
+        <div class="navbar-start">
+          {#if !sidebarCollapsed}
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-primary to-secondary shadow-sm">
+                <TrendingUp class="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 class="text-lg font-bold">Happy Balance</h1>
+                <p class="text-xs opacity-70">Gestión Financiera</p>
+              </div>
+            </div>
+          {:else}
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-primary to-secondary shadow-sm">
+              <TrendingUp class="w-5 h-5 text-white" />
+            </div>
+          {/if}
+        </div>
+        <div class="navbar-end">
+          <ThemeToggle />
+          <button
+            onclick={layoutStore.toggleSidebar}
+            class="btn btn-ghost btn-sm"
+            title={sidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+          >
+            {#if sidebarCollapsed}
+              <ChevronRight class="w-4 h-4" />
+            {:else}
+              <ChevronLeft class="w-4 h-4" />
+            {/if}
+          </button>
+        </div>
+      </div>
 
-  <!-- Global notifications -->
-  <NotificationContainer />
+      <!-- Navigation menu -->
+      <nav class="p-4">
+        <ul class="menu menu-vertical w-full">
+          {#each navigation as item}
+            <li>
+              {#if item.subItems && !sidebarCollapsed}
+                <!-- Collapsible menu item -->
+                <details class="{expandedItems.has(item.name) ? 'open' : ''}">
+                  <summary 
+                    class="{isActive(item.href, item.subItems) ? 'active' : ''}"
+                    onclick={() => toggleExpanded(item.name)}
+                  >
+                    <item.icon class="w-5 h-5" />
+                    <span>{item.name}</span>
+                  </summary>
+                  <ul>
+                    {#each item.subItems as subItem}
+                      <li>
+                        <a 
+                          href={subItem.href}
+                          class="{$page.url.pathname === subItem.href ? 'active' : ''}"
+                          onclick={() => layoutStore.closeMobileMenu()}
+                        >
+                          {subItem.name}
+                        </a>
+                      </li>
+                    {/each}
+                  </ul>
+                </details>
+              {:else}
+                <!-- Regular menu item -->
+                <a 
+                  href={item.href}
+                  class="{isActive(item.href, item.subItems) ? 'active' : ''} {sidebarCollapsed ? 'tooltip tooltip-right' : ''}"
+                  data-tip={sidebarCollapsed ? `${item.name} - ${item.description}` : item.description}
+                  onclick={() => layoutStore.closeMobileMenu()}
+                >
+                  <item.icon class="w-5 h-5" />
+                  {#if !sidebarCollapsed}
+                    <span>{item.name}</span>
+                  {/if}
+                </a>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      </nav>
+    </aside>
+  </div>
 </div>
+
+<!-- Global notifications -->
+<NotificationContainer />

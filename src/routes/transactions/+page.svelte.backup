@@ -381,16 +381,9 @@
   }
 
   // Hide/Show management
-  let toggleVisibilityLoading = new Set();
   async function toggleTransactionVisibility(transactionId: string) {
-    if (toggleVisibilityLoading.has(transactionId)) return;
-    
     const isCurrentlyHidden = hiddenTransactions.has(transactionId);
     const newHiddenState = !isCurrentlyHidden;
-    
-    // Add loading state
-    toggleVisibilityLoading.add(transactionId);
-    toggleVisibilityLoading = new Set(toggleVisibilityLoading);
     
     try {
       const response = await fetch(`/api/transactions/${transactionId}/visibility`, {
@@ -411,15 +404,12 @@
         hiddenTransactions = new Set(hiddenTransactions);
         
         // Update totals since hidden transactions affect calculations
+        await loadTransactions();
       } else {
         showAlert('Error al actualizar la visibilidad de la transacción', 'error');
       }
     } catch (err) {
       console.error('Error updating transaction visibility:', err);
-    } finally {
-      // Remove loading state
-      toggleVisibilityLoading.delete(transactionId);
-      toggleVisibilityLoading = new Set(toggleVisibilityLoading);
       showAlert('Error al actualizar la visibilidad de la transacción', 'error');
     }
   }
@@ -672,7 +662,7 @@
                 customStartDate = '';
                 customEndDate = '';
               }}
-              class="text-xs text-tertiary hover:status-error underline"
+              class="text-xs text-tertiary hover:text-red-600 underline"
             >
               Limpiar
             </button>
@@ -981,14 +971,13 @@
                 </div>
                 <div class="text-right flex items-center gap-2 flex-shrink-0">
                   <div class="text-right">
-                    <p class="text-lg font-semibold {transaction.amount > 0 ? 'status-success' : 'status-error'}">
+                    <p class="text-lg font-semibold {transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}">
                       {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
                     </p>
                   </div>
                   {#if !isSelectionMode}
                     <button
                       onclick={() => toggleTransactionVisibility(transaction.id.value || transaction.id)}
-                      disabled={toggleVisibilityLoading.has(transaction.id.value || transaction.id)}
                       class="btn btn-ghost btn-sm opacity-60 hover:opacity-100"
                       title={hiddenTransactions.has(transaction.id.value || transaction.id) ? "Mostrar transacción" : "Ocultar transacción"}
                     >
@@ -1123,7 +1112,6 @@
                         <button
                           onclick={() => toggleTransactionVisibility(transaction.id.value || transaction.id)}
                           class="btn btn-ghost btn-sm opacity-60 hover:opacity-100"
-                          disabled={toggleVisibilityLoading.has(transaction.id.value || transaction.id)}
                           title={hiddenTransactions.has(transaction.id.value || transaction.id) ? "Mostrar transacción" : "Ocultar transacción"}
                         >
                           {#if hiddenTransactions.has(transaction.id.value || transaction.id)}

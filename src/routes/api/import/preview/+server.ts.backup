@@ -6,7 +6,6 @@ import { PrismaAccountRepository } from '$lib/infrastructure/repositories/Prisma
 import { CSVParserFactory } from '$lib/infrastructure/parsers/CSVParserFactory.js';
 import { logger } from '$lib/shared/utils/AppLogger.js';
 import { AccountId } from '$lib/domain/value-objects/AccountId.js';
-import { UniversalCSVParser } from '$lib/infrastructure/parsers/UniversalCSVParser.js';
 
 export interface PreviewTransaction {
   id: string; // Temporary ID for preview
