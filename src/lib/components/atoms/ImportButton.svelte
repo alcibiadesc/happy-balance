@@ -11,12 +11,12 @@
   
   const sizeClasses = {
     sm: 'px-3 py-2 text-sm',
-    md: 'px-4 py-3 text-base'
+    md: 'px-4 py-2 text-sm'
   };
   
   const iconSizes = {
-    sm: 16,
-    md: 18
+    sm: 14,
+    md: 16
   };
 </script>
 
@@ -30,40 +30,29 @@
     <Upload size={iconSizes[size]} strokeWidth={2} />
   </div>
   <span class="import-button__text">Import</span>
-  <div class="import-button__badge"></div>
 </a>
 
 <style>
   .import-button {
-    position: relative;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    border-radius: var(--radius-lg);
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
     text-decoration: none;
     font-weight: 500;
     transition: all 0.15s ease;
     
-    /* Gradient background */
-    background: linear-gradient(135deg, var(--accent), var(--warning));
-    color: var(--text-inverse);
-    box-shadow: var(--shadow-md);
-    
-    /* Import emphasis */
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    /* Minimal style */
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid var(--accent);
   }
   
   .import-button:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: var(--shadow-lg);
-    
-    /* Enhanced gradient on hover */
-    background: linear-gradient(135deg, var(--accent-hover), var(--warning-hover));
-  }
-  
-  .import-button:active {
-    transform: translateY(-1px) scale(1.01);
-    box-shadow: var(--shadow-md);
+    background: var(--accent);
+    color: var(--text-inverse);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
   }
   
   .import-button__icon {
@@ -74,40 +63,27 @@
   }
   
   .import-button:hover .import-button__icon {
-    transform: rotate(-5deg) scale(1.1);
+    transform: scale(1.05);
   }
   
   .import-button__text {
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.025em;
-  }
-  
-  .import-button__badge {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--success);
-    border: 2px solid var(--text-inverse);
-    animation: pulse 2s infinite;
-  }
-  
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.7;
-      transform: scale(1.1);
-    }
   }
   
   /* Focus state */
   .import-button:focus {
     outline: none;
-    box-shadow: 0 0 0 2px var(--surface-elevated), 0 0 0 4px var(--accent), var(--shadow-lg);
+    box-shadow: 0 0 0 2px var(--accent-light), 0 0 0 4px var(--accent);
+  }
+  
+  /* Dark mode */
+  html.dark .import-button {
+    background: rgba(245, 121, 108, 0.1);
+    border-color: var(--accent);
+  }
+  
+  html.dark .import-button:hover {
+    background: var(--accent);
   }
 </style>
