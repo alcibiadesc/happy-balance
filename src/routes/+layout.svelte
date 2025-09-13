@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import '../app.css';
   import '../lib/styles/japan-palette.css';
-  import Navbar from '../lib/components/organisms/Navbar.svelte';
+  import NewNavbar from '../lib/components/organisms/NewNavbar.svelte';
   import { initLanguage } from '$lib/stores/i18n';
   import { initCurrency } from '$lib/stores/currency';
   import { theme, applyTheme } from '$lib/stores/theme';
@@ -30,8 +30,8 @@
 </script>
 
 <div class="app-shell">
-  <Navbar />
-  
+  <NewNavbar />
+
   <main class="main-content" class:main-content--collapsed={$sidebarCollapsed}>
     <div class="content-container">
       {@render children?.()}
@@ -48,7 +48,7 @@
   
   .main-content {
     margin-left: 0;
-    padding-top: 64px;
+    padding-top: 72px;
     min-height: 100vh;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
