@@ -5,13 +5,19 @@
   import Navbar from '../lib/components/organisms/Navbar.svelte';
   import { initLanguage } from '$lib/stores/i18n';
   import { initCurrency } from '$lib/stores/currency';
+  import { theme, applyTheme } from '$lib/stores/theme';
   
   let { children } = $props();
   
-  // Initialize i18n and currency on mount
+  // Initialize stores and apply theme on mount
   onMount(() => {
     initLanguage();
     initCurrency();
+    
+    // Apply the current theme (this ensures consistency with the inline script)
+    theme.subscribe(currentTheme => {
+      applyTheme(currentTheme);
+    });
   });
 </script>
 

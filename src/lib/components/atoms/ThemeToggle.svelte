@@ -2,6 +2,7 @@
   import { Sun, Moon } from 'lucide-svelte';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
+  import { theme, setTheme, effectiveTheme } from '$lib/stores/theme';
   
   interface Props {
     size?: 'sm' | 'md';
@@ -9,7 +10,6 @@
   
   let { size = 'md' }: Props = $props();
   
-  let isDark = $state(false);
   let mounted = $state(false);
   
   const iconSizes = {
@@ -17,19 +17,15 @@
     md: 18
   };
   
+  // Get current effective theme (reactive)
+  let isDark = $derived($effectiveTheme === 'dark');
+  
   function toggleTheme() {
-    isDark = !isDark;
+    // Toggle between light and dark (not system)
+    const newTheme = isDark ? 'light' : 'dark';
+    setTheme(newTheme);
     
     if (browser && mounted) {
-      // Apply theme immediately
-      document.documentElement.classList.toggle('dark', isDark);
-      
-      // Save preference
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      
-      // Debug feedback
-      console.log('🌓 Theme changed to:', isDark ? 'dark' : 'light');
-      
       // Visual feedback - briefly change the button
       const button = document.querySelector('.theme-toggle');
       button?.classList.add('theme-toggle--active');
@@ -40,37 +36,7 @@
   }
   
   onMount(() => {
-    if (browser) {
-      // Get saved theme or detect system preference
-      const savedTheme = localStorage.getItem('theme');
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      
-      // Determine initial state
-      isDark = savedTheme ? savedTheme === 'dark' : systemPrefersDark;
-      
-      // Apply theme
-      document.documentElement.classList.toggle('dark', isDark);
-      
-      // Listen to system theme changes
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-        if (!localStorage.getItem('theme')) {
-          isDark = e.matches;
-          document.documentElement.classList.toggle('dark', isDark);
-        }
-      };
-      
-      mediaQuery.addEventListener('change', handleSystemThemeChange);
-      
-      mounted = true;
-      
-      console.log('🎨 Theme initialized:', isDark ? 'dark' : 'light');
-      
-      // Cleanup
-      return () => {
-        mediaQuery.removeEventListener('change', handleSystemThemeChange);
-      };
-    }
+    mounted = true;
   });
 </script>
 

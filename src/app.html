@@ -9,17 +9,27 @@
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 		<script>
-			// Sistema de temas con preferencia del sistema
+			// Sistema de temas - previene flash of unstyled content
 			(function() {
 				const savedTheme = localStorage.getItem('theme');
 				const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 				
-				if (savedTheme) {
-					document.documentElement.setAttribute('data-theme', savedTheme);
-				} else if (systemPrefersDark) {
-					document.documentElement.setAttribute('data-theme', 'japanese-dark');
+				let effectiveTheme = 'light';
+				
+				if (savedTheme === 'dark') {
+					effectiveTheme = 'dark';
+				} else if (savedTheme === 'light') {
+					effectiveTheme = 'light';
+				} else if (savedTheme === 'system' || !savedTheme) {
+					effectiveTheme = systemPrefersDark ? 'dark' : 'light';
+				}
+				
+				if (effectiveTheme === 'dark') {
+					document.documentElement.classList.add('dark');
+					document.documentElement.setAttribute('data-theme', 'dark');
 				} else {
-					document.documentElement.setAttribute('data-theme', 'japanese');
+					document.documentElement.classList.remove('dark');
+					document.documentElement.setAttribute('data-theme', 'light');
 				}
 			})();
 		</script>
