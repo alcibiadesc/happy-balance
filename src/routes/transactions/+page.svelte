@@ -1142,7 +1142,6 @@
   </div>
 </div>
 
-<!-- Legacy IntelligentSuggestions removed - not properly implemented -->
 
 <!-- Confirmation Dialog -->
 <ConfirmationDialog

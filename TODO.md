@@ -2,8 +2,6 @@ ESTE ES EL BACKLOG DE TAREAS, antes de comenzar cada una analizala, piensa en ap
 
 Una vez finalizada y tras comprobar que funciona haz el commit, borra la tarea que corresponda y sigue con la siguiente. Puedes añadir tareas si quieres a este document.
 
-- Al igual que el sistema de categorias me gustaría que se pudiera hacer lo mismo con ocultar para que sea de forma inteligente
-- Migra todos los componentes a https://daisyui.com/components/
 - Limpia o simplifica más el código para eliminar archivos que no hacen falta, etc...
 - Haz que los datos del dashboard aparezcan bien
 - Haz que el plegar desplegar funcione bien
