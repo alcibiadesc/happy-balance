@@ -1,38 +1,39 @@
 <script lang="ts">
-  export let size: 'sm' | 'md' | 'lg' | 'xl' = 'md';
-  export let color: 'primary' | 'white' | 'gray' | 'green' | 'red' = 'primary';
+  export let size: 'xs' | 'sm' | 'md' | 'lg' = 'md';
+  export let type: 'spinner' | 'dots' | 'ring' | 'ball' | 'bars' | 'infinity' = 'spinner';
   export let text: string | undefined = undefined;
 
-  // Size configuration
+  // DaisyUI size configurations
   const sizeConfig = {
-    sm: { spinner: 'w-4 h-4', border: 'border-2' },
-    md: { spinner: 'w-6 h-6', border: 'border-2' },
-    lg: { spinner: 'w-8 h-8', border: 'border-3' },
-    xl: { spinner: 'w-12 h-12', border: 'border-4' }
+    xs: 'loading-xs',
+    sm: 'loading-sm',
+    md: 'loading-md',
+    lg: 'loading-lg'
   };
 
-  // Color configuration
-  const colorConfig = {
-    primary: 'border-blue-200 border-t-blue-600',
-    white: 'border-white/30 border-t-white',
-    gray: 'border-gray-200 border-t-gray-600',
-    green: 'border-green-200 border-t-green-600',
-    red: 'border-red-200 border-t-red-600'
+  // DaisyUI loading type configurations
+  const typeConfig = {
+    spinner: 'loading-spinner',
+    dots: 'loading-dots',
+    ring: 'loading-ring',
+    ball: 'loading-ball',
+    bars: 'loading-bars',
+    infinity: 'loading-infinity'
   };
 
   $: sizeClasses = sizeConfig[size];
-  $: colorClasses = colorConfig[color];
+  $: typeClasses = typeConfig[type];
 </script>
 
 <div class="flex items-center justify-center">
-  <div class="flex items-center space-x-3">
-    <div 
-      class="{sizeClasses.spinner} {sizeClasses.border} {colorClasses} rounded-full animate-spin"
-      role="status"
-      aria-label="Loading"
-    ></div>
+  <div class="flex items-center gap-3">
+    <span 
+      class="loading {typeClasses} {sizeClasses}"
+      role="status" 
+      aria-label="Cargando"
+    ></span>
     {#if text}
-      <span class="text-gray-600">{text}</span>
+      <span class="text-base-content/70">{text}</span>
     {/if}
   </div>
 </div>

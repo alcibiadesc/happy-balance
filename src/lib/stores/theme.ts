@@ -28,10 +28,12 @@ export function toggleTheme(): void {
     if (browser) {
       localStorage.setItem('theme', newTheme);
       
-      // Remove both classes first, then add the correct one
+      // Update DaisyUI theme using data-theme attribute
+      document.documentElement.setAttribute('data-theme', newTheme);
+      
+      // Also keep the class for backward compatibility with custom CSS
       document.documentElement.classList.remove('light', 'dark');
       document.documentElement.classList.add(newTheme);
-      
     }
     return newTheme;
   });
@@ -41,16 +43,19 @@ export function toggleTheme(): void {
 if (browser) {
   const initialTheme = getInitialTheme();
   
-  // Ensure clean state
+  // Set DaisyUI theme
+  document.documentElement.setAttribute('data-theme', initialTheme);
+  
+  // Also set class for backward compatibility
   document.documentElement.classList.remove('light', 'dark');
   document.documentElement.classList.add(initialTheme);
-  
   
   // Escuchar cambios del tema del sistema
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
     if (!localStorage.getItem('theme')) {
       const newTheme = e.matches ? 'dark' : 'light';
       theme.set(newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
       document.documentElement.classList.remove('light', 'dark');
       document.documentElement.classList.add(newTheme);
     }

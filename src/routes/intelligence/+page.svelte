@@ -392,43 +392,51 @@
   {:else}
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="p-6 rounded-xl border" style="background-color: var(--color-background-elevated); border-color: var(--color-border-primary);">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium" style="color: var(--color-text-secondary);">Transacciones Totales</p>
-            <p class="text-2xl font-bold" style="color: var(--color-text-primary);">{statistics.totalTransactions}</p>
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Transacciones Totales</p>
+              <p class="text-2xl font-bold text-base-content">{statistics.totalTransactions}</p>
+            </div>
+            <Target class="w-8 h-8 text-primary" />
           </div>
-          <Target class="w-8 h-8" style="color: var(--color-dusty-pink);" />
         </div>
       </div>
       
-      <div class="p-6 rounded-xl border" style="background-color: var(--color-background-elevated); border-color: var(--color-border-primary);">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium" style="color: var(--color-text-secondary);">Categorizadas</p>
-            <p class="text-2xl font-bold" style="color: var(--color-sage-green);">{statistics.categorizedTransactions}</p>
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Categorizadas</p>
+              <p class="text-2xl font-bold text-success">{statistics.categorizedTransactions}</p>
+            </div>
+            <Check class="w-8 h-8 text-success" />
           </div>
-          <Check class="w-8 h-8" style="color: var(--color-sage-green);" />
         </div>
       </div>
       
-      <div class="p-6 rounded-xl border" style="background-color: var(--color-background-elevated); border-color: var(--color-border-primary);">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium" style="color: var(--color-text-secondary);">Sin Categorizar</p>
-            <p class="text-2xl font-bold" style="color: var(--color-coral-pastel);">{statistics.uncategorizedTransactions}</p>
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Sin Categorizar</p>
+              <p class="text-2xl font-bold text-error">{statistics.uncategorizedTransactions}</p>
+            </div>
+            <AlertCircle class="w-8 h-8 text-error" />
           </div>
-          <AlertCircle class="w-8 h-8" style="color: var(--color-coral-pastel);" />
         </div>
       </div>
       
-      <div class="p-6 rounded-xl border" style="background-color: var(--color-background-elevated); border-color: var(--color-border-primary);">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium" style="color: var(--color-text-secondary);">Tasa de Categorización</p>
-            <p class="text-2xl font-bold" style="color: var(--color-text-primary);">{statistics.categorizationRate}%</p>
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Tasa de Categorización</p>
+              <p class="text-2xl font-bold text-base-content">{statistics.categorizationRate}%</p>
+            </div>
+            <Brain class="w-8 h-8 text-info" />
           </div>
-          <Brain class="w-8 h-8" style="color: var(--color-aqua-seafoam);" />
         </div>
       </div>
     </div>

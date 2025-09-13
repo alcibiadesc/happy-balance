@@ -104,5 +104,59 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [require('daisyui')],
+  daisyui: {
+    themes: [
+      {
+        light: {
+          "primary": "#49A9A6",           // happy-teal
+          "primary-content": "#ffffff",
+          "secondary": "#A3E8DC",         // happy-mint  
+          "secondary-content": "#374151",
+          "accent": "#F6BD61",            // happy-gold
+          "accent-content": "#374151", 
+          "neutral": "#374151",           // dark-grey
+          "neutral-content": "#ffffff",
+          "base-100": "#ffffff",          // white
+          "base-200": "#F8F9FA",          // light-grey
+          "base-300": "#E5E7EB",          // medium-grey
+          "base-content": "#374151",      // dark-grey
+          "info": "#49A9A6",              // happy-teal
+          "info-content": "#ffffff",
+          "success": "#A3E8DC",           // happy-mint
+          "success-content": "#374151",
+          "warning": "#F6BD61",           // happy-gold
+          "warning-content": "#374151",
+          "error": "#EF817F",             // happy-coral
+          "error-content": "#ffffff",
+        },
+        dark: {
+          "primary": "#49A9A6",           // happy-teal
+          "primary-content": "#ffffff",
+          "secondary": "#A3E8DC",         // happy-mint
+          "secondary-content": "#1F2937",
+          "accent": "#F6BD61",            // happy-gold
+          "accent-content": "#1F2937",
+          "neutral": "#1F2937",           // charcoal
+          "neutral-content": "#E5E7EB",
+          "base-100": "#1F2937",          // charcoal
+          "base-200": "#374151",          // dark-grey
+          "base-300": "#6B7280",          // text-grey
+          "base-content": "#E5E7EB",      // medium-grey
+          "info": "#49A9A6",              // happy-teal
+          "info-content": "#ffffff",
+          "success": "#A3E8DC",           // happy-mint
+          "success-content": "#1F2937",
+          "warning": "#F6BD61",           // happy-gold
+          "warning-content": "#1F2937",
+          "error": "#EF817F",             // happy-coral
+          "error-content": "#ffffff",
+        }
+      }
+    ],
+    darkTheme: "dark",
+    base: true,
+    styled: true,
+    utils: true,
+  },
 };
