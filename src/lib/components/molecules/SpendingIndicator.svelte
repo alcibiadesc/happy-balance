@@ -15,8 +15,12 @@
   );
   
   // Generate dynamic spending summary with current currency
-  let spendingSummaryText = $derived(() => {
-    const currency = currencies[$currentCurrency];
+  let spendingSummaryText = $derived.by(() => {
+    const currencyCode = $currentCurrency;
+    const language = $currentLanguage;
+    const rate = spendingRate;
+    
+    const currency = currencies[currencyCode];
     if (!currency) return 'Loading...';
     
     // Use proper currency formatting with Intl.NumberFormat
@@ -35,8 +39,8 @@
       es: `Por cada ${formatCurrencyAmount(10)} que ingreso, gasto {amount}`
     };
     
-    const template = templates[$currentLanguage as keyof typeof templates] || templates.en;
-    return template.replace('{amount}', `<strong>${spendingRate}</strong>`);
+    const template = templates[language as keyof typeof templates] || templates.en;
+    return template.replace('{amount}', `<strong>${rate}</strong>`);
   });
 </script>
 
