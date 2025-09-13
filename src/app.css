@@ -1007,3 +1007,82 @@
   .w-10 svg, .h-10 svg { width: 2.5rem; height: 2.5rem; }
   .w-12 svg, .h-12 svg { width: 3rem; height: 3rem; }
   .w-16 svg, .h-16 svg { width: 4rem; height: 4rem; }
+
+/* FORZAR VISIBILIDAD DEL MENÚ HAMBURGUESA EN MÓVIL */
+@media (max-width: 1023px) {
+  /* Forzar que el header móvil sea siempre visible */
+  header.lg\\:hidden {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 50 !important;
+  }
+  
+  /* Forzar que el botón hamburguesa sea visible */
+  .btn-square,
+  button[class*="btn-square"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 3rem !important;
+    height: 3rem !important;
+    min-height: 3rem !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* Forzar que el ícono del menú sea visible */
+  .btn-square svg,
+  button[class*="btn-square"] svg {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 2 !important;
+  }
+  
+  /* Asegurar que el navbar móvil tenga altura correcta */
+  .navbar {
+    min-height: 4rem !important;
+    height: 4rem !important;
+    padding: 0 1rem !important;
+  }
+  
+  /* Forzar estilos del botón */
+  .btn-ghost {
+    background-color: transparent !important;
+    border-color: transparent !important;
+  }
+  
+  .btn-ghost:hover {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* Estilos para el dark mode */
+html.dark .btn-ghost:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Forzar que los íconos Lucide se muestren */
+[data-lucide] {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Asegurar que no haya conflictos con display: none */
+@media (max-width: 1023px) {
+  .lg\\:hidden {
+    display: block !important;
+  }
+  
+  .hidden.lg\\:flex {
+    display: none !important;
+  }
+}

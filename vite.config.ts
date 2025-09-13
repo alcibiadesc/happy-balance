@@ -20,5 +20,10 @@ export default defineConfig({
 	},
 	optimizeDeps: {
 		include: ['@prisma/client', 'chart.js', 'date-fns']
+	},
+	test: {
+		environment: 'jsdom',
+		globals: true,
+		setupFiles: ['./src/test-setup.ts']
 	}
 });
