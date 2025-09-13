@@ -79,6 +79,9 @@
     margin-top: var(--space-lg);
     padding-top: var(--space-md);
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   
   .nav-list--collapsed .import-section {
@@ -90,6 +93,7 @@
     height: 1px;
     background: rgba(2, 60, 70, 0.08);
     margin-bottom: var(--space-md);
+    width: 100%;
   }
   
   .nav-list--collapsed .import-divider {
@@ -113,13 +117,18 @@
     gap: 0.5rem;
     white-space: nowrap;
     overflow: hidden;
+    box-sizing: border-box;
   }
   
   .import-btn--collapsed {
-    width: 2.5rem;
-    height: 2.5rem;
-    padding: 0.5rem;
-    border-radius: 0.75rem;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    padding: 0.5rem !important;
+    border-radius: 0.75rem !important;
+    border-top-left-radius: 0.75rem !important;
+    border-top-right-radius: 0.75rem !important;
+    border-bottom-left-radius: 0.75rem !important;
+    border-bottom-right-radius: 0.75rem !important;
   }
   
   .import-icon {
