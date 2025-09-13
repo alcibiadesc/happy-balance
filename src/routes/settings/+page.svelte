@@ -11,6 +11,9 @@
     transactions: 0,
     categories: 0,
     budgets: 0,
+    accounts: 0,
+    savingsAccounts: 0,
+    categorizationRules: 0,
     totalSize: '0 MB'
   });
 
@@ -20,11 +23,21 @@
 
   async function loadStats() {
     try {
-      // Get basic stats about data size
-      const [transactionsRes, categoriesRes, budgetsRes] = await Promise.all([
+      // Get comprehensive stats about all data 
+      const [
+        transactionsRes, 
+        categoriesRes, 
+        budgetsRes,
+        accountsRes,
+        savingsRes,
+        rulesRes
+      ] = await Promise.all([
         fetch('/api/transactions?limit=1'),
         fetch('/api/categories'),
-        fetch('/api/budgets')
+        fetch('/api/budgets'),
+        fetch('/api/accounts'),
+        fetch('/api/savings-accounts'),
+        fetch('/api/categorization-rules')
       ]);
 
       if (transactionsRes.ok) {
@@ -42,8 +55,28 @@
         stats.budgets = budgetsData.data?.length || 0;
       }
 
-      // Estimate total size (rough calculation)
-      const estimatedSize = (stats.transactions * 0.5) + (stats.categories * 0.1) + (stats.budgets * 0.1);
+      if (accountsRes.ok) {
+        const accountsData = await accountsRes.json();
+        stats.accounts = accountsData.data?.length || 0;
+      }
+
+      if (savingsRes.ok) {
+        const savingsData = await savingsRes.json();
+        stats.savingsAccounts = savingsData.data?.length || 0;
+      }
+
+      if (rulesRes.ok) {
+        const rulesData = await rulesRes.json();
+        stats.categorizationRules = rulesData.data?.length || 0;
+      }
+
+      // Estimate total size (comprehensive calculation)
+      const estimatedSize = (stats.transactions * 0.5) + 
+                           (stats.categories * 0.1) + 
+                           (stats.budgets * 0.1) +
+                           (stats.accounts * 0.05) +
+                           (stats.savingsAccounts * 0.05) +
+                           (stats.categorizationRules * 0.02);
       stats.totalSize = estimatedSize > 1 ? `${estimatedSize.toFixed(1)} MB` : `${(estimatedSize * 1000).toFixed(0)} KB`;
       
     } catch (error) {
@@ -272,7 +305,7 @@
         Resumen de Datos
       </h2>
       
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <div class="card-editorial p-4">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -305,6 +338,42 @@
             <div>
               <h3 class="text-sm font-medium text-primary">Presupuestos</h3>
               <p class="text-xs text-tertiary">Límites de gasto</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-editorial p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <span class="text-sm font-semibold text-orange-600">{stats.accounts}</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-medium text-primary">Cuentas</h3>
+              <p class="text-xs text-tertiary">Cuentas bancarias</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-editorial p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+              <span class="text-sm font-semibold text-teal-600">{stats.savingsAccounts}</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-medium text-primary">Ahorros</h3>
+              <p class="text-xs text-tertiary">Cuentas de ahorro</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-editorial p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
+              <span class="text-sm font-semibold text-pink-600">{stats.categorizationRules}</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-medium text-primary">Reglas</h3>
+              <p class="text-xs text-tertiary">Categorización automática</p>
             </div>
           </div>
         </div>
@@ -455,7 +524,7 @@
                     categorías, presupuestos y configuraciones. No hay forma de deshacer esta acción.
                   </p>
                   
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-xs">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4 text-xs">
                     <div class="bg-red-50 p-2 rounded border border-red-200">
                       <strong>{stats.transactions}</strong> transacciones se eliminarán
                     </div>
@@ -464,6 +533,15 @@
                     </div>
                     <div class="bg-red-50 p-2 rounded border border-red-200">
                       <strong>{stats.budgets}</strong> presupuestos se eliminarán
+                    </div>
+                    <div class="bg-red-50 p-2 rounded border border-red-200">
+                      <strong>{stats.accounts}</strong> cuentas se eliminarán
+                    </div>
+                    <div class="bg-red-50 p-2 rounded border border-red-200">
+                      <strong>{stats.savingsAccounts}</strong> cuentas de ahorro se eliminarán
+                    </div>
+                    <div class="bg-red-50 p-2 rounded border border-red-200">
+                      <strong>{stats.categorizationRules}</strong> reglas se eliminarán
                     </div>
                   </div>
                   
@@ -506,6 +584,9 @@
               <li>• {stats.transactions} transacciones</li>
               <li>• {stats.categories} categorías</li>
               <li>• {stats.budgets} presupuestos</li>
+              <li>• {stats.accounts} cuentas</li>
+              <li>• {stats.savingsAccounts} cuentas de ahorro</li>
+              <li>• {stats.categorizationRules} reglas de categorización</li>
               <li>• Todas las configuraciones</li>
             </ul>
           </div>
@@ -592,7 +673,7 @@
 
           <div class="bg-red-100 border-2 border-red-300 rounded-lg p-4 mb-6">
             <p class="text-sm text-red-800 font-medium text-center">
-              Se eliminarán {stats.transactions + stats.categories + stats.budgets} elementos de forma permanente
+              Se eliminarán {stats.transactions + stats.categories + stats.budgets + stats.accounts + stats.savingsAccounts + stats.categorizationRules} elementos de forma permanente
             </p>
           </div>
 
