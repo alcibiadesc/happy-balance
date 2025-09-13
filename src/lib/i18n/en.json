@@ -12,11 +12,14 @@
     "reset": "Reset",
     "apply": "Apply",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "back": "Back",
+    "done": "Done"
   },
   "navigation": {
     "dashboard": "Dashboard",
-    "settings": "Settings"
+    "settings": "Settings",
+    "import": "Import"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -57,6 +60,83 @@
       "excellent_control": "Excellent control",
       "moderate_control": "Moderate control",
       "high_spending": "High spending"
+    }
+  },
+  "import": {
+    "title": "Import Transactions",
+    "subtitle": "Upload and process your bank CSV files with Japanese minimalist elegance",
+    "steps": {
+      "upload": "Upload",
+      "upload_desc": "Choose file",
+      "preview": "Preview",
+      "preview_desc": "Review & Edit",
+      "complete": "Complete",
+      "complete_desc": "Import Done"
+    },
+    "settings": {
+      "title": "Import Settings",
+      "enable_preview": "Enable preview before import",
+      "enable_preview_desc": "Preview allows you to review and edit transactions before saving"
+    },
+    "upload": {
+      "choose_file": "Choose a CSV file",
+      "drag_drop": "Or drag and drop your file here • Max 10MB",
+      "processing": "Processing...",
+      "ready": "Ready"
+    },
+    "preview": {
+      "stats": {
+        "total": "Total",
+        "selected": "Selected", 
+        "duplicates": "Duplicates",
+        "skipped": "Skipped"
+      },
+      "controls": {
+        "show_duplicates": "Show duplicates",
+        "show_all": "Show all transactions",
+        "select_all": "Select All",
+        "deselect_all": "Deselect All"
+      },
+      "table": {
+        "select": "Select",
+        "date": "Date",
+        "partner": "Partner", 
+        "description": "Description",
+        "amount": "Amount",
+        "status": "Status"
+      },
+      "status": {
+        "duplicate": "Duplicate",
+        "ready": "Ready",
+        "skipped": "Skipped"
+      },
+      "pagination": {
+        "showing": "Showing first 10 of {total} transactions",
+        "show_all": "Show all"
+      }
+    },
+    "complete": {
+      "importing": "Importing Transactions",
+      "importing_desc": "Please wait while we save your data...",
+      "success": "Import Complete!",
+      "success_desc": "Successfully imported {count} transactions",
+      "redirecting": "Redirecting to dashboard...",
+      "import_another": "Import Another File"
+    },
+    "actions": {
+      "import_count": "Import {count} Transaction",
+      "import_count_plural": "Import {count} Transactions"
+    },
+    "errors": {
+      "invalid_file": "Please select a CSV file",
+      "file_too_large": "File size must be less than 10MB",
+      "no_transactions": "No valid transactions found in file",
+      "parse_failed": "Failed to parse CSV file",
+      "import_failed": "Failed to import transactions"
+    },
+    "duplicate_reasons": {
+      "file": "Identical transaction found in file",
+      "database": "Transaction already exists in database"
     }
   },
   "transactions": {
@@ -100,7 +180,15 @@
     "export_data": "Export Data",
     "import_data": "Import Data",
     "clear_data": "Clear Data",
-    "clear_data_confirmation": "Are you sure you want to delete all data? This action cannot be undone."
+    "clear_data_confirmation": "Are you sure you want to delete all data? This action cannot be undone.",
+    "export_success": "Data exported successfully",
+    "import_success": "Successfully imported {count} transactions",
+    "import_invalid_file": "Please select a valid JSON file",
+    "import_file_too_large": "File size must be less than 10MB",
+    "import_invalid_format": "Invalid backup file format",
+    "import_confirmation": "This will import {transactions} transactions from {date}. Continue?",
+    "import_parse_error": "Error parsing backup file",
+    "import_read_error": "Error reading backup file"
   },
   "errors": {
     "generic": "An error occurred",

@@ -9,22 +9,25 @@
     "loading": "Cargando...",
     "search": "Buscar",
     "filter": "Filtrar",
-    "reset": "Resetear",
+    "reset": "Restablecer",
     "apply": "Aplicar",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "back": "Atrás",
+    "done": "Hecho"
   },
   "navigation": {
     "dashboard": "Panel",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "import": "Importar"
   },
   "dashboard": {
     "title": "Panel de Control",
-    "spending_summary": "Gastas {amount} de cada 10 euros que ingresas",
+    "spending_summary": "Gastas {amount} de cada 10 euros que ganas",
     "periods": {
       "week": "Semana",
       "month": "Mes",
-      "quarter": "Trimestre", 
+      "quarter": "Trimestre",
       "year": "Año"
     },
     "metrics": {
@@ -45,23 +48,100 @@
       "expense_evolution": "Evolución de Gastos"
     },
     "categories": {
-      "title": "Distribución de gastos",
+      "title": "Desglose de gastos",
       "food": "Alimentación",
-      "transport": "Transporte", 
-      "utilities": "Servicios",
+      "transport": "Transporte",
+      "utilities": "Servicios", 
       "shopping": "Compras",
       "entertainment": "Entretenimiento",
       "health": "Salud"
     },
     "status": {
-      "excellent_control": "Excelente control",
-      "moderate_control": "Control moderado", 
+      "excellent_control": "Control excelente",
+      "moderate_control": "Control moderado",
       "high_spending": "Gasto elevado"
+    }
+  },
+  "import": {
+    "title": "Importar Transacciones",
+    "subtitle": "Carga y procesa tus archivos CSV bancarios con elegancia minimalista japonesa",
+    "steps": {
+      "upload": "Cargar",
+      "upload_desc": "Elegir archivo",
+      "preview": "Vista previa",
+      "preview_desc": "Revisar y Editar",
+      "complete": "Completar",
+      "complete_desc": "Importación Hecha"
+    },
+    "settings": {
+      "title": "Configuración de Importación",
+      "enable_preview": "Habilitar vista previa antes de importar",
+      "enable_preview_desc": "La vista previa te permite revisar y editar transacciones antes de guardar"
+    },
+    "upload": {
+      "choose_file": "Elige un archivo CSV",
+      "drag_drop": "O arrastra y suelta tu archivo aquí • Máx 10MB",
+      "processing": "Procesando...",
+      "ready": "Listo"
+    },
+    "preview": {
+      "stats": {
+        "total": "Total",
+        "selected": "Seleccionadas", 
+        "duplicates": "Duplicados",
+        "skipped": "Omitidas"
+      },
+      "controls": {
+        "show_duplicates": "Mostrar duplicados",
+        "show_all": "Mostrar todas las transacciones",
+        "select_all": "Seleccionar Todo",
+        "deselect_all": "Deseleccionar Todo"
+      },
+      "table": {
+        "select": "Seleccionar",
+        "date": "Fecha",
+        "partner": "Comercio", 
+        "description": "Descripción",
+        "amount": "Cantidad",
+        "status": "Estado"
+      },
+      "status": {
+        "duplicate": "Duplicado",
+        "ready": "Listo",
+        "skipped": "Omitido"
+      },
+      "pagination": {
+        "showing": "Mostrando las primeras 10 de {total} transacciones",
+        "show_all": "Mostrar todas"
+      }
+    },
+    "complete": {
+      "importing": "Importando Transacciones",
+      "importing_desc": "Por favor espera mientras guardamos tus datos...",
+      "success": "¡Importación Completada!",
+      "success_desc": "Se importaron exitosamente {count} transacciones",
+      "redirecting": "Redirigiendo al panel...",
+      "import_another": "Importar Otro Archivo"
+    },
+    "actions": {
+      "import_count": "Importar {count} Transacción",
+      "import_count_plural": "Importar {count} Transacciones"
+    },
+    "errors": {
+      "invalid_file": "Por favor selecciona un archivo CSV",
+      "file_too_large": "El archivo debe ser menor a 10MB",
+      "no_transactions": "No se encontraron transacciones válidas en el archivo",
+      "parse_failed": "Error al procesar el archivo CSV",
+      "import_failed": "Error al importar transacciones"
+    },
+    "duplicate_reasons": {
+      "file": "Transacción idéntica encontrada en el archivo",
+      "database": "La transacción ya existe en la base de datos"
     }
   },
   "transactions": {
     "title": "Transacciones",
-    "add_transaction": "Añadir Transacción",
+    "add_transaction": "Agregar Transacción",
     "edit_transaction": "Editar Transacción",
     "description": "Descripción",
     "amount": "Cantidad",
@@ -77,7 +157,7 @@
   },
   "categories": {
     "title": "Categorías",
-    "add_category": "Añadir Categoría",
+    "add_category": "Agregar Categoría",
     "edit_category": "Editar Categoría",
     "name": "Nombre",
     "color": "Color",
@@ -100,10 +180,18 @@
     "export_data": "Exportar Datos",
     "import_data": "Importar Datos",
     "clear_data": "Limpiar Datos",
-    "clear_data_confirmation": "¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer."
+    "clear_data_confirmation": "¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.",
+    "export_success": "Datos exportados exitosamente",
+    "import_success": "Se importaron exitosamente {count} transacciones",
+    "import_invalid_file": "Por favor selecciona un archivo JSON válido",
+    "import_file_too_large": "El archivo debe ser menor a 10MB",
+    "import_invalid_format": "Formato de archivo de respaldo inválido",
+    "import_confirmation": "Esto importará {transactions} transacciones desde {date}. ¿Continuar?",
+    "import_parse_error": "Error al analizar archivo de respaldo",
+    "import_read_error": "Error al leer archivo de respaldo"
   },
   "errors": {
-    "generic": "Ha ocurrido un error",
+    "generic": "Ocurrió un error",
     "network": "Error de conexión",
     "validation": "Error de validación",
     "not_found": "No encontrado",

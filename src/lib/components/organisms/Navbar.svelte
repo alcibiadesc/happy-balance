@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { Menu, X } from 'lucide-svelte';
+  import { Menu, X, ChevronLeft, ChevronRight } from 'lucide-svelte';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
 
   import Brand from '../atoms/Brand.svelte';
   import ThemeToggle from '../atoms/ThemeToggle.svelte';
   import NavList from '../molecules/NavList.svelte';
+  import { sidebarCollapsed, toggleSidebar } from '$lib/stores/sidebar';
 
   // Mobile sidebar state
   let isMobileSidebarOpen = $state(false);
@@ -68,21 +69,35 @@
 </header>
 
 <!-- Desktop Sidebar -->
-<aside class="desktop-sidebar">
+<aside class="desktop-sidebar" class:desktop-sidebar--collapsed={$sidebarCollapsed}>
   <div class="sidebar-container">
     <!-- Sidebar Header -->
     <header class="sidebar-header">
-      <Brand size="md" />
-      <ThemeToggle size="md" />
+      {#if !$sidebarCollapsed}
+        <Brand size="md" />
+      {/if}
+      <div class="sidebar-controls">
+        {#if !$sidebarCollapsed}
+          <ThemeToggle size="sm" />
+        {/if}
+        <button
+          class="sidebar-collapse-toggle"
+          on:click={toggleSidebar}
+          aria-label={$sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {#if $sidebarCollapsed}
+            <ChevronRight size={18} strokeWidth={2} />
+          {:else}
+            <ChevronLeft size={18} strokeWidth={2} />
+          {/if}
+        </button>
+      </div>
     </header>
 
     <!-- Navigation -->
     <div class="sidebar-content">
-      <NavList />
+      <NavList collapsed={$sidebarCollapsed} />
     </div>
-
-
-    <!-- Sidebar Footer -->
   </div>
 </aside>
 
@@ -119,8 +134,6 @@
     <div class="mobile-sidebar__content">
       <NavList />
     </div>
-
-
   </div>
 </aside>
 
@@ -205,6 +218,11 @@
     background: var(--surface-elevated);
     border-right: 1px solid rgba(2, 60, 70, 0.08);
     box-shadow: var(--shadow-sm);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .desktop-sidebar--collapsed {
+    width: 80px;
   }
 
   .sidebar-container {
@@ -213,6 +231,7 @@
     height: 100%;
     width: 100%;
     padding: var(--space-lg);
+    overflow: hidden;
   }
 
   .sidebar-header {
@@ -222,11 +241,47 @@
     padding-bottom: var(--space-lg);
     border-bottom: 1px solid rgba(2, 60, 70, 0.08);
     margin-bottom: var(--space-lg);
+    min-height: 60px;
+  }
+
+  .sidebar-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sidebar-collapse-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .sidebar-collapse-toggle:hover {
+    background: var(--surface-muted);
+    color: var(--text-primary);
+    border-color: var(--acapulco);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(122, 186, 165, 0.15);
+  }
+
+  .sidebar-collapse-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--acapulco), 0 0 0 4px rgba(122, 186, 165, 0.2);
   }
 
   .sidebar-content {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     /* Custom scrollbar */
     scrollbar-width: thin;
     scrollbar-color: var(--text-muted) transparent;
@@ -244,12 +299,6 @@
     background: var(--text-muted);
     border-radius: 2px;
     opacity: 0.3;
-  }
-
-
-  .sidebar-footer {
-    margin-top: var(--space-lg);
-    padding-top: var(--space-lg);
   }
 
   /* Mobile Overlay */
@@ -325,31 +374,6 @@
     overflow-y: auto;
   }
 
-
-  .mobile-sidebar__footer {
-    margin-top: var(--space-md);
-    padding-top: var(--space-md);
-  }
-
-  /* Quote */
-  .quote {
-    text-align: center;
-    padding: var(--space-sm);
-  }
-
-  .quote--small {
-    padding: var(--space-xs);
-  }
-
-  .quote__text {
-    font-size: 0.75rem;
-    font-weight: 300;
-    color: var(--text-muted);
-    font-style: italic;
-    letter-spacing: 0.025em;
-    line-height: 1.4;
-  }
-
   /* Responsive Design */
   @media (max-width: 1023px) {
     .mobile-header {
@@ -400,10 +424,23 @@
     }
 
     .sidebar-header,
-    .sidebar-footer,
-    .mobile-sidebar__header,
-    .mobile-sidebar__footer {
+    .mobile-sidebar__header {
       border-color: rgba(254, 247, 238, 0.1);
+    }
+  }
+
+  /* Layout adjustments for collapsed sidebar */
+  :global(main) {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @media (min-width: 1024px) {
+    :global(main) {
+      margin-left: 280px;
+    }
+
+    :global(.desktop-sidebar--collapsed ~ main) {
+      margin-left: 80px;
     }
   }
 </style>

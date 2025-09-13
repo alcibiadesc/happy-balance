@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { TrendingUp } from 'lucide-svelte';
-  
   interface Props {
     showText?: boolean;
     size?: 'sm' | 'md' | 'lg';
@@ -14,12 +12,6 @@
     lg: 'h-12 w-12'
   };
   
-  const iconSizes = {
-    sm: 18,
-    md: 22,
-    lg: 26
-  };
-  
   const textSizes = {
     sm: 'text-sm',
     md: 'text-base',
@@ -29,8 +21,12 @@
 
 <div class="flex items-center gap-3">
   <!-- Logo Icon -->
-  <div class="brand-icon {sizeClasses[size]}">
-    <TrendingUp size={iconSizes[size]} strokeWidth={2} />
+  <div class="brand-icon {sizeClasses[size]} overflow-hidden">
+    <img 
+      src="/logo/happy-balance-logo-without-text.png" 
+      alt="Happy Balance Logo" 
+      class="w-full h-full object-cover object-center"
+    />
   </div>
   
   <!-- Brand Text -->
@@ -40,7 +36,7 @@
         Happy Balance
       </div>
       <div class="brand-tagline text-xs text-subtle">
-        Financial clarity
+        Financial harmony
       </div>
     </div>
   {/if}
@@ -52,15 +48,17 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-lg);
-    background: linear-gradient(135deg, var(--primary), var(--success));
-    color: var(--text-inverse);
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s ease;
+    background: linear-gradient(135deg, rgba(122, 186, 165, 0.1), rgba(122, 186, 165, 0.05));
+    padding: 4px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(122, 186, 165, 0.2);
   }
   
   .brand-icon:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-1px) scale(1.05);
+    background: linear-gradient(135deg, rgba(122, 186, 165, 0.15), rgba(122, 186, 165, 0.1));
+    border-color: rgba(122, 186, 165, 0.3);
+    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.15);
   }
   
   .brand-text {
@@ -73,10 +71,13 @@
     font-weight: 500;
     color: var(--text-primary);
     letter-spacing: 0.01em;
+    font-family: 'Noto Sans JP', 'Inter', sans-serif;
   }
   
   .brand-tagline {
     font-weight: 300;
     margin-top: 2px;
+    color: var(--text-muted);
+    font-style: italic;
   }
 </style>
