@@ -41,7 +41,7 @@
     <button 
       class="import-button"
       class:import-button--collapsed={collapsed}
-      on:click={handleImportClick}
+      onclick={handleImportClick}
       title={collapsed ? $t('navigation.import') : ''}
     >
       <svg class="import-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

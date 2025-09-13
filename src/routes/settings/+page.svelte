@@ -308,7 +308,7 @@
             <input 
               type="checkbox" 
               bind:checked={isDark}
-              on:change={toggleTheme}
+              onclick={toggleTheme}
               class="toggle toggle-primary toggle-lg"
             />
             <div class="theme-option {isDark ? 'active' : ''}">
@@ -342,7 +342,7 @@
             <select 
               class="language-select__input"
               value={$currentLanguage}
-              on:change={handleLanguageChange}
+              onchange={handleLanguageChange}
             >
               {#each languages as lang}
                 <option value={lang.code}>
@@ -363,7 +363,7 @@
           <select 
             class="currency-select"
             value={$currentCurrency}
-            on:change={handleCurrencyChange}
+            onchange={handleCurrencyChange}
           >
             {#each currencyOptions as currency}
               <option value={currency.value}>{currency.label}</option>
@@ -385,7 +385,7 @@
         <div class="action-buttons">
           <button 
             class="action-button export"
-            on:click={handleExportData}
+            onclick={handleExportData}
           >
             <Download size={16} strokeWidth={2} />
             {$t('settings.export_data')}
@@ -395,7 +395,7 @@
             <input 
               type="file" 
               accept=".json"
-              on:change={handleFileImport}
+              onchange={handleFileImport}
               style="display: none;"
               disabled={importing}
             />
@@ -410,7 +410,7 @@
           
           <button 
             class="action-button delete"
-            on:click={handleDeleteAllData}
+            onclick={handleDeleteAllData}
           >
             <Trash2 size={16} strokeWidth={2} />
             {$t('settings.clear_data')}

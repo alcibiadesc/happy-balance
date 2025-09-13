@@ -103,3 +103,26 @@ html.dark ::selection {
     --shadow-lg: none;
   }
 }
+
+/* Sidebar responsive layout */
+@media (min-width: 1024px) {
+  main {
+    margin-left: 280px;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  body.sidebar-collapsed main {
+    margin-left: 80px;
+  }
+}
+
+/* Import page specific adjustments */
+.import-page {
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 1024px) {
+  body.sidebar-collapsed .import-page {
+    max-width: calc(100vw - 120px);
+  }
+}

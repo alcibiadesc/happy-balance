@@ -6,7 +6,7 @@
   import Brand from '../atoms/Brand.svelte';
   import ThemeToggle from '../atoms/ThemeToggle.svelte';
   import NavList from '../molecules/NavList.svelte';
-  import { sidebarCollapsed, toggleSidebar } from '$lib/stores/sidebar';
+import { sidebarCollapsed, toggleSidebar, initSidebar } from '$lib/stores/sidebar';
 
   // Mobile sidebar state
   let isMobileSidebarOpen = $state(false);
@@ -27,6 +27,8 @@
   }
 
   onMount(() => {
+    // Initialize sidebar state
+    initSidebar();
     // Close sidebar when clicking outside
     const handleOutsideClick = (event: Event) => {
       if (isMobileSidebarOpen) {
@@ -82,7 +84,7 @@
         {/if}
         <button
           class="sidebar-collapse-toggle"
-          on:click={toggleSidebar}
+          onclick={toggleSidebar}
           aria-label={$sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {#if $sidebarCollapsed}

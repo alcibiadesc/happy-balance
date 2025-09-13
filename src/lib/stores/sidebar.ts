@@ -10,15 +10,21 @@ export function toggleSidebar() {
     const newState = !collapsed;
     if (browser) {
       localStorage.setItem('sidebar-collapsed', JSON.stringify(newState));
+      // Update body class immediately
+      document.body.classList.toggle('sidebar-collapsed', newState);
     }
     return newState;
   });
 }
 
-// Initialize sidebar state from localStorage
-if (browser) {
-  const saved = localStorage.getItem('sidebar-collapsed');
-  if (saved !== null) {
-    sidebarCollapsed.set(JSON.parse(saved));
+// Initialize sidebar state from localStorage on client
+export function initSidebar() {
+  if (browser) {
+    const saved = localStorage.getItem('sidebar-collapsed');
+    if (saved !== null) {
+      const isCollapsed = JSON.parse(saved);
+      sidebarCollapsed.set(isCollapsed);
+      document.body.classList.toggle('sidebar-collapsed', isCollapsed);
+    }
   }
 }
