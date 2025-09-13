@@ -2,7 +2,6 @@ ESTE ES EL BACKLOG DE TAREAS, antes de comenzar cada una analizala, piensa en ap
 
 Una vez finalizada y tras comprobar que funciona haz el commit, borra la tarea que corresponda y sigue con la siguiente. Puedes añadir tareas si quieres a este document.
 
-- Haz que los datos del dashboard aparezcan bien
 - Haz que el plegar desplegar funcione bien
 - Haz que la interfaz este bien en todas las resoluciones ahora en la de desktop se solapa
 - Asegurate que el contraste es el adecuado en darkmode

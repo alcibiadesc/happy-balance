@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { TrendingUp, TrendingDown, Target, PiggyBank, DollarSign, BarChart3, Calendar, AlertCircle, PieChart } from 'lucide-svelte';
+  import { TrendingUp, TrendingDown, Target, PiggyBank, DollarSign, BarChart3, Calendar, AlertCircle, PieChart, ChevronDown } from 'lucide-svelte';
   import { TrendChart } from '$lib/ui/components/organisms/TrendChart/index.js';
   import { CategoryPieChart } from '$lib/ui/components/organisms/CategoryPieChart/index.js';
   import { ExpenseRatioGauge } from '$lib/ui/components/organisms/ExpenseRatioGauge/index.js';
@@ -544,9 +544,12 @@
                   <p class="text-xs sm:text-caption text-secondary">Distribución por categorías</p>
                 </div>
               </div>
-              <div class="text-lg sm:text-2xl font-bold text-red-600 flex-shrink-0 ml-2">
-                <span class="block sm:hidden">{formatCurrency(analyticsData.monthlyExpenses).replace(',00', '')}</span>
-                <span class="hidden sm:block">{formatCurrency(analyticsData.monthlyExpenses)}</span>
+              <div class="flex items-center gap-3">
+                <div class="text-lg sm:text-2xl font-bold text-red-600 flex-shrink-0">
+                  <span class="block sm:hidden">{formatCurrency(analyticsData.monthlyExpenses).replace(',00', '')}</span>
+                  <span class="hidden sm:block">{formatCurrency(analyticsData.monthlyExpenses)}</span>
+                </div>
+                <ChevronDown class="w-5 h-5 text-gray-400 transition-transform duration-200 details-chevron" />
               </div>
             </summary>
             <div class="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-gray-100">
@@ -578,9 +581,12 @@
                   <p class="text-xs sm:text-caption text-secondary">Cuentas y objetivos</p>
                 </div>
               </div>
-              <div class="text-lg sm:text-2xl font-bold text-blue-600 flex-shrink-0 ml-2">
-                <span class="block sm:hidden">{formatCurrency(analyticsData.savingsData.totalSavings).replace(',00', '')}</span>
-                <span class="hidden sm:block">{formatCurrency(analyticsData.savingsData.totalSavings)}</span>
+              <div class="flex items-center gap-3">
+                <div class="text-lg sm:text-2xl font-bold text-blue-600 flex-shrink-0">
+                  <span class="block sm:hidden">{formatCurrency(analyticsData.savingsData.totalSavings).replace(',00', '')}</span>
+                  <span class="hidden sm:block">{formatCurrency(analyticsData.savingsData.totalSavings)}</span>
+                </div>
+                <ChevronDown class="w-5 h-5 text-gray-400 transition-transform duration-200 details-chevron" />
               </div>
             </summary>
             <div class="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-gray-100">
@@ -641,12 +647,15 @@
                   <p class="text-xs sm:text-caption text-secondary">Tendencias de ingresos y gastos</p>
                 </div>
               </div>
-              <div class="text-right flex-shrink-0 ml-2">
-                <div class="text-base sm:text-lg font-bold {insights.monthlyNet >= 0 ? 'text-green-600' : 'text-red-600'}">
-                  <span class="block sm:hidden">{formatCurrency(insights.monthlyNet).replace(',00', '')}</span>
-                  <span class="hidden sm:block">{formatCurrency(insights.monthlyNet)}</span>
+              <div class="flex items-center gap-3">
+                <div class="text-right flex-shrink-0">
+                  <div class="text-base sm:text-lg font-bold {insights.monthlyNet >= 0 ? 'text-green-600' : 'text-red-600'}">
+                    <span class="block sm:hidden">{formatCurrency(insights.monthlyNet).replace(',00', '')}</span>
+                    <span class="hidden sm:block">{formatCurrency(insights.monthlyNet)}</span>
+                  </div>
+                  <div class="text-xs text-tertiary">balance mensual</div>
                 </div>
-                <div class="text-xs text-tertiary">balance mensual</div>
+                <ChevronDown class="w-5 h-5 text-gray-400 transition-transform duration-200 details-chevron" />
               </div>
             </summary>
             <div class="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-gray-100">
@@ -684,3 +693,26 @@
     {/if}
   </div>
 </main>
+
+<style>
+  /* Collapse/Expand chevron rotation */
+  details[open] .details-chevron {
+    transform: rotate(180deg);
+  }
+  
+  /* Smooth content expansion animation */
+  details > div {
+    animation: slideDown 0.2s ease-in-out;
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
