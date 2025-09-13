@@ -2,6 +2,7 @@
   import NavItem from '../atoms/NavItem.svelte';
   import { t, currentLanguage } from '$lib/stores/i18n';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   
   interface Props {
     isMobile?: boolean;
@@ -13,6 +14,7 @@
   
   const navItems = [
     { href: '/', icon: 'layout-dashboard', labelKey: 'navigation.dashboard' },
+    { href: '/transactions', icon: 'receipt', labelKey: 'navigation.transactions' },
     { href: '/settings', icon: 'settings', labelKey: 'navigation.settings' }
   ];
   
@@ -20,6 +22,9 @@
     if (onItemClick) onItemClick();
     goto('/import');
   }
+  
+  // Get current path to highlight active item
+  let currentPath = $derived($page.url.pathname);
 </script>
 
 <nav class="nav-list" class:nav-list--mobile={isMobile} class:nav-list--collapsed={collapsed}>
@@ -29,6 +34,7 @@
       href={item.href} 
       icon={item.icon} 
       {collapsed}
+      isActive={currentPath === item.href}
       onclick={onItemClick}
     >
       {collapsed ? '' : $t(item.labelKey)}
