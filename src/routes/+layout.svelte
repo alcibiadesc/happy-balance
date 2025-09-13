@@ -10,19 +10,17 @@
   import { NotificationContainer } from '$lib/ui/components/organisms/NotificationContainer/index.js';
   import ThemeToggle from '$lib/ui/components/molecules/ThemeToggle/ThemeToggle.svelte';
   import { theme } from '$lib/stores/theme';
+  import { layoutStore } from '$lib/stores/layout';
 
   let { children } = $props();
-  let mobileMenuOpen = $state(false);
-  let sidebarCollapsed = $state(false);
+  
+  // Use the layout store for global state
+  let sidebarCollapsed = $derived($layoutStore.sidebarCollapsed);
+  let mobileMenuOpen = $derived($layoutStore.mobileMenuOpen);
   
   // Load sidebar and navigation state from localStorage
   onMount(() => {
     if (browser) {
-      const saved = localStorage.getItem('sidebar-collapsed');
-      if (saved !== null) {
-        sidebarCollapsed = JSON.parse(saved);
-      }
-      
       // Load expanded menu items
       const expandedSaved = localStorage.getItem('navigation-expanded');
       if (expandedSaved) {
@@ -42,14 +40,6 @@
       document.documentElement.classList.toggle('dark', currentTheme === 'dark');
     }
   });
-  
-  // Save sidebar state when it changes
-  function toggleSidebar() {
-    sidebarCollapsed = !sidebarCollapsed;
-    if (browser) {
-      localStorage.setItem('sidebar-collapsed', JSON.stringify(sidebarCollapsed));
-    }
-  }
 
   const navigation = [
     { 
@@ -160,7 +150,7 @@
         <div class="flex items-center gap-1">
           <ThemeToggle />
           <button
-            onclick={toggleSidebar}
+            onclick={layoutStore.toggleSidebar}
             class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             title={sidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
           >
@@ -259,7 +249,7 @@
         </div>
       </div>
       <button
-        onclick={() => mobileMenuOpen = !mobileMenuOpen}
+        onclick={layoutStore.toggleMobileMenu}
         class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
       >
         {#if mobileMenuOpen}
@@ -274,8 +264,8 @@
     {#if mobileMenuOpen}
       <div 
         class="fixed inset-0 z-20 bg-black bg-opacity-25" 
-        onclick={() => mobileMenuOpen = false}
-        onkeydown={(e) => e.key === 'Escape' && (mobileMenuOpen = false)}
+        onclick={layoutStore.closeMobileMenu}
+        onkeydown={(e) => e.key === 'Escape' && layoutStore.closeMobileMenu()}
         role="button"
         aria-label="Close mobile menu"
         tabindex="0"
@@ -289,7 +279,7 @@
       <div class="flex h-16 items-center justify-between px-4 border-b border-gray-200">
         <h1 class="text-lg font-semibold text-gray-900">Menú</h1>
         <button
-          onclick={() => mobileMenuOpen = false}
+          onclick={layoutStore.closeMobileMenu}
           class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
         >
           <X class="w-5 h-5" />
@@ -306,7 +296,7 @@
                     toggleExpanded(item.name);
                   } else {
                     goto(item.href);
-                    mobileMenuOpen = false;
+                    layoutStore.closeMobileMenu();
                   }
                 }}
                 class="flex-1 flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors {
@@ -330,7 +320,7 @@
                 <button
                   onclick={() => {
                     goto(item.href);
-                    mobileMenuOpen = false;
+                    layoutStore.closeMobileMenu();
                   }}
                   class="ml-1 p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
                   title="Ir a {item.name}"
@@ -350,7 +340,7 @@
                   <button
                     onclick={() => {
                       goto(subItem.href);
-                      mobileMenuOpen = false;
+                      layoutStore.closeMobileMenu();
                     }}
                     class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors {
                       $page.url.pathname === subItem.href || $page.url.pathname.startsWith(subItem.href + '/')

@@ -4,6 +4,7 @@
   import { TrendChart } from '$lib/ui/components/organisms/TrendChart/index.js';
   import { CategoryPieChart } from '$lib/ui/components/organisms/CategoryPieChart/index.js';
   import { ExpenseRatioGauge } from '$lib/ui/components/organisms/ExpenseRatioGauge/index.js';
+  import { StickyHeader } from '$lib/ui/components/atoms/StickyHeader/index.js';
 
   let analyticsData = $state({
     monthlyIncome: 0,
@@ -285,7 +286,7 @@
 
 <main class="min-h-screen" style="background-color: var(--color-background-primary);" role="main">
   <!-- Header -->
-  <header class="sticky top-0 z-10 border-b" style="background-color: var(--color-background-elevated); border-color: var(--color-border-primary); backdrop-filter: blur(8px);">
+  <StickyHeader>
     <div class="container-editorial">
       <div class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div class="min-w-0 flex-1">
@@ -311,7 +312,7 @@
         </div>
       </div>
     </div>
-  </header>
+  </StickyHeader>
 
   <div class="container-editorial py-4 sm:py-6 space-y-6 sm:space-y-8">
     {#if isLoading}
