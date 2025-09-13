@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Japanese Color Palette - Expense Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #fef7ee;
+            color: #023c46;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #023c46;
+            font-weight: 600;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem;
+            color: #023c46;
+        }
+
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .color-card {
+            background: #fefefe;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f0f0f0;
+        }
+
+        .color-swatch {
+            width: 100%;
+            height: 80px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .color-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .color-hex {
+            font-family: 'SF Mono', Consolas, 'Liberation Mono', monospace;
+            font-size: 0.9rem;
+            color: #737373;
+            background: #f8f8f8;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .color-description {
+            font-size: 0.85rem;
+            color: #4a4a4a;
+            margin-top: 0.5rem;
+        }
+
+        .buttons-demo {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.6, 1);
+            text-decoration: none;
+            border: none;
+            letter-spacing: -0.01em;
+        }
+
+        .btn-primary {
+            background: #023c46;
+            color: #fefefe;
+        }
+
+        .btn-primary:hover {
+            background: #7abaa5;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #023c46;
+            border: 1px solid #e8e8e8;
+        }
+
+        .btn-secondary:hover {
+            background: #f8f8f8;
+            border-color: #d4d4d4;
+        }
+
+        .btn-accent {
+            background: #fecd2c;
+            color: #023c46;
+        }
+
+        .btn-accent:hover {
+            background: #f5796c;
+            color: #fefefe;
+        }
+
+        .usage-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .example-card {
+            background: #fefefe;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f0f0f0;
+        }
+
+        .status-success { color: #7abaa5; }
+        .status-warning { color: #fecd2c; }
+        .status-error { color: #f5796c; }
+        .status-info { color: #023c46; }
+
+        .text-whisper { font-size: 0.75rem; color: #a8a8a8; }
+        .text-breath { font-size: 0.875rem; color: #737373; }
+        .text-speak { font-size: 1rem; color: #4a4a4a; }
+        .text-voice { font-size: 1.125rem; color: #2a2a2a; }
+
+        .original-palette {
+            background: #f8f8f8;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border-left: 4px solid #023c46;
+        }
+
+        .original-code {
+            font-family: 'SF Mono', Consolas, 'Liberation Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #4a4a4a;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Japanese Color Palette</h1>
+        <p class="text-voice">Esta es la paleta de colores japonesa que me proporcionaste, inspirada en la naturaleza y la estética tradicional japonesa.</p>
+
+        <div class="original-palette">
+            <h2 style="margin-top: 0;">Paleta Original (CSS que me enviaste)</h2>
+            <div class="original-code">/*
+ * japan
+ * Created with ColorSlurp
+ */
+:root, .japan {
+    --evening-sea: #023c46;
+    --froly: #f5796c;
+    --bridesmaid: #fef7ee;
+    --acapulco: #7abaa5;
+    --sunglow: #fecd2c;
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+    :root, .japan {
+        --evening-sea: color(display-p3 0.008 0.235 0.276 / 1.0);
+        --froly: color(display-p3 0.96 0.475 0.422 / 1.0);
+        --bridesmaid: color(display-p3 0.997 0.968 0.934 / 1.0);
+        --acapulco: color(display-p3 0.477 0.728 0.647 / 1.0);
+        --sunglow: color(display-p3 0.995 0.804 0.174 / 1.0);
+    }
+}</div>
+        </div>
+
+        <h2>Colores Principales</h2>
+        <div class="palette-grid">
+            <div class="color-card">
+                <div class="color-swatch" style="background-color: #023c46;"></div>
+                <div class="color-name">Evening Sea</div>
+                <div class="color-hex">#023c46</div>
+                <div class="color-description">Teal profundo - Color principal, evoca la tranquilidad del mar al anochecer</div>
+            </div>
+
+            <div class="color-card">
+                <div class="color-swatch" style="background-color: #f5796c;"></div>
+                <div class="color-name">Froly</div>
+                <div class="color-hex">#f5796c</div>
+                <div class="color-description">Coral salmón - Para errores y alertas cálidas, como un amanecer suave</div>
+            </div>
+
+            <div class="color-card">
+                <div class="color-swatch" style="background-color: #fef7ee;"></div>
+                <div class="color-name">Bridesmaid</div>
+                <div class="color-hex">#fef7ee</div>
+                <div class="color-description">Crema cálido - Fondo principal, como papel washi tradicional</div>
+            </div>
+
+            <div class="color-card">
+                <div class="color-swatch" style="background-color: #7abaa5;"></div>
+                <div class="color-name">Acapulco</div>
+                <div class="color-hex">#7abaa5</div>
+                <div class="color-description">Verde salvia - Para éxitos y crecimiento, como bambú joven</div>
+            </div>
+
+            <div class="color-card">
+                <div class="color-swatch" style="background-color: #fecd2c;"></div>
+                <div class="color-name">Sunglow</div>
+                <div class="color-hex">#fecd2c</div>
+                <div class="color-description">Amarillo dorado - Para advertencias y acentos, como el sol de otoño</div>
+            </div>
+        </div>
+
+        <h2>Botones Sin Degradados</h2>
+        <div class="buttons-demo">
+            <button class="btn btn-primary">Primary Button</button>
+            <button class="btn btn-secondary">Secondary Button</button>
+            <button class="btn btn-accent">Accent Button</button>
+        </div>
+
+        <h2>Ejemplos de Uso</h2>
+        <div class="usage-examples">
+            <div class="example-card">
+                <h3 class="text-voice">Estados de Transacciones</h3>
+                <p class="status-success">✓ Ingreso completado: +$1,250.00</p>
+                <p class="status-error">⚠ Gasto registrado: -$89.50</p>
+                <p class="status-warning">! Presupuesto al 80%</p>
+                <p class="status-info">ℹ Balance actual: $4,850.75</p>
+            </div>
+
+            <div class="example-card">
+                <h3 class="text-voice">Tipografía Japonesa</h3>
+                <p class="text-whisper">whisper - Texto muy pequeño y sutil</p>
+                <p class="text-breath">breath - Texto de apoyo y metadatos</p>
+                <p class="text-speak">speak - Texto base para lectura</p>
+                <p class="text-voice">voice - Texto prominente y títulos</p>
+            </div>
+
+            <div class="example-card">
+                <h3 class="text-voice">Armonía Natural</h3>
+                <p class="text-breath">Esta paleta está inspirada en:</p>
+                <ul style="margin-left: 1rem; margin-top: 0.5rem;">
+                    <li class="text-breath">🌊 El mar al atardecer (Evening Sea)</li>
+                    <li class="text-breath">🍑 Flores de cerezo (Froly)</li>
+                    <li class="text-breath">📜 Papel washi (Bridesmaid)</li>
+                    <li class="text-breath">🎋 Bambú verde (Acapulco)</li>
+                    <li class="text-breath">🌅 Sol dorado (Sunglow)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

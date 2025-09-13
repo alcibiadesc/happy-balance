@@ -262,7 +262,8 @@
     };
   }
 
-  async function saveRule() {
+  async function saveRule(event) {
+		event.preventDefault();
     try {
       let payload = { ...formData };
       
@@ -590,7 +591,7 @@
         </h2>
       </div>
       
-      <form class="p-6 space-y-6" onsubmit|preventDefault={saveRule}>
+      <form class="p-6 space-y-6" onsubmit={saveRule}>
         <!-- Rule Name -->
         <div>
           <label class="block text-sm font-medium mb-2 text-primary">

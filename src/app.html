@@ -1,13 +1,31 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="japanese">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="description" content="Happy Balance - Gestión inteligente de finanzas personales para una vida financiera más feliz" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.ico" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Expense Tracker - Gestión Financiera Minimalista</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+		<script>
+			// Sistema de temas con preferencia del sistema
+			(function() {
+				const savedTheme = localStorage.getItem('theme');
+				const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				
+				if (savedTheme) {
+					document.documentElement.setAttribute('data-theme', savedTheme);
+				} else if (systemPrefersDark) {
+					document.documentElement.setAttribute('data-theme', 'japanese-dark');
+				} else {
+					document.documentElement.setAttribute('data-theme', 'japanese');
+				}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
-	<body data-sveltekit-preload-data="hover" class="bg-gray-50 text-gray-900">
+	<body data-sveltekit-preload-data="hover" class="bg-base-100 text-base-content">
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

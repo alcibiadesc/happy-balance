@@ -1,63 +1,67 @@
-import { writable } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
 
-type Theme = 'light' | 'dark';
+// Tipo para el tema
+export type Theme = 'light' | 'dark' | 'system';
 
-// Detectar preferencia del usuario
-function getInitialTheme(): Theme {
+// Función para obtener el tema del sistema
+function getSystemTheme(): 'light' | 'dark' {
   if (!browser) return 'light';
-  
-  // Revisar localStorage primero
-  const stored = localStorage.getItem('theme') as Theme;
-  if (stored && (stored === 'light' || stored === 'dark')) {
-    return stored;
-  }
-  
-  // Usar preferencia del sistema
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-// Store del tema
-export const theme = writable<Theme>(getInitialTheme());
-
-// Función para cambiar tema
-export function toggleTheme(): void {
-  theme.update(current => {
-    const newTheme = current === 'light' ? 'dark' : 'light';
-    
-    if (browser) {
-      localStorage.setItem('theme', newTheme);
-      
-      // Update DaisyUI theme using data-theme attribute
-      document.documentElement.setAttribute('data-theme', newTheme);
-      
-      // Also keep the class for backward compatibility with custom CSS
-      document.documentElement.classList.remove('light', 'dark');
-      document.documentElement.classList.add(newTheme);
-    }
-    return newTheme;
-  });
+// Función para obtener el tema inicial
+function getInitialTheme(): Theme {
+  if (!browser) return 'system';
+  
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light' || saved === 'dark' || saved === 'system') {
+    return saved;
+  }
+  return 'system';
 }
 
-// Inicializar tema en el DOM
+// Store principal del tema
+export const theme = writable<Theme>(getInitialTheme());
+
+// Store derivado para el tema efectivo (resuelve 'system' al tema real)
+export const effectiveTheme = derived(theme, ($theme) => {
+  if ($theme === 'system') {
+    return getSystemTheme();
+  }
+  return $theme;
+});
+
+// Función para cambiar el tema
+export function setTheme(newTheme: Theme) {
+  theme.set(newTheme);
+  if (browser) {
+    localStorage.setItem('theme', newTheme);
+    applyTheme(newTheme);
+  }
+}
+
+// Función para aplicar el tema al DOM
+export function applyTheme(theme: Theme) {
+  if (!browser) return;
+  
+  const effectiveTheme = theme === 'system' ? getSystemTheme() : theme;
+  
+  if (effectiveTheme === 'dark') {
+    document.documentElement.classList.add('dark');
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+}
+
+// Escuchar cambios del sistema
 if (browser) {
-  const initialTheme = getInitialTheme();
-  
-  // Set DaisyUI theme
-  document.documentElement.setAttribute('data-theme', initialTheme);
-  
-  // Also set class for backward compatibility
-  document.documentElement.classList.remove('light', 'dark');
-  document.documentElement.classList.add(initialTheme);
-  
-  // Escuchar cambios del tema del sistema
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    if (!localStorage.getItem('theme')) {
-      const newTheme = e.matches ? 'dark' : 'light';
-      theme.set(newTheme);
-      document.documentElement.setAttribute('data-theme', newTheme);
-      document.documentElement.classList.remove('light', 'dark');
-      document.documentElement.classList.add(newTheme);
+    const currentTheme = getInitialTheme();
+    if (currentTheme === 'system') {
+      applyTheme('system');
     }
   });
 }

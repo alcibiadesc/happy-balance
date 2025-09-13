@@ -1,548 +1,168 @@
 <script lang="ts">
-  import { Plus, Search, Filter, ArrowUpDown, FileText, Calendar, DollarSign, Trash2, Check, X, Eye, EyeOff } from 'lucide-svelte';
-  import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import CategorySelector from '$lib/ui/CategorySelector.svelte';
-  import InlineTextEditor from '$lib/ui/InlineTextEditor.svelte';
-  import { ConfirmationDialog } from '$lib/ui/components/molecules/ConfirmationDialog/index.js';
-  import { AlertDialog } from '$lib/ui/components/molecules/AlertDialog/index.js';
+  import { Search, Filter, Download, Plus, Eye, EyeOff, Edit2, Trash2, Calendar, ArrowUpRight, ArrowDownRight, ChevronDown, X } from 'lucide-svelte';
 
-  let transactions = $state([]);
-  let isLoading = $state(true);
-  let error = $state('');
+  // Sample data - replace with real API calls
+  let loading = $state(true);
   let searchTerm = $state('');
-  let selectedMonth = $state('');
-  let selectedType = $state('all');
-  let selectedCategoryType = $state('all');
-  let selectedCategoryId = $state('all');
-  let dateFilterType = $state('month'); // 'month', 'custom', 'preset'
-  let customStartDate = $state('');
-  let customEndDate = $state('');
-  let presetPeriod = $state('');
+  let selectedCategory = $state('todas');
+  let selectedDateRange = $state('30');
+  let showFilters = $state(false);
   
-  // Dialog states
-  let showConfirmDialog = $state(false);
-  let showAlertDialog = $state(false);
-  let dialogConfig = $state({
-    title: '',
-    message: '',
-    type: 'info',
-    onConfirm: null,
-    requiresTyping: false,
-    requiredText: '',
-    isLoading: false
+  let transactions = $state([
+    { 
+      id: 1, 
+      date: '2025-01-13', 
+      description: 'Supermercado Mercadona', 
+      category: 'Alimentación', 
+      amount: -125.50, 
+      account: 'Cuenta Principal',
+      type: 'expense',
+      visible: true,
+      reference: 'TARJETA *4321'
+    },
+    { 
+      id: 2, 
+      date: '2025-01-12', 
+      description: 'Salario Enero', 
+      category: 'Ingresos', 
+      amount: 4250.00, 
+      account: 'Cuenta Principal',
+      type: 'income',
+      visible: true,
+      reference: 'TRANSFER-001'
+    },
+    { 
+      id: 3, 
+      date: '2025-01-11', 
+      description: 'Gasolina Repsol', 
+      category: 'Transporte', 
+      amount: -65.30, 
+      account: 'Cuenta Principal',
+      type: 'expense',
+      visible: true,
+      reference: 'TARJETA *4321'
+    },
+    { 
+      id: 4, 
+      date: '2025-01-10', 
+      description: 'Netflix Suscripción', 
+      category: 'Entretenimiento', 
+      amount: -15.99, 
+      account: 'Cuenta Principal',
+      type: 'expense',
+      visible: true,
+      reference: 'DOMICILIACION'
+    },
+    { 
+      id: 5, 
+      date: '2025-01-09', 
+      description: 'Freelance Proyecto', 
+      category: 'Ingresos', 
+      amount: 850.00, 
+      account: 'Cuenta Ahorros',
+      type: 'income',
+      visible: true,
+      reference: 'TRANSFER-002'
+    },
+    { 
+      id: 6, 
+      date: '2025-01-08', 
+      description: 'Farmacia', 
+      category: 'Salud', 
+      amount: -28.45, 
+      account: 'Cuenta Principal',
+      type: 'expense',
+      visible: false,
+      reference: 'TARJETA *4321'
+    },
+    { 
+      id: 7, 
+      date: '2025-01-07', 
+      description: 'Restaurante', 
+      category: 'Alimentación', 
+      amount: -42.80, 
+      account: 'Cuenta Principal',
+      type: 'expense',
+      visible: true,
+      reference: 'TARJETA *4321'
+    },
+    { 
+      id: 8, 
+      date: '2025-01-06', 
+      description: 'Amazon Compra', 
+      category: 'Otros', 
+      amount: -89.99, 
+      account: 'Cuenta Principal',
+      type: 'expense',
+      visible: true,
+      reference: 'TARJETA *4321'
+    }
+  ]);
+
+  let categories = ['todas', 'Alimentación', 'Transporte', 'Entretenimiento', 'Ingresos', 'Salud', 'Otros'];
+  let selectedTransactions = $state(new Set());
+
+  // Computed properties
+  let filteredTransactions = $derived(() => {
+    return transactions.filter(t => {
+      const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           t.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'todas' || t.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
   });
-  let alertConfig = $state({
-    title: '',
-    message: '',
-    type: 'info'
-  });
-  let selectedTransactions = $state(new Set<string>());
-  let isSelectionMode = $state(false);
-  let sortField = $state<'date' | 'amount' | 'partner' | 'category'>('date');
-  let sortDirection = $state<'asc' | 'desc'>('desc');
-  let categories = $state([]);
-  let showAdvancedFilters = $state(false);
-  let hiddenTransactions = $state(new Set<string>());
 
-  // Initialize without date filter to show all transactions
-  onMount(() => {
-    const now = new Date();
-    selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    dateFilterType = ''; // No filter by default to show all transactions
-    loadTransactions();
-    loadCategories();
+  let totalIncome = $derived(() => {
+    return filteredTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
   });
 
-  // Load transactions with filters
-  async function loadTransactions() {
-    try {
-      isLoading = true;
-      error = '';
-      
-      const params = new URLSearchParams();
-      
-      // Handle date filtering based on selected type
-      if (dateFilterType === 'month' && selectedMonth) {
-        // Convert month (YYYY-MM) to start and end dates
-        const [year, month] = selectedMonth.split('-');
-        const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-        const endDate = new Date(parseInt(year), parseInt(month), 0); // Last day of the month
-        
-        params.append('startDate', startDate.toISOString());
-        params.append('endDate', endDate.toISOString());
-      } else if (dateFilterType === 'custom' && customStartDate && customEndDate) {
-        params.append('startDate', new Date(customStartDate).toISOString());
-        params.append('endDate', new Date(customEndDate + 'T23:59:59').toISOString());
-      } else if (dateFilterType === 'preset' && presetPeriod) {
-        const { startDate, endDate } = getPresetDates(presetPeriod);
-        params.append('startDate', startDate.toISOString());
-        params.append('endDate', endDate.toISOString());
-      }
-      
-      if (selectedType !== 'all') {
-        // Convert type filter to amount-based filter
-        if (selectedType === 'income') {
-          params.append('minAmount', '0.01');
-        } else if (selectedType === 'expense') {
-          params.append('maxAmount', '-0.01');
-        }
-      }
-      
-      if (selectedCategoryType !== 'all') {
-        // Filter by category type
-        params.append('categoryType', selectedCategoryType);
-      }
-      
-      if (selectedCategoryId !== 'all') {
-        // Filter by specific category
-        params.append('categoryIds', selectedCategoryId);
-      }
-      
-      const response = await fetch(`/api/transactions?${params.toString()}`);
-      const result = await response.json();
-      
-      if (result.success) {
-        transactions = result.data;
-        // Update hiddenTransactions set based on database state
-        hiddenTransactions = new Set(
-          result.data
-            .filter((t: any) => t.isHidden)
-            .map((t: any) => t.id.value || t.id)
-        );
-      } else {
-        error = result.error || 'Error al cargar transacciones';
-      }
-    } catch (err) {
-      console.error('Error loading transactions:', err);
-      error = 'Error de conexión';
-    } finally {
-      isLoading = false;
+  let totalExpenses = $derived(() => {
+    return Math.abs(filteredTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0));
+  });
+
+  let netAmount = $derived(() => totalIncome - totalExpenses);
+
+  function toggleTransactionVisibility(id: number) {
+    const transaction = transactions.find(t => t.id === id);
+    if (transaction) {
+      transaction.visible = !transaction.visible;
     }
   }
 
-  // Get preset date ranges
-  function getPresetDates(preset: string) {
-    const now = new Date();
-    let startDate: Date, endDate: Date;
-    
-    switch (preset) {
-      case 'thisWeek':
-        const dayOfWeek = now.getDay();
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - dayOfWeek + 1); // Monday
-        endDate = new Date(now);
-        break;
-      case 'lastWeek':
-        const lastWeekEnd = new Date(now);
-        lastWeekEnd.setDate(now.getDate() - now.getDay());
-        const lastWeekStart = new Date(lastWeekEnd);
-        lastWeekStart.setDate(lastWeekEnd.getDate() - 6);
-        startDate = lastWeekStart;
-        endDate = lastWeekEnd;
-        break;
-      case 'last30Days':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 30);
-        endDate = new Date(now);
-        break;
-      case 'thisQuarter':
-        const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-        const quarterEnd = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 + 3, 0);
-        startDate = quarterStart;
-        endDate = quarterEnd;
-        break;
-      case 'lastQuarter':
-        const lastQuarterMonth = Math.floor(now.getMonth() / 3) * 3 - 3;
-        const lastQuarterStart = new Date(now.getFullYear(), lastQuarterMonth, 1);
-        const lastQuarterEnd = new Date(now.getFullYear(), lastQuarterMonth + 3, 0);
-        startDate = lastQuarterStart;
-        endDate = lastQuarterEnd;
-        break;
-      case 'thisYear':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        endDate = new Date(now.getFullYear(), 11, 31);
-        break;
-      case 'lastYear':
-        startDate = new Date(now.getFullYear() - 1, 0, 1);
-        endDate = new Date(now.getFullYear() - 1, 11, 31);
-        break;
-      default:
-        startDate = new Date(now);
-        startDate.setMonth(startDate.getMonth() - 1);
-        endDate = new Date(now);
-    }
-    
-    return { startDate, endDate };
-  }
-
-  // Dialog helper functions
-  function showConfirmationDialog(title: string, message: string, type: string, onConfirm: () => void, requiresTyping = false, requiredText = '') {
-    dialogConfig = {
-      title,
-      message,
-      type,
-      onConfirm,
-      requiresTyping,
-      requiredText,
-      isLoading: false
-    };
-    showConfirmDialog = true;
-  }
-  
-  function showAlert(message: string, type = 'info', title = '') {
-    alertConfig = { title, message, type };
-    showAlertDialog = true;
-  }
-  
-  function handleConfirmDialog() {
-    if (dialogConfig.onConfirm) {
-      dialogConfig.isLoading = true;
-      dialogConfig.onConfirm();
-    }
-    showConfirmDialog = false;
-  }
-  
-  function handleCancelDialog() {
-    showConfirmDialog = false;
-    dialogConfig = {
-      title: '',
-      message: '',
-      type: 'info',
-      onConfirm: null,
-      requiresTyping: false,
-      requiredText: '',
-      isLoading: false
-    };
-  }
-  
-  function handleCloseAlert() {
-    showAlertDialog = false;
-  }
-
-  // Delete transaction
-  async function deleteTransaction(id: string) {
-    showConfirmationDialog(
-      'Eliminar transacción',
-      '¿Estás seguro de que deseas eliminar esta transacción? Esta acción no se puede deshacer.',
-      'danger',
-      () => executeDeleteTransaction(id)
-    );
-  }
-  
-  async function executeDeleteTransaction(id: string) {
-    try {
-      const response = await fetch(`/api/transactions/${id}`, {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        await loadTransactions(); // Reload transactions
-      } else {
-        showAlert('Error al eliminar la transacción', 'error');
-      }
-    } catch (err) {
-      console.error('Error deleting transaction:', err);
-      showAlert('Error al eliminar la transacción', 'error');
-    }
-  }
-
-  // Load categories
-  async function loadCategories() {
-    try {
-      const response = await fetch('/api/categories');
-      const result = await response.json();
-      if (result.success) {
-        categories = result.data;
-      }
-    } catch (err) {
-      console.error('Error loading categories:', err);
-    }
-  }
-
-  // Update transaction category
-  async function updateTransactionCategory(transactionId: string, category: any) {
-    try {
-      const response = await fetch(`/api/transactions/${transactionId}/category`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ categoryId: category?.id.value || category?.id || null })
-      });
-
-      if (response.ok) {
-        // Update the local state instead of reloading to avoid flickering
-        transactions = transactions.map(t => 
-          (t.id.value || t.id) === transactionId
-            ? { ...t, category, categoryId: category?.id?.value || category?.id || null }
-            : t
-        );
-        return true; // Return success indicator
-      } else {
-        alert('Error al actualizar la categoría');
-        return false;
-      }
-    } catch (err) {
-      console.error('Error updating category:', err);
-      alert('Error al actualizar la categoría');
-      return false;
-    }
-  }
-
-  // Create new category
-  async function createNewCategory(categoryData: any) {
-    try {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: categoryData.name,
-          icon: categoryData.icon,
-          color: categoryData.color,
-          type: categoryData.type || 'DISCRETIONARY_EXPENSE' // Use provided type or default
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          await loadCategories(); // Reload categories
-          return result.data;
-        } else {
-          const errorResult = await response.json();
-          alert(`Error al crear la categoría: ${errorResult.error || 'Error desconocido'}`);
-        }
-      } else {
-        const errorResult = await response.json().catch(() => ({ error: 'Error de red' }));
-        alert(`Error al crear la categoría: ${errorResult.error || 'Error desconocido'}`);
-      }
-    } catch (err) {
-      console.error('Error creating category:', err);
-      alert('Error al crear la categoría');
-    }
-  }
-
-  // Update transaction description
-  async function updateTransactionDescription(transactionId: string, description: string) {
-    try {
-      const response = await fetch(`/api/transactions/${transactionId}/description`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ description })
-      });
-
-      if (response.ok) {
-        // Update local state to avoid full reload
-        transactions = transactions.map(t => 
-          (t.id.value || t.id) === transactionId 
-            ? { ...t, notes: description }
-            : t
-        );
-      } else {
-        alert('Error al actualizar la descripción');
-      }
-    } catch (err) {
-      console.error('Error updating description:', err);
-      alert('Error al actualizar la descripción');
-    }
-  }
-
-  // Selection management
-  function toggleSelection(transactionId: string) {
-    if (selectedTransactions.has(transactionId)) {
-      selectedTransactions.delete(transactionId);
+  function toggleTransactionSelection(id: number) {
+    if (selectedTransactions.has(id)) {
+      selectedTransactions.delete(id);
     } else {
-      selectedTransactions.add(transactionId);
+      selectedTransactions.add(id);
     }
     selectedTransactions = new Set(selectedTransactions);
   }
 
-  function toggleSelectAll() {
+  function selectAllTransactions() {
     if (selectedTransactions.size === filteredTransactions.length) {
       selectedTransactions.clear();
     } else {
-      selectedTransactions = new Set(filteredTransactions.map(t => t.id.value || t.id));
+      selectedTransactions = new Set(filteredTransactions.map(t => t.id));
     }
   }
 
-  function enterSelectionMode() {
-    isSelectionMode = true;
-    selectedTransactions.clear();
+  function clearFilters() {
+    searchTerm = '';
+    selectedCategory = 'todas';
+    selectedDateRange = '30';
+    showFilters = false;
   }
 
-  function exitSelectionMode() {
-    isSelectionMode = false;
-    selectedTransactions.clear();
-  }
-
-  // Hide/Show management
-  let toggleVisibilityLoading = new Set();
-  async function toggleTransactionVisibility(transactionId: string) {
-    if (toggleVisibilityLoading.has(transactionId)) return;
-    
-    const isCurrentlyHidden = hiddenTransactions.has(transactionId);
-    const newHiddenState = !isCurrentlyHidden;
-    
-    // Add loading state
-    toggleVisibilityLoading.add(transactionId);
-    toggleVisibilityLoading = new Set(toggleVisibilityLoading);
-    
-    try {
-      const response = await fetch(`/api/transactions/${transactionId}/visibility`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ isHidden: newHiddenState })
-      });
-
-      if (response.ok) {
-        // Update local state
-        if (newHiddenState) {
-          hiddenTransactions.add(transactionId);
-        } else {
-          hiddenTransactions.delete(transactionId);
-        }
-        hiddenTransactions = new Set(hiddenTransactions);
-        
-        // Update totals since hidden transactions affect calculations
-      } else {
-        showAlert('Error al actualizar la visibilidad de la transacción', 'error');
-      }
-    } catch (err) {
-      console.error('Error updating transaction visibility:', err);
-    } finally {
-      // Remove loading state
-      toggleVisibilityLoading.delete(transactionId);
-      toggleVisibilityLoading = new Set(toggleVisibilityLoading);
-      showAlert('Error al actualizar la visibilidad de la transacción', 'error');
-    }
-  }
-
-  // Bulk actions
-  async function bulkDelete() {
-    if (selectedTransactions.size === 0) return;
-    
-    if (!confirm(`¿Estás seguro de que deseas eliminar ${selectedTransactions.size} transacciones seleccionadas?`)) {
-      return;
-    }
-
-    const promises = Array.from(selectedTransactions).map(id =>
-      fetch(`/api/transactions/${id}`, { method: 'DELETE' })
-    );
-
-    try {
-      await Promise.all(promises);
-      await loadTransactions();
-      exitSelectionMode();
-    } catch (err) {
-      console.error('Error deleting transactions:', err);
-      alert('Error al eliminar las transacciones seleccionadas');
-    }
-  }
-
-
-  // Sort and filter transactions
-  function sortTransactions(transactionList: any[]) {
-    return [...transactionList].sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (sortField) {
-        case 'date':
-          aValue = new Date(a.transactionDate || a.bookingDate).getTime();
-          bValue = new Date(b.transactionDate || b.bookingDate).getTime();
-          break;
-        case 'amount':
-          aValue = Math.abs(a.amount);
-          bValue = Math.abs(b.amount);
-          break;
-        case 'partner':
-          aValue = (a.partnerName || a.paymentReference || '').toLowerCase();
-          bValue = (b.partnerName || b.paymentReference || '').toLowerCase();
-          break;
-        case 'category':
-          aValue = a.category?.name?.toLowerCase() || 'zzz'; // Put uncategorized at end
-          bValue = b.category?.name?.toLowerCase() || 'zzz';
-          break;
-        default:
-          aValue = new Date(a.transactionDate || a.bookingDate).getTime();
-          bValue = new Date(b.transactionDate || b.bookingDate).getTime();
-      }
-      
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }
-
-  function handleSort(field: 'date' | 'amount' | 'partner' | 'category') {
-    if (sortField === field) {
-      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-      sortField = field;
-      sortDirection = 'desc';
-    }
-  }
-
-
-  const filteredTransactions = $derived(
-    sortTransactions(
-      transactions.filter(transaction => {
-        const matchesSearch = !searchTerm || 
-          (transaction.partnerName || transaction.paymentReference || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          transaction.notes?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        return matchesSearch;
-      })
-    )
-  );
-
-  // Calculate totals (excluding OMIT transactions and hidden transactions)
-  const totals = $derived.by(() => {
-    const omitCategory = categories.find(c => c.name === 'Omitir');
-    const includedTransactions = transactions.filter(t => 
-      !t.isHidden && // Exclude hidden transactions
-      t.category?.name !== 'Omitir' && 
-      t.category?.type !== 'OMIT' &&
-      t.categoryId !== omitCategory?.id?.value &&
-      t.categoryId !== omitCategory?.id
-    );
-    
-    return {
-      income: includedTransactions.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0),
-      expenses: Math.abs(includedTransactions.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)),
-      balance: includedTransactions.reduce((sum, t) => sum + t.amount, 0),
-      count: transactions.length, // Show all transactions count
-      includedCount: includedTransactions.length // Count of included transactions
-    };
-  });
-
-  function formatCurrency(amount: number) {
-    const safeAmount = isFinite(amount) ? amount : 0;
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(safeAmount);
-  }
-
-  function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  }
-
-  // Manual filter application - only reload when user changes filters that need server updates
-  $effect(() => {
-    if (dateFilterType || selectedType || selectedCategoryType || selectedCategoryId) {
-      loadTransactions();
-    }
+  onMount(async () => {
+    // Simulate API loading
+    setTimeout(() => {
+      loading = false;
+    }, 800);
   });
 </script>
 
@@ -550,627 +170,953 @@
   <title>Transacciones - Happy Balance</title>
 </svelte:head>
 
-<div class="min-h-screen" style="background-color: var(--color-background-primary);">
-  <!-- Header -->
-  <div class="glass-effect sticky top-0 z-10" style="border-color: var(--color-border-primary); background-color: var(--color-background-elevated);">
-    <div class="container-editorial">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4">
-        <div>
-          <h1 class="text-h3" style="color: var(--color-text-primary);">Transacciones</h1>
-          <p class="text-secondary mt-1">
-            {#if isSelectionMode && selectedTransactions.size > 0}
-              {selectedTransactions.size} seleccionadas de {totals.count} transacciones
-            {:else}
-              {totals.count} transacciones encontradas
-            {/if}
-          </p>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <button 
-            class="btn-primary gap-2"
-            onclick={() => goto('/transactions/new')}
-          >
-            <Plus class="w-4 h-4" />
-            Nueva Transacción
-          </button>
-        </div>
+<div class="transactions-container">
+  <!-- Header Section -->
+  <div class="transactions-header">
+    <div class="header-content">
+      <div class="header-text">
+        <h1 class="page-title">Transacciones</h1>
+        <p class="page-subtitle">Gestiona y revisa todos tus movimientos financieros</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn-secondary" onclick={() => showFilters = !showFilters}>
+          <Filter size={16} />
+          Filtros
+        </button>
+        <button class="btn-secondary">
+          <Download size={16} />
+          Exportar
+        </button>
+        <button class="btn-primary">
+          <Plus size={16} />
+          Nueva Transacción
+        </button>
       </div>
     </div>
   </div>
 
-  <div class="container-editorial py-6">
-    <!-- Smart Filters Section -->
-    <div class="card-editorial p-6 mb-6">
-      <!-- Basic Filters Row -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <!-- Search - Always visible for quick access -->
-        <div class="lg:col-span-2">
-          <label for="search" class="block text-caption mb-2">
-            <Search class="w-4 h-4 inline mr-1" />
-            Buscar transacciones
-          </label>
-          <input
-            id="search"
-            type="text"
-            bind:value={searchTerm}
-            placeholder="Buscar por concepto o descripción..."
-            class="input-editorial"
-          />
-        </div>
-
-        <!-- Quick Period Filter -->
-        <div>
-          <label for="quick-period" class="block text-caption mb-2">
-            <Calendar class="w-4 h-4 inline mr-1" />
-            Periodo rápido
-          </label>
-          <select
-            id="quick-period"
-            bind:value={dateFilterType}
-            class="input-editorial"
-            onchange={() => {
-              if (dateFilterType === 'preset') {
-                presetPeriod = 'thisYear';
-              }
-              loadTransactions();
-            }}
-          >
-            <option value="">Todas las transacciones</option>
-            <option value="month">Este mes</option>
-            <option value="preset">Periodo personalizado</option>
-          </select>
-        </div>
-
-        <!-- Quick Type Filter -->
-        <div>
-          <label for="quick-type" class="block text-caption mb-2">
-            <Filter class="w-4 h-4 inline mr-1" />
-            Tipo
-          </label>
-          <select
-            id="quick-type"
-            bind:value={selectedType}
-            class="input-editorial"
-            onchange={loadTransactions}
-          >
-            <option value="all">Todos</option>
-            <option value="income">Solo Ingresos</option>
-            <option value="expense">Solo Gastos</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Advanced Filters Toggle -->
-      <div class="flex items-center justify-between pt-4 border-t border-warm">
-        <button
-          onclick={() => showAdvancedFilters = !showAdvancedFilters}
-          class="btn-ghost gap-2 text-sm"
-        >
-          <Filter class="w-4 h-4" />
-          Filtros avanzados
-          <span class="text-xs px-2 py-1 bg-gray-100 rounded-full">
-            {#if showAdvancedFilters}Ocultar{:else}Mostrar{/if}
-          </span>
-        </button>
-        
-        <!-- Active Filters Indicator -->
-        {#if (dateFilterType !== 'month' && dateFilterType !== '') || selectedCategoryType !== 'all' || selectedCategoryId !== 'all'}
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-              {[
-                dateFilterType !== 'month' ? 'Periodo personalizado' : '',
-                selectedCategoryType !== 'all' ? 'Tipo de categoría' : '',
-                selectedCategoryId !== 'all' ? 'Categoría específica' : ''
-              ].filter(Boolean).length} filtros activos
-            </span>
-            <button
-              onclick={() => {
-                dateFilterType = 'month';
-                selectedCategoryType = 'all';
-                selectedCategoryId = 'all';
-                presetPeriod = '';
-                customStartDate = '';
-                customEndDate = '';
-              }}
-              class="text-xs text-tertiary hover:status-error underline"
-            >
-              Limpiar
-            </button>
-          </div>
-        {/if}
-      </div>
-
-      <!-- Advanced Filters Collapsible Section -->
-      {#if showAdvancedFilters}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-warm mt-4">
-          <!-- Month Filter (when month type is selected) -->
-          {#if dateFilterType === 'month'}
-          <div>
-            <label for="month-filter" class="block text-caption mb-2">
-              <Calendar class="w-3 h-3 inline mr-1" />
-              Seleccionar mes
-            </label>
-            <input
-              id="month-filter"
-              type="month"
-              bind:value={selectedMonth}
-              class="input-editorial"
-              onchange={loadTransactions}
-            />
-          </div>
-          {/if}
-
-          <!-- Preset Period Filter -->
-          {#if dateFilterType === 'preset'}
-          <div>
-            <label for="preset-filter" class="block text-caption mb-2">
-              <Calendar class="w-3 h-3 inline mr-1" />
-              Periodo predefinido
-            </label>
-            <select
-              id="preset-filter"
-              bind:value={presetPeriod}
-              class="input-editorial"
-              onchange={loadTransactions}
-            >
-              <option value="">Seleccionar periodo</option>
-              <option value="thisWeek">Esta semana</option>
-              <option value="lastWeek">Semana pasada</option>
-              <option value="last30Days">Últimos 30 días</option>
-              <option value="thisQuarter">Este trimestre</option>
-              <option value="lastQuarter">Trimestre pasado</option>
-              <option value="thisYear">Este año</option>
-              <option value="lastYear">Año pasado</option>
-            </select>
-          </div>
-          {/if}
-
-          <!-- Custom Date Range -->
-          {#if dateFilterType === 'custom'}
-          <div>
-            <label for="start-date" class="block text-caption mb-2">
-              <Calendar class="w-3 h-3 inline mr-1" />
-              Fecha desde
-            </label>
-            <input
-              id="start-date"
-              type="date"
-              bind:value={customStartDate}
-              class="input-editorial"
-              onchange={loadTransactions}
-            />
-          </div>
-          <div>
-            <label for="end-date" class="block text-caption mb-2">
-              <Calendar class="w-3 h-3 inline mr-1" />
-              Fecha hasta
-            </label>
-            <input
-              id="end-date"
-              type="date"
-              bind:value={customEndDate}
-              class="input-editorial"
-              onchange={loadTransactions}
-            />
-          </div>
-          {/if}
-
-          <!-- Category Type Filter -->
-          <div>
-            <label for="category-type-filter" class="block text-caption mb-2">
-              <Filter class="w-3 h-3 inline mr-1" />
-              Tipo de categoría
-            </label>
-            <select
-              id="category-type-filter"
-              bind:value={selectedCategoryType}
-              class="input-editorial"
-              onchange={loadTransactions}
-            >
-              <option value="all">Todos los tipos</option>
-              <option value="INCOME">Ingresos</option>
-              <option value="ESSENTIAL_EXPENSE">Gastos Esenciales</option>
-              <option value="DISCRETIONARY_EXPENSE">Gastos Discrecionales</option>
-              <option value="DEBT_PAYMENT">Pagos de Deuda</option>
-              <option value="SAVINGS">Ahorros</option>
-              <option value="INVESTMENT">Inversiones</option>
-            </select>
-          </div>
-
-          <!-- Specific Category Filter -->
-          <div>
-            <label for="category-filter" class="block text-caption mb-2">
-              <Filter class="w-3 h-3 inline mr-1" />
-              Categoría específica
-            </label>
-            <select
-              id="category-filter"
-              bind:value={selectedCategoryId}
-              class="input-editorial"
-              onchange={loadTransactions}
-            >
-              <option value="all">Todas las categorías</option>
-              <option value="">❓ Sin categoría</option>
-              {#each categories as category}
-                <option value={category.id.value || category.id}>
-                  {category.icon || '📁'} {category.name}
-                </option>
-              {/each}
-            </select>
-          </div>
-
-          <!-- Add Custom Date Range Option in Advanced -->
-          {#if dateFilterType === 'preset'}
-          <div class="flex items-end">
-            <button
-              onclick={() => dateFilterType = 'custom'}
-              class="btn-ghost gap-2 text-sm w-full"
-            >
-              <Calendar class="w-4 h-4" />
-              Rango personalizado
-            </button>
-          </div>
-          {/if}
-        </div>
-      {/if}
+  {#if loading}
+    <!-- Loading State -->
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Cargando transacciones...</p>
     </div>
-
+  {:else}
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="metric-card income">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-caption">Ingresos</p>
-            <p class="text-h4 status-success text-mono">{formatCurrency(totals.income)}</p>
-          </div>
-          <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-            <ArrowUpDown class="w-5 h-5 status-success transform rotate-180" />
-          </div>
+    <div class="summary-grid">
+      <div class="summary-card income-summary">
+        <div class="summary-icon income-icon">
+          <ArrowUpRight size={20} />
+        </div>
+        <div class="summary-content">
+          <p class="summary-label">Total Ingresos</p>
+          <p class="summary-value income-value">+€{totalIncome.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
         </div>
       </div>
       
-      <div class="metric-card expense">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-caption">Gastos</p>
-            <p class="text-h4 status-error text-mono">{formatCurrency(totals.expenses)}</p>
-          </div>
-          <div class="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
-            <ArrowUpDown class="w-5 h-5 status-error" />
-          </div>
+      <div class="summary-card expense-summary">
+        <div class="summary-icon expense-icon">
+          <ArrowDownRight size={20} />
+        </div>
+        <div class="summary-content">
+          <p class="summary-label">Total Gastos</p>
+          <p class="summary-value expense-value">-€{totalExpenses.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
         </div>
       </div>
       
-      <div class="metric-card {totals.balance >= 0 ? 'income' : 'expense'}">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-caption">Balance</p>
-            <p class="text-h4 text-mono {totals.balance >= 0 ? 'status-success' : 'status-error'}">
-              {formatCurrency(totals.balance)}
-            </p>
-          </div>
-          <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
-            <DollarSign class="w-5 h-5 status-info" />
-          </div>
+      <div class="summary-card net-summary {netAmount >= 0 ? 'positive' : 'negative'}">
+        <div class="summary-icon net-icon">
+          {#if netAmount >= 0}
+            <ArrowUpRight size={20} />
+          {:else}
+            <ArrowDownRight size={20} />
+          {/if}
         </div>
-      </div>
-      
-      <div class="metric-card neutral">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-caption">Transacciones</p>
-            <p class="text-h4 text-mono">{totals.count}</p>
-          </div>
-          <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--color-background-secondary);">
-            <FileText class="w-5 h-5 text-tertiary" />
-          </div>
+        <div class="summary-content">
+          <p class="summary-label">Balance Neto</p>
+          <p class="summary-value net-value">
+            {netAmount >= 0 ? '+' : ''}€{netAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+          </p>
         </div>
       </div>
     </div>
 
-    <!-- Table Controls -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-4">
-        {#if !isSelectionMode}
-          <button 
-            class="btn-ghost gap-2"
-            onclick={enterSelectionMode}
-          >
-            <Check class="w-4 h-4" />
-            Seleccionar elementos
+    <!-- Filters Section -->
+    {#if showFilters}
+      <div class="filters-section">
+        <div class="filters-header">
+          <h3 class="filters-title">Filtros</h3>
+          <button class="filters-close" onclick={() => showFilters = false}>
+            <X size={16} />
           </button>
-        {:else}
-          <div class="flex items-center gap-3">
-            <span class="text-body-small">
-              {selectedTransactions.size} seleccionadas
-            </span>
-            
-            <!-- Bulk Actions -->
-            <div class="flex items-center gap-2">
-              <button 
-                class="btn btn-ghost btn-sm text-error hover:bg-error/10"
-                onclick={bulkDelete}
-                disabled={selectedTransactions.size === 0}
-              >
-                <Trash2 class="w-3 h-3" />
-                Eliminar
-              </button>
-              
+        </div>
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label class="filter-label">Buscar</label>
+            <div class="search-input-wrapper">
+              <Search size={16} class="search-icon" />
+              <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Buscar por descripción o categoría..."
+                bind:value={searchTerm}
+              />
             </div>
-            
-            <button 
-              class="btn-ghost gap-2 text-sm"
-              onclick={exitSelectionMode}
-            >
-              <X class="w-4 h-4" />
-              Cancelar
-            </button>
           </div>
-        {/if}
+          
+          <div class="filter-group">
+            <label class="filter-label">Categoría</label>
+            <div class="select-wrapper">
+              <select class="filter-select" bind:value={selectedCategory}>
+                {#each categories as category}
+                  <option value={category}>{category}</option>
+                {/each}
+              </select>
+              <ChevronDown size={16} class="select-icon" />
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">Periodo</label>
+            <div class="select-wrapper">
+              <select class="filter-select" bind:value={selectedDateRange}>
+                <option value="7">Últimos 7 días</option>
+                <option value="30">Últimos 30 días</option>
+                <option value="90">Últimos 3 meses</option>
+                <option value="365">Último año</option>
+              </select>
+              <ChevronDown size={16} class="select-icon" />
+            </div>
+          </div>
+          
+          <div class="filter-actions">
+            <button class="btn-clear" onclick={clearFilters}>Limpiar</button>
+          </div>
+        </div>
       </div>
-      
-      <!-- Table Info -->
-      <div class="text-body-small text-tertiary">
-        {filteredTransactions.length} de {transactions.length} transacciones
-      </div>
-    </div>
+    {/if}
 
     <!-- Transactions Table -->
-    <div class="card-editorial overflow-hidden">
-      {#if isLoading}
-        <div class="p-8 text-center">
-          <div class="inline-flex items-center gap-2 text-body">
-            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
-            Cargando transacciones...
+    <div class="table-container">
+      <div class="table-header">
+        <div class="table-title-section">
+          <h2 class="table-title">Listado de Transacciones</h2>
+          <p class="table-subtitle">{filteredTransactions.length} transacciones encontradas</p>
+        </div>
+        
+        {#if selectedTransactions.size > 0}
+          <div class="bulk-actions">
+            <p class="selected-count">{selectedTransactions.size} seleccionadas</p>
+            <button class="btn-bulk">Ocultar seleccionadas</button>
+            <button class="btn-bulk danger">Eliminar seleccionadas</button>
           </div>
-        </div>
-      {:else if error}
-        <div class="p-8 text-center">
-          <div class="status-error mb-4">{error}</div>
-          <button 
-            onclick={loadTransactions}
-            class="btn-primary"
-          >
-            Reintentar
-          </button>
-        </div>
-      {:else if filteredTransactions.length === 0}
-        <div class="p-8 text-center">
-          <FileText class="w-12 h-12 text-tertiary mx-auto mb-4" />
-          <h3 class="text-h4 mb-2">No hay transacciones</h3>
-          <p class="text-body mb-4">
-            {transactions.length === 0 
-              ? 'Aún no tienes transacciones registradas.'
-              : 'No se encontraron transacciones con los filtros seleccionados.'
-            }
-          </p>
-          <button 
-            onclick={() => goto('/transactions/new')}
-            class="btn-primary"
-          >
-            Crear Primera Transacción
-          </button>
-        </div>
-      {:else}
-        <!-- Mobile View -->
-        <div class="sm:hidden">
-          {#each filteredTransactions as transaction}
-            <div class="p-4 border-b border-base-300 last:border-b-0 transition-all hover:bg-base-200 {selectedTransactions.has(transaction.id.value || transaction.id) ? 'bg-primary/10 border-primary/20' : ''} {hiddenTransactions.has(transaction.id.value || transaction.id) ? 'opacity-40 bg-base-300' : ''}">
-              <div class="flex items-start justify-between gap-3 mb-2">
-                <div class="flex items-start gap-3 min-w-0 flex-1">
-                  <div class="flex items-center gap-2 flex-shrink-0">
-                    {#if isSelectionMode}
-                      <input
-                        type="checkbox"
-                        class="checkbox checkbox-primary"
-                        checked={selectedTransactions.has(transaction.id.value || transaction.id)}
-                        onchange={() => toggleSelection(transaction.id.value || transaction.id)}
-                      />
-                    {/if}
-                    <span class="text-lg flex-shrink-0">
-                      {transaction.category?.icon || (transaction.amount > 0 ? '📈' : '📉')}
-                    </span>
+        {/if}
+      </div>
+
+      <div class="table-wrapper">
+        <table class="transactions-table">
+          <thead>
+            <tr>
+              <th class="checkbox-column">
+                <input 
+                  type="checkbox" 
+                  class="table-checkbox"
+                  checked={selectedTransactions.size === filteredTransactions.length && filteredTransactions.length > 0}
+                  onchange={selectAllTransactions}
+                />
+              </th>
+              <th class="date-column">Fecha</th>
+              <th class="description-column">Descripción</th>
+              <th class="category-column">Categoría</th>
+              <th class="account-column">Cuenta</th>
+              <th class="amount-column">Importe</th>
+              <th class="actions-column">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each filteredTransactions as transaction}
+              <tr class="transaction-row {transaction.visible ? '' : 'hidden-transaction'}">
+                <td class="checkbox-column">
+                  <input 
+                    type="checkbox" 
+                    class="table-checkbox"
+                    checked={selectedTransactions.has(transaction.id)}
+                    onchange={() => toggleTransactionSelection(transaction.id)}
+                  />
+                </td>
+                <td class="date-column">
+                  <div class="date-info">
+                    <span class="date-primary">{new Date(transaction.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}</span>
+                    <span class="date-year">{new Date(transaction.date).getFullYear()}</span>
                   </div>
-                  <div class="min-w-0 flex-1">
-                    <p class="font-medium text-primary truncate" title="{transaction.partnerName || transaction.paymentReference}">{transaction.partnerName || transaction.paymentReference}</p>
-                    <p class="text-xs text-tertiary">{formatDate(transaction.transactionDate || transaction.bookingDate)}</p>
-                    {#if transaction.category?.name}
-                      <p class="text-xs text-tertiary truncate" title="{transaction.category.name}">{transaction.category.name}</p>
-                    {/if}
+                </td>
+                <td class="description-column">
+                  <div class="description-info">
+                    <span class="description-primary">{transaction.description}</span>
+                    <span class="description-reference">{transaction.reference}</span>
                   </div>
-                </div>
-                <div class="text-right flex items-center gap-2 flex-shrink-0">
-                  <div class="text-right">
-                    <p class="text-lg font-semibold {transaction.amount > 0 ? 'status-success' : 'status-error'}">
-                      {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
-                    </p>
-                  </div>
-                  {#if !isSelectionMode}
-                    <button
-                      onclick={() => toggleTransactionVisibility(transaction.id.value || transaction.id)}
-                      disabled={toggleVisibilityLoading.has(transaction.id.value || transaction.id)}
-                      class="btn btn-ghost btn-sm opacity-60 hover:opacity-100"
-                      title={hiddenTransactions.has(transaction.id.value || transaction.id) ? "Mostrar transacción" : "Ocultar transacción"}
+                </td>
+                <td class="category-column">
+                  <span class="category-badge {transaction.type}">{transaction.category}</span>
+                </td>
+                <td class="account-column">
+                  <span class="account-name">{transaction.account}</span>
+                </td>
+                <td class="amount-column">
+                  <span class="amount-value {transaction.type}">
+                    {transaction.type === 'income' ? '+' : ''}€{Math.abs(transaction.amount).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                  </span>
+                </td>
+                <td class="actions-column">
+                  <div class="transaction-actions">
+                    <button 
+                      class="action-btn visibility-btn"
+                      onclick={() => toggleTransactionVisibility(transaction.id)}
+                      title={transaction.visible ? 'Ocultar transacción' : 'Mostrar transacción'}
                     >
-                      {#if hiddenTransactions.has(transaction.id.value || transaction.id)}
-                        <EyeOff class="w-4 h-4" />
+                      {#if transaction.visible}
+                        <Eye size={14} />
                       {:else}
-                        <Eye class="w-4 h-4" />
+                        <EyeOff size={14} />
                       {/if}
                     </button>
-                    <button
-                      class="btn btn-ghost btn-sm text-error hover:bg-error/10"
-                      onclick={() => deleteTransaction(transaction.id.value || transaction.id)}
-                      title="Eliminar transacción"
-                    >
-                      <Trash2 class="w-4 h-4" />
+                    <button class="action-btn edit-btn" title="Editar transacción">
+                      <Edit2 size={14} />
                     </button>
-                  {/if}
-                </div>
-              </div>
-              {#if transaction.notes}
-                <p class="text-sm text-secondary">{transaction.notes}</p>
-              {/if}
-            </div>
-          {/each}
-        </div>
-
-        <!-- Desktop View -->
-        <div class="hidden sm:block overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-base-200 border-b border-base-300">
-              <tr>
-                {#if isSelectionMode}
-                  <th class="py-3 px-4 w-12">
-                    <input
-                      type="checkbox"
-                      class="checkbox checkbox-primary"
-                      checked={selectedTransactions.size === filteredTransactions.length && filteredTransactions.length > 0}
-                      onchange={toggleSelectAll}
-                    />
-                  </th>
-                {/if}
-                <th class="text-left py-3 px-4 text-caption">
-                  <button
-                    class="flex items-center gap-1 hover:text-indigo-600 transition-colors focus-ring"
-                    onclick={() => handleSort('date')}
-                  >
-                    Fecha
-                    <ArrowUpDown class="w-4 h-4 {sortField === 'date' ? 'status-info' : 'text-tertiary'}" />
-                  </button>
-                </th>
-                <th class="text-left py-3 px-4 text-caption">
-                  <button
-                    class="flex items-center gap-1 hover:text-indigo-600 transition-colors focus-ring"
-                    onclick={() => handleSort('partner')}
-                  >
-                    Concepto
-                    <ArrowUpDown class="w-4 h-4 {sortField === 'partner' ? 'status-info' : 'text-tertiary'}" />
-                  </button>
-                </th>
-                <th class="text-left py-3 px-4 text-caption">
-                  <button
-                    class="flex items-center gap-1 hover:text-indigo-600 transition-colors focus-ring"
-                    onclick={() => handleSort('category')}
-                  >
-                    Categoría
-                    <ArrowUpDown class="w-4 h-4 {sortField === 'category' ? 'status-info' : 'text-tertiary'}" />
-                  </button>
-                </th>
-                <th class="text-left py-3 px-4 text-caption">Descripción</th>
-                <th class="text-right py-3 px-4 text-caption">
-                  <button
-                    class="flex items-center gap-1 hover:text-indigo-600 transition-colors ml-auto focus-ring"
-                    onclick={() => handleSort('amount')}
-                  >
-                    Importe
-                    <ArrowUpDown class="w-4 h-4 {sortField === 'amount' ? 'status-info' : 'text-tertiary'}" />
-                  </button>
-                </th>
-                {#if !isSelectionMode}
-                  <th class="text-right py-3 px-4 font-medium text-primary">Acciones</th>
-                {/if}
+                    <button class="action-btn delete-btn" title="Eliminar transacción">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-base-300">
-              {#each filteredTransactions as transaction}
-                <tr class="transition-colors hover:bg-base-200 {selectedTransactions.has(transaction.id.value || transaction.id) ? 'bg-primary/10 border-primary/20' : ''} {hiddenTransactions.has(transaction.id.value || transaction.id) ? 'opacity-40 bg-base-300' : ''}" 
-                    style="transition: all var(--transition-default);">
-                  {#if isSelectionMode}
-                    <td class="py-3 px-4">
-                      <input
-                        type="checkbox"
-                        class="checkbox checkbox-primary"
-                        checked={selectedTransactions.has(transaction.id.value || transaction.id)}
-                        onchange={() => toggleSelection(transaction.id.value || transaction.id)}
-                      />
-                    </td>
-                  {/if}
-                  <td class="py-3 px-4">
-                    <p class="text-sm text-primary">{formatDate(transaction.transactionDate || transaction.bookingDate)}</p>
-                  </td>
-                  <td class="py-3 px-4">
-                    <p class="font-medium text-primary">{transaction.partnerName || transaction.paymentReference}</p>
-                  </td>
-                  <td class="py-3 px-4">
-                    <CategorySelector
-                      currentCategory={transaction.category}
-                      {categories}
-                      transaction={transaction}
-                      on:select={(e) => updateTransactionCategory(transaction.id.value || transaction.id, e.detail)}
-                      on:smartSelect={(e) => handleSmartCategorySelection(e.detail)}
-                      on:create={(e) => createNewCategory(e.detail).then(newCategory => {
-                        if (newCategory) updateTransactionCategory(transaction.id.value || transaction.id, newCategory);
-                      })}
-                    />
-                  </td>
-                  <td class="py-3 px-4">
-                    <InlineTextEditor
-                      value={transaction.notes || ''}
-                      placeholder="Agregar descripción..."
-                      maxLength={200}
-                      on:save={(e) => updateTransactionDescription(transaction.id.value || transaction.id, e.detail)}
-                    />
-                  </td>
-                  <td class="py-3 px-4 text-right">
-                    <p class="text-h4 font-semibold text-mono {transaction.amount > 0 ? 'status-success' : 'status-error'}">
-                      {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
-                    </p>
-                  </td>
-                  {#if !isSelectionMode}
-                    <td class="py-3 px-4 text-right">
-                      <div class="flex items-center justify-end gap-2">
-                        <button
-                          onclick={() => toggleTransactionVisibility(transaction.id.value || transaction.id)}
-                          class="btn btn-ghost btn-sm opacity-60 hover:opacity-100"
-                          disabled={toggleVisibilityLoading.has(transaction.id.value || transaction.id)}
-                          title={hiddenTransactions.has(transaction.id.value || transaction.id) ? "Mostrar transacción" : "Ocultar transacción"}
-                        >
-                          {#if hiddenTransactions.has(transaction.id.value || transaction.id)}
-                            <EyeOff class="w-4 h-4" />
-                          {:else}
-                            <Eye class="w-4 h-4" />
-                          {/if}
-                        </button>
-                        <button
-                          class="btn btn-ghost btn-sm text-error hover:bg-error/10"
-                          onclick={() => deleteTransaction(transaction.id.value || transaction.id)}
-                          title="Eliminar transacción"
-                        >
-                          <Trash2 class="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  {/if}
-                </tr>
-              {/each}
-            </tbody>
-          </table>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+
+      {#if filteredTransactions.length === 0}
+        <div class="empty-state">
+          <div class="empty-icon">
+            <Search size={48} />
+          </div>
+          <h3 class="empty-title">No se encontraron transacciones</h3>
+          <p class="empty-description">
+            {searchTerm || selectedCategory !== 'todas' 
+              ? 'Intenta cambiar los filtros de búsqueda' 
+              : 'Aún no tienes transacciones registradas'}
+          </p>
+          {#if searchTerm || selectedCategory !== 'todas'}
+            <button class="btn-secondary" onclick={clearFilters}>Limpiar filtros</button>
+          {:else}
+            <button class="btn-primary">
+              <Plus size={16} />
+              Crear primera transacción
+            </button>
+          {/if}
         </div>
       {/if}
     </div>
-  </div>
+  {/if}
 </div>
 
+<style>
+  .transactions-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+  }
 
-<!-- Confirmation Dialog -->
-<ConfirmationDialog
-  show={showConfirmDialog}
-  title={dialogConfig.title}
-  message={dialogConfig.message}
-  type={dialogConfig.type}
-  requiresTyping={dialogConfig.requiresTyping}
-  requiredText={dialogConfig.requiredText}
-  isLoading={dialogConfig.isLoading}
-  on:confirm={handleConfirmDialog}
-  on:cancel={handleCancelDialog}
-/>
+  /* Header */
+  .transactions-header {
+    margin-bottom: 2rem;
+  }
 
-<!-- Alert Dialog -->
-<AlertDialog
-  show={showAlertDialog}
-  title={alertConfig.title}
-  message={alertConfig.message}
-  type={alertConfig.type}
-  on:close={handleCloseAlert}
-/>
+  .header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .header-text {
+    flex: 1;
+  }
+
+  .page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.2;
+  }
+
+  .page-subtitle {
+    font-size: 1rem;
+    color: var(--color-gray-600);
+    margin: 0;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary, .btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: var(--color-gray-700);
+    border: 1px solid var(--color-gray-300);
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-gray-50);
+    border-color: var(--color-gray-400);
+  }
+
+  /* Loading */
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+
+  .loading-spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 3px solid var(--color-gray-200);
+    border-top: 3px solid var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  .loading-text {
+    color: var(--color-gray-600);
+    font-size: 1rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Summary Cards */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .summary-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-gray-200);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .summary-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .income-icon { background: linear-gradient(135deg, #059669, #10b981); }
+  .expense-icon { background: linear-gradient(135deg, #dc2626, #ef4444); }
+  .net-icon.positive { background: linear-gradient(135deg, #059669, #10b981); }
+  .net-icon.negative { background: linear-gradient(135deg, #dc2626, #ef4444); }
+
+  .summary-content {
+    flex: 1;
+  }
+
+  .summary-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-gray-600);
+    margin: 0 0 0.25rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .summary-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .income-value { color: #059669; }
+  .expense-value { color: #dc2626; }
+  .net-value { color: #059669; }
+  .negative .net-value { color: #dc2626; }
+
+  /* Filters */
+  .filters-section {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-gray-200);
+    margin-bottom: 2rem;
+  }
+
+  .filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .filters-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin: 0;
+  }
+
+  .filters-close {
+    background: none;
+    border: none;
+    color: var(--color-gray-500);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+  }
+
+  .filters-close:hover {
+    background: var(--color-gray-100);
+    color: var(--color-gray-700);
+  }
+
+  .filters-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filter-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-gray-700);
+  }
+
+  .search-input-wrapper {
+    position: relative;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-gray-400);
+  }
+
+  .select-wrapper {
+    position: relative;
+  }
+
+  .filter-select {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    background: white;
+    appearance: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .filter-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .select-icon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-gray-400);
+    pointer-events: none;
+  }
+
+  .btn-clear {
+    padding: 0.75rem 1.25rem;
+    background: var(--color-gray-100);
+    color: var(--color-gray-700);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-clear:hover {
+    background: var(--color-gray-200);
+  }
+
+  /* Table */
+  .table-container {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-gray-200);
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  .table-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin: 0;
+  }
+
+  .table-subtitle {
+    font-size: 0.875rem;
+    color: var(--color-gray-500);
+    margin: 0.25rem 0 0 0;
+  }
+
+  .bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .selected-count {
+    font-size: 0.875rem;
+    color: var(--color-gray-600);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .btn-bulk {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-md);
+    background: white;
+    color: var(--color-gray-700);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-bulk:hover {
+    background: var(--color-gray-50);
+  }
+
+  .btn-bulk.danger {
+    border-color: #fecaca;
+    color: #dc2626;
+  }
+
+  .btn-bulk.danger:hover {
+    background: #fef2f2;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .transactions-table th {
+    background: var(--color-gray-50);
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-gray-700);
+    border-bottom: 1px solid var(--color-gray-200);
+    white-space: nowrap;
+  }
+
+  .transactions-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-gray-100);
+    vertical-align: middle;
+  }
+
+  .transaction-row:hover {
+    background: var(--color-gray-50);
+  }
+
+  .transaction-row.hidden-transaction {
+    opacity: 0.5;
+    background: var(--color-gray-50);
+  }
+
+  .checkbox-column {
+    width: 50px;
+    text-align: center;
+  }
+
+  .table-checkbox {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--color-primary);
+  }
+
+  .date-column {
+    width: 100px;
+  }
+
+  .date-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .date-primary {
+    font-weight: 600;
+    color: var(--color-gray-900);
+    font-size: 0.875rem;
+  }
+
+  .date-year {
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+  }
+
+  .description-column {
+    min-width: 200px;
+  }
+
+  .description-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .description-primary {
+    font-weight: 600;
+    color: var(--color-gray-900);
+    font-size: 0.875rem;
+    margin-bottom: 0.125rem;
+  }
+
+  .description-reference {
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+  }
+
+  .category-column {
+    width: 150px;
+  }
+
+  .category-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .category-badge.income {
+    background: rgba(5, 150, 105, 0.1);
+    color: #059669;
+  }
+
+  .category-badge.expense {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+  }
+
+  .account-column {
+    width: 150px;
+  }
+
+  .account-name {
+    font-size: 0.875rem;
+    color: var(--color-gray-600);
+  }
+
+  .amount-column {
+    width: 120px;
+    text-align: right;
+  }
+
+  .amount-value {
+    font-weight: 700;
+    font-size: 0.875rem;
+  }
+
+  .amount-value.income {
+    color: #059669;
+  }
+
+  .amount-value.expense {
+    color: #dc2626;
+  }
+
+  .actions-column {
+    width: 120px;
+  }
+
+  .transaction-actions {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: flex-end;
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .action-btn:hover {
+    background: var(--color-gray-100);
+  }
+
+  .visibility-btn {
+    color: var(--color-gray-500);
+  }
+
+  .edit-btn {
+    color: var(--color-primary);
+  }
+
+  .delete-btn {
+    color: #dc2626;
+  }
+
+  .delete-btn:hover {
+    background: #fef2f2;
+  }
+
+  /* Empty State */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+
+  .empty-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: var(--color-gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-gray-400);
+    margin-bottom: 1rem;
+  }
+
+  .empty-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .empty-description {
+    font-size: 1rem;
+    color: var(--color-gray-600);
+    margin: 0 0 1.5rem 0;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 1023px) {
+    .header-content {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .header-actions {
+      justify-content: stretch;
+    }
+
+    .btn-primary, .btn-secondary {
+      flex: 1;
+      justify-content: center;
+    }
+
+    .summary-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filters-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filter-actions {
+      justify-self: stretch;
+    }
+
+    .table-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+
+    .bulk-actions {
+      justify-content: space-between;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .page-title {
+      font-size: 1.5rem;
+    }
+
+    .summary-value {
+      font-size: 1.25rem;
+    }
+
+    .transactions-table th,
+    .transactions-table td {
+      padding: 0.75rem 0.5rem;
+    }
+
+    .description-column {
+      min-width: 150px;
+    }
+
+    .category-column,
+    .account-column {
+      width: 100px;
+    }
+
+    .amount-column {
+      width: 100px;
+    }
+  }
+
+  /* Dark Mode */
+  :global(html.dark) .summary-card,
+  :global(html.dark) .filters-section,
+  :global(html.dark) .table-container {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  :global(html.dark) .table-header,
+  :global(html.dark) .transactions-table th {
+    border-bottom-color: #374151;
+  }
+
+  :global(html.dark) .transactions-table th {
+    background: #374151;
+  }
+
+  :global(html.dark) .transactions-table td {
+    border-bottom-color: #4b5563;
+  }
+
+  :global(html.dark) .transaction-row:hover {
+    background: #374151;
+  }
+
+  :global(html.dark) .search-input,
+  :global(html.dark) .filter-select {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+
+  :global(html.dark) .btn-secondary {
+    background: #374151;
+    color: #f3f4f6;
+    border-color: #4b5563;
+  }
+
+  :global(html.dark) .btn-clear {
+    background: #4b5563;
+    color: #f3f4f6;
+  }
+
+  :global(html.dark) .empty-icon {
+    background: #374151;
+  }
+</style>
