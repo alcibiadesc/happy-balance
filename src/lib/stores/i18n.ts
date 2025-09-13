@@ -44,6 +44,8 @@ const translations = {
         totalExpenses: 'Total Expenses',
         essentialExpenses: 'Essential',
         discretionaryExpenses: 'Discretionary',
+        essential_expenses: 'Essential',
+        discretionary_expenses: 'Discretionary',
         monthlyIncome: 'Monthly Income',
         savingsRate: 'Savings Rate',
         remainingBudget: 'Remaining Budget',
@@ -112,6 +114,8 @@ const translations = {
         totalExpenses: 'Gastos Totales',
         essentialExpenses: 'Esenciales',
         discretionaryExpenses: 'Discrecionales',
+        essential_expenses: 'Esenciales',
+        discretionary_expenses: 'Discrecionales',
         monthlyIncome: 'Ingresos Mensuales',
         savingsRate: 'Tasa de Ahorro',
         remainingBudget: 'Presupuesto Restante',
@@ -148,7 +152,7 @@ const translations = {
 export const t = derived(
   currentLanguage,
   ($currentLanguage) => {
-    return (key: string): string => {
+    return (key: string, params?: Record<string, string | number>): string => {
       const keys = key.split('.');
       let value: any = translations[$currentLanguage as keyof typeof translations];
       
@@ -156,7 +160,16 @@ export const t = derived(
         value = value?.[k];
       }
       
-      return value || key;
+      let result = value || key;
+      
+      // Interpolate parameters if provided
+      if (params && typeof result === 'string') {
+        Object.entries(params).forEach(([paramKey, paramValue]) => {
+          result = result.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
+        });
+      }
+      
+      return result;
     };
   }
 );

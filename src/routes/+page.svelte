@@ -398,7 +398,7 @@
   
   .period-button.active {
     background: var(--primary);
-    color: var(--text-inverse);
+    color: var(--text-inverse) !important;
   }
   
   .period-button:disabled {
@@ -638,7 +638,7 @@
   
   html.dark .period-button.active {
     background: var(--acapulco);
-    color: var(--gray-900);
+    color: var(--gray-900) !important;
   }
   
   html.dark .category-bar {
