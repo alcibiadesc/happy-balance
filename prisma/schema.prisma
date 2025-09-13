@@ -39,7 +39,7 @@ model Transaction {
 model Category {
   id           String        @id @default(cuid())
   name         String        @unique
-  type         CategoryType
+  type         String        // "INCOME", "ESSENTIAL", "DISCRETIONARY", "INVESTMENT"
   color        String        @default("#7abaa5")
   icon         String        @default("📁")
   
@@ -72,9 +72,3 @@ model CategoryRule {
   @@index([priority])
 }
 
-enum CategoryType {
-  INCOME
-  ESSENTIAL
-  DISCRETIONARY
-  INVESTMENT
-}

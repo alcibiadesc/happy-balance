@@ -1,4 +1,4 @@
-import { PrismaClient, CategoryType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -9,73 +9,73 @@ async function main() {
   const categories = [
     {
       name: 'Food & Groceries',
-      type: CategoryType.ESSENTIAL,
+      type: 'ESSENTIAL',
       color: '#f5796c',
       icon: '🍽️'
     },
     {
       name: 'Transport',
-      type: CategoryType.ESSENTIAL,
+      type: 'ESSENTIAL',
       color: '#7abaa5',
       icon: '🚇'
     },
     {
       name: 'Utilities',
-      type: CategoryType.ESSENTIAL,
+      type: 'ESSENTIAL',
       color: '#023c46',
       icon: '⚡'
     },
     {
       name: 'Housing & Rent',
-      type: CategoryType.ESSENTIAL,
+      type: 'ESSENTIAL',
       color: '#023c46',
       icon: '🏠'
     },
     {
       name: 'Healthcare',
-      type: CategoryType.ESSENTIAL,
+      type: 'ESSENTIAL',
       color: '#f5796c',
       icon: '🏥'
     },
     {
       name: 'Entertainment',
-      type: CategoryType.DISCRETIONARY,
+      type: 'DISCRETIONARY',
       color: '#fecd2c',
       icon: '🎬'
     },
     {
       name: 'Shopping',
-      type: CategoryType.DISCRETIONARY,
+      type: 'DISCRETIONARY',
       color: '#fecd2c',
       icon: '🛍️'
     },
     {
       name: 'Dining Out',
-      type: CategoryType.DISCRETIONARY,
+      type: 'DISCRETIONARY',
       color: '#f5796c',
       icon: '🍴'
     },
     {
       name: 'Travel',
-      type: CategoryType.DISCRETIONARY,
+      type: 'DISCRETIONARY',
       color: '#7abaa5',
       icon: '✈️'
     },
     {
       name: 'Income',
-      type: CategoryType.INCOME,
+      type: 'INCOME',
       color: '#7abaa5',
       icon: '💰'
     },
     {
       name: 'Investment',
-      type: CategoryType.INVESTMENT,
+      type: 'INVESTMENT',
       color: '#023c46',
       icon: '📈'
     },
     {
       name: 'Savings',
-      type: CategoryType.INVESTMENT,
+      type: 'INVESTMENT',
       color: '#7abaa5',
       icon: '🏦'
     }
