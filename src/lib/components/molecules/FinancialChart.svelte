@@ -3,6 +3,7 @@
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import { currentLanguage } from '$lib/stores/i18n';
+  import { getChartThemeColors, updateChartTheme, updateChartDatasetColors, setupChartThemeObserver } from '$lib/utils/chartTheme';
   
   interface DataPoint {
     month: string;
@@ -39,17 +40,6 @@
     return translations[lang as keyof typeof translations] || translations.en;
   }
 
-  // Function to get theme-aware colors
-  function getThemeColors() {
-    const isDark = document.documentElement.classList.contains('dark');
-    return {
-      income: {
-        border: isDark ? '#7ABAA5' : '#7abaa5',
-        background: isDark ? 'rgba(122, 186, 165, 0.1)' : 'rgba(122, 186, 165, 0.1)',
-        point: isDark ? '#7ABAA5' : '#7abaa5'
-      }
-    };
-  }
   
   function initChart() {
     if (!canvas) return;
@@ -64,7 +54,7 @@
     
     // Create new chart
     const labels = getLabels($currentLanguage);
-    const colors = getThemeColors();
+    const colors = getChartThemeColors();
     
     chart = new Chart(ctx, {
       type: 'line',
@@ -234,62 +224,24 @@
     }
   });
   
-  // Handle dark mode changes
-  function handleThemeChange() {
-    if (chart) {
-      const isDark = document.documentElement.classList.contains('dark');
-      
-      // Update grid color
-      if (chart.options.scales?.y?.grid) {
-        chart.options.scales.y.grid.color = isDark 
-          ? 'rgba(255, 255, 255, 0.05)' 
-          : 'rgba(0, 0, 0, 0.05)';
-      }
-      
-      // Update text colors
-      const textColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--text-muted').trim();
-      const legendColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--text-secondary').trim();
-      
-      if (chart.options.scales?.x?.ticks) {
-        chart.options.scales.x.ticks.color = textColor;
-      }
-      if (chart.options.scales?.y?.ticks) {
-        chart.options.scales.y.ticks.color = textColor;
-      }
-      if (chart.options.plugins?.legend?.labels) {
-        chart.options.plugins.legend.labels.color = legendColor;
-      }
-      
-      // Update income colors based on theme
-      const colors = getThemeColors();
-      if (chart.data.datasets[0]) {
-        chart.data.datasets[0].borderColor = colors.income.border;
-        chart.data.datasets[0].backgroundColor = colors.income.background;
-        chart.data.datasets[0].pointBackgroundColor = colors.income.point;
-      }
-      
-      chart.update();
-    }
-  }
+  
+  let cleanupThemeObserver: (() => void) | null = null;
   
   onMount(() => {
     initChart();
     
-    // Listen for theme changes
-    const observer = new MutationObserver(handleThemeChange);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
+    // Setup theme change observer
+    cleanupThemeObserver = setupChartThemeObserver(chart, () => {
+      updateChartDatasetColors(chart, 0, 'income');
     });
-    
-    return () => observer.disconnect();
   });
   
   onDestroy(() => {
     if (chart) {
       chart.destroy();
+    }
+    if (cleanupThemeObserver) {
+      cleanupThemeObserver();
     }
   });
 </script>

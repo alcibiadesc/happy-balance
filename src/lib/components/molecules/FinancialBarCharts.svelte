@@ -3,6 +3,7 @@
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import { currentLanguage, t } from '$lib/stores/i18n';
+  import { getChartThemeColors, updateChartTheme, updateChartDatasetColors, setupChartThemeObserver } from '$lib/utils/chartTheme';
   
   interface MonthlyData {
     month: string;
@@ -40,16 +41,6 @@
     return translations[lang as keyof typeof translations] || translations.en;
   }
   
-  // Function to get theme-aware colors
-  function getThemeColors() {
-    const isDark = document.documentElement.classList.contains('dark');
-    return {
-      investments: {
-        background: isDark ? 'rgba(122, 186, 165, 0.8)' : 'rgba(2, 60, 70, 0.8)',
-        border: isDark ? '#7ABAA5' : '#023c46'
-      }
-    };
-  }
 
   function initChart() {
     if (!canvas) return;
@@ -140,7 +131,7 @@
     
     // Single Chart: Expense Breakdown + Investments (Grouped bars - not stacked)
     const labels = getLabels($currentLanguage);
-    const colors = getThemeColors();
+    const colors = getChartThemeColors();
     
     chart = new Chart(ctx, {
       type: 'bar',
@@ -211,61 +202,24 @@
     }
   });
   
-  // Handle dark mode changes
-  function handleThemeChange() {
-    if (chart) {
-      const isDark = document.documentElement.classList.contains('dark');
-      
-      // Update grid color
-      if (chart.options.scales?.y?.grid) {
-        chart.options.scales.y.grid.color = isDark 
-          ? 'rgba(255, 255, 255, 0.05)' 
-          : 'rgba(0, 0, 0, 0.05)';
-      }
-      
-      // Update text colors
-      const textColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--text-muted').trim();
-      const legendColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--text-secondary').trim();
-      
-      if (chart.options.scales?.x?.ticks) {
-        chart.options.scales.x.ticks.color = textColor;
-      }
-      if (chart.options.scales?.y?.ticks) {
-        chart.options.scales.y.ticks.color = textColor;
-      }
-      if (chart.options.plugins?.legend?.labels) {
-        chart.options.plugins.legend.labels.color = legendColor;
-      }
-      
-      // Update investment colors based on theme
-      const colors = getThemeColors();
-      if (chart.data.datasets[2]) {
-        chart.data.datasets[2].backgroundColor = colors.investments.background;
-        chart.data.datasets[2].borderColor = colors.investments.border;
-      }
-      
-      chart.update();
-    }
-  }
+  
+  let cleanupThemeObserver: (() => void) | null = null;
   
   onMount(() => {
     initChart();
     
-    // Listen for theme changes
-    const observer = new MutationObserver(handleThemeChange);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
+    // Setup theme change observer
+    cleanupThemeObserver = setupChartThemeObserver(chart, () => {
+      updateChartDatasetColors(chart, 2, 'investments');
     });
-    
-    return () => observer.disconnect();
   });
   
   onDestroy(() => {
     if (chart) {
       chart.destroy();
+    }
+    if (cleanupThemeObserver) {
+      cleanupThemeObserver();
     }
   });
 </script>
