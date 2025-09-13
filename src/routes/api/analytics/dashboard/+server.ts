@@ -39,6 +39,9 @@ export const GET: RequestHandler = async ({ url }) => {
     // Get category breakdown
     const categoryBreakdown = await getCategoryBreakdown(transactions);
     
+    // Get monthly breakdown for trend analysis
+    const monthlyBreakdown = await getMonthlyBreakdown(period);
+    
     // Get savings data
     const savingsAccounts = await savingsAccountRepository.findActive();
     const totalSavings = savingsAccounts.reduce((sum, account) => sum + account.balance.amount, 0);
@@ -69,7 +72,7 @@ export const GET: RequestHandler = async ({ url }) => {
       savingsRate: isFinite(savingsRate) ? savingsRate : 0,
       expenseRatio: isFinite(expenseRatio) ? expenseRatio : 0,
       financialFreedomProgress: Number(enhancedFinancialFreedom.progress) || 0,
-      monthlyBreakdown: [], // TODO: Implement monthly breakdown
+      monthlyBreakdown,
       categoryBreakdown,
       trends,
       savingsData: {
@@ -300,4 +303,106 @@ function calculateEnhancedFinancialFreedom(metrics: any, totalSavings: number): 
     targetAmount: isFinite(targetAmount) ? targetAmount : 0,
     remainingToTarget: isFinite(remainingToTarget) ? remainingToTarget : 0
   };
+}
+
+async function getMonthlyBreakdown(period: string): Promise<any[]> {
+  try {
+    const now = new Date();
+    let months: { startDate: Date; endDate: Date; label: string }[] = [];
+    
+    // Generate monthly data based on the period
+    switch (period) {
+      case 'current_month':
+      case 'last_month':
+        // For single month periods, show the last 6 months
+        for (let i = 5; i >= 0; i--) {
+          const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+          months.push({
+            startDate: monthStart,
+            endDate: monthEnd,
+            label: monthStart.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
+          });
+        }
+        break;
+        
+      case 'last_3_months':
+        // Show the last 3 months
+        for (let i = 2; i >= 0; i--) {
+          const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+          months.push({
+            startDate: monthStart,
+            endDate: monthEnd,
+            label: monthStart.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
+          });
+        }
+        break;
+        
+      case 'last_6_months':
+        // Show the last 6 months
+        for (let i = 5; i >= 0; i--) {
+          const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+          months.push({
+            startDate: monthStart,
+            endDate: monthEnd,
+            label: monthStart.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
+          });
+        }
+        break;
+        
+      case 'this_year':
+        // Show all months in the current year
+        for (let i = 0; i < now.getMonth() + 1; i++) {
+          const monthStart = new Date(now.getFullYear(), i, 1);
+          const monthEnd = new Date(now.getFullYear(), i + 1, 0);
+          months.push({
+            startDate: monthStart,
+            endDate: monthEnd,
+            label: monthStart.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
+          });
+        }
+        break;
+        
+      default:
+        // Default to last 6 months
+        for (let i = 5; i >= 0; i--) {
+          const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+          months.push({
+            startDate: monthStart,
+            endDate: monthEnd,
+            label: monthStart.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
+          });
+        }
+    }
+    
+    // Calculate metrics for each month
+    const monthlyData = await Promise.all(
+      months.map(async (month) => {
+        const transactions = await transactionRepository.findAll({
+          startDate: month.startDate,
+          endDate: month.endDate
+        });
+        
+        const metrics = calculateMetrics(transactions);
+        
+        return {
+          month: month.label,
+          income: Number(metrics.income) || 0,
+          expenses: Math.abs(Number(metrics.expenses) || 0),
+          balance: Number(metrics.balance) || 0,
+          transactionCount: Number(metrics.transactionCount) || 0,
+          savingsRate: metrics.income > 0 ? Math.max(0, (metrics.income - Math.abs(metrics.expenses)) / metrics.income) : 0
+        };
+      })
+    );
+    
+    return monthlyData;
+    
+  } catch (error) {
+    console.error('Error calculating monthly breakdown:', error);
+    return [];
+  }
 }
