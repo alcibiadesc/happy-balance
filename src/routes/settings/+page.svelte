@@ -1,141 +1,162 @@
-<script>
-  import { Download, Upload, Trash2, AlertTriangle } from 'lucide-svelte';
-  import ThemeToggle from '../../lib/components/atoms/ThemeToggle.svelte';
-  import LanguageSelect from '../../lib/components/atoms/LanguageSelect.svelte';
-  import ActionButton from '../../lib/components/atoms/ActionButton.svelte';
+<script lang="ts">
+  import { Download, Trash2, DollarSign, Palette, Globe } from 'lucide-svelte';
+  import ThemeToggle from '$lib/components/atoms/ThemeToggle.svelte';
+  import LanguageSelect from '$lib/components/atoms/LanguageSelect.svelte';
+  import { t, currentLanguage, setLanguage } from '$lib/stores/i18n';
+  import { browser } from '$app/environment';
+  import { onMount } from 'svelte';
   
-  let currentLanguage = $state('en');
-  let showDeleteConfirm = $state(false);
+  let selectedCurrency = $state('EUR');
   
-  function handleLanguageChange(lang) {
-    currentLanguage = lang;
-    console.log('Language changed to:', lang);
+  const currencies = [
+    { value: 'EUR', label: '€ Euro', symbol: '€' },
+    { value: 'USD', label: '$ US Dollar', symbol: '$' },
+    { value: 'GBP', label: '£ British Pound', symbol: '£' },
+    { value: 'JPY', label: '¥ Japanese Yen', symbol: '¥' }
+  ];
+  
+  function handleExportData() {
+    // Create a sample data export
+    const data = {
+      expenses: [],
+      settings: {
+        currency: selectedCurrency,
+        language: $currentLanguage,
+        exportDate: new Date().toISOString()
+      }
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `expense-tracker-data-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
   
-  function handleExport() {
-    console.log('Exporting data...');
+  function handleDeleteAllData() {
+    if (confirm($t('settings.confirmDelete'))) {
+      // Clear localStorage data
+      if (browser) {
+        const keysToKeep = ['theme', 'expense-tracker-language', 'expense-tracker-currency'];
+        const allKeys = Object.keys(localStorage);
+        allKeys.forEach(key => {
+          if (!keysToKeep.includes(key)) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+      alert($t('settings.dataDeleted'));
+    }
   }
   
-  function handleImport() {
-    console.log('Importing data...');
+  function handleLanguageChange(lang: string) {
+    setLanguage(lang);
   }
   
-  function handleDeleteConfirm() {
-    showDeleteConfirm = true;
+  function handleCurrencyChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    selectedCurrency = target.value;
+    if (browser) {
+      localStorage.setItem('expense-tracker-currency', selectedCurrency);
+    }
   }
   
-  function handleDeleteCancel() {
-    showDeleteConfirm = false;
-  }
-  
-  function handleDeleteAll() {
-    console.log('Deleting all data...');
-    showDeleteConfirm = false;
-  }
+  onMount(() => {
+    if (browser) {
+      const savedCurrency = localStorage.getItem('expense-tracker-currency');
+      if (savedCurrency) {
+        selectedCurrency = savedCurrency;
+      }
+    }
+  });
 </script>
 
+<svelte:head>
+  <title>{$t('settings.title')} - Expense Tracker</title>
+</svelte:head>
+
 <div class="settings-page">
-  <header class="settings-header">
-    <h1 class="text-3xl font-medium text-emphasis">Settings</h1>
-    <p class="text-light text-subtle">Manage your preferences and data</p>
-  </header>
+  <div class="settings-header">
+    <h1 class="page-title">{$t('settings.title')}</h1>
+  </div>
   
   <div class="settings-grid">
-    <!-- Appearance -->
-    <div class="setting-card">
-      <div class="setting-card__header">
-        <h2 class="setting-card__title">Appearance</h2>
-        <p class="setting-card__description">Customize the look and feel of your dashboard</p>
-      </div>
-      <div class="setting-card__content">
-        <div class="setting-item">
-          <div class="setting-item__content">
-            <h3 class="setting-item__title">Theme</h3>
-            <p class="setting-item__description">Switch between light and dark mode</p>
-          </div>
-          <div class="setting-item__control">
-            <ThemeToggle size="md" />
-          </div>
+    <!-- Appearance Settings -->
+    <div class="settings-card">
+      <div class="card-header">
+        <div class="card-icon appearance">
+          <Palette size={20} strokeWidth={2} />
         </div>
-        
+        <h2 class="card-title">{$t('settings.appearance')}</h2>
+      </div>
+      <div class="card-content">
         <div class="setting-item">
-          <div class="setting-item__content">
-            <h3 class="setting-item__title">Language</h3>
-            <p class="setting-item__description">Choose your preferred language</p>
-          </div>
-          <div class="setting-item__control">
-            <LanguageSelect value={currentLanguage} onchange={handleLanguageChange} />
-          </div>
+          <span class="setting-label">{$t('settings.theme')}</span>
+          <ThemeToggle size="md" />
         </div>
       </div>
     </div>
-    
+
+    <!-- Localization Settings -->
+    <div class="settings-card">
+      <div class="card-header">
+        <div class="card-icon localization">
+          <Globe size={20} strokeWidth={2} />
+        </div>
+        <h2 class="card-title">{$t('settings.localization')}</h2>
+      </div>
+      <div class="card-content">
+        <div class="setting-item">
+          <span class="setting-label">{$t('settings.language')}</span>
+          <LanguageSelect 
+            value={$currentLanguage} 
+            onchange={handleLanguageChange}
+          />
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">{$t('settings.currency')}</span>
+          <select 
+            class="currency-select"
+            bind:value={selectedCurrency}
+            onchange={handleCurrencyChange}
+          >
+            {#each currencies as currency}
+              <option value={currency.value}>{currency.label}</option>
+            {/each}
+          </select>
+        </div>
+      </div>
+    </div>
+
     <!-- Data Management -->
-    <div class="setting-card">
-      <div class="setting-card__header">
-        <h2 class="setting-card__title">Data Management</h2>
-        <p class="setting-card__description">Import, export, and manage your financial data</p>
-      </div>
-      <div class="setting-card__content">
-        <div class="setting-item">
-          <div class="setting-item__content">
-            <h3 class="setting-item__title">Export Data</h3>
-            <p class="setting-item__description">Download all your financial data as CSV</p>
-          </div>
-          <div class="setting-item__control">
-            <ActionButton icon={Download} label="Export" variant="secondary" onclick={handleExport} />
-          </div>
+    <div class="settings-card">
+      <div class="card-header">
+        <div class="card-icon data">
+          <DollarSign size={20} strokeWidth={2} />
         </div>
-        
-        <div class="setting-item">
-          <div class="setting-item__content">
-            <h3 class="setting-item__title">Import Data</h3>
-            <p class="setting-item__description">Upload financial data from CSV file</p>
-          </div>
-          <div class="setting-item__control">
-            <ActionButton icon={Upload} label="Import" variant="primary" onclick={handleImport} />
-          </div>
-        </div>
+        <h2 class="card-title">{$t('settings.dataManagement')}</h2>
       </div>
-    </div>
-    
-    <!-- Danger Zone -->
-    <div class="setting-card">
-      <div class="setting-card__header">
-        <h2 class="setting-card__title">Danger Zone</h2>
-        <p class="setting-card__description">Irreversible actions that affect all your data</p>
-      </div>
-      <div class="setting-card__content">
-        <div class="setting-item">
-          <div class="setting-item__content">
-            <h3 class="setting-item__title">Delete All Data</h3>
-            <p class="setting-item__description">Permanently remove all financial data</p>
-          </div>
-          <div class="setting-item__control">
-            <ActionButton 
-              icon={showDeleteConfirm ? AlertTriangle : Trash2}
-              label={showDeleteConfirm ? "Confirm" : "Delete All"}
-              variant="danger"
-              onclick={showDeleteConfirm ? handleDeleteAll : handleDeleteConfirm}
-            />
-          </div>
+      <div class="card-content">
+        <div class="action-buttons">
+          <button 
+            class="action-button export"
+            onclick={handleExportData}
+          >
+            <Download size={16} strokeWidth={2} />
+            {$t('settings.exportData')}
+          </button>
+          <button 
+            class="action-button delete"
+            onclick={handleDeleteAllData}
+          >
+            <Trash2 size={16} strokeWidth={2} />
+            {$t('settings.deleteAllData')}
+          </button>
         </div>
-        
-        {#if showDeleteConfirm}
-          <div class="delete-confirmation">
-            <div class="delete-confirmation__content">
-              <AlertTriangle size={20} />
-              <div>
-                <p class="delete-confirmation__title">Are you sure?</p>
-                <p class="delete-confirmation__text">This action cannot be undone.</p>
-              </div>
-            </div>
-            <div class="delete-confirmation__actions">
-              <ActionButton icon={AlertTriangle} label="Yes, Delete All" variant="danger" onclick={handleDeleteAll} />
-              <ActionButton icon={AlertTriangle} label="Cancel" variant="secondary" onclick={handleDeleteCancel} />
-            </div>
-          </div>
-        {/if}
       </div>
     </div>
   </div>
@@ -143,185 +164,249 @@
 
 <style>
   .settings-page {
-    animation: fadeInUp 0.3s ease-out;
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
+    padding: 1.5rem;
   }
   
   .settings-header {
-    margin-bottom: var(--space-2xl);
+    margin-bottom: 2rem;
   }
   
-  .settings-header h1 {
-    margin-bottom: var(--space-xs);
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.025em;
   }
   
   .settings-grid {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xl);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
   }
   
-  .setting-card {
+  .settings-card {
     background: var(--surface-elevated);
-    border-radius: var(--radius-lg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color, transparent);
     box-shadow: var(--shadow-sm);
-    border: 1px solid rgba(2, 60, 70, 0.08);
     transition: all 0.2s ease;
-    overflow: hidden;
   }
   
-  .setting-card:hover {
-    transform: translateY(-1px);
+  .settings-card:hover {
+    transform: translateY(-2px);
     box-shadow: var(--shadow-md);
   }
   
-  .setting-card__header {
-    padding: var(--space-lg);
-    border-bottom: 1px solid rgba(2, 60, 70, 0.08);
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color, rgba(2, 60, 70, 0.08));
   }
   
-  .setting-card__title {
-    font-size: 1.125rem;
-    font-weight: 500;
+  .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .card-icon.appearance {
+    background: rgba(245, 121, 108, 0.1);
+    color: var(--accent);
+  }
+  
+  .card-icon.localization {
+    background: rgba(122, 186, 165, 0.1);
+    color: var(--success);
+  }
+  
+  .card-icon.data {
+    background: rgba(254, 205, 44, 0.1);
+    color: var(--warning);
+  }
+  
+  .card-title {
+    font-size: 1rem;
+    font-weight: 600;
     color: var(--text-primary);
-    margin: 0 0 0.5rem 0;
-    line-height: 1.3;
-  }
-  
-  .setting-card__description {
-    font-size: 0.875rem;
-    color: var(--text-muted);
     margin: 0;
-    line-height: 1.5;
-    font-weight: 300;
   }
   
-  .setting-card__content {
-    padding: var(--space-lg);
+  .card-content {
     display: flex;
     flex-direction: column;
-    gap: var(--space-md);
+    gap: 1rem;
   }
   
   .setting-item {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: var(--space-md);
-    padding: var(--space-md);
-    border-radius: var(--radius-md);
-    background: var(--surface-muted);
-    border: 1px solid rgba(2, 60, 70, 0.05);
-    transition: all 0.15s ease;
+    align-items: center;
+    gap: 1rem;
   }
   
-  .setting-item:hover {
-    background: var(--surface-elevated);
-    border-color: rgba(2, 60, 70, 0.1);
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .setting-item__content {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .setting-item__title {
+  .setting-label {
     font-size: 0.875rem;
     font-weight: 500;
+    color: var(--text-secondary);
+  }
+  
+  .currency-select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color, rgba(2, 60, 70, 0.2));
+    border-radius: 6px;
+    background: var(--surface);
     color: var(--text-primary);
-    margin: 0 0 0.25rem 0;
-    line-height: 1.3;
-  }
-  
-  .setting-item__description {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin: 0;
-    line-height: 1.4;
-  }
-  
-  .setting-item__control {
-    flex-shrink: 0;
-  }
-  
-  .delete-confirmation {
-    padding: var(--space-md);
-    border-radius: var(--radius-md);
-    background: var(--accent-light);
-    border: 1px solid var(--accent);
-    animation: slideDown 0.2s ease-out;
-  }
-  
-  .delete-confirmation__content {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-md);
-    color: var(--accent);
-  }
-  
-  .delete-confirmation__title {
     font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--accent);
-    margin: 0 0 0.25rem 0;
+    min-width: 140px;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
   
-  .delete-confirmation__text {
-    font-size: 0.75rem;
-    color: var(--accent);
-    margin: 0;
-    line-height: 1.4;
+  .currency-select:hover {
+    border-color: var(--primary);
   }
   
-  .delete-confirmation__actions {
+  .currency-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(2, 60, 70, 0.1);
+  }
+  
+  .action-buttons {
     display: flex;
-    gap: var(--space-sm);
-    justify-content: flex-end;
+    flex-direction: column;
+    gap: 0.75rem;
   }
   
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(16px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid;
   }
   
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .action-button.export {
+    background: transparent;
+    border-color: var(--success);
+    color: var(--success);
+  }
+  
+  .action-button.export:hover {
+    background: var(--success);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(122, 186, 165, 0.25);
+  }
+  
+  .action-button.delete {
+    background: transparent;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  
+  .action-button.delete:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(245, 121, 108, 0.25);
+  }
+  
+  .action-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px currentColor;
   }
   
   /* Dark mode */
-  html.dark .setting-card {
+  html.dark .settings-card {
+    background: var(--gray-800);
     border-color: rgba(254, 247, 238, 0.1);
   }
   
-  html.dark .setting-card__header {
-    border-bottom-color: rgba(254, 247, 238, 0.1);
-  }
-  
-  html.dark .setting-item {
-    border-color: rgba(254, 247, 238, 0.05);
-  }
-  
-  html.dark .setting-item:hover {
+  html.dark .card-header {
     border-color: rgba(254, 247, 238, 0.1);
   }
   
-  html.dark .delete-confirmation {
-    background: rgba(245, 121, 108, 0.1);
+  html.dark .currency-select {
+    background: var(--gray-700);
+    border-color: rgba(254, 247, 238, 0.2);
+    color: var(--text-primary);
+  }
+  
+  html.dark .currency-select:hover,
+  html.dark .currency-select:focus {
+    border-color: var(--acapulco);
+  }
+  
+  html.dark .currency-select:focus {
+    box-shadow: 0 0 0 2px rgba(122, 186, 165, 0.2);
+  }
+  
+  html.dark .action-button.export {
+    border-color: var(--acapulco);
+    color: var(--acapulco);
+  }
+  
+  html.dark .action-button.export:hover {
+    background: var(--acapulco);
+    color: var(--gray-900);
+  }
+  
+  /* Light mode specific styles */
+  html:not(.dark) .settings-card {
+    background: white;
+    border-color: rgba(2, 60, 70, 0.08);
+  }
+  
+  html:not(.dark) .card-header {
+    border-color: rgba(2, 60, 70, 0.08);
+  }
+  
+  html:not(.dark) .currency-select {
+    background: var(--surface);
+    border-color: rgba(2, 60, 70, 0.15);
+  }
+  
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .settings-page {
+      padding: 1rem;
+    }
+    
+    .settings-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    
+    .settings-card {
+      padding: 1.25rem;
+    }
+    
+    .setting-item {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+    
+    .currency-select {
+      min-width: unset;
+      width: 100%;
+    }
   }
 </style>

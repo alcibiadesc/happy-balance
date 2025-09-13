@@ -20,9 +20,17 @@ const translations = {
     },
     settings: {
       title: 'Settings',
+      appearance: 'Appearance',
+      localization: 'Localization',
+      dataManagement: 'Data Management',
       theme: 'Theme',
       language: 'Language',
-      export: 'Export Data'
+      currency: 'Currency',
+      export: 'Export Data',
+      exportData: 'Export Data',
+      deleteAllData: 'Delete All Data',
+      confirmDelete: 'Are you sure you want to delete all data? This action cannot be undone.',
+      dataDeleted: 'All data has been deleted successfully.'
     },
     dashboard: {
       title: 'Dashboard',
@@ -90,9 +98,17 @@ const translations = {
     },
     settings: {
       title: 'Configuración',
+      appearance: 'Apariencia',
+      localization: 'Localización',
+      dataManagement: 'Gestión de Datos',
       theme: 'Tema',
       language: 'Idioma',
-      export: 'Exportar Datos'
+      currency: 'Moneda',
+      export: 'Exportar Datos',
+      exportData: 'Exportar Datos',
+      deleteAllData: 'Eliminar Todos los Datos',
+      confirmDelete: '¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.',
+      dataDeleted: 'Todos los datos han sido eliminados exitosamente.'
     },
     dashboard: {
       title: 'Panel de Control',
