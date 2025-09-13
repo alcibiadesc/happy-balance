@@ -7,6 +7,7 @@
   import ExpensesCard from '$lib/components/molecules/ExpensesCard.svelte';
   import FinancialChart from '$lib/components/molecules/FinancialChart.svelte';
   import FinancialBarCharts from '$lib/components/molecules/FinancialBarCharts.svelte';
+  import DashboardSkeleton from '$lib/components/organisms/DashboardSkeleton.svelte';
   
   // Period options - using i18n
   let periods = $derived([
@@ -215,9 +216,7 @@
   </header>
   
   {#if loading}
-    <div class="loading-container">
-      <div class="loading-pulse"></div>
-    </div>
+    <DashboardSkeleton />
   {:else}
     <!-- Simple Spending Summary -->
     <SpendingIndicator 
@@ -585,26 +584,6 @@
     color: var(--text-muted);
   }
   
-  /* Loading */
-  .loading-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 400px;
-  }
-  
-  .loading-pulse {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--primary);
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-  
-  @keyframes pulse {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.1); }
-  }
   
   /* Dark mode */
   html.dark .metric-card,
