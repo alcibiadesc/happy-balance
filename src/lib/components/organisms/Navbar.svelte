@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { Menu, X, ChevronLeft, ChevronRight } from 'lucide-svelte';
+  import { Menu, X, ChevronLeft, ChevronRight, Upload } from 'lucide-svelte';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
 
   import Brand from '../atoms/Brand.svelte';
   import ThemeToggle from '../atoms/ThemeToggle.svelte';
@@ -17,6 +18,10 @@
 
   function closeMobileSidebar() {
     isMobileSidebarOpen = false;
+  }
+
+  function handleImportClick() {
+    goto('/import');
   }
 
   // Close sidebar on escape key
@@ -107,6 +112,15 @@
     <!-- Sidebar Footer (solo cuando está colapsado) -->
     {#if $sidebarCollapsed}
       <div class="sidebar-footer">
+        <button
+          class="collapsed-import-btn"
+          onclick={handleImportClick}
+          aria-label="Import transactions"
+          title="Import transactions"
+        >
+          <Upload size={18} strokeWidth={2} />
+        </button>
+        
         <ThemeToggle size="sm" collapsed={true} />
       </div>
     {/if}
@@ -328,8 +342,37 @@
     padding-top: var(--space-md);
     border-top: 1px solid rgba(2, 60, 70, 0.08);
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
     margin-top: auto;
+  }
+
+  .collapsed-import-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--acapulco);
+    background: var(--acapulco);
+    color: var(--bridesmaid);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0 auto;
+  }
+
+  .collapsed-import-btn:hover {
+    background: #6ba696;
+    border-color: #6ba696;
+    transform: translateY(-1px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.3);
+  }
+
+  .collapsed-import-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--acapulco), 0 0 0 4px rgba(122, 186, 165, 0.2);
   }
 
   /* Mobile Overlay */

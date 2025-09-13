@@ -35,23 +35,22 @@
     </NavItem>
   {/each}
   
-  <!-- Import Button -->
-  <div class="import-section">
-    <div class="import-divider"></div>
-    <button 
-      class="import-btn"
-      class:import-btn--collapsed={collapsed}
-      onclick={handleImportClick}
-      title={collapsed ? $t('navigation.import') : ''}
-    >
-      <svg class="import-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-      </svg>
-      {#if !collapsed}
+  <!-- Import Button (solo cuando no está colapsado) -->
+  {#if !collapsed}
+    <div class="import-section">
+      <div class="import-divider"></div>
+      <button 
+        class="import-btn"
+        onclick={handleImportClick}
+        title={$t('navigation.import')}
+      >
+        <svg class="import-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
         <span class="import-text">{$t('navigation.import')}</span>
-      {/if}
-    </button>
-  </div>
+      </button>
+    </div>
+  {/if}
 </nav>
 
 <style>
@@ -79,25 +78,12 @@
     margin-top: var(--space-lg);
     padding-top: var(--space-md);
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .nav-list--collapsed .import-section {
-    margin-top: var(--space-md);
-    padding-top: 0;
   }
   
   .import-divider {
     height: 1px;
     background: rgba(2, 60, 70, 0.08);
     margin-bottom: var(--space-md);
-    width: 100%;
-  }
-  
-  .nav-list--collapsed .import-divider {
-    display: none;
   }
   
   .import-btn {
@@ -117,18 +103,6 @@
     gap: 0.5rem;
     white-space: nowrap;
     overflow: hidden;
-    box-sizing: border-box;
-  }
-  
-  .import-btn--collapsed {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-    padding: 0.5rem !important;
-    border-radius: 0.75rem !important;
-    border-top-left-radius: 0.75rem !important;
-    border-top-right-radius: 0.75rem !important;
-    border-bottom-left-radius: 0.75rem !important;
-    border-bottom-right-radius: 0.75rem !important;
   }
   
   .import-icon {
@@ -142,20 +116,10 @@
     transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  .import-btn--collapsed .import-text {
-    opacity: 0;
-    width: 0;
-    overflow: hidden;
-  }
-  
   .import-btn:hover {
     background: #6ba696;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(122, 186, 165, 0.3);
-  }
-  
-  .import-btn--collapsed:hover {
-    transform: translateY(-1px) scale(1.05);
   }
   
   .import-btn:focus {
