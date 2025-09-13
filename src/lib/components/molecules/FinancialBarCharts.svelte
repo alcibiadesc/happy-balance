@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
-  import { t, currentLanguage } from '$lib/stores/i18n';
+  import { currentLanguage, t } from '$lib/stores/i18n';
   
   interface MonthlyData {
     month: string;
@@ -22,13 +22,22 @@
   let canvas: HTMLCanvasElement;
   let chart: Chart | null = null;
   
-  // Helper to get translations
-  function getLabels() {
-    return {
-      essential_expenses: $t('charts.labels.essential_expenses'),
-      discretionary_expenses: $t('charts.labels.discretionary_expenses'),
-      investments: $t('charts.labels.investments')
+  // Helper to get translations directly from language
+  function getLabels(lang: string = $currentLanguage) {
+    const translations = {
+      en: {
+        essential_expenses: 'Essential Expenses',
+        discretionary_expenses: 'Discretionary Expenses',
+        investments: 'Investments'
+      },
+      es: {
+        essential_expenses: 'Gastos Esenciales',
+        discretionary_expenses: 'Gastos Discrecionales',
+        investments: 'Inversiones'
+      }
     };
+    
+    return translations[lang as keyof typeof translations] || translations.en;
   }
   
   function initChart() {
@@ -119,7 +128,7 @@
     };
     
     // Single Chart: Expense Breakdown + Investments (Grouped bars - not stacked)
-    const labels = getLabels();
+    const labels = getLabels($currentLanguage);
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -181,7 +190,7 @@
   $effect(() => {
     if (chart && $currentLanguage) {
       // Update dataset labels
-      const labels = getLabels();
+      const labels = getLabels($currentLanguage);
       chart.data.datasets[0].label = labels.essential_expenses;
       chart.data.datasets[1].label = labels.discretionary_expenses;
       chart.data.datasets[2].label = labels.investments;
