@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Settings, Trash2, AlertTriangle, Shield, Database, Download, Upload, X, Check } from 'lucide-svelte';
+  import { Settings, Trash2, AlertTriangle, Shield, Database, Download, Upload, X, Check, FileText } from 'lucide-svelte';
   import { notifications } from '$lib/shared/stores/notifications.js';
 
   let isLoading = $state(false);
@@ -169,6 +169,72 @@
     }
   }
 
+  // Import data functionality
+  let selectedImportFile = $state(null);
+  let isImporting = $state(false);
+
+  function handleImportFileSelect(event) {
+    const file = event.target.files?.[0];
+    if (file) {
+      selectedImportFile = file;
+    }
+  }
+
+  async function importData() {
+    if (!selectedImportFile) {
+      notifications.add({
+        type: 'error',
+        message: 'Por favor, selecciona un archivo para importar',
+        timeout: 3000
+      });
+      return;
+    }
+
+    isImporting = true;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedImportFile);
+
+      const response = await fetch('/api/settings/import-data', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        notifications.add({
+          type: 'success',
+          message: result.message,
+          timeout: 5000
+        });
+        
+        // Reset file selection
+        selectedImportFile = null;
+        
+        // Reload page data to show updated stats
+        loadStats();
+        
+      } else {
+        throw new Error(result.error || 'Error al importar los datos');
+      }
+    } catch (error) {
+      console.error('Error importing data:', error);
+      notifications.add({
+        type: 'error',
+        message: error.message || 'Error al importar los datos',
+        timeout: 5000
+      });
+    } finally {
+      isImporting = false;
+    }
+  }
+
+  function clearImportFile() {
+    selectedImportFile = null;
+  }
+
   // Computed values for confirmation validation
   const isDeleteInputValid = $derived(deleteConfirmationInput.toLowerCase() === 'delete');
   const canProceedToNextStep = $derived(
@@ -298,15 +364,69 @@
             <div class="flex-1">
               <h3 class="text-h5 mb-2">Importar Datos</h3>
               <p class="text-caption mb-4">
-                Próximamente: Restaura datos desde un archivo de respaldo JSON.
-                Esta función estará disponible en una próxima actualización.
+                Restaura datos desde un archivo de respaldo JSON de Happy Balance.
+                Esto restaurará cuentas, categorías, transacciones y configuraciones.
               </p>
-              <button
-                disabled
-                class="btn-editorial btn-secondary opacity-50 cursor-not-allowed"
-              >
-                Próximamente
-              </button>
+              
+              {#if selectedImportFile}
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <FileText class="w-4 h-4 text-blue-600" />
+                      <span class="text-sm font-medium text-blue-900">{selectedImportFile.name}</span>
+                      <span class="text-xs text-blue-600">({(selectedImportFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+                    </div>
+                    <button
+                      onclick={clearImportFile}
+                      class="text-blue-600 hover:text-blue-800 p-1"
+                      title="Quitar archivo"
+                    >
+                      <X class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="flex gap-3">
+                  <button
+                    onclick={importData}
+                    disabled={isImporting}
+                    class="btn-editorial btn-primary flex items-center gap-2"
+                  >
+                    {#if isImporting}
+                      <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Importando...
+                    {:else}
+                      <Upload class="w-4 h-4" />
+                      Importar Datos
+                    {/if}
+                  </button>
+                  <button
+                    onclick={clearImportFile}
+                    disabled={isImporting}
+                    class="btn-editorial btn-secondary"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              {:else}
+                <label class="btn-editorial btn-secondary flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".json"
+                    onchange={handleImportFileSelect}
+                    class="hidden"
+                  />
+                  <Upload class="w-4 h-4" />
+                  Seleccionar Archivo JSON
+                </label>
+              {/if}
+              
+              <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p class="text-xs text-yellow-800">
+                  <strong>⚠️ Atención:</strong> La importación puede sobrescribir datos existentes. 
+                  Se recomienda hacer una copia de seguridad antes de importar.
+                </p>
+              </div>
             </div>
           </div>
         </div>
