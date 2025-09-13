@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { Upload, BarChart3, CreditCard, Settings, FolderOpen, Calculator } from 'lucide-svelte';
+  import { Upload, BarChart3 } from 'lucide-svelte';
   import { page } from '$app/stores';
   import NavItem from '../atoms/NavItem.svelte';
   
-  // Navigation items with emphasis on import
+  // Simplified navigation items - only what we're rebuilding
   const navigationItems = [
     {
-      href: '/dashboard',
+      href: '/',
       icon: BarChart3,
       label: 'Dashboard',
       section: 'main'
@@ -17,39 +17,14 @@
       label: 'Import',
       section: 'main',
       isImportant: true // Emphasized as requested
-    },
-    {
-      href: '/transactions',
-      icon: CreditCard,
-      label: 'Transactions',
-      section: 'main'
-    },
-    {
-      href: '/categories',
-      icon: FolderOpen,
-      label: 'Categories',
-      section: 'manage'
-    },
-    {
-      href: '/budgets',
-      icon: Calculator,
-      label: 'Budgets',
-      section: 'manage'
-    },
-    {
-      href: '/settings',
-      icon: Settings,
-      label: 'Settings',
-      section: 'manage'
     }
   ];
   
   // Group items by section
   const mainItems = navigationItems.filter(item => item.section === 'main');
-  const manageItems = navigationItems.filter(item => item.section === 'manage');
   
   function isActive(href: string): boolean {
-    if (href === '/dashboard' && $page.url.pathname === '/') {
+    if (href === '/' && $page.url.pathname === '/') {
       return true;
     }
     return $page.url.pathname === href || $page.url.pathname.startsWith(href + '/');
@@ -74,26 +49,6 @@
       {/each}
     </ul>
   </div>
-  
-  <!-- Divider -->
-  <div class="nav-divider" role="separator" aria-hidden="true"></div>
-  
-  <!-- Management Section -->
-  <div class="nav-section">
-    <h2 class="nav-section__title">Management</h2>
-    <ul class="nav-section__list">
-      {#each manageItems as item}
-        <li>
-          <NavItem 
-            href={item.href}
-            icon={item.icon}
-            label={item.label}
-            isActive={isActive(item.href)}
-          />
-        </li>
-      {/each}
-    </ul>
-  </div>
 </nav>
 
 <style>
@@ -106,10 +61,6 @@
   .nav-section {
     display: flex;
     flex-direction: column;
-  }
-  
-  .nav-section + .nav-section {
-    margin-top: var(--space-lg);
   }
   
   .nav-section__title {
@@ -129,16 +80,6 @@
     list-style: none;
     padding: 0;
     margin: 0;
-  }
-  
-  /* Minimal divider */
-  .nav-divider {
-    align-self: center;
-    margin: var(--space-lg) 0;
-    width: 24px;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--text-muted), transparent);
-    opacity: 0.3;
   }
   
   /* Subtle animation for sections */

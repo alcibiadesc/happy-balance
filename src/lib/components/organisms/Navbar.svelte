@@ -1,14 +1,15 @@
 <script lang="ts">
-  import { Menu, X, Sun, Moon } from 'lucide-svelte';
+  import { Menu, X } from 'lucide-svelte';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
   
   import Brand from '../atoms/Brand.svelte';
+  import ThemeToggle from '../atoms/ThemeToggle.svelte';
+  import ImportButton from '../atoms/ImportButton.svelte';
   import NavList from '../molecules/NavList.svelte';
   
   // Mobile sidebar state
   let isMobileSidebarOpen = $state(false);
-  let isDark = $state(false);
   
   function toggleMobileSidebar() {
     isMobileSidebarOpen = !isMobileSidebarOpen;
@@ -16,14 +17,6 @@
   
   function closeMobileSidebar() {
     isMobileSidebarOpen = false;
-  }
-  
-  function toggleTheme() {
-    isDark = !isDark;
-    if (browser) {
-      document.documentElement.classList.toggle('dark', isDark);
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    }
   }
   
   // Close sidebar on escape key
@@ -34,13 +27,6 @@
   }
   
   onMount(() => {
-    if (browser) {
-      const savedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      isDark = savedTheme ? savedTheme === 'dark' : prefersDark;
-      document.documentElement.classList.toggle('dark', isDark);
-    }
-    
     // Close sidebar when clicking outside
     const handleOutsideClick = (event: Event) => {
       if (isMobileSidebarOpen) {
@@ -77,17 +63,8 @@
     </div>
     
     <div class="mobile-header__end">
-      <button 
-        class="theme-toggle theme-toggle--sm"
-        onclick={toggleTheme}
-        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      >
-        {#if isDark}
-          <Sun size={16} strokeWidth={2} />
-        {:else}
-          <Moon size={16} strokeWidth={2} />
-        {/if}
-      </button>
+      <ImportButton href="/import" size="sm" />
+      <ThemeToggle size="sm" />
     </div>
   </div>
 </header>
@@ -98,22 +75,17 @@
     <!-- Sidebar Header -->
     <header class="sidebar-header">
       <Brand size="md" />
-      <button 
-        class="theme-toggle theme-toggle--md"
-        onclick={toggleTheme}
-        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      >
-        {#if isDark}
-          <Sun size={18} strokeWidth={2} />
-        {:else}
-          <Moon size={18} strokeWidth={2} />
-        {/if}
-      </button>
+      <ThemeToggle size="md" />
     </header>
     
     <!-- Navigation -->
     <div class="sidebar-content">
       <NavList />
+    </div>
+    
+    <!-- Import Action -->
+    <div class="sidebar-action">
+      <ImportButton href="/import" size="md" />
     </div>
     
     <!-- Sidebar Footer -->
@@ -157,6 +129,11 @@
     <!-- Mobile Navigation -->
     <div class="mobile-sidebar__content">
       <NavList />
+    </div>
+    
+    <!-- Mobile Import Action -->
+    <div class="mobile-sidebar__action">
+      <ImportButton href="/import" size="md" onclick={closeMobileSidebar} />
     </div>
     
     <!-- Mobile Footer -->
@@ -209,6 +186,7 @@
   .mobile-header__end {
     display: flex;
     align-items: center;
+    gap: 0.75rem;
   }
   
   .mobile-menu-toggle {
@@ -289,52 +267,16 @@
     opacity: 0.3;
   }
   
+  .sidebar-action {
+    margin: var(--space-lg) 0;
+    padding: var(--space-lg) 0;
+    border-top: 1px solid rgba(2, 60, 70, 0.08);
+    border-bottom: 1px solid rgba(2, 60, 70, 0.08);
+  }
+  
   .sidebar-footer {
     margin-top: var(--space-lg);
     padding-top: var(--space-lg);
-    border-top: 1px solid rgba(2, 60, 70, 0.08);
-  }
-  
-  /* Theme Toggle */
-  .theme-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    border: 1px solid rgba(122, 186, 165, 0.2);
-    background: var(--surface-elevated);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .theme-toggle--sm {
-    width: 2rem;
-    height: 2rem;
-  }
-  
-  .theme-toggle--md {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-  
-  .theme-toggle:hover {
-    background: var(--success-light);
-    color: var(--success);
-    border-color: var(--success);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-  }
-  
-  .theme-toggle:active {
-    transform: translateY(0);
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .theme-toggle:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--primary-light), 0 0 0 4px rgba(2, 60, 70, 0.1);
   }
   
   /* Mobile Overlay */
@@ -410,10 +352,16 @@
     overflow-y: auto;
   }
   
+  .mobile-sidebar__action {
+    margin: var(--space-md) 0;
+    padding: var(--space-md) 0;
+    border-top: 1px solid rgba(2, 60, 70, 0.08);
+    border-bottom: 1px solid rgba(2, 60, 70, 0.08);
+  }
+  
   .mobile-sidebar__footer {
     margin-top: var(--space-md);
     padding-top: var(--space-md);
-    border-top: 1px solid rgba(2, 60, 70, 0.08);
   }
   
   /* Quote */
@@ -485,8 +433,10 @@
     }
     
     .sidebar-header,
+    .sidebar-action,
     .sidebar-footer,
     .mobile-sidebar__header,
+    .mobile-sidebar__action,
     .mobile-sidebar__footer {
       border-color: rgba(254, 247, 238, 0.1);
     }
