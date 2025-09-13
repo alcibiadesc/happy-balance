@@ -74,7 +74,14 @@ const translations = {
         temporal_evolution: 'Financial Evolution',
         temporal_evolution_subtitle: 'Track your income and expenses over time',
         detailed_breakdown: 'Detailed Financial Breakdown',
-        detailed_breakdown_subtitle: 'Comprehensive view of income, expenses, and investments'
+        detailed_breakdown_subtitle: 'Comprehensive view of income, expenses, and investments',
+        labels: {
+          income: 'Income',
+          expenses: 'Expenses',
+          essential_expenses: 'Essential Expenses',
+          discretionary_expenses: 'Discretionary Expenses',
+          investments: 'Investments'
+        }
       },
       trends: {
         vsLastMonth: 'vs last month',
@@ -152,7 +159,14 @@ const translations = {
         temporal_evolution: 'Evolución Financiera',
         temporal_evolution_subtitle: 'Seguimiento de ingresos y gastos a lo largo del tiempo',
         detailed_breakdown: 'Desglose Financiero Detallado',
-        detailed_breakdown_subtitle: 'Vista completa de ingresos, gastos e inversiones'
+        detailed_breakdown_subtitle: 'Vista completa de ingresos, gastos e inversiones',
+        labels: {
+          income: 'Ingresos',
+          expenses: 'Gastos',
+          essential_expenses: 'Gastos Esenciales',
+          discretionary_expenses: 'Gastos Discrecionales',
+          investments: 'Inversiones'
+        }
       },
       trends: {
         vsLastMonth: 'vs mes anterior',

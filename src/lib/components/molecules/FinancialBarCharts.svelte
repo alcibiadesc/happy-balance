@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
+  import { t } from '$lib/stores/i18n';
   
   interface MonthlyData {
     month: string;
@@ -115,7 +116,7 @@
         labels: data.map(d => d.month),
         datasets: [
           {
-            label: 'Gastos esenciales',
+            label: $t('charts.labels.essential_expenses'),
             data: data.map(d => d.essentialExpenses),
             backgroundColor: 'rgba(245, 121, 108, 0.8)',
             borderColor: '#f5796c',
@@ -124,7 +125,7 @@
             borderSkipped: false,
           },
           {
-            label: 'Gastos discrecionales',
+            label: $t('charts.labels.discretionary_expenses'),
             data: data.map(d => d.discretionaryExpenses),
             backgroundColor: 'rgba(254, 205, 44, 0.8)',
             borderColor: '#fecd2c',
@@ -133,7 +134,7 @@
             borderSkipped: false,
           },
           {
-            label: 'Inversiones',
+            label: $t('charts.labels.investments'),
             data: data.map(d => d.investments),
             backgroundColor: 'rgba(2, 60, 70, 0.8)',
             borderColor: '#023c46',
@@ -162,6 +163,17 @@
   $effect(() => {
     if (chart && $currentCurrency) {
       // Force chart update to refresh tooltips and axis labels
+      chart.update();
+    }
+  });
+  
+  // Update chart when language changes
+  $effect(() => {
+    if (chart) {
+      // Update dataset labels
+      chart.data.datasets[0].label = $t('charts.labels.essential_expenses');
+      chart.data.datasets[1].label = $t('charts.labels.discretionary_expenses');
+      chart.data.datasets[2].label = $t('charts.labels.investments');
       chart.update();
     }
   });
@@ -219,8 +231,8 @@
 </script>
 
 <div class="chart-card">
-  <h3 class="chart-title">Distribución de gastos e inversiones</h3>
-  <p class="chart-subtitle">Comparación mensual de gastos esenciales, discrecionales e inversiones</p>
+  <h3 class="chart-title">{$t('dashboard.charts.detailed_breakdown')}</h3>
+  <p class="chart-subtitle">{$t('dashboard.charts.detailed_breakdown_subtitle')}</p>
   <div class="chart-wrapper" style="height: {height}px">
     <canvas bind:this={canvas}></canvas>
   </div>

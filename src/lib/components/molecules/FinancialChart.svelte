@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
+  import { t } from '$lib/stores/i18n';
   
   interface DataPoint {
     month: string;
@@ -37,7 +38,7 @@
         labels: data.map(d => d.month),
         datasets: [
           {
-            label: 'Ingresos',
+            label: $t('charts.labels.income'),
             data: data.map(d => d.income),
             borderColor: '#7abaa5',
             backgroundColor: 'rgba(122, 186, 165, 0.1)',
@@ -51,7 +52,7 @@
             pointBorderWidth: 2,
           },
           {
-            label: 'Gastos',
+            label: $t('charts.labels.expenses'),
             data: data.map(d => d.expenses),
             borderColor: '#f5796c',
             backgroundColor: 'rgba(245, 121, 108, 0.1)',
@@ -168,6 +169,16 @@
   $effect(() => {
     if (chart && $currentCurrency) {
       // Force chart update to refresh tooltips and axis labels
+      chart.update();
+    }
+  });
+  
+  // Update chart when language changes
+  $effect(() => {
+    if (chart) {
+      // Update dataset labels
+      chart.data.datasets[0].label = $t('charts.labels.income');
+      chart.data.datasets[1].label = $t('charts.labels.expenses');
       chart.update();
     }
   });
