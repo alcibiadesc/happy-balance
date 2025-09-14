@@ -9,10 +9,13 @@
     "backend"
   ],
   "scripts": {
-    "dev": "node scripts/kill-ports-if-needed.js && concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev": "node scripts/dev-env.js",
+    "dev:legacy": "node scripts/kill-ports-if-needed.js && concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "setup:worktree": "node scripts/setup-worktree.js",
     "kill-ports": "node scripts/kill-ports-if-needed.js",
     "dev:frontend": "vite dev --host 0.0.0.0 --port 5173",
     "dev:backend": "cd backend && pnpm dev",
+    "dev:clean": "docker ps -a | grep expense-tracker-db | awk '{print $1}' | xargs -r docker stop && docker ps -a | grep expense-tracker-db | awk '{print $1}' | xargs -r docker rm",
     "build": "npm run build:frontend && npm run build:backend",
     "build:frontend": "vite build",
     "build:backend": "cd backend && pnpm build",

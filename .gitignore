@@ -1,4 +1,5 @@
 node_modules
+pnpm-lock.yaml
 
 # Output
 .output
@@ -17,6 +18,8 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
+backend/.env
+.env.local
 
 # Vite
 vite.config.js.timestamp-*
@@ -27,3 +30,10 @@ vite.config.ts.timestamp-*
 /prisma/generated/
 ejemplo.csv
 /.vite
+
+# Docker compose files for worktrees
+.docker-compose.*.yml
+
+# Test CSV files
+test-import.csv
+*.test.csv
