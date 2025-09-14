@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execSync, spawn } from 'child_process';
-import { existsSync, writeFileSync } from 'fs';
+import { existsSync, writeFileSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import net from 'net';
@@ -72,7 +72,7 @@ async function findAvailablePort(startPort, maxRetries = 50) {
   throw new Error(`Could not find available port starting from ${startPort}`);
 }
 
-// Generate ports based on workspace
+// Generate ports based on workspace (with persistence)
 async function generatePorts(workspaceInfo) {
   if (!workspaceInfo.isWorktree) {
     // For main repository, use standard ports
@@ -84,16 +84,36 @@ async function generatePorts(workspaceInfo) {
     };
   }
 
-  // For worktrees, generate unique ports based on workspace ID
+  // For worktrees, check if we already have cached ports
+  const portsFile = resolve(rootDir, `.ports.${workspaceInfo.id}.json`);
+  
+  // Try to load existing ports first
+  if (existsSync(portsFile)) {
+    try {
+      const existingPorts = JSON.parse(readFileSync(portsFile, 'utf8'));
+      log(`📌 Using cached ports for ${workspaceInfo.id}`, 'gray');
+      return existingPorts;
+    } catch (error) {
+      log(`⚠️  Invalid ports cache file, regenerating...`, 'yellow');
+    }
+  }
+
+  // Generate new unique ports based on workspace ID
   const hash = crypto.createHash('md5').update(workspaceInfo.id).digest('hex');
   const baseOffset = parseInt(hash.substring(0, 4), 16) % 1000;
 
-  return {
+  const ports = {
     dbPort: await findAvailablePort(5432 + baseOffset),
-    backendPort: await findAvailablePort(3000 + baseOffset),
+    backendPort: await findAvailablePort(3000 + baseOffset),  
     frontendPort: await findAvailablePort(5173 + baseOffset),
     useStandardDb: false
   };
+
+  // Cache the ports for future runs
+  writeFileSync(portsFile, JSON.stringify(ports, null, 2));
+  log(`💾 Cached ports for ${workspaceInfo.id}`, 'gray');
+
+  return ports;
 }
 
 // Kill processes on specific ports
@@ -229,6 +249,7 @@ volumes:
         log('🔄 Starting existing worktree database container...', 'cyan');
         execSync(`docker start ${containerName}`, { stdio: 'ignore' });
       } else {
+        log('📦 Creating new worktree database container...', 'cyan');
         execSync(`docker-compose -f "${dockerComposeFile}" up -d`, {
           stdio: 'pipe',
           cwd: rootDir

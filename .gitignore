@@ -38,3 +38,5 @@ ejemplo.csv
 test-import.csv
 *.test.csv
 test_wt*
+.ports.*.json
+.docker-compose.*.yml
