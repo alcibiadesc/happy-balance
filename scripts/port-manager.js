@@ -148,9 +148,10 @@ function clearWorkspacePorts(workspaceId) {
   const portsFile = resolve(rootDir, `.ports.${workspaceId}.json`);
   if (existsSync(portsFile)) {
     try {
-      const fs = await import('fs');
-      fs.unlinkSync(portsFile);
-      console.log(`🗑️  Cleared cached ports for ${workspaceId}`);
+      import('fs').then(fs => {
+        fs.unlinkSync(portsFile);
+        console.log(`🗑️  Cleared cached ports for ${workspaceId}`);
+      });
     } catch (error) {
       console.log(`⚠️  Could not clear ports cache: ${error.message}`);
     }
