@@ -266,26 +266,8 @@
         </article>
       </div>
     </section>
-    
-    <!-- Financial Line Chart - FIRST -->
-    <section class="chart-section">
-      <h2 class="section-title">{$t('dashboard.charts.temporal_evolution')}</h2>
-      <p class="chart-subtitle">{$t('dashboard.charts.temporal_evolution_subtitle')}</p>
-      <div class="chart-wrapper">
-        <FinancialChart 
-          data={realData.monthlyTrend} 
-          height={280}
-        />
-      </div>
-    </section>
-    
-    <!-- Bar Charts Section - SECOND (with grouped bars, not stacked) -->
-    <FinancialBarCharts 
-      data={realData.monthlyBarData} 
-      height={250}
-    />
-    
-    <!-- Category Breakdown -->
+
+    <!-- Category Breakdown - FIRST -->
     <section class="categories-section">
       <h2 class="section-title">{$t('dashboard.categories.title')}</h2>
       <div class="categories-grid">
@@ -296,8 +278,8 @@
               <span class="category-amount">{formatCurrencyAmount(category.amount)}</span>
             </div>
             <div class="category-bar">
-              <div 
-                class="category-progress" 
+              <div
+                class="category-progress"
                 style="width: {category.percentage}%"
               ></div>
             </div>
@@ -306,6 +288,24 @@
         {/each}
       </div>
     </section>
+
+    <!-- Financial Line Chart - SECOND -->
+    <section class="chart-section">
+      <h2 class="section-title">{$t('dashboard.charts.temporal_evolution')}</h2>
+      <p class="chart-subtitle">{$t('dashboard.charts.temporal_evolution_subtitle')}</p>
+      <div class="chart-wrapper">
+        <FinancialChart
+          data={realData.monthlyTrend}
+          height={280}
+        />
+      </div>
+    </section>
+
+    <!-- Bar Charts Section - THIRD (with grouped bars, not stacked) -->
+    <FinancialBarCharts
+      data={realData.monthlyBarData}
+      height={250}
+    />
 </main>
 
 <style>
@@ -487,6 +487,7 @@
     background: var(--surface-elevated);
     border-radius: 16px;
     padding: 1.5rem;
+    margin-bottom: 2rem;
     border: 1px solid var(--border-color, transparent);
   }
   
