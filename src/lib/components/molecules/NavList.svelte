@@ -15,6 +15,7 @@
   const navItems = [
     { href: '/', icon: 'layout-dashboard', labelKey: 'navigation.dashboard' },
     { href: '/transactions', icon: 'receipt', labelKey: 'navigation.transactions' },
+    { href: '/categories', icon: 'layers', labelKey: 'navigation.categories' },
     { href: '/settings', icon: 'settings', labelKey: 'navigation.settings' }
   ];
   

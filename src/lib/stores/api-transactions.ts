@@ -314,27 +314,159 @@ function mapApiToTransaction(apiTransaction: any): Transaction {
   };
 }
 
-// Category Store using Backend APIs (placeholder for now)
+// Category Store using Backend APIs
 function createApiCategoryStore() {
-  const { subscribe, set } = writable<Category[]>([
-    // Default categories - in the future we'll load from API
-    { id: '1', name: 'Food & Groceries', type: 'essential', color: '#f5796c', icon: '🍽️' },
-    { id: '2', name: 'Transport', type: 'essential', color: '#7abaa5', icon: '🚇' },
-    { id: '3', name: 'Entertainment', type: 'discretionary', color: '#fecd2c', icon: '🎬' },
-    { id: '4', name: 'Utilities', type: 'essential', color: '#023c46', icon: '⚡' },
-    { id: '5', name: 'Income', type: 'income', color: '#7abaa5', icon: '💰' },
-    { id: '6', name: 'Investment', type: 'investment', color: '#023c46', icon: '📈' }
-  ]);
+  const { subscribe, set, update } = writable<Category[]>([]);
 
   return {
     subscribe,
+
+    // Load categories from API
+    async load() {
+      try {
+        const response = await fetch(`${API_BASE}/categories`);
+        if (!response.ok) {
+          // If API fails, seed default categories first
+          if (response.status === 404 || response.status === 500) {
+            await fetch(`${API_BASE}/categories/seed`, { method: 'POST' });
+            // Try loading again
+            const retryResponse = await fetch(`${API_BASE}/categories`);
+            if (retryResponse.ok) {
+              const result = await retryResponse.json();
+              if (result.success && result.data) {
+                set(result.data.map((cat: any) => ({
+                  id: cat.id,
+                  name: cat.name,
+                  type: cat.type,
+                  color: cat.color,
+                  icon: cat.icon,
+                  parentId: cat.parentId
+                })));
+                return;
+              }
+            }
+          }
+          throw new Error(`Failed to load categories: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success && result.data) {
+          set(result.data.map((cat: any) => ({
+            id: cat.id,
+            name: cat.name,
+            type: cat.type,
+            color: cat.color,
+            icon: cat.icon,
+            parentId: cat.parentId
+          })));
+        }
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+        // Use default categories as fallback
+        set([
+          { id: '1', name: 'Food & Groceries', type: 'essential', color: '#f5796c', icon: '🍽️' },
+          { id: '2', name: 'Transport', type: 'essential', color: '#7abaa5', icon: '🚇' },
+          { id: '3', name: 'Entertainment', type: 'discretionary', color: '#fecd2c', icon: '🎬' },
+          { id: '4', name: 'Utilities', type: 'essential', color: '#023c46', icon: '⚡' },
+          { id: '5', name: 'Income', type: 'income', color: '#7abaa5', icon: '💰' },
+          { id: '6', name: 'Investment', type: 'investment', color: '#023c46', icon: '📈' }
+        ]);
+      }
+    },
+
+    // Add new category
     async add(category: Omit<Category, 'id'>) {
-      // TODO: Implement API call when categories API is ready
-      const newCategory = {
-        ...category,
-        id: crypto.randomUUID?.() || `cat-${Date.now()}`
-      };
-      return newCategory;
+      try {
+        const response = await fetch(`${API_BASE}/categories`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(category)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create category');
+        }
+
+        const result = await response.json();
+        if (result.success && result.data) {
+          const newCategory = {
+            id: result.data.id,
+            name: result.data.name,
+            type: result.data.type,
+            color: result.data.color,
+            icon: result.data.icon,
+            parentId: result.data.parentId
+          };
+          update(categories => [...categories, newCategory]);
+          return newCategory;
+        }
+      } catch (error) {
+        console.error('Failed to add category:', error);
+        throw error;
+      }
+    },
+
+    // Update category
+    async update(id: string, updates: Partial<Category>) {
+      try {
+        const response = await fetch(`${API_BASE}/categories/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update category');
+        }
+
+        update(categories =>
+          categories.map(c => c.id === id ? { ...c, ...updates } : c)
+        );
+      } catch (error) {
+        console.error('Failed to update category:', error);
+        throw error;
+      }
+    },
+
+    // Delete category
+    async delete(id: string, reassignTo?: string) {
+      try {
+        const params = reassignTo ? `?reassignTo=${reassignTo}` : '';
+        const response = await fetch(`${API_BASE}/categories/${id}${params}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to delete category');
+        }
+
+        update(categories => categories.filter(c => c.id !== id));
+      } catch (error) {
+        console.error('Failed to delete category:', error);
+        throw error;
+      }
+    },
+
+    // Learn from correction
+    async learnFromCorrection(transactionId: string, categoryId: string, applyToAll: boolean = false) {
+      try {
+        const response = await fetch(`${API_BASE}/categories/learn`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transactionId, categoryId, applyToAll })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to learn from correction');
+        }
+
+        const result = await response.json();
+        return result.data;
+      } catch (error) {
+        console.error('Failed to learn from correction:', error);
+        throw error;
+      }
     }
   };
 }

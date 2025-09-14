@@ -8,6 +8,7 @@ import { PrismaUserPreferencesRepository } from '@infrastructure/repositories/Pr
 import { TransactionController } from '@infrastructure/controllers/TransactionController';
 import { ImportController } from '@infrastructure/controllers/ImportController';
 import { UserPreferencesController } from '@infrastructure/controllers/UserPreferencesController';
+import { CategoryController } from '@infrastructure/controllers/CategoryController';
 import { createTransactionRoutes } from '@infrastructure/routes/transactionRoutes';
 import { createImportRoutes } from '@infrastructure/routes/importRoutes';
 import { createUserPreferencesRoutes } from '@infrastructure/routes/userPreferencesRoutes';
@@ -30,6 +31,7 @@ class App {
   private transactionController: TransactionController;
   private importController: ImportController;
   private userPreferencesController: UserPreferencesController;
+  private categoryController: CategoryController;
 
   constructor() {
     this.app = express();
@@ -89,6 +91,7 @@ class App {
       importSelectedTransactionsUseCase
     );
     this.userPreferencesController = new UserPreferencesController(this.userPreferencesRepository);
+    this.categoryController = new CategoryController();
   }
 
   private initializeMiddleware() {
@@ -149,6 +152,7 @@ class App {
     this.app.use('/api/transactions', createTransactionRoutes(this.transactionController));
     this.app.use('/api/import', createImportRoutes(this.importController));
     this.app.use('/api/preferences', createUserPreferencesRoutes(this.userPreferencesController));
+    this.app.use('/api', this.categoryController.getRouter());
 
     // 404 handler
     this.app.use('*', (req, res) => {
