@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+  import AddTransactionModal from '$lib/components/AddTransactionModal.svelte';
   import { 
     ChevronDown, Search, Filter, Download, Plus, Calendar, 
     TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,
@@ -196,6 +197,16 @@
     if (!transactionToDelete) return;
     await apiTransactions.delete(transactionToDelete);
     transactionToDelete = null;
+  }
+
+  async function addTransaction(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>) {
+    try {
+      await apiTransactions.add(transaction);
+      showAddModal = false;
+    } catch (error) {
+      console.error('Failed to add transaction:', error);
+      // Could show error toast here
+    }
   }
   
   async function categorizeTransaction(transaction: Transaction, categoryId: string, applyToAll = false) {
@@ -533,6 +544,14 @@
   type="danger"
   onConfirm={confirmDeleteSingle}
   onCancel={() => transactionToDelete = null}
+/>
+
+<!-- Add Transaction Modal -->
+<AddTransactionModal
+  bind:isOpen={showAddModal}
+  categories={$apiCategories}
+  onSubmit={addTransaction}
+  onCancel={() => showAddModal = false}
 />
 
 <style>
