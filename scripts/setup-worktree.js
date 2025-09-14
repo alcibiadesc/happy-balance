@@ -6,6 +6,7 @@ import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import crypto from 'crypto';
+import { getWorkspacePorts, getDatabaseName, getContainerName } from './port-manager.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
@@ -44,36 +45,18 @@ function getWorkspaceInfo() {
   }
 }
 
-// Generate unique ports for worktree
-function generatePortsForWorktree(workspaceInfo) {
-  if (!workspaceInfo.isWorktree) {
-    return {
-      dbPort: 5432,
-      backendPort: 3000,
-      frontendPort: 5173
-    };
-  }
-
-  // Generate unique ports based on workspace ID
-  const hash = crypto.createHash('md5').update(workspaceInfo.id).digest('hex');
-  const baseOffset = parseInt(hash.substring(0, 4), 16) % 1000;
-
-  return {
-    dbPort: 5432 + baseOffset,
-    backendPort: 3000 + baseOffset,
-    frontendPort: 5173 + baseOffset
-  };
+// Generate unique ports for worktree (unified)
+async function generatePortsForWorktree(workspaceInfo) {
+  return await getWorkspacePorts(workspaceInfo.id, { checkAvailability: true });
 }
 
 // Create environment files
-function createEnvironmentFiles(workspaceInfo) {
-  const ports = generatePortsForWorktree(workspaceInfo);
+async function createEnvironmentFiles(workspaceInfo) {
+  const ports = await generatePortsForWorktree(workspaceInfo);
 
   // Backend .env
   const backendEnvPath = resolve(rootDir, 'backend', '.env');
-  const dbName = workspaceInfo.isWorktree
-    ? `happy_balance_${workspaceInfo.id.replace(/-/g, '_')}`
-    : 'happy_balance';
+  const dbName = getDatabaseName(workspaceInfo.id);
 
   const backendEnvContent = `DATABASE_URL="postgresql://postgres:postgres@localhost:${ports.dbPort}/${dbName}"
 PORT=${ports.backendPort}
@@ -151,7 +134,7 @@ async function setupDockerDatabase(workspaceInfo, ports, dbName) {
   }
 
   if (workspaceInfo.isWorktree) {
-    const containerName = `expense-tracker-db-${workspaceInfo.id}`;
+    const containerName = getContainerName(workspaceInfo.id);
 
     try {
       // Check if container already exists
@@ -328,7 +311,7 @@ async function quickSetup() {
   log(`📁 Workspace: ${workspaceInfo.id} (${workspaceInfo.isWorktree ? 'worktree' : 'main branch'})`, 'cyan');
 
   // 2. Create .env files with appropriate ports
-  const config = createEnvironmentFiles(workspaceInfo);
+  const config = await createEnvironmentFiles(workspaceInfo);
   log(`🔌 Configured ports - Backend: ${config.backendPort}, Frontend: ${config.frontendPort}, DB: ${config.dbPort}`, 'cyan');
 
   // 3. Ensure Docker is running

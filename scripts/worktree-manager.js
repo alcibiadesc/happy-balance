@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { getWorkspacePorts } from './port-manager.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
@@ -26,16 +27,9 @@ function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
 
-// Generate ports for a worktree ID
-function generatePortsForId(id) {
-  const hash = crypto.createHash('md5').update(id).digest('hex');
-  const baseOffset = parseInt(hash.substring(0, 4), 16) % 1000;
-
-  return {
-    dbPort: 5432 + baseOffset,
-    backendPort: 3000 + baseOffset,
-    frontendPort: 5173 + baseOffset
-  };
+// Generate ports for a worktree ID (unified)
+async function generatePortsForId(id) {
+  return await getWorkspacePorts(id, { checkAvailability: true });
 }
 
 // Check if a port is in use
@@ -102,7 +96,8 @@ function listWorktrees() {
 // Main command handler
 const command = process.argv[2];
 
-switch (command) {
+async function handleCommand() {
+  switch (command) {
   case 'list':
   case 'ls':
     console.clear();
@@ -187,7 +182,7 @@ switch (command) {
       log('🚀 Running setup...', 'cyan');
       execSync(`cd ${newWorktreeName} && pnpm run setup:worktree`, { cwd: rootDir, stdio: 'inherit' });
 
-      const ports = generatePortsForId(newWorktreeName);
+      const ports = await generatePortsForId(newWorktreeName);
       log(`\n✨ Worktree ready!`, 'green');
       log(`📌 Your ports:`, 'bright');
       log(`   Backend:  http://localhost:${ports.backendPort}`, 'gray');
@@ -208,4 +203,11 @@ switch (command) {
     log('  pnpm worktree:create <name>  - Create and setup a new worktree', 'gray');
     log('  pnpm worktree:clean <name>   - Remove worktree and its Docker container', 'gray');
     log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'gray');
+  }
 }
+
+// Execute the command handler
+handleCommand().catch(error => {
+  log(`❌ Error: ${error.message}`, 'red');
+  process.exit(1);
+});

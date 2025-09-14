@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import net from 'net';
 import crypto from 'crypto';
 import readline from 'readline';
+import { getWorkspacePorts, getDatabaseName, getContainerName } from './port-manager.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
@@ -72,47 +73,14 @@ async function findAvailablePort(startPort, maxRetries = 50) {
   throw new Error(`Could not find available port starting from ${startPort}`);
 }
 
-// Generate ports based on workspace (with persistence)
+// Generate ports based on workspace (unified)
 async function generatePorts(workspaceInfo) {
-  if (!workspaceInfo.isWorktree) {
-    // For main repository, use standard ports
-    return {
-      dbPort: 5432,
-      backendPort: 3000,
-      frontendPort: 5173,
-      useStandardDb: true
-    };
-  }
-
-  // For worktrees, check if we already have cached ports
-  const portsFile = resolve(rootDir, `.ports.${workspaceInfo.id}.json`);
+  const ports = await getWorkspacePorts(workspaceInfo.id);
   
-  // Try to load existing ports first
-  if (existsSync(portsFile)) {
-    try {
-      const existingPorts = JSON.parse(readFileSync(portsFile, 'utf8'));
-      log(`📌 Using cached ports for ${workspaceInfo.id}`, 'gray');
-      return existingPorts;
-    } catch (error) {
-      log(`⚠️  Invalid ports cache file, regenerating...`, 'yellow');
-    }
+  if (ports.cached) {
+    log(`📌 Using cached ports for ${workspaceInfo.id}`, 'gray');
   }
-
-  // Generate new unique ports based on workspace ID
-  const hash = crypto.createHash('md5').update(workspaceInfo.id).digest('hex');
-  const baseOffset = parseInt(hash.substring(0, 4), 16) % 1000;
-
-  const ports = {
-    dbPort: await findAvailablePort(5432 + baseOffset),
-    backendPort: await findAvailablePort(3000 + baseOffset),  
-    frontendPort: await findAvailablePort(5173 + baseOffset),
-    useStandardDb: false
-  };
-
-  // Cache the ports for future runs
-  writeFileSync(portsFile, JSON.stringify(ports, null, 2));
-  log(`💾 Cached ports for ${workspaceInfo.id}`, 'gray');
-
+  
   return ports;
 }
 
@@ -133,7 +101,7 @@ function killPort(port) {
 function updateEnvironmentFiles(workspaceInfo, ports) {
   // Backend .env
   const backendEnvPath = resolve(rootDir, 'backend', '.env');
-  const dbName = ports.useStandardDb ? 'happy_balance' : `happy_balance_${workspaceInfo.id.replace(/-/g, '_')}`;
+  const dbName = getDatabaseName(workspaceInfo.id);
   const backendEnvContent = `DATABASE_URL="postgresql://postgres:postgres@localhost:${ports.dbPort}/${dbName}"
 PORT=${ports.backendPort}
 NODE_ENV=development
@@ -209,8 +177,8 @@ async function setupDatabaseContainer(workspaceInfo, ports) {
     // For worktrees, create unique Docker container
     log(`🐳 Setting up database for worktree: ${workspaceInfo.id}...`, 'cyan');
 
-    const dbName = `happy_balance_${workspaceInfo.id.replace(/-/g, '_')}`;
-    const containerName = `expense-tracker-db-${workspaceInfo.id}`;
+    const dbName = getDatabaseName(workspaceInfo.id);
+    const containerName = getContainerName(workspaceInfo.id);
 
     const dockerComposeContent = `version: '3.8'
 services:
