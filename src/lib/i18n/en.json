@@ -151,13 +151,39 @@
     "amount": "Amount",
     "category": "Category",
     "date": "Date",
+    "merchant": "Merchant",
+    "time": "Time",
     "type": {
       "income": "Income",
       "expense": "Expense",
       "investment": "Investment"
     },
     "no_transactions": "No transactions",
-    "delete_confirmation": "Are you sure you want to delete this transaction?"
+    "delete_confirmation": "Are you sure you want to delete this transaction?",
+    "delete_selected_title": "Delete Selected Transactions",
+    "delete_selected_message": "Are you sure you want to delete {count} selected transactions? This action cannot be undone.",
+    "delete_single_title": "Delete Transaction",
+    "delete_single_message": "Are you sure you want to delete this transaction? This action cannot be undone.",
+    "period": {
+      "balance": "Period balance",
+      "income": "Income",
+      "total_expenses": "Total expenses",
+      "expense_distribution": "Expense distribution",
+      "essential": "Essential",
+      "discretionary": "Discretionary",
+      "uncategorized": "Uncategorized"
+    },
+    "search_placeholder": "Search transactions...",
+    "select_all": "Select All",
+    "select": "Select",
+    "cancel": "Cancel",
+    "add_category": "Add category",
+    "show_transaction": "Show transaction",
+    "hide_transaction": "Hide transaction",
+    "delete_transaction": "Delete transaction",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "delete_all": "Delete All"
   },
   "categories": {
     "title": "Categories",

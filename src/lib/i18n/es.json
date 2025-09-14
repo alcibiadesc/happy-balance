@@ -151,13 +151,39 @@
     "amount": "Cantidad",
     "category": "Categoría",
     "date": "Fecha",
+    "merchant": "Comercio",
+    "time": "Hora",
     "type": {
       "income": "Ingreso",
       "expense": "Gasto",
       "investment": "Inversión"
     },
     "no_transactions": "No hay transacciones",
-    "delete_confirmation": "¿Estás seguro de que quieres eliminar esta transacción?"
+    "delete_confirmation": "¿Estás seguro de que quieres eliminar esta transacción?",
+    "delete_selected_title": "Eliminar Transacciones Seleccionadas",
+    "delete_selected_message": "¿Estás seguro de que quieres eliminar {count} transacciones seleccionadas? Esta acción no se puede deshacer.",
+    "delete_single_title": "Eliminar Transacción",
+    "delete_single_message": "¿Estás seguro de que quieres eliminar esta transacción? Esta acción no se puede deshacer.",
+    "period": {
+      "balance": "Balance del período",
+      "income": "Ingresos",
+      "total_expenses": "Gastos totales",
+      "expense_distribution": "Distribución de gastos",
+      "essential": "Esenciales",
+      "discretionary": "Discrecionales",
+      "uncategorized": "Sin categorizar"
+    },
+    "search_placeholder": "Buscar transacciones...",
+    "select_all": "Seleccionar Todo",
+    "select": "Seleccionar",
+    "cancel": "Cancelar",
+    "add_category": "Añadir categoría",
+    "show_transaction": "Mostrar transacción",
+    "hide_transaction": "Ocultar transacción",
+    "delete_transaction": "Eliminar transacción",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "delete_all": "Eliminar Todo"
   },
   "categories": {
     "title": "Categorías",
