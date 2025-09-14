@@ -19,6 +19,7 @@
   
   let selectedPeriod = $state('month');
   let loading = $state(false);
+  let dashboardData = $state<any>(null);
   let realData = $state({
     monthlyTrend: [] as any[],
     monthlyBarData: [] as any[],
@@ -40,112 +41,67 @@
     currentStats.income > 0 ? ((currentStats.balance) / currentStats.income * 100) : 0
   );
   
-  // Load data based on period
-  function loadData(period: string) {
-      // Update data based on period (this would come from API)
-      if (period === 'year') {
-        data = {
-          ...data,
-          income: 36000,
-          expenses: 21600,
-          essentialExpenses: 14400,
-          discretionaryExpenses: 7200,
-          investments: 6000,
-          balance: 8400,
-          previousIncome: 34000,
-          previousExpenses: 20400,
-          previousInvestments: 4800,
-          monthlyTrend: [
-            { month: '2023', income: 34000, expenses: 20400, balance: 13600 },
-            { month: '2024', income: 36000, expenses: 21600, balance: 14400 }
-          ],
-          monthlyBarData: [
-            { month: '2023', income: 34000, essentialExpenses: 13600, discretionaryExpenses: 6800, investments: 4800 },
-            { month: '2024', income: 36000, essentialExpenses: 14400, discretionaryExpenses: 7200, investments: 6000 }
-          ]
-        };
-      } else if (period === 'quarter') {
-        data = {
-          ...data,
-          income: 9000,
-          expenses: 5400,
-          essentialExpenses: 3600,
-          discretionaryExpenses: 1800,
-          investments: 1500,
-          balance: 2100,
-          previousIncome: 8400,
-          previousExpenses: 4950,
-          previousInvestments: 1200,
-          monthlyTrend: [
-            { month: 'Abr', income: 3100, expenses: 1900, balance: 1200 },
-            { month: 'May', income: 2950, expenses: 1700, balance: 1250 },
-            { month: 'Jun', income: 3000, expenses: 1800, balance: 1200 }
-          ],
-          monthlyBarData: [
-            { month: 'Abr', income: 3100, essentialExpenses: 1270, discretionaryExpenses: 630, investments: 480 },
-            { month: 'May', income: 2950, essentialExpenses: 1140, discretionaryExpenses: 560, investments: 460 },
-            { month: 'Jun', income: 3000, essentialExpenses: 1200, discretionaryExpenses: 600, investments: 500 }
-          ]
-        };
-      } else if (period === 'week') {
-        data = {
-          ...data,
-          income: 750,
-          expenses: 450,
-          essentialExpenses: 300,
-          discretionaryExpenses: 150,
-          investments: 125,
-          balance: 175,
-          previousIncome: 700,
-          previousExpenses: 412,
-          previousInvestments: 100,
-          categories: data.categories.map(c => ({ ...c, amount: Math.round(c.amount / 4) })),
-          monthlyTrend: [
-            { month: 'Lun', income: 150, expenses: 90, balance: 60 },
-            { month: 'Mar', income: 150, expenses: 97, balance: 53 },
-            { month: 'Mié', income: 150, expenses: 87, balance: 63 },
-            { month: 'Jue', income: 150, expenses: 93, balance: 57 },
-            { month: 'Vie', income: 150, expenses: 83, balance: 67 }
-          ],
-          monthlyBarData: [
-            { month: 'Lun', income: 150, essentialExpenses: 60, discretionaryExpenses: 30, investments: 25 },
-            { month: 'Mar', income: 150, essentialExpenses: 65, discretionaryExpenses: 32, investments: 25 },
-            { month: 'Mié', income: 150, essentialExpenses: 58, discretionaryExpenses: 29, investments: 25 },
-            { month: 'Jue', income: 150, essentialExpenses: 62, discretionaryExpenses: 31, investments: 25 },
-            { month: 'Vie', income: 150, essentialExpenses: 55, discretionaryExpenses: 28, investments: 25 }
-          ]
-        };
+  // Load data based on period from API
+  async function loadData(period: string) {
+    loading = true;
+    try {
+      const response = await fetch(`http://localhost:3008/api/transactions/dashboard?period=${period}&currency=${$currentCurrency}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          dashboardData = result.data;
+
+          // Transform trends data for charts
+          if (result.data.trends && result.data.trends.length > 0) {
+            realData.monthlyTrend = result.data.trends.map((trend: any) => ({
+              month: trend.period,
+              income: trend.income?._amount || 0,
+              expenses: trend.expenses?._amount || 0,
+              balance: trend.balance?._amount || 0
+            }));
+
+            // For bar data, we need to split expenses into essential and discretionary
+            realData.monthlyBarData = result.data.trends.map((trend: any) => ({
+              month: trend.period,
+              income: trend.income?._amount || 0,
+              essentialExpenses: (trend.expenses?._amount || 0) * 0.67, // Approximate for now
+              discretionaryExpenses: (trend.expenses?._amount || 0) * 0.33, // Approximate for now
+              investments: trend.investments?._amount || 0
+            }));
+          }
+
+          // Transform category breakdown for the categories section
+          if (result.data.categoryBreakdown && result.data.categoryBreakdown.length > 0) {
+            const totalExpenses = result.data.summary?.totalExpenses?._amount || 1;
+            realData.categories = result.data.categoryBreakdown.map((cat: any) => ({
+              name: cat.categoryName || cat.category || 'Unknown',
+              amount: cat.amount?._amount || 0,
+              percentage: cat.percentage || ((cat.amount?._amount || 0) / totalExpenses * 100).toFixed(1)
+            }));
+          } else {
+            // Use mock categories if none from DB
+            realData.categories = generatePeriodData([], period).categories;
+          }
+        }
       } else {
-        // Default month data
-        data = {
-          ...data,
-          income: 3000,
-          expenses: 1800,
-          essentialExpenses: 1200,
-          discretionaryExpenses: 600,
-          investments: 500,
-          balance: 700,
-          previousIncome: 2800,
-          previousExpenses: 1650,
-          previousInvestments: 400,
-          monthlyTrend: [
-            { month: 'Ene', income: 2800, expenses: 1600, balance: 1200 },
-            { month: 'Feb', income: 2900, expenses: 1750, balance: 1150 },
-            { month: 'Mar', income: 3000, expenses: 1650, balance: 1350 },
-            { month: 'Abr', income: 3100, expenses: 1900, balance: 1200 },
-            { month: 'May', income: 2950, expenses: 1700, balance: 1250 },
-            { month: 'Jun', income: 3000, expenses: 1800, balance: 1200 }
-          ],
-          monthlyBarData: [
-            { month: 'Ene', income: 2800, essentialExpenses: 1070, discretionaryExpenses: 530, investments: 400 },
-            { month: 'Feb', income: 2900, essentialExpenses: 1170, discretionaryExpenses: 580, investments: 420 },
-            { month: 'Mar', income: 3000, essentialExpenses: 1100, discretionaryExpenses: 550, investments: 450 },
-            { month: 'Abr', income: 3100, essentialExpenses: 1270, discretionaryExpenses: 630, investments: 480 },
-            { month: 'May', income: 2950, essentialExpenses: 1140, discretionaryExpenses: 560, investments: 460 },
-            { month: 'Jun', income: 3000, essentialExpenses: 1200, discretionaryExpenses: 600, investments: 500 }
-          ]
-        };
+        // Fallback to mock data if API fails
+        generateMockData(period);
       }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      // Fallback to mock data
+      generateMockData(period);
+    } finally {
+      loading = false;
+    }
+  }
+
+  // Generate mock data as fallback
+  function generateMockData(period: string) {
+    const mockData = generatePeriodData([], period);
+    realData.monthlyTrend = mockData.monthlyTrend;
+    realData.monthlyBarData = mockData.monthlyBarData;
+    realData.categories = mockData.categories;
   }
   
   // Generate period-based data from transactions
@@ -179,9 +135,9 @@
     };
   }
   
-  function handlePeriodChange(period: string) {
+  async function handlePeriodChange(period: string) {
     selectedPeriod = period;
-    loadData(period);
+    await loadData(period);
   }
   
   // Use the global currency formatter
@@ -206,7 +162,7 @@
   onMount(async () => {
     // Load transactions from API
     await apiTransactions.load();
-    loadData(selectedPeriod);
+    await loadData(selectedPeriod);
   });
 </script>
 
@@ -253,7 +209,7 @@
             <span class="metric-label">{$t('dashboard.metrics.income')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(currentStats.income)}</div>
+            <div class="metric-value">{formatCurrencyAmount(dashboardData?.summary?.totalIncome?._amount || currentStats.income)}</div>
             <div 
               class="metric-trend"
               style="color: {getTrendColor(trends.income, 'income')}"
@@ -264,10 +220,10 @@
         </article>
         
         <!-- Expenses Card with Breakdown -->
-        <ExpensesCard 
-          totalExpenses={currentStats.expenses}
-          essentialExpenses={currentStats.expenses * 0.67}
-          discretionaryExpenses={currentStats.expenses * 0.33}
+        <ExpensesCard
+          totalExpenses={dashboardData?.summary?.totalExpenses?._amount || currentStats.expenses}
+          essentialExpenses={dashboardData?.expenseDistribution?.essential?._amount || currentStats.expenses * 0.67}
+          discretionaryExpenses={dashboardData?.expenseDistribution?.discretionary?._amount || currentStats.expenses * 0.33}
           trend={trends.expenses}
           formatCurrency={formatCurrencyAmount}
           {formatTrend}
@@ -283,7 +239,7 @@
             <span class="metric-label">{$t('dashboard.metrics.investments')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(500)}</div>
+            <div class="metric-value">{formatCurrencyAmount(dashboardData?.summary?.totalInvestments?._amount || 500)}</div>
             <div 
               class="metric-trend"
               style="color: {getTrendColor(trends.investments, 'investments')}"
@@ -302,9 +258,9 @@
             <span class="metric-label">{$t('dashboard.metrics.balance')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(currentStats.balance)}</div>
+            <div class="metric-value">{formatCurrencyAmount(dashboardData?.summary?.balance?._amount || currentStats.balance)}</div>
             <div class="metric-subtext">
-              {@html $t('dashboard.metrics.saved_percentage', { percentage: savingsRate.toFixed(1) })}
+              {@html $t('dashboard.metrics.saved_percentage', { percentage: (dashboardData?.spendingRate ? (100 - dashboardData.spendingRate).toFixed(1) : savingsRate.toFixed(1)) })}
             </div>
           </div>
         </article>

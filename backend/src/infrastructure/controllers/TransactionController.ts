@@ -38,9 +38,11 @@ const TransactionFiltersSchema = z.object({
 });
 
 const DashboardQuerySchema = z.object({
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  currency: z.string().min(3).max(3).default('EUR')
+  period: z.enum(['week', 'month', 'quarter', 'year']).optional().default('month'),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  currency: z.string().min(3).max(3).optional().default('EUR'),
+  includeInvestments: z.boolean().optional().default(true)
 });
 
 export class TransactionController {
@@ -314,7 +316,16 @@ export class TransactionController {
 
   async getDashboard(req: Request, res: Response) {
     try {
-      const validationResult = DashboardQuerySchema.safeParse(req.query);
+      // Parse with defaults
+      const queryData = {
+        period: req.query.period || 'month',
+        currency: req.query.currency || 'EUR',
+        includeInvestments: req.query.includeInvestments === 'false' ? false : true,
+        startDate: req.query.startDate as string | undefined,
+        endDate: req.query.endDate as string | undefined
+      };
+
+      const validationResult = DashboardQuerySchema.safeParse(queryData);
       if (!validationResult.success) {
         return res.status(400).json({
           error: 'Validation error',
@@ -322,22 +333,14 @@ export class TransactionController {
         });
       }
 
-      const { startDate, endDate, currency } = validationResult.data;
-
-      const startDateResult = TransactionDate.fromString(startDate);
-      if (startDateResult.isFailure()) {
-        return res.status(400).json({ error: startDateResult.getError() });
-      }
-
-      const endDateResult = TransactionDate.fromString(endDate);
-      if (endDateResult.isFailure()) {
-        return res.status(400).json({ error: endDateResult.getError() });
-      }
+      const { period, startDate, endDate, currency, includeInvestments } = validationResult.data;
 
       const query = new DashboardQuery(
-        startDateResult.getValue(),
-        endDateResult.getValue(),
-        currency
+        currency,
+        period,
+        startDate,
+        endDate,
+        includeInvestments
       );
 
       const result = await this.getDashboardDataUseCase.execute(query);

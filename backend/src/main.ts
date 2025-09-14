@@ -5,6 +5,7 @@ import compression from 'compression';
 import { prisma } from '@infrastructure/database/prisma';
 import { PrismaTransactionRepository } from '@infrastructure/repositories/PrismaTransactionRepository';
 import { PrismaUserPreferencesRepository } from '@infrastructure/repositories/PrismaUserPreferencesRepository';
+import { PrismaCategoryRepository } from '@infrastructure/repositories/PrismaCategoryRepository';
 import { TransactionController } from '@infrastructure/controllers/TransactionController';
 import { ImportController } from '@infrastructure/controllers/ImportController';
 import { UserPreferencesController } from '@infrastructure/controllers/UserPreferencesController';
@@ -26,6 +27,7 @@ import { TransactionFactory } from './domain/factories/TransactionFactory';
 class App {
   private app: express.Application;
   private transactionRepository: PrismaTransactionRepository;
+  private categoryRepository: PrismaCategoryRepository;
   private userPreferencesRepository: PrismaUserPreferencesRepository;
   private transactionController: TransactionController;
   private importController: ImportController;
@@ -34,6 +36,7 @@ class App {
   constructor() {
     this.app = express();
     this.transactionRepository = new PrismaTransactionRepository(prisma);
+    this.categoryRepository = new PrismaCategoryRepository(prisma);
     this.userPreferencesRepository = new PrismaUserPreferencesRepository(prisma);
     this.initializeServices();
     this.initializeMiddleware();
@@ -51,17 +54,13 @@ class App {
     // Application services / Use cases
     const getDashboardDataUseCase = new GetDashboardDataUseCase(
       this.transactionRepository,
+      this.categoryRepository,
       financialCalculationService
     );
 
-    // TODO: Create proper category repository
-    const mockCategoryRepository = {
-      findActive: async () => ({ isSuccess: () => true, getValue: () => [] })
-    } as any;
-
     const importTransactionsUseCase = new ImportTransactionsUseCase(
       this.transactionRepository,
-      mockCategoryRepository,
+      this.categoryRepository,
       duplicateDetectionService,
       categorizationService
     );

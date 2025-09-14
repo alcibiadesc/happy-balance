@@ -1,0 +1,396 @@
+import { PrismaClient } from '@prisma/client';
+import { Result } from '@domain/shared/Result';
+import { ICategoryRepository, CategoryFilters } from '@domain/repositories/ICategoryRepository';
+import { Category, CategoryId, CategorySnapshot } from '@domain/entities/Category';
+import { TransactionType } from '@domain/entities/TransactionType';
+
+export class PrismaCategoryRepository implements ICategoryRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async findAll(): Promise<Result<Category[]>> {
+    try {
+      const categories = await this.prisma.category.findMany({
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      const domainCategories = categories.map(cat => ({
+        id: { value: cat.id },
+        name: cat.name,
+        description: cat.description,
+        type: cat.type as TransactionType,
+        isActive: cat.isActive,
+        createdAt: cat.createdAt,
+        updatedAt: cat.updatedAt
+      }));
+
+      return Result.ok(domainCategories as Category[]);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to fetch categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async findActive(): Promise<Result<Category[]>> {
+    try {
+      const categories = await this.prisma.category.findMany({
+        where: {
+          isActive: true
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      const domainCategories = categories.map(cat => ({
+        id: { value: cat.id },
+        name: cat.name,
+        description: cat.description,
+        type: cat.type as TransactionType,
+        isActive: cat.isActive,
+        createdAt: cat.createdAt,
+        updatedAt: cat.updatedAt
+      }));
+
+      return Result.ok(domainCategories as Category[]);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to fetch active categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async findById(id: CategoryId): Promise<Result<Category | null>> {
+    try {
+      const category = await this.prisma.category.findUnique({
+        where: {
+          id: id.value
+        }
+      });
+
+      if (!category) {
+        return Result.ok(null);
+      }
+
+      const domainCategory = {
+        id: { value: category.id },
+        name: category.name,
+        description: category.description,
+        type: category.type as TransactionType,
+        isActive: category.isActive,
+        createdAt: category.createdAt,
+        updatedAt: category.updatedAt
+      };
+
+      return Result.ok(domainCategory as Category);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to fetch category: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async save(category: Category): Promise<Result<void>> {
+    try {
+      await this.prisma.category.create({
+        data: {
+          id: category.id.value,
+          name: category.name,
+          description: category.description || null,
+          type: category.type || 'EXPENSE',
+          isActive: category.isActive !== undefined ? category.isActive : true
+        }
+      });
+      return Result.ok();
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to save category: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async saveMany(categories: Category[]): Promise<Result<number>> {
+    try {
+      const result = await this.prisma.category.createMany({
+        data: categories.map(cat => ({
+          id: cat.id.value,
+          name: cat.name,
+          description: cat.description || null,
+          type: cat.type || 'EXPENSE',
+          isActive: cat.isActive !== undefined ? cat.isActive : true
+        }))
+      });
+      return Result.ok(result.count);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to save categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async findWithFilters(filters?: CategoryFilters): Promise<Result<Category[]>> {
+    try {
+      const where: any = {};
+
+      if (filters?.type) {
+        where.type = filters.type;
+      }
+
+      if (filters?.isActive !== undefined) {
+        where.isActive = filters.isActive;
+      }
+
+      if (filters?.searchTerm) {
+        where.name = {
+          contains: filters.searchTerm,
+          mode: 'insensitive'
+        };
+      }
+
+      const categories = await this.prisma.category.findMany({
+        where,
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      const domainCategories = categories.map(cat => ({
+        id: { value: cat.id },
+        name: cat.name,
+        description: cat.description,
+        type: cat.type as TransactionType,
+        isActive: cat.isActive,
+        createdAt: cat.createdAt,
+        updatedAt: cat.updatedAt
+      }));
+
+      return Result.ok(domainCategories as Category[]);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to fetch categories with filters: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async findByType(type: TransactionType): Promise<Result<Category[]>> {
+    return this.findWithFilters({ type });
+  }
+
+  async findByName(name: string): Promise<Result<Category[]>> {
+    return this.findWithFilters({ searchTerm: name });
+  }
+
+  async update(category: Category): Promise<Result<void>> {
+    try {
+      await this.prisma.category.update({
+        where: {
+          id: category.id.value
+        },
+        data: {
+          name: category.name,
+          description: category.description,
+          type: category.type,
+          isActive: category.isActive
+        }
+      });
+      return Result.ok();
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to update category: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async delete(id: CategoryId): Promise<Result<void>> {
+    try {
+      await this.prisma.category.update({
+        where: {
+          id: id.value
+        },
+        data: {
+          isActive: false
+        }
+      });
+      return Result.ok();
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to delete category: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async permanentDelete(id: CategoryId): Promise<Result<void>> {
+    try {
+      await this.prisma.category.delete({
+        where: {
+          id: id.value
+        }
+      });
+      return Result.ok();
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to permanently delete category: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async exists(id: CategoryId): Promise<Result<boolean>> {
+    try {
+      const count = await this.prisma.category.count({
+        where: {
+          id: id.value
+        }
+      });
+      return Result.ok(count > 0);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to check category existence: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async existsByName(name: string, type: TransactionType): Promise<Result<boolean>> {
+    try {
+      const count = await this.prisma.category.count({
+        where: {
+          name,
+          type
+        }
+      });
+      return Result.ok(count > 0);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to check category name existence: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async count(filters?: CategoryFilters): Promise<Result<number>> {
+    try {
+      const where: any = {};
+
+      if (filters?.type) {
+        where.type = filters.type;
+      }
+
+      if (filters?.isActive !== undefined) {
+        where.isActive = filters.isActive;
+      }
+
+      if (filters?.searchTerm) {
+        where.name = {
+          contains: filters.searchTerm,
+          mode: 'insensitive'
+        };
+      }
+
+      const count = await this.prisma.category.count({ where });
+      return Result.ok(count);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to count categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async getDefaults(type: TransactionType): Promise<Result<Category[]>> {
+    // For now, return empty array. Could be enhanced to return preset categories
+    return Result.ok([]);
+  }
+
+  async seedDefaults(): Promise<Result<number>> {
+    // For now, return 0. Could be enhanced to create default categories
+    return Result.ok(0);
+  }
+
+  async getUsageStatistics(id: CategoryId): Promise<Result<{
+    transactionCount: number;
+    totalAmount: number;
+    lastUsed?: Date;
+  }>> {
+    try {
+      const stats = await this.prisma.transaction.aggregate({
+        where: {
+          categoryId: id.value
+        },
+        _count: true,
+        _sum: {
+          amount: true
+        },
+        _max: {
+          date: true
+        }
+      });
+
+      return Result.ok({
+        transactionCount: stats._count,
+        totalAmount: stats._sum.amount || 0,
+        lastUsed: stats._max.date || undefined
+      });
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to get usage statistics: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async findMatchingCategories(merchantName: string, type: TransactionType): Promise<Result<Category[]>> {
+    // Simple keyword matching for now
+    return this.findWithFilters({ searchTerm: merchantName, type });
+  }
+
+  async clear(): Promise<Result<void>> {
+    try {
+      await this.prisma.category.deleteMany({});
+      return Result.ok();
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to clear categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async export(filters?: CategoryFilters): Promise<Result<CategorySnapshot[]>> {
+    const categoriesResult = await this.findWithFilters(filters);
+    if (categoriesResult.isFailure()) {
+      return Result.fail(categoriesResult.getError());
+    }
+
+    const categories = categoriesResult.getValue();
+    const snapshots = categories.map(cat => ({
+      id: cat.id.value,
+      name: cat.name,
+      description: cat.description,
+      type: cat.type,
+      isActive: cat.isActive,
+      createdAt: cat.createdAt.toISOString(),
+      updatedAt: cat.updatedAt.toISOString()
+    }));
+
+    return Result.ok(snapshots);
+  }
+
+  async import(snapshots: CategorySnapshot[]): Promise<Result<number>> {
+    try {
+      const result = await this.prisma.category.createMany({
+        data: snapshots.map(snap => ({
+          id: snap.id,
+          name: snap.name,
+          description: snap.description || null,
+          type: snap.type,
+          isActive: snap.isActive !== undefined ? snap.isActive : true,
+          createdAt: new Date(snap.createdAt),
+          updatedAt: new Date(snap.updatedAt)
+        })),
+        skipDuplicates: true
+      });
+      return Result.ok(result.count);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to import categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+}
