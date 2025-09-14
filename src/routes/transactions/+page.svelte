@@ -261,20 +261,6 @@
   <!-- Header -->
   <header class="transactions-header">
     <div class="header-content">
-      <!-- Period Selector -->
-      <div class="period-controls">
-        <button class="period-btn" onclick={previousPeriod}>
-          <ChevronLeft size={16} />
-        </button>
-        <div class="period-display">
-          <Calendar size={16} />
-          <span>{new Date(selectedPeriod + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
-        </div>
-        <button class="period-btn" onclick={nextPeriod}>
-          <ChevronRight size={16} />
-        </button>
-      </div>
-      
       <!-- Stats -->
       <div class="period-stats">
         <!-- Main Balance -->
@@ -354,15 +340,29 @@
   <!-- Toolbar -->
   <div class="toolbar">
     <div class="toolbar-content">
+      <!-- Period Selector -->
+      <div class="period-controls">
+        <button class="period-btn" onclick={previousPeriod}>
+          <ChevronLeft size={16} />
+        </button>
+        <div class="period-display">
+          <Calendar size={16} />
+          <span>{new Date(selectedPeriod + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+        </div>
+        <button class="period-btn" onclick={nextPeriod}>
+          <ChevronRight size={16} />
+        </button>
+      </div>
+
       <div class="search-bar">
         <Search size={16} />
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder={$t('transactions.search_placeholder')}
           bind:value={searchQuery}
         />
       </div>
-      
+
       <div class="toolbar-actions">
         {#if isSelectionMode}
           <button class="toolbar-btn" onclick={selectAll}>
@@ -573,22 +573,6 @@
   .header-content {
     max-width: 1200px;
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2xl);
-  }
-
-  @media (min-width: 768px) {
-    .header-content {
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: var(--space-3xl);
-    }
-
-    .period-stats {
-      min-width: 320px;
-    }
   }
   
   .period-controls {
@@ -630,7 +614,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-xl);
-    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
   }
 
   /* Balance Display - Featured */
@@ -802,8 +787,15 @@
     margin: 0 auto;
     padding: var(--space-md) var(--space-lg);
     display: flex;
-    justify-content: space-between;
+    gap: var(--space-md);
     align-items: center;
+    flex-wrap: wrap;
+  }
+
+  @media (min-width: 768px) {
+    .toolbar-content {
+      flex-wrap: nowrap;
+    }
   }
   
   .search-bar {
