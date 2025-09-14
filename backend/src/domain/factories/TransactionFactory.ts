@@ -33,7 +33,12 @@ export class TransactionFactory {
       const absoluteAmount = Math.abs(data.amount);
       const amount = Money.create(absoluteAmount, data.currency);
       const date = TransactionDate.create(data.date);
-      const merchant = Merchant.create(data.merchant);
+
+      // Handle empty or invalid merchant names
+      const merchantName = data.merchant && data.merchant.trim().length >= 2
+        ? data.merchant.trim()
+        : 'Unknown Merchant';
+      const merchant = Merchant.create(merchantName);
 
       // Validate amount
       if (amount.isFailure()) {

@@ -116,19 +116,22 @@ export class ImportSelectedTransactionsUseCase {
         uniqueTransactions.map(transaction => this.transactionRepository.save(transaction))
       );
 
-      const successfulSaves = saveResults.filter((result): result is PromiseFulfilledResult<any> =>
-        result.status === 'fulfilled' && result.value.isSuccess()
-      );
+      const successfulSaves: Transaction[] = [];
+      const failedSaves: any[] = [];
 
-      const failedSaves = saveResults.filter(result =>
-        result.status === 'rejected' ||
-        (result.status === 'fulfilled' && result.value.isFailure())
-      );
+      for (let i = 0; i < saveResults.length; i++) {
+        const result = saveResults[i];
+        const transaction = uniqueTransactions[i];
+
+        if (result.status === 'fulfilled' && result.value.isSuccess()) {
+          successfulSaves.push(transaction);
+        } else {
+          failedSaves.push(result);
+        }
+      }
 
       // Collect successfully saved transactions
-      const importedTransactions = successfulSaves.map(result =>
-        result.value.getValue()
-      );
+      const importedTransactions = successfulSaves;
 
       const response: ImportSelectedTransactionsResponse = {
         imported: {

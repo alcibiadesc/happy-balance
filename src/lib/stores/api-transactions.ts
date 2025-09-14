@@ -224,7 +224,7 @@ function createApiTransactionStore() {
           transactions: selectedTransactions.map(tx => ({
             hash: tx.hash,
             date: tx.date,
-            merchant: tx.partner,
+            merchant: tx.partner && tx.partner.trim().length >= 2 ? tx.partner.trim() : 'Unknown Merchant',
             amount: tx.amount,
             description: tx.description || '',
             currency: 'EUR'
