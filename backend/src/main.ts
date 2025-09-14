@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from '@infrastructure/swagger/swagger.config';
 import { prisma } from '@infrastructure/database/prisma';
 import { PrismaTransactionRepository } from '@infrastructure/repositories/PrismaTransactionRepository';
 import { PrismaUserPreferencesRepository } from '@infrastructure/repositories/PrismaUserPreferencesRepository';
@@ -92,8 +94,17 @@ class App {
   }
 
   private initializeMiddleware() {
-    // Security middleware
-    this.app.use(helmet());
+    // Security middleware - configure helmet to allow Swagger UI
+    this.app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https://validator.swagger.io"],
+        },
+      },
+    }));
 
     // CORS configuration
     const allowedOrigins = [
@@ -136,6 +147,18 @@ class App {
   }
 
   private initializeRoutes() {
+    // Swagger documentation
+    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'Happy Balance API Documentation'
+    }));
+
+    // Serve OpenAPI spec as JSON
+    this.app.get('/api-docs.json', (req, res) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(swaggerSpec);
+    });
+
     // Health check
     this.app.get('/health', (req, res) => {
       res.json({
@@ -176,6 +199,7 @@ class App {
         console.log(`🚀 Server running on port ${port}`);
         console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
         console.log(`🔗 API Base URL: http://localhost:${port}/api`);
+        console.log(`📚 API Documentation: http://localhost:${port}/api-docs`);
       });
     } catch (error) {
       console.error('❌ Failed to start server:', error);
