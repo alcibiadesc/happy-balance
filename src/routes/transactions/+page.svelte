@@ -107,14 +107,37 @@
     const income = filtered
       .filter(t => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
-    const expenses = filtered
-      .filter(t => t.amount < 0)
+
+    const expenseTransactions = filtered.filter(t => t.amount < 0);
+    const totalExpenses = expenseTransactions
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    
-    return { 
+
+    // Separate essential and discretionary expenses
+    const essentialExpenses = expenseTransactions
+      .filter(t => {
+        const category = getCategoryById(t.categoryId);
+        return category?.type === 'essential';
+      })
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const discretionaryExpenses = expenseTransactions
+      .filter(t => {
+        const category = getCategoryById(t.categoryId);
+        return category?.type === 'discretionary';
+      })
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const uncategorizedExpenses = expenseTransactions
+      .filter(t => !t.categoryId)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    return {
       income: isNaN(income) ? 0 : income,
-      expenses: isNaN(expenses) ? 0 : expenses,
-      balance: isNaN(income - expenses) ? 0 : income - expenses
+      expenses: isNaN(totalExpenses) ? 0 : totalExpenses,
+      essentialExpenses: isNaN(essentialExpenses) ? 0 : essentialExpenses,
+      discretionaryExpenses: isNaN(discretionaryExpenses) ? 0 : discretionaryExpenses,
+      uncategorizedExpenses: isNaN(uncategorizedExpenses) ? 0 : uncategorizedExpenses,
+      balance: isNaN(income - totalExpenses) ? 0 : income - totalExpenses
     };
   });
   
@@ -242,19 +265,75 @@
       
       <!-- Stats -->
       <div class="period-stats">
-        <div class="stat-item">
-          <TrendingUp size={14} />
-          <span class="stat-value income">{formatAmount(periodStats().income)}</span>
-        </div>
-        <div class="stat-item">
-          <TrendingDown size={14} />
-          <span class="stat-value expense">{formatAmount(periodStats().expenses)}</span>
-        </div>
-        <div class="stat-item balance">
-          <span class="stat-label">Balance</span>
-          <span class="stat-value" class:positive={periodStats().balance >= 0} class:negative={periodStats().balance < 0}>
+        <!-- Main Balance -->
+        <div class="balance-display">
+          <div class="balance-label">Balance del período</div>
+          <div class="balance-value" class:positive={periodStats().balance >= 0} class:negative={periodStats().balance < 0}>
             {formatAmount(periodStats().balance)}
-          </span>
+          </div>
+        </div>
+
+        <!-- Income & Expenses Overview -->
+        <div class="stats-overview">
+          <div class="stat-row">
+            <span class="stat-label">Ingresos</span>
+            <span class="stat-value income">{formatAmount(periodStats().income)}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Gastos totales</span>
+            <span class="stat-value expense">{formatAmount(periodStats().expenses)}</span>
+          </div>
+        </div>
+
+        <!-- Expense Breakdown -->
+        <div class="expense-breakdown">
+          <div class="breakdown-header">
+            <span class="breakdown-title">Distribución de gastos</span>
+          </div>
+
+          <div class="breakdown-content">
+            <div class="breakdown-row">
+              <div class="breakdown-item">
+                <div class="breakdown-dot essential"></div>
+                <span class="breakdown-label">Esenciales</span>
+              </div>
+              <span class="breakdown-value">{formatAmount(periodStats().essentialExpenses)}</span>
+            </div>
+
+            <div class="breakdown-row">
+              <div class="breakdown-item">
+                <div class="breakdown-dot discretionary"></div>
+                <span class="breakdown-label">Discrecionales</span>
+              </div>
+              <span class="breakdown-value">{formatAmount(periodStats().discretionaryExpenses)}</span>
+            </div>
+
+            {#if periodStats().uncategorizedExpenses > 0}
+            <div class="breakdown-row uncategorized">
+              <div class="breakdown-item">
+                <div class="breakdown-dot uncategorized"></div>
+                <span class="breakdown-label">Sin categorizar</span>
+              </div>
+              <span class="breakdown-value">{formatAmount(periodStats().uncategorizedExpenses)}</span>
+            </div>
+            {/if}
+          </div>
+
+          <!-- Visual bar -->
+          <div class="visual-bar">
+            <div
+              class="bar-segment essential"
+              style="width: {periodStats().expenses > 0 ? (periodStats().essentialExpenses / periodStats().expenses * 100) : 0}%"
+            ></div>
+            <div
+              class="bar-segment discretionary"
+              style="width: {periodStats().expenses > 0 ? (periodStats().discretionaryExpenses / periodStats().expenses * 100) : 0}%"
+            ></div>
+            <div
+              class="bar-segment uncategorized"
+              style="width: {periodStats().expenses > 0 ? (periodStats().uncategorizedExpenses / periodStats().expenses * 100) : 0}%"
+            ></div>
+          </div>
         </div>
       </div>
     </div>
@@ -464,8 +543,8 @@
   
   .transactions-header {
     background: var(--surface-elevated);
-    border-bottom: 1px solid rgba(2, 60, 70, 0.08);
-    padding: var(--space-lg);
+    border-bottom: 1px solid var(--gray-200);
+    padding: var(--space-2xl) var(--space-lg);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -475,8 +554,21 @@
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: var(--space-2xl);
+  }
+
+  @media (min-width: 768px) {
+    .header-content {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-3xl);
+    }
+
+    .period-stats {
+      min-width: 320px;
+    }
   }
   
   .period-controls {
@@ -516,48 +608,165 @@
   
   .period-stats {
     display: flex;
-    gap: var(--space-xl);
-    align-items: center;
-  }
-  
-  .stat-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    font-size: 0.875rem;
-  }
-  
-  .stat-item.balance {
     flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
+    gap: var(--space-xl);
+    width: 100%;
   }
-  
-  .stat-label {
-    font-size: 0.75rem;
+
+  /* Balance Display - Featured */
+  .balance-display {
+    text-align: center;
+  }
+
+  .balance-label {
+    font-size: 0.875rem;
     color: var(--text-muted);
+    margin-bottom: var(--space-xs);
+    font-weight: 300;
   }
-  
+
+  .balance-value {
+    font-size: 2.25rem;
+    font-weight: 300;
+    letter-spacing: -0.025em;
+    color: var(--text-primary);
+  }
+
+  .balance-value.positive {
+    color: var(--acapulco);
+  }
+
+  .balance-value.negative {
+    color: var(--froly);
+  }
+
+  /* Stats Overview - Clean rows */
+  .stats-overview {
+    border-top: 1px solid var(--gray-200);
+    border-bottom: 1px solid var(--gray-200);
+    padding: var(--space-lg) 0;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) 0;
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
   .stat-value {
-    font-weight: 600;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
   }
-  
+
   .stat-value.income {
     color: var(--acapulco);
   }
-  
+
   .stat-value.expense {
-    color: var(--froly);
+    color: var(--text-primary);
   }
-  
-  .stat-value.positive {
-    color: var(--acapulco);
-    font-size: 1.25rem;
+
+  /* Expense Breakdown - Minimal */
+  .expense-breakdown {
+    padding-top: var(--space-md);
   }
-  
-  .stat-value.negative {
-    color: var(--froly);
-    font-size: 1.25rem;
+
+  .breakdown-header {
+    margin-bottom: var(--space-md);
+  }
+
+  .breakdown-title {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .breakdown-content {
+    margin-bottom: var(--space-lg);
+  }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-xs) 0;
+  }
+
+  .breakdown-row.uncategorized {
+    opacity: 0.7;
+    font-size: 0.8125rem;
+  }
+
+  .breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .breakdown-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .breakdown-dot.essential {
+    background: var(--froly);
+  }
+
+  .breakdown-dot.discretionary {
+    background: var(--acapulco);
+  }
+
+  .breakdown-dot.uncategorized {
+    background: var(--text-muted);
+  }
+
+  .breakdown-label {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  .breakdown-value {
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* Visual Bar - Subtle */
+  .visual-bar {
+    display: flex;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--gray-200);
+    overflow: hidden;
+  }
+
+  .bar-segment {
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bar-segment.essential {
+    background: var(--froly);
+  }
+
+  .bar-segment.discretionary {
+    background: var(--acapulco);
+  }
+
+  .bar-segment.uncategorized {
+    background: var(--text-muted);
   }
   
   .toolbar {
