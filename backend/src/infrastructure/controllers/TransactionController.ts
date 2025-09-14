@@ -396,4 +396,28 @@ export class TransactionController {
       });
     }
   }
+
+  async deleteAll(req: Request, res: Response) {
+    try {
+      // Clear all transactions from the repository
+      const result = await this.transactionRepository.clear();
+
+      if (result.isFailure()) {
+        return res.status(500).json({
+          error: 'Failed to delete all transactions',
+          message: result.getError()
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'All transactions deleted successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: 'Failed to delete all transactions',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
 }

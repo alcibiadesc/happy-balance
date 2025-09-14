@@ -140,8 +140,70 @@
   }
 
   async function checkDuplicatesAgainstDatabase() {
-    // Skip database duplicate check for now - the backend will handle duplicates during import
-    // The UI preview will only show file-level duplicates
+    try {
+      // Ensure we have the latest transactions from database
+      await apiTransactions.loadTransactions();
+      const existingTransactions = $apiTransactions;
+
+      console.log('Checking duplicates against', existingTransactions.length, 'existing transactions');
+
+      // Check each parsed transaction against existing ones
+      transactions = transactions.map(tx => {
+        // Skip if already marked as duplicate from file-level check
+        if (tx.isDuplicate) {
+          return tx;
+        }
+
+        // Check against existing transactions
+        const existingDuplicate = existingTransactions.find(existing => {
+          // Parse dates properly for comparison
+          const txDate = new Date(tx.date);
+          const existingDate = new Date(existing.date);
+
+          // Check if amounts match (considering absolute values)
+          const amountsMatch = Math.abs(existing.amount) === Math.abs(tx.amount);
+
+          // Check if merchants are similar (case insensitive)
+          const merchantsMatch = existing.merchant.toLowerCase().trim() === tx.partner.toLowerCase().trim();
+
+          // Check if dates are within 24 hours
+          const timeDiff = Math.abs(txDate.getTime() - existingDate.getTime());
+          const within24Hours = timeDiff <= (24 * 60 * 60 * 1000);
+
+          const isDuplicate = amountsMatch && merchantsMatch && within24Hours;
+
+          if (isDuplicate) {
+            console.log('Found duplicate:', {
+              new: { date: tx.date, partner: tx.partner, amount: tx.amount },
+              existing: { date: existing.date, merchant: existing.merchant, amount: existing.amount },
+              amountsMatch,
+              merchantsMatch,
+              within24Hours
+            });
+          }
+
+          return isDuplicate;
+        });
+
+        if (existingDuplicate) {
+          return {
+            ...tx,
+            isDuplicate: true,
+            selected: false,
+            duplicateReason: $t('import.duplicate_reasons.database')
+          };
+        }
+
+        return tx;
+      });
+
+      const duplicateCount = transactions.filter(tx => tx.isDuplicate).length;
+      console.log('Found', duplicateCount, 'duplicates out of', transactions.length, 'transactions');
+
+    } catch (error) {
+      console.warn('Could not check database duplicates:', error);
+      // Continue with file-level duplicates only
+    }
   }
 
   async function importTransactions() {

@@ -1,8 +1,10 @@
 <script lang="ts">
   import { Download, Upload, Trash2, DollarSign, Palette, Globe, FileText, AlertCircle, CheckCircle } from 'lucide-svelte';
+  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import { t, currentLanguage, setLanguage } from '$lib/stores/i18n';
   import { currentCurrency, currencies, setCurrency } from '$lib/stores/currency';
   import { theme, setTheme, effectiveTheme } from '$lib/stores/theme';
+  import { userPreferences } from '$lib/stores/user-preferences';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
   
@@ -21,9 +23,10 @@
   $: isDark = $effectiveTheme === 'dark';
 
   // Theme toggle function
-  function toggleTheme() {
+  async function toggleTheme() {
     const newTheme = isDark ? 'light' : 'dark';
     setTheme(newTheme);
+    await userPreferences.updateTheme(newTheme);
   }
 
   // Import/Export state
@@ -31,6 +34,11 @@
   let importError = '';
   let importSuccess = false;
   let importing = false;
+
+  // Modal state
+  let showImportModal = false;
+  let showDeleteAllModal = false;
+  let pendingImportData: any = null;
   
   function handleExportData() {
     // Create a comprehensive data export
@@ -110,19 +118,10 @@
           return;
         }
         
-        // Ask for confirmation
-        const confirmMessage = $t('settings.import_confirmation', {
-          transactions: data.transactions?.length || 0,
-          date: data.settings?.exportDate ? new Date(data.settings.exportDate).toLocaleDateString() : 'Unknown'
-        });
-        
-        if (!confirm(confirmMessage)) {
-          importing = false;
-          return;
-        }
-        
-        // Import data
-        await importData(data);
+        // Store data and show modal for confirmation
+        pendingImportData = data;
+        showImportModal = true;
+        importing = false;
         
         // Success feedback
         importStatus = $t('settings.import_success', { count: data.transactions?.length || 0 });
@@ -205,18 +204,53 @@
     if (data.settings) {
       if (data.settings.currency && currencies[data.settings.currency]) {
         setCurrency(data.settings.currency);
+        await userPreferences.updateCurrency(data.settings.currency);
       }
       if (data.settings.language && languages.find(l => l.code === data.settings.language)) {
         setLanguage(data.settings.language);
+        await userPreferences.updateLanguage(data.settings.language);
       }
       if (data.settings.theme && ['light', 'dark', 'system'].includes(data.settings.theme)) {
         setTheme(data.settings.theme);
+        await userPreferences.updateTheme(data.settings.theme);
       }
     }
   }
+
+  async function confirmImport() {
+    if (!pendingImportData) return;
+
+    importing = true;
+    try {
+      await importData(pendingImportData);
+
+      // Success feedback
+      importStatus = $t('settings.import_success', { count: pendingImportData.transactions?.length || 0 });
+      importSuccess = true;
+
+      setTimeout(() => {
+        importStatus = '';
+        importSuccess = false;
+      }, 5000);
+    } catch (error) {
+      console.error('Import error:', error);
+      importError = $t('settings.import_error');
+    } finally {
+      importing = false;
+      pendingImportData = null;
+    }
+  }
+
+  function cancelImport() {
+    pendingImportData = null;
+  }
   
   function handleDeleteAllData() {
-    if (confirm($t('settings.clear_data_confirmation'))) {
+    showDeleteAllModal = true;
+  }
+
+  async function confirmDeleteAll() {
+    try {
       // Clear localStorage data
       if (browser) {
         const keysToKeep = ['theme', 'expense-tracker-language', 'expense-tracker-currency'];
@@ -227,26 +261,57 @@
           }
         });
       }
-      
+
+      // Also clear data from the database via API
+      try {
+        const response = await fetch('http://localhost:3000/api/transactions', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          console.warn('Failed to delete data from database, but localStorage was cleared');
+        }
+      } catch (apiError) {
+        console.warn('API not available, but localStorage was cleared');
+      }
+
       // Show success feedback
-      importStatus = $t('success.deleted');
+      importStatus = 'All data has been successfully deleted';
       importSuccess = true;
       setTimeout(() => {
         importStatus = '';
         importSuccess = false;
       }, 3000);
+
+      // Optionally reload the page to reset the application state
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error('Error deleting data:', error);
+      importError = 'Failed to delete all data';
     }
   }
   
-  function handleLanguageChange(event: Event) {
+  async function handleLanguageChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     setLanguage(target.value);
+    await userPreferences.updateLanguage(target.value);
   }
-  
-  function handleCurrencyChange(event: Event) {
+
+  async function handleCurrencyChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     setCurrency(target.value);
+    await userPreferences.updateCurrency(target.value);
   }
+
+  // Load user preferences on mount
+  onMount(async () => {
+    await userPreferences.load();
+  });
 
   // Clear status messages after some time
   $: if (importError) {
@@ -421,6 +486,30 @@
     </div>
   </div>
 </main>
+
+<!-- Import Confirmation Modal -->
+<ConfirmModal
+  bind:isOpen={showImportModal}
+  title="Import Data"
+  message="Are you sure you want to import {pendingImportData?.transactions?.length || 0} transactions from {pendingImportData?.settings?.exportDate ? new Date(pendingImportData.settings.exportDate).toLocaleDateString() : 'Unknown date'}? This will merge with your existing data."
+  confirmText="Import"
+  cancelText="Cancel"
+  type="info"
+  onConfirm={confirmImport}
+  onCancel={cancelImport}
+/>
+
+<!-- Delete All Data Confirmation Modal -->
+<ConfirmModal
+  bind:isOpen={showDeleteAllModal}
+  title={$t('modal.delete_all_title')}
+  message={$t('modal.delete_all_message')}
+  confirmText={$t('modal.delete_everything')}
+  cancelText={$t('common.cancel')}
+  type="danger"
+  onConfirm={confirmDeleteAll}
+  onCancel={() => {}}
+/>
 
 <style>
   .settings-page {

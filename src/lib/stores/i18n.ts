@@ -179,6 +179,13 @@ const translations = {
       deleted: "Deleted successfully",
       imported: "Imported successfully",
       exported: "Exported successfully"
+    },
+    modal: {
+      confirm_action: "Confirm Action",
+      are_you_sure: "Are you sure?",
+      delete_all_title: "Delete All Data",
+      delete_all_message: "⚠️ This will permanently delete ALL your transactions, categories, and settings from both the app and the database. This action cannot be undone!",
+      delete_everything: "Delete Everything"
     }
   },
   es: {
@@ -354,6 +361,13 @@ const translations = {
       deleted: "Eliminado exitosamente",
       imported: "Importado exitosamente",
       exported: "Exportado exitosamente"
+    },
+    modal: {
+      confirm_action: "Confirmar Acción",
+      are_you_sure: "¿Estás seguro?",
+      delete_all_title: "Eliminar Todos los Datos",
+      delete_all_message: "⚠️ Esto eliminará permanentemente TODAS tus transacciones, categorías y configuraciones tanto de la aplicación como de la base de datos. ¡Esta acción no se puede deshacer!",
+      delete_everything: "Eliminar Todo"
     }
   }
 };

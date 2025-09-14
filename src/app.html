@@ -14,7 +14,21 @@
 		<script>
 			// Theme initialization (must run before page render to prevent flash)
 			const initTheme = () => {
-				const saved = localStorage.getItem('theme') || 'system';
+				// Check user preferences first, fallback to regular theme store
+				const userPrefs = localStorage.getItem('userPreferences');
+				let saved = 'system';
+
+				if (userPrefs) {
+					try {
+						const prefs = JSON.parse(userPrefs);
+						saved = prefs.theme || 'system';
+					} catch (e) {
+						saved = localStorage.getItem('theme') || 'system';
+					}
+				} else {
+					saved = localStorage.getItem('theme') || 'system';
+				}
+
 				const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 				const isDark = saved === 'dark' || (saved === 'system' && systemDark);
 
@@ -43,7 +57,7 @@
 			window.addEventListener('storage', (e) => {
 				if (e.key === 'sidebar-collapsed') {
 					updateSidebarClass();
-				} else if (e.key === 'theme') {
+				} else if (e.key === 'theme' || e.key === 'userPreferences') {
 					initTheme();
 				}
 			});

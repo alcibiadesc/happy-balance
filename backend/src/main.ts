@@ -4,10 +4,13 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { prisma } from '@infrastructure/database/prisma';
 import { PrismaTransactionRepository } from '@infrastructure/repositories/PrismaTransactionRepository';
+import { PrismaUserPreferencesRepository } from '@infrastructure/repositories/PrismaUserPreferencesRepository';
 import { TransactionController } from '@infrastructure/controllers/TransactionController';
 import { ImportController } from '@infrastructure/controllers/ImportController';
+import { UserPreferencesController } from '@infrastructure/controllers/UserPreferencesController';
 import { createTransactionRoutes } from '@infrastructure/routes/transactionRoutes';
 import { createImportRoutes } from '@infrastructure/routes/importRoutes';
+import { createUserPreferencesRoutes } from '@infrastructure/routes/userPreferencesRoutes';
 import { errorHandler } from '@infrastructure/middleware/errorHandler';
 
 // Import use cases and services
@@ -20,12 +23,15 @@ import { FinancialCalculationService } from '@domain/services/FinancialCalculati
 class App {
   private app: express.Application;
   private transactionRepository: PrismaTransactionRepository;
+  private userPreferencesRepository: PrismaUserPreferencesRepository;
   private transactionController: TransactionController;
   private importController: ImportController;
+  private userPreferencesController: UserPreferencesController;
 
   constructor() {
     this.app = express();
     this.transactionRepository = new PrismaTransactionRepository(prisma);
+    this.userPreferencesRepository = new PrismaUserPreferencesRepository(prisma);
     this.initializeServices();
     this.initializeMiddleware();
     this.initializeRoutes();
@@ -63,6 +69,7 @@ class App {
     );
 
     this.importController = new ImportController(importTransactionsUseCase);
+    this.userPreferencesController = new UserPreferencesController(this.userPreferencesRepository);
   }
 
   private initializeMiddleware() {
@@ -96,6 +103,7 @@ class App {
     // API routes
     this.app.use('/api/transactions', createTransactionRoutes(this.transactionController));
     this.app.use('/api/import', createImportRoutes(this.importController));
+    this.app.use('/api/preferences', createUserPreferencesRoutes(this.userPreferencesController));
 
     // 404 handler
     this.app.use('*', (req, res) => {

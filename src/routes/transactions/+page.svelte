@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import { 
     ChevronDown, Search, Filter, Download, Plus, Calendar, 
     TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,
@@ -23,6 +24,11 @@
   let editingTransaction = $state<Transaction | null>(null);
   let showAddModal = $state(false);
   let showCategoryDropdown = $state<string | null>(null); // Transaction ID showing category dropdown
+
+  // Modal states
+  let showDeleteSelectedModal = $state(false);
+  let showDeleteSingleModal = $state(false);
+  let transactionToDelete = $state<string | null>(null);
   
   // Period navigation
   function previousPeriod() {
@@ -136,8 +142,10 @@
   }
   
   async function deleteSelected() {
-    if (!confirm('Delete selected transactions?')) return;
-    
+    showDeleteSelectedModal = true;
+  }
+
+  async function confirmDeleteSelected() {
     const ids = Array.from($apiSelectedTransactions);
     for (const id of ids) {
       await apiTransactions.delete(id);
@@ -157,8 +165,14 @@
   }
 
   async function deleteTransaction(id: string) {
-    if (!confirm('Delete this transaction?')) return;
-    await apiTransactions.delete(id);
+    transactionToDelete = id;
+    showDeleteSingleModal = true;
+  }
+
+  async function confirmDeleteSingle() {
+    if (!transactionToDelete) return;
+    await apiTransactions.delete(transactionToDelete);
+    transactionToDelete = null;
   }
   
   async function categorizeTransaction(transaction: Transaction, categoryId: string, applyToAll = false) {
@@ -422,6 +436,30 @@
     <Plus size={20} />
   </button>
 </div>
+
+<!-- Delete Selected Modal -->
+<ConfirmModal
+  bind:isOpen={showDeleteSelectedModal}
+  title="Delete Selected Transactions"
+  message="Are you sure you want to delete {$apiSelectedTransactions.size} selected transactions? This action cannot be undone."
+  confirmText="Delete All"
+  cancelText="Cancel"
+  type="danger"
+  onConfirm={confirmDeleteSelected}
+  onCancel={() => {}}
+/>
+
+<!-- Delete Single Transaction Modal -->
+<ConfirmModal
+  bind:isOpen={showDeleteSingleModal}
+  title="Delete Transaction"
+  message="Are you sure you want to delete this transaction? This action cannot be undone."
+  confirmText="Delete"
+  cancelText="Cancel"
+  type="danger"
+  onConfirm={confirmDeleteSingle}
+  onCancel={() => transactionToDelete = null}
+/>
 
 <style>
   .transactions-page {
@@ -705,6 +743,7 @@
   }
   
   .category-selector {
+    position: relative;
     margin-top: var(--space-xs);
   }
   
@@ -724,6 +763,47 @@
   
   .category-btn:hover {
     background: rgba(122, 186, 165, 0.1);
+  }
+
+  .category-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 0.25rem;
+  }
+
+  .category-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+    padding: var(--space-sm);
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .category-option:hover {
+    background: var(--surface);
+  }
+
+  .category-icon {
+    font-size: 1rem;
+  }
+
+  .category-name {
+    font-size: 0.875rem;
+    color: var(--text);
   }
   
   .transaction-actions {

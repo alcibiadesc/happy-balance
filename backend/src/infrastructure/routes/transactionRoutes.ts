@@ -9,6 +9,7 @@ export const createTransactionRoutes = (transactionController: TransactionContro
   router.get('/', transactionController.getTransactions.bind(transactionController));
   router.get('/statistics', transactionController.getStatistics.bind(transactionController));
   router.get('/dashboard', transactionController.getDashboard.bind(transactionController));
+  router.delete('/', transactionController.deleteAll.bind(transactionController));
   router.get('/:id', transactionController.getTransaction.bind(transactionController));
   router.put('/:id', transactionController.updateTransaction.bind(transactionController));
   router.delete('/:id', transactionController.deleteTransaction.bind(transactionController));

@@ -92,3 +92,16 @@ model AppSettings {
 
   @@map("app_settings")
 }
+
+model UserPreferences {
+  id        String   @id @default(cuid()) @db.VarChar(36)
+  userId    String   @default("default") @db.VarChar(36) // For future multi-user support
+  currency  String   @default("EUR") @db.VarChar(3)
+  language  String   @default("en") @db.VarChar(5)
+  theme     String   @default("light") @db.VarChar(10) // light, dark, system
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId])
+  @@map("user_preferences")
+}
