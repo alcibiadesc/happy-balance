@@ -228,7 +228,7 @@ function parseAmount(amountStr: string): number {
   if (!amountStr) return 0;
   
   // Remove any non-numeric characters except . , - and +
-  const cleaned = amountStr.replace(/[^\d.,-+]/g, '');
+  const cleaned = amountStr.replace(/[^\d.,+\-]/g, '');
   
   // Handle different decimal separators
   const normalized = cleaned.replace(/,/g, '.');

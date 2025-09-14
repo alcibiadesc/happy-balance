@@ -21,7 +21,7 @@ import { ImportSelectedTransactionsUseCase } from '@application/use-cases/Import
 import { DuplicateDetectionService } from '@domain/services/DuplicateDetectionService';
 import { CategorizationService } from '@domain/services/CategorizationService';
 import { FinancialCalculationService } from '@domain/services/FinancialCalculationService';
-import { TransactionFactory } from '@domain/factories/TransactionFactory';
+import { TransactionFactory } from './domain/factories/TransactionFactory';
 
 class App {
   private app: express.Application;

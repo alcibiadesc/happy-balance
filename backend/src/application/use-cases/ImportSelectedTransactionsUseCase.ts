@@ -62,7 +62,7 @@ export class ImportSelectedTransactionsUseCase {
         return this.transactionFactory.createFromImportData({
           date: txData.date,
           merchant: txData.merchant,
-          amount: Math.abs(txData.amount),
+          amount: txData.amount,
           type: txData.amount < 0 ? 'EXPENSE' : 'INCOME',
           description: txData.description || '',
           currency: txData.currency

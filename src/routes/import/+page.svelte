@@ -3,19 +3,10 @@
   import { t } from "$lib/stores/i18n";
   import { onMount } from "svelte";
   import { apiTransactions } from "$lib/stores/api-transactions";
+  import { parseCSV } from "$lib/utils/csv-parser";
 
-  // Types
-  interface ParsedTransaction {
-    id: string;
-    hash: string;
-    date: string;
-    partner: string;
-    description: string;
-    amount: number;
-    selected: boolean;
-    isDuplicate: boolean;
-    duplicateReason?: string;
-  }
+  // Import types from the parser
+  import type { ParsedTransaction } from "$lib/utils/csv-parser";
 
   // State management
   let step = 1; // 1: upload, 2: preview, 3: complete
@@ -30,115 +21,44 @@
 
   // Parse CSV and check for duplicates using new DDD endpoints
   async function getCSVPreview(file: File): Promise<ParsedTransaction[]> {
-    // First, parse the CSV file locally
+    // Parse the CSV file using the centralized parser
     const fileText = await file.text();
-    const lines = fileText.split('\n').filter(line => line.trim());
+    const parseResult = parseCSV(fileText);
 
-    if (lines.length < 2) {
-      throw new Error('CSV file must have header and at least one data row');
+    // Check for parsing errors
+    if (parseResult.errors.length > 0) {
+      console.warn('CSV parsing errors:', parseResult.errors);
+      // Continue with parsed transactions, but log errors
+      parseResult.errors.forEach(error => {
+        console.warn(`Row ${error.row}: ${error.message}`);
+      });
     }
 
-    // Parse CSV (assuming ING bank format)
-    const parsedTransactions = lines.slice(1).map((line, index) => {
-      const columns = parseCSVLine(line);
+    console.log('📋 CSV Headers:', parseResult.headers);
+    console.log('📋 Parsed transactions:', parseResult.transactions.length);
 
-      if (columns.length < 4) {
-        throw new Error(`Invalid CSV format on line ${index + 2}`);
-      }
-
-      const date = columns[0]?.replace(/"/g, '').trim();
-      const partner = columns[1]?.replace(/"/g, '').trim();
-      const description = columns[2]?.replace(/"/g, '').trim();
-      const amountStr = columns[3]?.replace(/"/g, '').trim();
-
-      const amount = parseFloat(amountStr.replace(',', '.'));
-
-      // Generate hash for duplicate detection
-      const normalizedData = {
-        date,
-        merchant: partner,
-        amount: Math.abs(amount),
-        description
-      };
-
-      const hash = generateTransactionHash(normalizedData);
-
-      return {
-        id: `tx-${index}-${Date.now()}`,
-        hash,
-        date,
-        partner,
-        description,
-        amount,
-        selected: true, // Initially select all transactions
-        isDuplicate: false,
-        duplicateReason: undefined
-      };
-    });
+    if (parseResult.transactions.length === 0) {
+      throw new Error('No valid transactions found in CSV file');
+    }
 
     // Extract hashes and check for duplicates using new DDD endpoint
-    const hashes = parsedTransactions.map(tx => tx.hash);
+    const hashes = parseResult.transactions.map(tx => tx.hash);
     const duplicateCheckResult = await apiTransactions.checkDuplicates(hashes);
 
     // Update transactions based on duplicate check results
-    const transactionsWithDuplicateInfo = parsedTransactions.map(tx => {
+    const transactionsWithDuplicateInfo = parseResult.transactions.map(tx => {
       const duplicateInfo = duplicateCheckResult.results.find(r => r.hash === tx.hash);
       return {
         ...tx,
-        isDuplicate: duplicateInfo?.isDuplicate || false,
-        selected: !(duplicateInfo?.isDuplicate || false), // Don't select duplicates by default
-        duplicateReason: duplicateInfo?.isDuplicate ? $t("import.duplicate_reasons.database") : undefined
+        isDuplicate: duplicateInfo?.isDuplicate || tx.isDuplicate, // Keep local duplicates too
+        selected: !(duplicateInfo?.isDuplicate || tx.isDuplicate), // Don't select any duplicates
+        duplicateReason: duplicateInfo?.isDuplicate ? $t("import.duplicate_reasons.database") : tx.duplicateReason
       };
     });
 
     return transactionsWithDuplicateInfo;
   }
 
-  // Helper function to parse CSV line (handles quoted fields)
-  function parseCSVLine(line: string): string[] {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    let i = 0;
-
-    while (i < line.length) {
-      const char = line[i];
-
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i += 2;
-        } else {
-          inQuotes = !inQuotes;
-          i++;
-        }
-      } else if (char === ',' && !inQuotes) {
-        result.push(current.trim());
-        current = '';
-        i++;
-      } else {
-        current += char;
-        i++;
-      }
-    }
-
-    result.push(current.trim());
-    return result;
-  }
-
-  // Helper function to generate transaction hash
-  function generateTransactionHash(data: { date: string; merchant: string; amount: number; description: string }): string {
-    const normalizedData = `${data.date}|${data.merchant.toLowerCase().trim()}|${data.amount.toFixed(2)}|${data.description.toLowerCase().trim()}`;
-
-    // Simple hash function (in production, consider using a crypto library)
-    let hash = 0;
-    for (let i = 0; i < normalizedData.length; i++) {
-      const char = normalizedData.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return hash.toString(16);
-  }
 
   async function handleFileUpload(event: Event) {
     const input = event.target as HTMLInputElement;

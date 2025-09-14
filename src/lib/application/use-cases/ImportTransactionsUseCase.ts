@@ -295,7 +295,7 @@ export class ImportTransactionsUseCase {
   private parseAmount(amountStr: string): number {
     if (!amountStr) return 0;
 
-    const cleaned = amountStr.replace(/[^\d.,-+]/g, '');
+    const cleaned = amountStr.replace(/[^\d.,+\-]/g, '');
     const normalized = cleaned.replace(/,/g, '.');
     const parsed = parseFloat(normalized);
 
