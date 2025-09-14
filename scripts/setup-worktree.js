@@ -331,7 +331,10 @@ async function quickSetup() {
   const config = createEnvironmentFiles(workspaceInfo);
   log(`🔌 Configured ports - Backend: ${config.backendPort}, Frontend: ${config.frontendPort}, DB: ${config.dbPort}`, 'cyan');
 
-  // 3. Setup Docker database if available (for worktrees)
+  // 3. Ensure Docker is running
+  await ensureDockerRunning();
+
+  // 4. Setup Docker database if available (for worktrees)
   await setupDockerDatabase(workspaceInfo, config, config.dbName);
 
   // 4. Install dependencies (in parallel if needed)
