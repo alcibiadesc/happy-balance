@@ -55,8 +55,12 @@ function getWorkspaceInfo() {
     console.log(`Debug: Detected as worktree: ${currentDir}`);
     return { id: currentDir, isWorktree: true };
   }
-  
-  // Try git worktree detection as fallback
+
+  // If we are exactly at root, treat as main (do not rely on git worktree output)
+  console.log(`Debug: Detected as main repository`);
+  return { id: 'main', isWorktree: false };
+
+  // Try git worktree detection as fallback (unreached due to early return)
   try {
     const gitWorktreeInfo = execSync('git worktree list --porcelain', { 
       encoding: 'utf-8',
@@ -153,8 +157,52 @@ async function setupDatabase(workspaceInfo, ports) {
   const containerName = getContainerName(workspaceInfo.id);
   
   if (!workspaceInfo.isWorktree) {
-    log('📍 Main repository - using standard database', 'gray');
-    return true;
+    log('📍 Main repository - ensuring standard database is available', 'gray');
+    // If standard DB port is already in use, assume a local DB is running
+    const dbInUse = await isPortInUse(ports.dbPort);
+    if (dbInUse) {
+      log(`✅ Database detected on port ${ports.dbPort}`, 'green');
+      return true;
+    }
+
+    // Try to start a local postgres via Docker on standard ports
+    const mainContainerName = getContainerName('main');
+    try {
+      // Start existing container if present
+      execSync(`docker start ${mainContainerName} 2>/dev/null || true`, { stdio: 'ignore' });
+    } catch {}
+
+    // Check again
+    if (!(await isPortInUse(ports.dbPort))) {
+      log('🐳 Starting local PostgreSQL container for main...', 'cyan');
+      try {
+        const dockerCommand = `docker run -d \
+      --name ${mainContainerName} \
+      -e POSTGRES_USER=postgres \
+      -e POSTGRES_PASSWORD=postgres \
+      -e POSTGRES_DB=happy_balance \
+      -p ${ports.dbPort}:5432 \
+      --restart unless-stopped \
+      postgres:17-alpine`;
+        execSync(dockerCommand, { stdio: 'ignore' });
+      } catch (error) {
+        log(`❌ Failed to start main DB container: ${error.message}`, 'red');
+        return false;
+      }
+    }
+
+    // Wait until ready
+    log('⏳ Waiting for database to be ready...', 'yellow');
+    for (let i = 0; i < 30; i++) {
+      try {
+        execSync(`pg_isready -h localhost -p ${ports.dbPort} -d happy_balance -U postgres`, { stdio: 'ignore' });
+        log('✅ Database is ready!', 'green');
+        return true;
+      } catch {}
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    log('❌ Database failed to become ready on main', 'red');
+    return false;
   }
   
   log(`🐳 Setting up database for worktree: ${workspaceInfo.id}`, 'cyan');
@@ -420,9 +468,34 @@ async function startFrontend(ports) {
     process.stderr.write(`${colors.red}[Frontend Error]${colors.reset} ${output}`);
   });
   
-  // Wait for frontend - try original port first, then check nearby ports
+  // Capture the port from stdout if Vite selects an alternative
   let actualFrontendPort = ports.frontendPort;
-  let frontendReady = await waitForPort(ports.frontendPort, 'Frontend', 10);
+  let detectedPort = null;
+
+  const tryDetectPortFromOutput = (chunk) => {
+    const text = chunk.toString();
+    const match = text.match(/Local:\s*http:\/\/localhost:(\d+)/);
+    if (match && match[1]) {
+      detectedPort = parseInt(match[1], 10);
+    }
+  };
+
+  // Also parse stdout/stderr to detect actual port quickly
+  frontendProcess.stdout.on('data', tryDetectPortFromOutput);
+  frontendProcess.stderr.on('data', tryDetectPortFromOutput);
+
+  // Wait up to 30s for either default or detected alt port
+  let frontendReady = false;
+  for (let i = 0; i < 60; i++) {
+    if (detectedPort && typeof detectedPort === 'number') {
+      actualFrontendPort = detectedPort;
+      const ok = await isPortInUse(actualFrontendPort);
+      if (ok) { frontendReady = true; break; }
+    }
+    const defaultOk = await isPortInUse(ports.frontendPort);
+    if (defaultOk) { actualFrontendPort = ports.frontendPort; frontendReady = true; break; }
+    await new Promise(r => setTimeout(r, 500));
+  }
   
   if (!frontendReady) {
     // Vite might have moved to next available port

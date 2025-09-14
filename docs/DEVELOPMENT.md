@@ -39,10 +39,10 @@ This ensures consistent ports for each workspace while avoiding conflicts.
 ### Start Development Environment
 
 ```bash
-pnpm run dev
+pnpm setup && pnpm dev
 ```
 
-This single command will:
+This two-step flow will:
 1. Detect your workspace (main repo or worktree)
 2. Generate unique ports for your workspace
 3. Start a PostgreSQL database in Docker
@@ -50,6 +50,10 @@ This single command will:
 5. Start the backend server
 6. Start the frontend server
 7. Display all URLs and ports
+
+Notes:
+- On main: uses standard ports (5432, 3000, 5173). If Postgres is not running, a local Docker container is provisioned automatically.
+- On worktrees: unique, deterministic ports are assigned and a dedicated Postgres container is provisioned per worktree.
 
 ### Clean Up
 

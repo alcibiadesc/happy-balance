@@ -1,32 +1,128 @@
-# Development Docker Compose
-version: '3.8'
+# 🚀 UNIVERSAL DOCKER COMPOSE FOR WORKTREES
+# Supports both main repository and any worktree with automatic isolation
 
 services:
-  # PostgreSQL Database
+  # 🐘 PostgreSQL Database (Shared across all worktrees with schema isolation)
   postgres:
-    image: postgres:16-alpine
-    container_name: happy-balance-db-dev
+    image: postgres:17-alpine
+    container_name: expense-tracker-db-shared
     restart: unless-stopped
     environment:
-      POSTGRES_DB: happy_balance
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    volumes:
-      - postgres_data_dev:/var/lib/postgresql/data
+      POSTGRES_DB: happy_balance
+      # Enable multiple databases
+      POSTGRES_MULTIPLE_DATABASES: happy_balance,happy_balance_test
     ports:
-      - "5432:5432"
-    networks:
-      - happy-balance-dev
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Script to create multiple databases if needed
+      - ./scripts/init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d happy_balance"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
       retries: 5
+      start_period: 10s
+    networks:
+      - app-network
+
+  # 🏗️ Backend Service (Node.js + Prisma) - Dynamic per worktree
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: expense-tracker-backend-${WORKSPACE_ID:-main}
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/happy_balance}
+      - NODE_ENV=development
+      - PORT=${BACKEND_PORT:-3000}
+      - CORS_ORIGIN=http://localhost:${FRONTEND_PORT:-5173}
+      - MAX_FILE_SIZE=10485760
+      - UPLOAD_DIR=uploads
+      - WORKSPACE_ID=${WORKSPACE_ID:-main}
+    ports:
+      - "${BACKEND_PORT:-3000}:${BACKEND_PORT:-3000}"
+    volumes:
+      # Mount source code for hot reload
+      - ./backend/src:/app/src:cached
+      - ./backend/prisma:/app/prisma:cached
+      - ./backend/package.json:/app/package.json:ro
+      - ./backend/tsconfig.json:/app/tsconfig.json:ro
+      - ./backend/.env:/app/.env:ro
+      # Node modules as named volume for performance
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: >
+      sh -c "
+        echo '🔧 Setting up backend for workspace: ${WORKSPACE_ID:-main}...' &&
+        echo '📦 Installing dependencies...' &&
+        pnpm install --prefer-offline &&
+        echo '🔧 Generating Prisma client...' &&
+        pnpm run db:generate &&
+        echo '🔄 Running database migrations...' &&
+        pnpm run db:push &&
+        echo '🌱 Seeding database (if needed)...' &&
+        (pnpm run db:seed 2>/dev/null || echo 'Seeding skipped') &&
+        echo '🚀 Starting backend server on port ${BACKEND_PORT:-3000}...' &&
+        pnpm run dev
+      "
+
+  # 🎨 Frontend Service (SvelteKit + Vite) - Dynamic per worktree
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: expense-tracker-frontend-${WORKSPACE_ID:-main}
+    restart: unless-stopped
+    environment:
+      - VITE_API_URL=http://localhost:${BACKEND_PORT:-3000}/api
+      - VITE_PORT=${FRONTEND_PORT:-5173}
+      - WORKSPACE_ID=${WORKSPACE_ID:-main}
+    ports:
+      - "${FRONTEND_PORT:-5173}:${FRONTEND_PORT:-5173}"
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src:cached
+      - ./static:/app/static:cached
+      - ./package.json:/app/package.json:ro
+      - ./svelte.config.js:/app/svelte.config.js:ro
+      - ./vite.config.ts:/app/vite.config.ts:ro
+      - ./tailwind.config.js:/app/tailwind.config.js:ro
+      - ./postcss.config.js:/app/postcss.config.js:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./app.html:/app/app.html:ro
+      - ./.env.local:/app/.env.local:ro
+      # Node modules as named volume for performance
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    command: >
+      sh -c "
+        echo '🔧 Setting up frontend for workspace: ${WORKSPACE_ID:-main}...' &&
+        echo '📦 Installing dependencies...' &&
+        pnpm install --prefer-offline &&
+        echo '🚀 Starting frontend server on port ${FRONTEND_PORT:-5173}...' &&
+        pnpm run dev:frontend -- --host 0.0.0.0 --port ${FRONTEND_PORT:-5173}
+      "
 
 volumes:
-  postgres_data_dev:
+  postgres_data:
+    driver: local
+  backend_node_modules:
+    driver: local
+  frontend_node_modules:
     driver: local
 
 networks:
-  happy-balance-dev:
+  app-network:
     driver: bridge
+    name: expense-tracker-network

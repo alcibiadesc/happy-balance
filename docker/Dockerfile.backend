@@ -1,0 +1,26 @@
+# Backend Dockerfile for Development
+FROM node:20-alpine
+
+# Install system dependencies including OpenSSL for Prisma
+RUN apk add --no-cache \
+    openssl \
+    openssl-dev \
+    libc6-compat
+
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY backend/package.json ./
+
+# Install dependencies (without frozen lockfile for flexibility)
+RUN pnpm install
+
+# Expose port
+EXPOSE 3000
+
+# Default command (will be overridden by docker-compose)
+CMD ["pnpm", "dev"]
