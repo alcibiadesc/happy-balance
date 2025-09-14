@@ -2,8 +2,8 @@
   import { onMount } from 'svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import AddTransactionModal from '$lib/components/AddTransactionModal.svelte';
-  import { 
-    ChevronDown, Search, Filter, Download, Plus, Calendar, 
+  import {
+    ChevronDown, Search, Filter, Download, Plus, Calendar,
     TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,
     Tag, MoreVertical, ChevronLeft, ChevronRight, Layers
   } from 'lucide-svelte';
@@ -14,6 +14,7 @@
     apiTransactionStats
   } from '$lib/stores/api-transactions';
   import type { Transaction, Category } from '$lib/types/transaction';
+  import { t } from '$lib/stores/i18n';
   
   // State
   let searchQuery = $state('');
@@ -234,9 +235,9 @@
     yesterday.setDate(yesterday.getDate() - 1);
     
     if (date.toDateString() === today.toDateString()) {
-      return 'Today';
+      return $t('transactions.today');
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
+      return $t('transactions.yesterday');
     } else {
       return date.toLocaleDateString('en-US', { 
         weekday: 'long',
@@ -278,7 +279,7 @@
       <div class="period-stats">
         <!-- Main Balance -->
         <div class="balance-display">
-          <div class="balance-label">Balance del período</div>
+          <div class="balance-label">{$t('transactions.period.balance')}</div>
           <div class="balance-value" class:positive={periodStats().balance >= 0} class:negative={periodStats().balance < 0}>
             {formatAmount(periodStats().balance)}
           </div>
@@ -287,11 +288,11 @@
         <!-- Income & Expenses Overview -->
         <div class="stats-overview">
           <div class="stat-row">
-            <span class="stat-label">Ingresos</span>
+            <span class="stat-label">{$t('transactions.period.income')}</span>
             <span class="stat-value income">{formatAmount(periodStats().income)}</span>
           </div>
           <div class="stat-row">
-            <span class="stat-label">Gastos totales</span>
+            <span class="stat-label">{$t('transactions.period.total_expenses')}</span>
             <span class="stat-value expense">{formatAmount(periodStats().expenses)}</span>
           </div>
         </div>
@@ -299,14 +300,14 @@
         <!-- Expense Breakdown -->
         <div class="expense-breakdown">
           <div class="breakdown-header">
-            <span class="breakdown-title">Distribución de gastos</span>
+            <span class="breakdown-title">{$t('transactions.period.expense_distribution')}</span>
           </div>
 
           <div class="breakdown-content">
             <div class="breakdown-row">
               <div class="breakdown-item">
                 <div class="breakdown-dot essential"></div>
-                <span class="breakdown-label">Esenciales</span>
+                <span class="breakdown-label">{$t('transactions.period.essential')}</span>
               </div>
               <span class="breakdown-value">{formatAmount(periodStats().essentialExpenses)}</span>
             </div>
@@ -314,7 +315,7 @@
             <div class="breakdown-row">
               <div class="breakdown-item">
                 <div class="breakdown-dot discretionary"></div>
-                <span class="breakdown-label">Discrecionales</span>
+                <span class="breakdown-label">{$t('transactions.period.discretionary')}</span>
               </div>
               <span class="breakdown-value">{formatAmount(periodStats().discretionaryExpenses)}</span>
             </div>
@@ -323,7 +324,7 @@
             <div class="breakdown-row uncategorized">
               <div class="breakdown-item">
                 <div class="breakdown-dot uncategorized"></div>
-                <span class="breakdown-label">Sin categorizar</span>
+                <span class="breakdown-label">{$t('transactions.period.uncategorized')}</span>
               </div>
               <span class="breakdown-value">{formatAmount(periodStats().uncategorizedExpenses)}</span>
             </div>
@@ -357,7 +358,7 @@
         <Search size={16} />
         <input 
           type="text" 
-          placeholder="Search transactions..."
+          placeholder={$t('transactions.search_placeholder')}
           bind:value={searchQuery}
         />
       </div>
@@ -365,7 +366,7 @@
       <div class="toolbar-actions">
         {#if isSelectionMode}
           <button class="toolbar-btn" onclick={selectAll}>
-            Select All
+            {$t('transactions.select_all')}
           </button>
           <button class="toolbar-btn danger" onclick={deleteSelected}>
             <Trash2 size={16} />
@@ -374,11 +375,11 @@
             <EyeOff size={16} />
           </button>
           <button class="toolbar-btn" onclick={clearSelection}>
-            Cancel
+            {$t('transactions.cancel')}
           </button>
         {:else}
           <button class="toolbar-btn" onclick={() => isSelectionMode = true}>
-            Select
+            {$t('transactions.select')}
           </button>
           <button class="toolbar-btn" onclick={() => showFilters = !showFilters}>
             <Filter size={16} />
@@ -467,7 +468,7 @@
                     onclick={() => showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id}
                   >
                     <Tag size={14} />
-                    Add category
+                    {$t('transactions.add_category')}
                   </button>
 
                   {#if showCategoryDropdown === transaction.id}
@@ -493,7 +494,7 @@
             <div class="transaction-actions">
               <button
                 class="action-btn"
-                title={transaction.hidden ? 'Show transaction' : 'Hide transaction'}
+                title={transaction.hidden ? $t('transactions.show_transaction') : $t('transactions.hide_transaction')}
                 onclick={() => toggleHideTransaction(transaction)}
               >
                 {#if transaction.hidden}
@@ -504,7 +505,7 @@
               </button>
               <button
                 class="action-btn delete-btn"
-                title="Delete transaction"
+                title={$t('transactions.delete_transaction')}
                 onclick={() => deleteTransaction(transaction.id)}
               >
                 <Trash2 size={14} />
@@ -525,10 +526,10 @@
 <!-- Delete Selected Modal -->
 <ConfirmModal
   bind:isOpen={showDeleteSelectedModal}
-  title="Delete Selected Transactions"
-  message="Are you sure you want to delete {$apiSelectedTransactions.size} selected transactions? This action cannot be undone."
-  confirmText="Delete All"
-  cancelText="Cancel"
+  title={$t('transactions.delete_selected_title')}
+  message={$t('transactions.delete_selected_message', { count: $apiSelectedTransactions.size })}
+  confirmText={$t('transactions.delete_all')}
+  cancelText={$t('common.cancel')}
   type="danger"
   onConfirm={confirmDeleteSelected}
   onCancel={() => {}}
@@ -537,10 +538,10 @@
 <!-- Delete Single Transaction Modal -->
 <ConfirmModal
   bind:isOpen={showDeleteSingleModal}
-  title="Delete Transaction"
-  message="Are you sure you want to delete this transaction? This action cannot be undone."
-  confirmText="Delete"
-  cancelText="Cancel"
+  title={$t('transactions.delete_single_title')}
+  message={$t('transactions.delete_single_message')}
+  confirmText={$t('common.delete')}
+  cancelText={$t('common.cancel')}
   type="danger"
   onConfirm={confirmDeleteSingle}
   onCancel={() => transactionToDelete = null}
