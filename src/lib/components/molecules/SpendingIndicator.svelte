@@ -13,7 +13,14 @@
   let spendingRate = $derived(
     income > 0 ? Math.round(expenses / income * 10) : 0
   );
-  
+
+  // Determine status based on spending rate
+  let spendingStatus = $derived.by(() => {
+    if (spendingRate <= 5) return 'good';
+    if (spendingRate <= 8) return 'medium';
+    return 'regular';
+  });
+
   // Generate dynamic spending summary with current currency
   let spendingSummaryText = $derived.by(() => {
     const currencyCode = $currentCurrency;
@@ -44,7 +51,7 @@
   });
 </script>
 
-<div class="spending-summary">
+<div class="spending-summary {spendingStatus}">
   <span class="spending-text">
     {@html spendingSummaryText}
   </span>
@@ -70,8 +77,23 @@
     font-size: 1.125rem;
     font-weight: 700;
   }
-  
-  
+
+  /* Status-based backgrounds */
+  .spending-summary.good {
+    background: linear-gradient(135deg, #22c55e10 0%, #16a34a10 100%);
+    border-color: #22c55e30;
+  }
+
+  .spending-summary.medium {
+    background: linear-gradient(135deg, #f59e0b10 0%, #ea580c10 100%);
+    border-color: #f59e0b30;
+  }
+
+  .spending-summary.regular {
+    background: linear-gradient(135deg, #ef444410 0%, #dc262610 100%);
+    border-color: #ef444430;
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .spending-summary {
