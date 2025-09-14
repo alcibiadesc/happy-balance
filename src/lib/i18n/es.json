@@ -54,7 +54,7 @@
       "title": "Desglose de gastos",
       "food": "Alimentación",
       "transport": "Transporte",
-      "utilities": "Servicios", 
+      "utilities": "Servicios",
       "shopping": "Compras",
       "entertainment": "Entretenimiento",
       "health": "Salud"
@@ -90,7 +90,7 @@
     "preview": {
       "stats": {
         "total": "Total",
-        "selected": "Seleccionadas", 
+        "selected": "Seleccionadas",
         "duplicates": "Duplicados",
         "skipped": "Omitidas"
       },
@@ -103,7 +103,7 @@
       "table": {
         "select": "Seleccionar",
         "date": "Fecha",
-        "partner": "Comercio", 
+        "partner": "Comercio",
         "description": "Descripción",
         "amount": "Cantidad",
         "status": "Estado"

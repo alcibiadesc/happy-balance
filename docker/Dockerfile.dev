@@ -1,96 +1,32 @@
-# Happy Balance - Development Dockerfile with Hot Reload Support
-FROM node:20-alpine AS base
+# 🚀 Universal Development Dockerfile
+# Simplified for both backend and frontend development
 
-# Install system dependencies
-RUN apk add --no-cache \
-    curl \
-    git \
-    bash \
-    && rm -rf /var/cache/apk/*
+FROM node:20-alpine
 
 # Install pnpm
-RUN npm install -g pnpm@latest
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Set working directory
+# Install basic tools
+RUN apk add --no-cache bash git
+
+# Create app directory
 WORKDIR /app
 
-# Copy package manager files first for better caching
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
 COPY backend/package.json ./backend/
 
-# Install all dependencies (including dev dependencies for development)
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Development stage with hot reload
-FROM base AS development
+# Copy application code
+COPY . .
 
-# Install additional development tools
-RUN apk add --no-cache \
-    vim \
-    nano \
-    htop \
-    procps \
-    && rm -rf /var/cache/apk/*
+# Default to development mode
+ENV NODE_ENV=development
 
-# Create non-root user for development
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodeuser -u 1001 -G nodejs
+# Expose common ports
+EXPOSE 3000 3001 5173 5174
 
-# Set proper ownership for the app directory
-RUN chown -R nodeuser:nodejs /app
-
-# Switch to non-root user
-USER nodeuser
-
-# Copy source code (this will be overridden by volume mounts in docker-compose)
-COPY --chown=nodeuser:nodejs . .
-
-# Generate Prisma client
-RUN cd backend && pnpm db:generate
-
-# Expose ports
-EXPOSE 3000 5173
-
-# Health check for development
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:3000/health || curl -f http://localhost:5173 || exit 1
-
-# Default command (will be overridden by docker-compose)
-CMD ["sh", "-c", "echo 'Starting Happy Balance Development Environment...' && pnpm dev"]
-
-# Production stage (for production builds)
-FROM base AS production
-
-# Install only production dependencies
-RUN pnpm install --frozen-lockfile --prod
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodeuser -u 1001 -G nodejs
-
-# Copy source code and build
-COPY --chown=nodeuser:nodejs . .
-
-# Generate Prisma client
-RUN cd backend && pnpm db:generate
-
-# Build the applications
-RUN pnpm build
-
-# Remove development dependencies and clear cache
-RUN pnpm prune --prod && \
-    npm cache clean --force && \
-    rm -rf /tmp/* /var/tmp/*
-
-# Switch to non-root user
-USER nodeuser
-
-# Expose port
-EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
-
-# Production command
-CMD ["node", "backend/dist/main.js"]
+# Default command (can be overridden)
+CMD ["pnpm", "dev"]
