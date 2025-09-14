@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
 import { execSync, spawn } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { dirname, basename, resolve } from 'path';
+import { existsSync, writeFileSync } from 'fs';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import net from 'net';
 import crypto from 'crypto';
+import readline from 'readline';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
@@ -14,105 +15,106 @@ const rootDir = resolve(__dirname, '..');
 const colors = {
   reset: '\x1b[0m',
   bright: '\x1b[1m',
+  dim: '\x1b[2m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   red: '\x1b[31m',
-  cyan: '\x1b[36m'
+  cyan: '\x1b[36m',
+  magenta: '\x1b[35m',
+  gray: '\x1b[90m'
 };
 
 function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
 
-// Get unique identifier for this workspace
-function getWorkspaceId() {
-  const gitDir = execSync('git rev-parse --git-dir', { encoding: 'utf-8' }).trim();
-  const isWorktree = gitDir.includes('.git/worktrees/');
-
-  if (isWorktree) {
-    // Extract worktree name from path
-    const worktreeName = gitDir.split('/worktrees/')[1]?.split('/')[0] || 'unknown';
-    return worktreeName;
-  }
-
-  // For main repo, use branch name
+// Get workspace information
+function getWorkspaceInfo() {
   try {
+    const gitDir = execSync('git rev-parse --git-dir', { encoding: 'utf-8' }).trim();
+    const isWorktree = gitDir.includes('.git/worktrees/');
+
+    if (isWorktree) {
+      const worktreeName = gitDir.split('/worktrees/')[1]?.split('/')[0] || 'unknown';
+      return { id: worktreeName, isWorktree: true };
+    }
+
     const branch = execSync('git branch --show-current', { encoding: 'utf-8' }).trim();
-    return branch || 'main';
+    return { id: branch || 'main', isWorktree: false };
   } catch {
-    return 'main';
+    return { id: 'main', isWorktree: false };
   }
 }
 
-// Find available port
-async function findAvailablePort(startPort) {
+// Check if port is in use
+async function isPortInUse(port) {
   return new Promise((resolve) => {
     const server = net.createServer();
 
-    server.listen(startPort, () => {
-      const port = server.address().port;
-      server.close(() => resolve(port));
+    server.once('error', () => resolve(true));
+    server.once('listening', () => {
+      server.close();
+      resolve(false);
     });
 
-    server.on('error', () => {
-      resolve(findAvailablePort(startPort + 1));
-    });
+    server.listen(port);
   });
 }
 
-// Generate consistent ports based on workspace
-async function generatePorts(workspaceId) {
-  // Use hash to generate consistent but unique ports per workspace
-  const hash = crypto.createHash('md5').update(workspaceId).digest('hex');
-  const baseOffset = parseInt(hash.substring(0, 4), 16) % 1000;
-
-  const dbPort = await findAvailablePort(5432 + baseOffset);
-  const backendPort = await findAvailablePort(3000 + baseOffset);
-  const frontendPort = await findAvailablePort(5173 + baseOffset);
-
-  return { dbPort, backendPort, frontendPort };
+// Find available port
+async function findAvailablePort(startPort, maxRetries = 50) {
+  for (let i = 0; i < maxRetries; i++) {
+    const port = startPort + i;
+    const inUse = await isPortInUse(port);
+    if (!inUse) return port;
+  }
+  throw new Error(`Could not find available port starting from ${startPort}`);
 }
 
-// Create Docker Compose configuration for this workspace
-function createDockerCompose(workspaceId, dbPort) {
-  const dockerComposeContent = `
-version: '3.8'
+// Generate ports based on workspace
+async function generatePorts(workspaceInfo) {
+  if (!workspaceInfo.isWorktree) {
+    // For main repository, use standard ports
+    return {
+      dbPort: 5432,
+      backendPort: 3000,
+      frontendPort: 5173,
+      useStandardDb: true
+    };
+  }
 
-services:
-  postgres-${workspaceId}:
-    image: postgres:17-alpine
-    container_name: expense-tracker-db-${workspaceId}
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: happy_balance_${workspaceId.replace(/-/g, '_')}
-    ports:
-      - "${dbPort}:5432"
-    volumes:
-      - postgres_data_${workspaceId}:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d happy_balance_${workspaceId.replace(/-/g, '_')}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+  // For worktrees, generate unique ports based on workspace ID
+  const hash = crypto.createHash('md5').update(workspaceInfo.id).digest('hex');
+  const baseOffset = parseInt(hash.substring(0, 4), 16) % 1000;
 
-volumes:
-  postgres_data_${workspaceId}:
-    external: false
-`;
+  return {
+    dbPort: await findAvailablePort(5432 + baseOffset),
+    backendPort: await findAvailablePort(3000 + baseOffset),
+    frontendPort: await findAvailablePort(5173 + baseOffset),
+    useStandardDb: false
+  };
+}
 
-  const dockerComposeFile = resolve(rootDir, `.docker-compose.${workspaceId}.yml`);
-  writeFileSync(dockerComposeFile, dockerComposeContent);
-  return dockerComposeFile;
+// Kill processes on specific ports
+function killPort(port) {
+  try {
+    if (process.platform === 'darwin' || process.platform === 'linux') {
+      execSync(`lsof -ti:${port} | xargs kill -9 2>/dev/null`, { stdio: 'ignore' });
+    } else if (process.platform === 'win32') {
+      execSync(`netstat -ano | findstr :${port} | findstr LISTENING | awk '{print $5}' | xargs taskkill /PID /F 2>nul`, { stdio: 'ignore' });
+    }
+  } catch {
+    // Port might not be in use, ignore
+  }
 }
 
 // Update environment files
-function updateEnvironmentFiles(workspaceId, ports) {
+function updateEnvironmentFiles(workspaceInfo, ports) {
   // Backend .env
   const backendEnvPath = resolve(rootDir, 'backend', '.env');
-  const backendEnvContent = `DATABASE_URL="postgresql://postgres:postgres@localhost:${ports.dbPort}/happy_balance_${workspaceId.replace(/-/g, '_')}"
+  const dbName = ports.useStandardDb ? 'happy_balance' : `happy_balance_${workspaceInfo.id.replace(/-/g, '_')}`;
+  const backendEnvContent = `DATABASE_URL="postgresql://postgres:postgres@localhost:${ports.dbPort}/${dbName}"
 PORT=${ports.backendPort}
 NODE_ENV=development
 CORS_ORIGIN="http://localhost:${ports.frontendPort}"
@@ -121,241 +123,450 @@ UPLOAD_DIR="uploads"
 `;
   writeFileSync(backendEnvPath, backendEnvContent);
 
-  // Frontend .env
+  // Frontend .env.local
   const frontendEnvPath = resolve(rootDir, '.env.local');
   const frontendEnvContent = `VITE_API_URL=http://localhost:${ports.backendPort}/api
 VITE_PORT=${ports.frontendPort}
 `;
   writeFileSync(frontendEnvPath, frontendEnvContent);
 
-  // Update Vite config to use dynamic port
-  const viteConfigPath = resolve(rootDir, 'vite.config.js');
+  // Update vite config to use the port
+  const viteConfigPath = resolve(rootDir, 'vite.config.ts');
   if (existsSync(viteConfigPath)) {
-    let viteConfig = readFileSync(viteConfigPath, 'utf-8');
+    let viteConfig = execSync(`cat "${viteConfigPath}"`, { encoding: 'utf-8' });
 
-    // Check if server config exists
-    if (!viteConfig.includes('server:')) {
-      // Add server config
-      viteConfig = viteConfig.replace(
-        'export default defineConfig({',
-        `export default defineConfig({
-  server: {
-    port: ${ports.frontendPort},
-    host: '0.0.0.0',
-    strictPort: false
-  },`
-      );
-    } else {
-      // Update existing port
-      viteConfig = viteConfig.replace(
-        /port:\s*\d+/,
-        `port: ${ports.frontendPort}`
-      );
-    }
-
+    // Update port in vite config
+    viteConfig = viteConfig.replace(/port:\s*\d+/, `port: ${ports.frontendPort}`);
     writeFileSync(viteConfigPath, viteConfig);
   }
 }
 
-// Start Docker container for database
-async function startDatabase(dockerComposeFile, workspaceId) {
-  log(`🐳 Starting database for workspace: ${workspaceId}`, 'cyan');
-
+// Check if Docker is available
+function isDockerAvailable() {
   try {
-    execSync(`docker-compose -f ${dockerComposeFile} up -d`, {
-      stdio: 'inherit',
-      cwd: rootDir
-    });
-
-    // Wait for database to be ready
-    log('⏳ Waiting for database to be ready...', 'yellow');
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
+    execSync('docker info', { stdio: 'ignore' });
     return true;
-  } catch (error) {
-    log(`❌ Failed to start database: ${error.message}`, 'red');
+  } catch {
     return false;
   }
 }
 
-// Run Prisma migrations
-async function runMigrations() {
-  log('🔄 Running database migrations...', 'cyan');
+// Setup database
+async function setupDatabase(workspaceInfo, ports) {
+  if (!isDockerAvailable()) {
+    log('⚠️  Docker not running. Please start Docker or use local PostgreSQL.', 'yellow');
+    log('💡 To start Docker on Mac: open -a Docker', 'cyan');
+    return false;
+  }
 
-  try {
-    execSync('cd backend && npx prisma generate', {
-      stdio: 'inherit',
-      cwd: rootDir
-    });
+  if (ports.useStandardDb) {
+    log('🐳 Setting up development database...', 'cyan');
 
-    execSync('cd backend && npx prisma migrate deploy', {
-      stdio: 'inherit',
-      cwd: rootDir
-    });
-
-    log('✅ Migrations completed', 'green');
-    return true;
-  } catch (error) {
-    log(`⚠️  Migration warning: ${error.message}`, 'yellow');
-
-    // Try to create and migrate if database doesn't exist
     try {
-      execSync('cd backend && npx prisma migrate dev --name init', {
-        stdio: 'inherit',
-        cwd: rootDir
-      });
+      // Check if container already exists
+      const existingContainer = execSync('docker ps -a --filter "name=happy-balance-db-dev" --format "{{.Names}}"', { encoding: 'utf-8' }).trim();
+
+      if (existingContainer) {
+        log('🔄 Starting existing database container...', 'cyan');
+        execSync('docker start happy-balance-db-dev', { stdio: 'ignore' });
+      } else {
+        execSync('docker-compose -f docker-compose.dev.yml up -d', {
+          stdio: 'pipe',
+          cwd: rootDir
+        });
+      }
+
+      // Wait for database to be ready
+      log('⏳ Waiting for database to be ready...', 'yellow');
+      await waitForDatabase(ports.dbPort, 'happy_balance');
+
       return true;
-    } catch {
+    } catch (error) {
+      log(`❌ Failed to start database: ${error.message}`, 'red');
+      return false;
+    }
+  } else {
+    // For worktrees, create unique Docker container
+    log(`🐳 Setting up database for worktree: ${workspaceInfo.id}...`, 'cyan');
+
+    const dbName = `happy_balance_${workspaceInfo.id.replace(/-/g, '_')}`;
+    const containerName = `expense-tracker-db-${workspaceInfo.id}`;
+
+    const dockerComposeContent = `version: '3.8'
+services:
+  postgres-${workspaceInfo.id}:
+    image: postgres:17-alpine
+    container_name: ${containerName}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${dbName}
+    ports:
+      - "${ports.dbPort}:5432"
+    volumes:
+      - postgres_data_${workspaceInfo.id}:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${dbName}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data_${workspaceInfo.id}:
+    external: false
+`;
+
+    const dockerComposeFile = resolve(rootDir, `.docker-compose.${workspaceInfo.id}.yml`);
+    writeFileSync(dockerComposeFile, dockerComposeContent);
+
+    try {
+      // Check if container already exists
+      const existingContainer = execSync(`docker ps -a --filter "name=${containerName}" --format "{{.Names}}"`, { encoding: 'utf-8' }).trim();
+
+      if (existingContainer) {
+        log('🔄 Starting existing worktree database container...', 'cyan');
+        execSync(`docker start ${containerName}`, { stdio: 'ignore' });
+      } else {
+        execSync(`docker-compose -f "${dockerComposeFile}" up -d`, {
+          stdio: 'pipe',
+          cwd: rootDir
+        });
+      }
+
+      // Wait for database to be ready
+      log('⏳ Waiting for database to be ready...', 'yellow');
+      await waitForDatabase(ports.dbPort, dbName);
+
+      return true;
+    } catch (error) {
+      log(`❌ Failed to start database: ${error.message}`, 'red');
       return false;
     }
   }
 }
 
-// Kill processes on specific ports
-function killPort(port) {
-  try {
-    if (process.platform === 'darwin' || process.platform === 'linux') {
-      execSync(`lsof -ti:${port} | xargs kill -9`, { stdio: 'ignore' });
-    } else if (process.platform === 'win32') {
-      execSync(`netstat -ano | findstr :${port} | findstr LISTENING | awk '{print $5}' | xargs taskkill /PID /F`,
-        { stdio: 'ignore' });
+// Wait for database to be ready
+async function waitForDatabase(port, dbName, maxRetries = 30) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      execSync(`pg_isready -h localhost -p ${port} -d ${dbName} -U postgres`, { stdio: 'ignore' });
+      log('✅ Database is ready!', 'green');
+      return true;
+    } catch {
+      process.stdout.write('.');
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
-  } catch {
-    // Port might not be in use, ignore
+  }
+  console.log('');
+  return false;
+}
+
+// Run migrations
+async function runMigrations() {
+  log('🔄 Running database migrations...', 'cyan');
+
+  try {
+    // Generate Prisma client
+    execSync('npx prisma generate', {
+      stdio: 'pipe',
+      cwd: resolve(rootDir, 'backend')
+    });
+
+    // Try to deploy existing migrations
+    try {
+      execSync('npx prisma migrate deploy', {
+        stdio: 'pipe',
+        cwd: resolve(rootDir, 'backend')
+      });
+      log('✅ Migrations applied successfully', 'green');
+    } catch {
+      // If deploy fails, try dev migrate
+      log('📝 Creating initial migration...', 'yellow');
+      execSync('npx prisma migrate dev --name init --skip-seed', {
+        stdio: 'pipe',
+        cwd: resolve(rootDir, 'backend')
+      });
+      log('✅ Initial migration created', 'green');
+    }
+
+    return true;
+  } catch (error) {
+    log('❌ Migration failed, but continuing...', 'red');
+    return false;
   }
 }
 
-// Check if node_modules exists
+// Check if dependencies are installed
 function checkDependencies() {
-  if (!existsSync(resolve(rootDir, 'node_modules')) ||
-      !existsSync(resolve(rootDir, 'backend', 'node_modules'))) {
-    return false;
-  }
+  const checks = [
+    { path: resolve(rootDir, 'node_modules'), name: 'root' },
+    { path: resolve(rootDir, 'backend', 'node_modules'), name: 'backend' },
+    { path: resolve(rootDir, 'backend', 'node_modules', '.prisma'), name: 'Prisma client' }
+  ];
 
-  // Check if Prisma client is generated
-  const prismaClientPath = resolve(rootDir, 'node_modules', '.pnpm', '@prisma+client@5.22.0_prisma@5.22.0',
-                                  'node_modules', '@prisma', 'client');
-  if (!existsSync(prismaClientPath)) {
-    return false;
+  for (const check of checks) {
+    if (!existsSync(check.path)) {
+      log(`❌ Missing: ${check.name} dependencies`, 'red');
+      return false;
+    }
   }
 
   return true;
 }
 
-// Setup worktree dependencies
-async function setupWorktree() {
-  log('📦 Setting up worktree dependencies...', 'yellow');
+// Install dependencies if needed
+async function ensureDependencies() {
+  if (checkDependencies()) {
+    log('✅ All dependencies are installed', 'green');
+    return true;
+  }
+
+  log('📦 Installing dependencies...', 'yellow');
 
   try {
-    // Run setup script
-    execSync('node scripts/setup-worktree.js', {
-      stdio: 'inherit',
-      cwd: rootDir
-    });
+    // Use setup-worktree script if available
+    if (existsSync(resolve(rootDir, 'scripts', 'setup-worktree.js'))) {
+      execSync('node scripts/setup-worktree.js', {
+        stdio: 'inherit',
+        cwd: rootDir
+      });
+    } else {
+      // Fallback to manual installation
+      log('📦 Installing root dependencies...', 'cyan');
+      execSync('pnpm install', {
+        stdio: 'inherit',
+        cwd: rootDir
+      });
+
+      log('📦 Installing backend dependencies...', 'cyan');
+      execSync('pnpm install', {
+        stdio: 'inherit',
+        cwd: resolve(rootDir, 'backend')
+      });
+    }
+
     return true;
   } catch (error) {
-    log(`❌ Failed to setup worktree: ${error.message}`, 'red');
+    log(`❌ Failed to install dependencies: ${error.message}`, 'red');
     return false;
   }
+}
+
+// Start development servers with better process management
+async function startServers(ports) {
+  log('\n🎯 Starting development servers...', 'green');
+
+  const processes = [];
+
+  // Start backend
+  log('🚀 Starting backend server...', 'cyan');
+  const backendProcess = spawn('pnpm', ['dev'], {
+    cwd: resolve(rootDir, 'backend'),
+    env: { ...process.env, FORCE_COLOR: '1' },
+    shell: true
+  });
+
+  processes.push({ process: backendProcess, name: 'Backend' });
+
+  // Forward backend output
+  backendProcess.stdout.on('data', (data) => {
+    process.stdout.write(`${colors.blue}[Backend]${colors.reset} ${data}`);
+  });
+
+  backendProcess.stderr.on('data', (data) => {
+    process.stderr.write(`${colors.red}[Backend]${colors.reset} ${data}`);
+  });
+
+  // Wait for backend to be ready
+  await waitForServer(ports.backendPort, 'Backend');
+
+  // Start frontend
+  log('🚀 Starting frontend server...', 'cyan');
+  const frontendProcess = spawn('vite', ['dev', '--host', '0.0.0.0', '--port', ports.frontendPort.toString()], {
+    cwd: rootDir,
+    env: { ...process.env, FORCE_COLOR: '1' },
+    shell: true
+  });
+
+  processes.push({ process: frontendProcess, name: 'Frontend' });
+
+  // Forward frontend output
+  frontendProcess.stdout.on('data', (data) => {
+    process.stdout.write(`${colors.magenta}[Frontend]${colors.reset} ${data}`);
+  });
+
+  frontendProcess.stderr.on('data', (data) => {
+    process.stderr.write(`${colors.red}[Frontend]${colors.reset} ${data}`);
+  });
+
+  // Wait just 3 seconds for frontend to start, then show URLs
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
+  // Show success message with URLs immediately
+  showUrls(ports);
+
+  // Also show a simple reminder every 30 seconds
+  setInterval(() => {
+    console.log('');
+    log('   📱 Frontend: ' + colors.green + `http://localhost:${ports.frontendPort}` + colors.reset, 'bright');
+    log('   🔧 API: ' + colors.blue + `http://localhost:${ports.backendPort}/api` + colors.reset, 'bright');
+  }, 30000);
+
+  // Handle cleanup
+  const cleanup = async () => {
+    log('\n🛑 Shutting down development servers...', 'yellow');
+
+    for (const { process, name } of processes) {
+      log(`  Stopping ${name}...`, 'gray');
+      process.kill('SIGTERM');
+    }
+
+    // Give processes time to cleanup
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Force kill if still running
+    for (const { process } of processes) {
+      try {
+        process.kill('SIGKILL');
+      } catch {}
+    }
+
+    log('👋 Goodbye!', 'green');
+    process.exit(0);
+  };
+
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
+
+  // Keep the process running
+  await new Promise(() => {});
+}
+
+// Wait for server to be ready
+async function waitForServer(port, name, maxRetries = 30) {
+  log(`⏳ Waiting for ${name} on port ${port}...`, 'yellow');
+
+  for (let i = 0; i < maxRetries; i++) {
+    const inUse = await isPortInUse(port);
+    if (inUse) {
+      console.log(''); // Clear line
+      log(`✅ ${name} is ready!`, 'green');
+      return true;
+    }
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  console.log('');
+  log(`⚠️  ${name} took too long to start`, 'yellow');
+  return false;
+}
+
+// Show URLs with improved formatting
+function showUrls(ports) {
+  const separator = '━'.repeat(70);
+
+  console.log('');
+  console.log('');
+  log(separator, 'cyan');
+  log('   🎉 DEVELOPMENT ENVIRONMENT IS READY!', 'bright');
+  log(separator, 'cyan');
+
+  console.log('');
+  log('   📱 FRONTEND APPLICATION:', 'bright');
+  log(`   ${colors.green}➜ http://localhost:${ports.frontendPort}${colors.reset}`, 'bright');
+  console.log('');
+
+  log('   🔧 BACKEND API:', 'bright');
+  log(`   ${colors.blue}➜ http://localhost:${ports.backendPort}/api${colors.reset}`, 'bright');
+  console.log('');
+
+  log('   🗄️  DATABASE:', 'bright');
+  log(`   ${colors.yellow}➜ postgresql://localhost:${ports.dbPort}/happy_balance${colors.reset}`, 'bright');
+  console.log('');
+
+  log(separator, 'cyan');
+  console.log('');
+
+  log(`   ${colors.bright}👆 Click the Frontend URL to open the app!${colors.reset}`, 'green');
+  console.log('');
+
+  log('   📚 Additional endpoints:', 'dim');
+  log(`      • Health: http://localhost:${ports.backendPort}/health`, 'gray');
+  log(`      • Docs:   http://localhost:${ports.backendPort}/api-docs`, 'gray');
+  console.log('');
+
+  log('   🔥 Hot reload is enabled - Edit files and see changes instantly!', 'green');
+  console.log('');
+  log(separator, 'cyan');
+  console.log('');
 }
 
 // Main function
 async function main() {
   console.clear();
+
+  const separator = '='.repeat(50);
+  log(separator, 'bright');
   log('🚀 Expense Tracker Development Environment', 'bright');
-  log('==========================================\n', 'bright');
+  log(separator, 'bright');
+  console.log('');
 
-  const workspaceId = getWorkspaceId();
-  log(`📁 Workspace: ${workspaceId}`, 'blue');
+  // Get workspace info
+  const workspaceInfo = getWorkspaceInfo();
+  const workspaceType = workspaceInfo.isWorktree ? 'worktree' : 'main repository';
+  log(`📁 Workspace: ${colors.bright}${workspaceInfo.id}${colors.reset} (${workspaceType})`, 'blue');
+  console.log('');
 
-  // Check dependencies
-  if (!checkDependencies()) {
-    log('⚠️  Dependencies not found or incomplete', 'yellow');
-    const setupSuccess = await setupWorktree();
-    if (!setupSuccess) {
-      log('❌ Failed to setup dependencies. Please run manually:', 'red');
-      log('   node scripts/setup-worktree.js', 'cyan');
-      process.exit(1);
-    }
-  }
-
-  // Generate ports
-  const ports = await generatePorts(workspaceId);
-  log(`🔌 Ports:`, 'blue');
-  log(`   Database:  ${ports.dbPort}`, 'cyan');
-  log(`   Backend:   ${ports.backendPort}`, 'cyan');
-  log(`   Frontend:  ${ports.frontendPort}\n`, 'cyan');
-
-  // Kill existing processes on these ports
-  log('🧹 Cleaning up existing processes...', 'yellow');
-  killPort(ports.dbPort);
-  killPort(ports.backendPort);
-  killPort(ports.frontendPort);
-
-  // Create Docker Compose file
-  const dockerComposeFile = createDockerCompose(workspaceId, ports.dbPort);
-
-  // Update environment files
-  updateEnvironmentFiles(workspaceId, ports);
-
-  // Start database
-  const dbStarted = await startDatabase(dockerComposeFile, workspaceId);
-  if (!dbStarted) {
-    log('❌ Failed to start database. Exiting...', 'red');
+  // Ensure dependencies
+  log('🔍 Checking dependencies...', 'cyan');
+  const depsOk = await ensureDependencies();
+  if (!depsOk) {
+    log('❌ Failed to setup dependencies', 'red');
+    log('💡 Try running: pnpm install', 'yellow');
     process.exit(1);
   }
+  console.log('');
 
-  // Run migrations
-  const migrationsRun = await runMigrations();
-  if (!migrationsRun) {
-    log('⚠️  Migrations failed, but continuing...', 'yellow');
+  // Generate ports
+  log('🔌 Configuring ports...', 'cyan');
+  const ports = await generatePorts(workspaceInfo);
+  log(`  Database:  ${ports.dbPort}`, 'gray');
+  log(`  Backend:   ${ports.backendPort}`, 'gray');
+  log(`  Frontend:  ${ports.frontendPort}`, 'gray');
+  console.log('');
+
+  // Clean up existing processes
+  log('🧹 Cleaning up existing processes...', 'yellow');
+  killPort(ports.backendPort);
+  killPort(ports.frontendPort);
+  await new Promise(resolve => setTimeout(resolve, 500));
+  console.log('');
+
+  // Update environment files
+  log('📝 Updating environment files...', 'cyan');
+  updateEnvironmentFiles(workspaceInfo, ports);
+  log('  ✅ Backend .env updated', 'gray');
+  log('  ✅ Frontend .env.local updated', 'gray');
+  console.log('');
+
+  // Setup database
+  const dbOk = await setupDatabase(workspaceInfo, ports);
+  if (dbOk) {
+    await runMigrations();
+  } else {
+    log('⚠️  Database not available, backend may fail to start', 'yellow');
+    log('💡 Please ensure Docker is running or PostgreSQL is installed', 'cyan');
   }
+  console.log('');
 
-  // Start backend and frontend
-  log('\n🎯 Starting application servers...', 'green');
-
-  const backendProcess = spawn('pnpm', ['dev'], {
-    cwd: resolve(rootDir, 'backend'),
-    stdio: 'inherit',
-    shell: true
-  });
-
-  // Wait a bit for backend to start
-  await new Promise(resolve => setTimeout(resolve, 3000));
-
-  const frontendProcess = spawn('pnpm', ['dev'], {
-    cwd: rootDir,
-    stdio: 'inherit',
-    shell: true
-  });
-
-  log('\n✨ Development environment is ready!', 'green');
-  log(`📱 Frontend: http://localhost:${ports.frontendPort}`, 'cyan');
-  log(`🔧 Backend:  http://localhost:${ports.backendPort}`, 'cyan');
-  log(`🗄️  Database: localhost:${ports.dbPort}\n`, 'cyan');
-
-  // Handle cleanup on exit
-  process.on('SIGINT', () => {
-    log('\n🛑 Shutting down development environment...', 'yellow');
-
-    backendProcess.kill();
-    frontendProcess.kill();
-
-    // Optionally stop Docker container
-    try {
-      execSync(`docker-compose -f ${dockerComposeFile} down`, {
-        stdio: 'ignore',
-        cwd: rootDir
-      });
-    } catch {}
-
-    log('👋 Goodbye!', 'green');
-    process.exit(0);
-  });
+  // Start servers
+  await startServers(ports);
 }
 
-// Run
+// Run the script
 main().catch(error => {
-  log(`❌ Error: ${error.message}`, 'red');
+  log(`\n❌ Fatal error: ${error.message}`, 'red');
+  console.error(error.stack);
   process.exit(1);
 });
