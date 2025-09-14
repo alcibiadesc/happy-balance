@@ -42,11 +42,13 @@
     }
 
     // Generate hashes using backend service for consistency
+    // IMPORTANT: Always use EUR for hash generation when amount is in EUR
+    // This ensures consistent duplicate detection regardless of originalCurrency
     const transactionsForHashing = parseResult.transactions.map(tx => ({
       date: tx.date,
       merchant: tx.partner,
       amount: tx.amount,
-      currency: tx.originalCurrency || 'EUR'
+      currency: 'EUR' // Always use EUR for hash to ensure consistent duplicate detection
     }));
 
     const hashResult = await apiTransactions.generateHashes(transactionsForHashing);

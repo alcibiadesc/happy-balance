@@ -157,10 +157,16 @@ function mapToTransaction(values: string[], mapping: Record<string, number>, row
     const valueDate = parseDate(values[mapping.valueDate] || '');
     const amountStr = values[mapping.amountEur] || '0';
     const amount = parseAmount(amountStr);
-    const partner = cleanString(values[mapping.partnerName] || '');
+    let partner = cleanString(values[mapping.partnerName] || '');
     const description = cleanString(values[mapping.paymentReference] || '');
 
-    if (!bookingDate || isNaN(amount) || !partner) {
+    // Handle empty or special-character-only merchants (like ".")
+    // This ensures consistent handling with backend normalization
+    if (!partner || partner.replace(/[^\w\s]/g, '').trim() === '') {
+      partner = 'Unknown Merchant';
+    }
+
+    if (!bookingDate || isNaN(amount)) {
       throw new Error(`Missing required fields (row ${rowNumber})`);
     }
 

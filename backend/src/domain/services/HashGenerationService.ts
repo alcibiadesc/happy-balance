@@ -60,12 +60,16 @@ export class HashGenerationService {
    * Normalize merchant name for consistent hashing
    */
   private normalizeMerchant(merchant: string): string {
-    return merchant
+    const normalized = merchant
       .trim()
       .toLowerCase()
       .replace(/[^\w\s]/g, '') // Remove special characters but keep word chars and spaces
       .replace(/\s+/g, ' ')    // Normalize whitespace to single spaces
       .trim();
+
+    // If normalization results in empty string (e.g., "." or other special chars only)
+    // use a consistent placeholder to ensure consistent hashing
+    return normalized || 'unknown';
   }
 
   /**
