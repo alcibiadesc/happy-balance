@@ -24,7 +24,7 @@
   },
   "dashboard": {
     "title": "Panel de Control",
-    "spending_summary": "Gastas {amount} de cada 10 euros que ganas",
+    "spending_summary": "Gastas {amount} de cada 10 euros",
     "periods": {
       "week": "Semana",
       "month": "Mes",

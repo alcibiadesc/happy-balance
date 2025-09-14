@@ -24,7 +24,7 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "spending_summary": "You spend {amount} out of every 10 euros you earn",
+    "spending_summary": "You spend {amount} out of every 10 euros",
     "periods": {
       "week": "Week",
       "month": "Month",

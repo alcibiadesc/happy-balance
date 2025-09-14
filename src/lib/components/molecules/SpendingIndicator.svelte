@@ -24,12 +24,11 @@
   // Generate dynamic spending summary with current currency
   let spendingSummaryText = $derived.by(() => {
     const currencyCode = $currentCurrency;
-    const language = $currentLanguage;
     const rate = spendingRate;
-    
+
     const currency = currencies[currencyCode];
     if (!currency) return 'Loading...';
-    
+
     // Use proper currency formatting with Intl.NumberFormat
     const formatCurrencyAmount = (amount: number) => {
       return new Intl.NumberFormat(currency.locale, {
@@ -39,14 +38,9 @@
         maximumFractionDigits: currency.code === 'JPY' ? 0 : 0
       }).format(amount);
     };
-    
-    // Create the spending summary based on language and currency
-    const templates = {
-      en: `For every ${formatCurrencyAmount(10)} I earn, I spend {amount}`,
-      es: `Por cada ${formatCurrencyAmount(10)} que ingreso, gasto {amount}`
-    };
 
-    const template = templates[language as keyof typeof templates] || templates.en;
+    // Use the i18n translation from the store
+    const template = $t('dashboard.spending_summary');
     return template.replace('{amount}', `<strong>${formatCurrencyAmount(rate)}</strong>`);
   });
 </script>
