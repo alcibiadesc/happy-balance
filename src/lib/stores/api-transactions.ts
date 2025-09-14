@@ -155,14 +155,14 @@ function createApiTransactionStore() {
     },
 
     // Import from file
-    async importFile(file: File) {
+    async importFile(file: File, options = {}) {
       try {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('currency', 'EUR');
-        formData.append('duplicateDetectionEnabled', 'true');
-        formData.append('skipDuplicates', 'true');
-        formData.append('autoCategorizationEnabled', 'true');
+        formData.append('currency', options.currency || 'EUR');
+        formData.append('duplicateDetectionEnabled', String(options.duplicateDetectionEnabled ?? true));
+        formData.append('skipDuplicates', String(options.skipDuplicates ?? true));
+        formData.append('autoCategorizationEnabled', String(options.autoCategorizationEnabled ?? true));
 
         const response = await fetch(`${API_BASE}/import/csv`, {
           method: 'POST',
@@ -183,6 +183,82 @@ function createApiTransactionStore() {
         return result.data;
       } catch (error) {
         console.error('Failed to import file:', error);
+        throw error;
+      }
+    },
+
+    // Check which hashes are duplicates
+    async checkDuplicates(hashes: string[]) {
+      try {
+        console.log('🔍 Frontend: Checking duplicates for hashes:', hashes.length);
+
+        const response = await fetch(`${API_BASE}/import/check-duplicates`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ hashes })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to check duplicates');
+        }
+
+        const result = await response.json();
+        console.log('✅ Frontend: Duplicate check result:', result.data);
+
+        return result.data;
+      } catch (error) {
+        console.error('❌ Frontend: Failed to check duplicates:', error);
+        throw error;
+      }
+    },
+
+    // Import selected transactions only
+    async importSelectedTransactions(selectedTransactions: any[]) {
+      try {
+        console.log('🔄 Frontend: Preparing to import selected transactions:', selectedTransactions.length);
+
+        const requestBody = {
+          transactions: selectedTransactions.map(tx => ({
+            hash: tx.hash,
+            date: tx.date,
+            merchant: tx.partner,
+            amount: tx.amount,
+            description: tx.description || '',
+            currency: 'EUR'
+          })),
+          currency: 'EUR',
+          duplicateDetectionEnabled: true,
+          skipDuplicates: true,
+          autoCategorizationEnabled: true
+        };
+
+        console.log('📤 Frontend: Request body:', requestBody);
+
+        const response = await fetch(`${API_BASE}/import/selected`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to import selected transactions');
+        }
+
+        const result = await response.json();
+        console.log('Import selected transactions result:', result.data);
+
+        // Reload transactions after successful import
+        await this.load();
+
+        return result.data;
+      } catch (error) {
+        console.error('Failed to import selected transactions:', error);
         throw error;
       }
     },

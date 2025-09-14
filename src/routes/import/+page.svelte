@@ -28,42 +28,116 @@
   let showAllTransactions = false;
 
 
-  // Use backend API to get CSV preview with duplicate detection
+  // Parse CSV and check for duplicates using new DDD endpoints
   async function getCSVPreview(file: File): Promise<ParsedTransaction[]> {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('currency', 'EUR');
+    // First, parse the CSV file locally
+    const fileText = await file.text();
+    const lines = fileText.split('\n').filter(line => line.trim());
 
-    const response = await fetch('http://localhost:3000/api/import/preview', {
-      method: 'POST',
-      body: formData
+    if (lines.length < 2) {
+      throw new Error('CSV file must have header and at least one data row');
+    }
+
+    // Parse CSV (assuming ING bank format)
+    const parsedTransactions = lines.slice(1).map((line, index) => {
+      const columns = parseCSVLine(line);
+
+      if (columns.length < 4) {
+        throw new Error(`Invalid CSV format on line ${index + 2}`);
+      }
+
+      const date = columns[0]?.replace(/"/g, '').trim();
+      const partner = columns[1]?.replace(/"/g, '').trim();
+      const description = columns[2]?.replace(/"/g, '').trim();
+      const amountStr = columns[3]?.replace(/"/g, '').trim();
+
+      const amount = parseFloat(amountStr.replace(',', '.'));
+
+      // Generate hash for duplicate detection
+      const normalizedData = {
+        date,
+        merchant: partner,
+        amount: Math.abs(amount),
+        description
+      };
+
+      const hash = generateTransactionHash(normalizedData);
+
+      return {
+        id: `tx-${index}-${Date.now()}`,
+        hash,
+        date,
+        partner,
+        description,
+        amount,
+        selected: true, // Initially select all transactions
+        isDuplicate: false,
+        duplicateReason: undefined
+      };
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Preview failed');
+    // Extract hashes and check for duplicates using new DDD endpoint
+    const hashes = parsedTransactions.map(tx => tx.hash);
+    const duplicateCheckResult = await apiTransactions.checkDuplicates(hashes);
+
+    // Update transactions based on duplicate check results
+    const transactionsWithDuplicateInfo = parsedTransactions.map(tx => {
+      const duplicateInfo = duplicateCheckResult.results.find(r => r.hash === tx.hash);
+      return {
+        ...tx,
+        isDuplicate: duplicateInfo?.isDuplicate || false,
+        selected: !(duplicateInfo?.isDuplicate || false), // Don't select duplicates by default
+        duplicateReason: duplicateInfo?.isDuplicate ? $t("import.duplicate_reasons.database") : undefined
+      };
+    });
+
+    return transactionsWithDuplicateInfo;
+  }
+
+  // Helper function to parse CSV line (handles quoted fields)
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    let i = 0;
+
+    while (i < line.length) {
+      const char = line[i];
+
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i += 2;
+        } else {
+          inQuotes = !inQuotes;
+          i++;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+        i++;
+      } else {
+        current += char;
+        i++;
+      }
     }
 
-    const result = await response.json();
+    result.push(current.trim());
+    return result;
+  }
 
-    if (!result.success) {
-      throw new Error(result.error || 'Preview failed');
+  // Helper function to generate transaction hash
+  function generateTransactionHash(data: { date: string; merchant: string; amount: number; description: string }): string {
+    const normalizedData = `${data.date}|${data.merchant.toLowerCase().trim()}|${data.amount.toFixed(2)}|${data.description.toLowerCase().trim()}`;
+
+    // Simple hash function (in production, consider using a crypto library)
+    let hash = 0;
+    for (let i = 0; i < normalizedData.length; i++) {
+      const char = normalizedData.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
     }
-
-    const { transactions, summary } = result.data;
-
-    // Convert backend format to frontend format
-    return transactions.map((tx: any, index: number) => ({
-      id: `tx-${index}-${Date.now()}`,
-      hash: tx.hash || '',
-      date: tx.date,
-      partner: tx.merchant,
-      description: tx.description || '',
-      amount: tx.type === 'EXPENSE' ? -tx.amount : tx.amount,
-      selected: !tx.isDuplicate, // Don't select duplicates by default
-      isDuplicate: tx.isDuplicate,
-      duplicateReason: tx.isDuplicate ? $t("import.duplicate_reasons.database") : undefined,
-    }));
+    return hash.toString(16);
   }
 
   async function handleFileUpload(event: Event) {
@@ -124,10 +198,20 @@
     step = 3;
 
     try {
-      // Use API to import file
-      const result = await apiTransactions.importFile(selectedFile);
+      // Get only selected transactions that are NOT duplicates
+      const selectedTransactions = transactions.filter(tx => tx.selected && !tx.isDuplicate);
 
-      console.log("Import successful:", result);
+      console.log('🔄 Importing selected transactions:', selectedTransactions.length);
+      console.log('📋 Selected transactions:', selectedTransactions);
+
+      if (selectedTransactions.length === 0) {
+        throw new Error('No transactions selected for import');
+      }
+
+      // Use new DDD endpoint to import selected transactions
+      const result = await apiTransactions.importSelectedTransactions(selectedTransactions);
+
+      console.log("✅ Import successful:", result);
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 

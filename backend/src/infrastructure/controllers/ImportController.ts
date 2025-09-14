@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { ImportTransactionsCommand } from '@application/commands/ImportTransactionsCommand';
 import { ImportTransactionsUseCase } from '@application/use-cases/ImportTransactionsUseCase';
+import { CheckDuplicateHashesUseCase, CheckDuplicateHashesCommand } from '@application/use-cases/CheckDuplicateHashesUseCase';
+import { ImportSelectedTransactionsUseCase, ImportSelectedTransactionsCommand } from '@application/use-cases/ImportSelectedTransactionsUseCase';
 
 const ImportConfigSchema = z.object({
   currency: z.string().min(3).max(3).default('EUR'),
@@ -25,10 +27,103 @@ const ImportConfigSchema = z.object({
   }).default(true)
 });
 
+const SelectedTransactionSchema = z.object({
+  hash: z.string(),
+  date: z.string(),
+  merchant: z.string(),
+  amount: z.number(),
+  description: z.string().optional().default(''),
+  currency: z.string().min(3).max(3).default('EUR')
+});
+
+const ImportSelectedTransactionsSchema = z.object({
+  transactions: z.array(SelectedTransactionSchema),
+  currency: z.string().min(3).max(3).default('EUR'),
+  duplicateDetectionEnabled: z.boolean().default(true),
+  skipDuplicates: z.boolean().default(true),
+  autoCategorizationEnabled: z.boolean().default(true)
+});
+
+const CheckDuplicateHashesSchema = z.object({
+  hashes: z.array(z.string()).min(1, 'At least one hash is required')
+});
+
 export class ImportController {
   constructor(
-    private readonly importTransactionsUseCase: ImportTransactionsUseCase
+    private readonly importTransactionsUseCase: ImportTransactionsUseCase,
+    private readonly checkDuplicateHashesUseCase: CheckDuplicateHashesUseCase,
+    private readonly importSelectedTransactionsUseCase: ImportSelectedTransactionsUseCase
   ) {}
+
+  async checkDuplicates(req: Request, res: Response) {
+    try {
+      const validation = CheckDuplicateHashesSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid request',
+          details: validation.error.errors
+        });
+      }
+
+      const { hashes } = validation.data;
+
+      const command: CheckDuplicateHashesCommand = {
+        hashes
+      };
+
+      const result = await this.checkDuplicateHashesUseCase.execute(command);
+      if (result.isFailure()) {
+        return res.status(400).json({ error: result.getError() });
+      }
+
+      res.json({
+        success: true,
+        data: result.getValue()
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: 'Duplicate check failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  async importSelected(req: Request, res: Response) {
+    try {
+      const validation = ImportSelectedTransactionsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid request',
+          details: validation.error.errors
+        });
+      }
+
+      const validatedData = validation.data;
+
+      const command: ImportSelectedTransactionsCommand = {
+        transactions: validatedData.transactions,
+        currency: validatedData.currency,
+        duplicateDetectionEnabled: validatedData.duplicateDetectionEnabled,
+        skipDuplicates: validatedData.skipDuplicates,
+        autoCategorizationEnabled: validatedData.autoCategorizationEnabled
+      };
+
+      const result = await this.importSelectedTransactionsUseCase.execute(command);
+      if (result.isFailure()) {
+        return res.status(400).json({ error: result.getError() });
+      }
+
+      res.json({
+        success: true,
+        data: result.getValue()
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: 'Import selected transactions failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
 
   async importFromCsv(req: Request, res: Response) {
     try {
@@ -75,6 +170,7 @@ export class ImportController {
       });
     }
   }
+
 
   async importFromExcel(req: Request, res: Response) {
     try {

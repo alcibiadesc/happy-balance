@@ -16,9 +16,12 @@ import { errorHandler } from '@infrastructure/middleware/errorHandler';
 // Import use cases and services
 import { GetDashboardDataUseCase } from '@application/use-cases/GetDashboardDataUseCase';
 import { ImportTransactionsUseCase } from '@application/use-cases/ImportTransactionsUseCase';
+import { CheckDuplicateHashesUseCase } from '@application/use-cases/CheckDuplicateHashesUseCase';
+import { ImportSelectedTransactionsUseCase } from '@application/use-cases/ImportSelectedTransactionsUseCase';
 import { DuplicateDetectionService } from '@domain/services/DuplicateDetectionService';
 import { CategorizationService } from '@domain/services/CategorizationService';
 import { FinancialCalculationService } from '@domain/services/FinancialCalculationService';
+import { TransactionFactory } from '@domain/factories/TransactionFactory';
 
 class App {
   private app: express.Application;
@@ -43,6 +46,7 @@ class App {
     const duplicateDetectionService = new DuplicateDetectionService();
     const categorizationService = new CategorizationService();
     const financialCalculationService = new FinancialCalculationService();
+    const transactionFactory = new TransactionFactory();
 
     // Application services / Use cases
     const getDashboardDataUseCase = new GetDashboardDataUseCase(
@@ -62,13 +66,28 @@ class App {
       categorizationService
     );
 
+    const checkDuplicateHashesUseCase = new CheckDuplicateHashesUseCase(
+      this.transactionRepository,
+      duplicateDetectionService
+    );
+
+    const importSelectedTransactionsUseCase = new ImportSelectedTransactionsUseCase(
+      this.transactionRepository,
+      duplicateDetectionService,
+      transactionFactory
+    );
+
     // Controllers
     this.transactionController = new TransactionController(
       this.transactionRepository,
       getDashboardDataUseCase
     );
 
-    this.importController = new ImportController(importTransactionsUseCase);
+    this.importController = new ImportController(
+      importTransactionsUseCase,
+      checkDuplicateHashesUseCase,
+      importSelectedTransactionsUseCase
+    );
     this.userPreferencesController = new UserPreferencesController(this.userPreferencesRepository);
   }
 

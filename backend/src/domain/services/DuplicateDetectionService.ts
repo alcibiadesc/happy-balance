@@ -7,6 +7,12 @@ export interface DuplicateDetectionResult {
   reason: string;
 }
 
+export interface DuplicateCheckResult {
+  hash: string;
+  isDuplicate: boolean;
+  duplicateId?: string;
+}
+
 /**
  * Domain service for detecting duplicate transactions
  * Implements complex business logic for financial duplicate detection
@@ -246,6 +252,29 @@ export class DuplicateDetectionService {
     const hoursDiff = Math.round(timeDiff / (1000 * 60 * 60));
 
     return `Same amount (${original.amount.format()}) and merchant (${original.merchant.name}) within ${hoursDiff} hours`;
+  }
+
+  /**
+   * Check multiple hashes against existing transactions
+   * Domain service method for hash-based duplicate detection
+   */
+  checkHashesDuplicates(
+    hashes: string[],
+    existingTransactions: Transaction[]
+  ): Result<DuplicateCheckResult[]> {
+    try {
+      const existingHashes = new Set(existingTransactions.map(tx => tx.getHash()));
+
+      const results = hashes.map(hash => ({
+        hash,
+        isDuplicate: existingHashes.has(hash),
+        duplicateId: existingTransactions.find(tx => tx.getHash() === hash)?.getId()
+      }));
+
+      return Result.ok(results);
+    } catch (error) {
+      return Result.fail(`Failed to check hashes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private buildAdvancedDuplicateReason(
