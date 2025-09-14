@@ -21,10 +21,10 @@ services:
       - happy-balance
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d happy_balance"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      interval: 3s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
 
   # Backend API (Development with hot reload)
   app:
@@ -74,11 +74,11 @@ services:
         echo '📦 Installing dependencies...' &&
         pnpm install --frozen-lockfile &&
         cd backend && pnpm install --frozen-lockfile && cd .. &&
-        echo '🗄️ Setting up database...' &&
+        echo '🗄️ Setting up database schema (fast)...' &&
         cd backend && 
         pnpm db:generate &&
-        pnpm db:push &&
-        echo '🌱 Running database seed...' &&
+        pnpm db:push --accept-data-loss &&
+        echo '🌱 Seeding database with sample data...' &&
         pnpm db:seed &&
         cd .. &&
         echo '🔥 Starting development servers with hot reload...' &&

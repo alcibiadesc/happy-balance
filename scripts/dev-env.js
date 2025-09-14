@@ -152,7 +152,7 @@ function isDockerAvailable() {
 }
 
 // Setup database
-async function setupDatabase(workspaceInfo, ports) {
+async function setupDatabaseContainer(workspaceInfo, ports) {
   if (!isDockerAvailable()) {
     log('⚠️  Docker not running. Please start Docker or use local PostgreSQL.', 'yellow');
     log('💡 To start Docker on Mac: open -a Docker', 'cyan');
@@ -208,9 +208,10 @@ services:
       - postgres_data_${workspaceInfo.id}:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ${dbName}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      interval: 2s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
 volumes:
   postgres_data_${workspaceInfo.id}:
@@ -247,7 +248,7 @@ volumes:
 }
 
 // Wait for database to be ready
-async function waitForDatabase(port, dbName, maxRetries = 30) {
+async function waitForDatabase(port, dbName, maxRetries = 15) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       execSync(`pg_isready -h localhost -p ${port} -d ${dbName} -U postgres`, { stdio: 'ignore' });
@@ -255,16 +256,16 @@ async function waitForDatabase(port, dbName, maxRetries = 30) {
       return true;
     } catch {
       process.stdout.write('.');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
   console.log('');
   return false;
 }
 
-// Run migrations
-async function runMigrations() {
-  log('🔄 Running database migrations...', 'cyan');
+// Setup database schema (faster than migrations for development)
+async function setupDatabase() {
+  log('🔄 Setting up database schema...', 'cyan');
 
   try {
     // Generate Prisma client
@@ -273,26 +274,28 @@ async function runMigrations() {
       cwd: resolve(rootDir, 'backend')
     });
 
-    // Try to deploy existing migrations
+    // Use db:push for fast development setup (no migration files needed)
+    execSync('npx prisma db push --accept-data-loss', {
+      stdio: 'pipe', 
+      cwd: resolve(rootDir, 'backend')
+    });
+    
+    log('✅ Database schema synchronized', 'green');
+
+    // Run seed if available
     try {
-      execSync('npx prisma migrate deploy', {
+      execSync('npx prisma db seed', {
         stdio: 'pipe',
         cwd: resolve(rootDir, 'backend')
       });
-      log('✅ Migrations applied successfully', 'green');
+      log('✅ Database seeded with initial data', 'green');
     } catch {
-      // If deploy fails, try dev migrate
-      log('📝 Creating initial migration...', 'yellow');
-      execSync('npx prisma migrate dev --name init --skip-seed', {
-        stdio: 'pipe',
-        cwd: resolve(rootDir, 'backend')
-      });
-      log('✅ Initial migration created', 'green');
+      log('⚠️  No seed data found, continuing...', 'yellow');
     }
 
     return true;
   } catch (error) {
-    log('❌ Migration failed, but continuing...', 'red');
+    log(`❌ Database setup failed: ${error.message}`, 'red');
     return false;
   }
 }
@@ -550,10 +553,10 @@ async function main() {
   log('  ✅ Frontend .env.local updated', 'gray');
   console.log('');
 
-  // Setup database
-  const dbOk = await setupDatabase(workspaceInfo, ports);
+  // Setup database container
+  const dbOk = await setupDatabaseContainer(workspaceInfo, ports);
   if (dbOk) {
-    await runMigrations();
+    await setupDatabase();
   } else {
     log('⚠️  Database not available, backend may fail to start', 'yellow');
     log('💡 Please ensure Docker is running or PostgreSQL is installed', 'cyan');
