@@ -420,17 +420,41 @@ async function startFrontend(ports) {
     process.stderr.write(`${colors.red}[Frontend Error]${colors.reset} ${output}`);
   });
   
-  // Wait for frontend
-  const frontendReady = await waitForPort(ports.frontendPort, 'Frontend', 30);
+  // Wait for frontend - try original port first, then check nearby ports
+  let actualFrontendPort = ports.frontendPort;
+  let frontendReady = await waitForPort(ports.frontendPort, 'Frontend', 10);
   
   if (!frontendReady) {
-    log('❌ Frontend failed to start!', 'red');
+    // Vite might have moved to next available port
+    log('🔍 Frontend not on expected port, checking alternatives...', 'yellow');
+    
+    for (let i = 1; i <= 5; i++) {
+      const altPort = ports.frontendPort + i;
+      const altReady = await waitForPort(altPort, `Frontend (alt port ${altPort})`, 3);
+      if (altReady) {
+        actualFrontendPort = altPort;
+        frontendReady = true;
+        log(`✅ Frontend found on alternative port ${altPort}!`, 'green');
+        break;
+      }
+    }
+  }
+  
+  if (!frontendReady) {
+    log('❌ Frontend failed to start on any port!', 'red');
     log('📄 Frontend output:', 'yellow');
     console.log(frontendOutput);
     throw new Error('Frontend startup failed');
   }
   
   log('✅ Frontend is running!', 'green');
+  
+  // Update ports object with actual frontend port for later use
+  if (actualFrontendPort !== ports.frontendPort) {
+    ports.frontendPort = actualFrontendPort;
+    log(`📝 Updated frontend port to ${actualFrontendPort}`, 'gray');
+  }
+  
   return frontendProcess;
 }
 
