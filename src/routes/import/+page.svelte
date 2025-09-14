@@ -2,11 +2,12 @@
   import { goto } from "$app/navigation";
   import { t } from "$lib/stores/i18n";
   import { onMount } from "svelte";
-  import { apiTransactions } from "$lib/stores/api-transactions";
+  import { apiTransactions, apiCategories } from "$lib/stores/api-transactions";
   import { parseCSV } from "$lib/utils/csv-parser";
 
   // Import types from the parser
   import type { ParsedTransaction } from "$lib/utils/csv-parser";
+  import type { Category } from "$lib/types/transaction";
 
   // State management
   let step = 1; // 1: upload, 2: preview, 3: complete
@@ -17,6 +18,7 @@
   let previewEnabled = true;
   let showDuplicates = true;
   let showAllTransactions = false;
+  let autoCategorizationEnabled = true;
 
 
   // Parse CSV and check for duplicates using new DDD endpoints
@@ -183,6 +185,7 @@
     (tx) => tx.selected && !tx.isDuplicate,
   ).length;
   $: duplicateCount = transactions.filter((tx) => tx.isDuplicate).length;
+  $: categorizedCount = transactions.filter((tx) => tx.suggestedCategoryId).length;
   $: visibleTransactions = showDuplicates
     ? transactions
     : transactions.filter((tx) => !tx.isDuplicate);
@@ -193,6 +196,16 @@
     selectedCount === 1
       ? $t("import.actions.import_count", { count: selectedCount })
       : $t("import.actions.import_count_plural", { count: selectedCount });
+
+  function getCategoryById(id?: string): Category | undefined {
+    if (!id) return undefined;
+    return $apiCategories.find(c => c.id === id);
+  }
+
+  onMount(async () => {
+    // Load categories for auto-categorization
+    await apiCategories.load();
+  });
 </script>
 
 <svelte:head>

@@ -18,6 +18,8 @@
   },
   "navigation": {
     "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "categories": "Categories",
     "settings": "Settings",
     "import": "Import"
   },

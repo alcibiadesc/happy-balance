@@ -15,6 +15,7 @@ export interface ParsedTransaction {
   selected: boolean;
   isDuplicate: boolean;
   duplicateReason?: string;
+  suggestedCategoryId?: string; // For auto-categorization
 }
 
 export interface ParseResult {

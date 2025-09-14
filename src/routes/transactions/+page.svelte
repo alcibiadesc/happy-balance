@@ -19,6 +19,7 @@
   let showFilters = $state(false);
   let selectedPeriod = $state(''); // Empty means show all transactions
   let selectedCategories = $state<string[]>([]);
+  let selectedTypes = $state<string[]>([]);
   let isSelectionMode = $state(false);
   let showCategoryModal = $state(false);
   let editingTransaction = $state<Transaction | null>(null);
@@ -57,9 +58,17 @@
     
     // Category filter
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter(t => 
+      filtered = filtered.filter(t =>
         t.categoryId && selectedCategories.includes(t.categoryId)
       );
+    }
+
+    // Type filter
+    if (selectedTypes.length > 0) {
+      filtered = filtered.filter(t => {
+        const category = getCategoryById(t.categoryId);
+        return category && selectedTypes.includes(category.type);
+      });
     }
     
     // Search filter
@@ -176,11 +185,11 @@
   }
   
   async function categorizeTransaction(transaction: Transaction, categoryId: string, applyToAll = false) {
-    if (applyToAll) {
-      await apiTransactions.applyCategoryToPattern(transaction, categoryId);
-    } else {
-      await apiTransactions.update(transaction.id, { categoryId });
-    }
+    // Update the transaction category
+    await apiTransactions.update(transaction.id, { categoryId });
+
+    // Learn from this correction for future imports
+    await apiCategories.learnFromCorrection(transaction.id, categoryId, applyToAll);
   }
   
   function formatAmount(amount: number): string {
@@ -218,7 +227,10 @@
   }
   
   onMount(async () => {
-    await apiTransactions.load();
+    await Promise.all([
+      apiTransactions.load(),
+      apiCategories.load()
+    ]);
   });
 </script>
 
@@ -302,23 +314,63 @@
     
     {#if showFilters}
       <div class="filters">
-        {#each $apiCategories as category}
-          <button 
-            class="category-chip"
-            class:active={selectedCategories.includes(category.id)}
-            style="--chip-color: {category.color}"
+        <!-- Type filters -->
+        <div class="filter-group">
+          <span class="filter-label">Type:</span>
+          {#each ['essential', 'discretionary', 'investment', 'income'] as type}
+            <button
+              class="type-chip"
+              class:active={selectedTypes.includes(type)}
+              data-type={type}
+              onclick={() => {
+                if (selectedTypes.includes(type)) {
+                  selectedTypes = selectedTypes.filter(t => t !== type);
+                } else {
+                  selectedTypes = [...selectedTypes, type];
+                }
+              }}
+            >
+              {type === 'essential' ? 'Essential' :
+               type === 'discretionary' ? 'Discretionary' :
+               type === 'investment' ? 'Investment' : 'Income'}
+            </button>
+          {/each}
+        </div>
+
+        <!-- Category filters -->
+        <div class="filter-group">
+          <span class="filter-label">Category:</span>
+          {#each $apiCategories as category}
+            <button
+              class="category-chip"
+              class:active={selectedCategories.includes(category.id)}
+              style="--chip-color: {category.color}"
+              onclick={() => {
+                if (selectedCategories.includes(category.id)) {
+                  selectedCategories = selectedCategories.filter(c => c !== category.id);
+                } else {
+                  selectedCategories = [...selectedCategories, category.id];
+                }
+              }}
+            >
+              <span>{category.icon}</span>
+              <span>{category.name}</span>
+            </button>
+          {/each}
+        </div>
+
+        {#if selectedCategories.length > 0 || selectedTypes.length > 0}
+          <button
+            class="clear-filters-btn"
             onclick={() => {
-              if (selectedCategories.includes(category.id)) {
-                selectedCategories = selectedCategories.filter(c => c !== category.id);
-              } else {
-                selectedCategories = [...selectedCategories, category.id];
-              }
+              selectedCategories = [];
+              selectedTypes = [];
             }}
           >
-            <span>{category.icon}</span>
-            <span>{category.name}</span>
+            <X size={14} />
+            Clear filters
           </button>
-        {/each}
+        {/if}
       </div>
     {/if}
   </div>
@@ -353,13 +405,13 @@
               />
             {/if}
             
-            <div 
+            <div
               class="transaction-category"
               style="background-color: {category?.color || '#e0e0e0'}20"
             >
               <span>{category?.icon || '📄'}</span>
             </div>
-            
+
             <div class="transaction-details">
               <div class="transaction-main">
                 <div>
@@ -368,6 +420,14 @@
                     <span>{transaction.merchant}</span>
                     <span>•</span>
                     <span>{transaction.time}</span>
+                    {#if category}
+                      <span>•</span>
+                      <span class="category-type-badge" data-type={category.type}>
+                        {category.type === 'essential' ? 'Essential' :
+                         category.type === 'discretionary' ? 'Discretionary' :
+                         category.type === 'investment' ? 'Investment' : 'Income'}
+                      </span>
+                    {/if}
                   </div>
                 </div>
                 <div class="transaction-amount" class:income={transaction.amount > 0}>
@@ -375,8 +435,8 @@
                 </div>
               </div>
               
-              {#if !category}
-                <div class="category-selector">
+              <div class="category-selector">
+                {#if !category}
                   <button
                     class="category-btn"
                     onclick={() => showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id}
@@ -384,25 +444,47 @@
                     <Tag size={14} />
                     Add category
                   </button>
+                {:else}
+                  <button
+                    class="category-btn has-category"
+                    onclick={() => showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id}
+                  >
+                    <span class="category-icon">{category.icon}</span>
+                    <span class="category-name">{category.name}</span>
+                  </button>
+                {/if}
 
-                  {#if showCategoryDropdown === transaction.id}
-                    <div class="category-dropdown">
-                      {#each $apiCategories as cat}
-                        <button
-                          class="category-option"
-                          onclick={() => {
-                            categorizeTransaction(transaction, cat.id);
-                            showCategoryDropdown = null;
-                          }}
-                        >
-                          <span class="category-icon">{cat.icon}</span>
-                          <span class="category-name">{cat.name}</span>
-                        </button>
-                      {/each}
-                    </div>
-                  {/if}
-                </div>
-              {/if}
+                {#if showCategoryDropdown === transaction.id}
+                  <div class="category-dropdown">
+                    {#each $apiCategories as cat}
+                      <button
+                        class="category-option"
+                        onclick={async () => {
+                          showCategoryDropdown = null;
+                          const shouldApplyToAll = confirm(`Apply "${cat.name}" to all transactions from "${transaction.merchant}"?`);
+                          await categorizeTransaction(transaction, cat.id, shouldApplyToAll);
+                        }}
+                      >
+                        <span class="category-icon">{cat.icon}</span>
+                        <span class="category-name">{cat.name}</span>
+                        <span class="category-type">{cat.type}</span>
+                      </button>
+                    {/each}
+                    {#if category}
+                      <button
+                        class="category-option remove"
+                        onclick={() => {
+                          categorizeTransaction(transaction, '', false);
+                          showCategoryDropdown = null;
+                        }}
+                      >
+                        <X size={14} />
+                        <span>Remove category</span>
+                      </button>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
             </div>
             
             <div class="transaction-actions">
@@ -636,10 +718,86 @@
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
     gap: var(--space-sm);
     flex-wrap: wrap;
   }
-  
+
+  .filter-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    min-width: 60px;
+  }
+
+  .type-chip {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid rgba(2, 60, 70, 0.1);
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-transform: capitalize;
+  }
+
+  .type-chip:hover {
+    border-color: var(--acapulco);
+  }
+
+  .type-chip.active[data-type="essential"] {
+    background: rgba(2, 60, 70, 0.1);
+    border-color: #023c46;
+    color: #023c46;
+  }
+
+  .type-chip.active[data-type="discretionary"] {
+    background: rgba(254, 205, 44, 0.15);
+    border-color: #d89e00;
+    color: #d89e00;
+  }
+
+  .type-chip.active[data-type="investment"] {
+    background: rgba(2, 60, 70, 0.08);
+    border-color: #023c46;
+    color: #023c46;
+  }
+
+  .type-chip.active[data-type="income"] {
+    background: rgba(122, 186, 165, 0.15);
+    border-color: #5ca98a;
+    color: #5ca98a;
+  }
+
+  .clear-filters-btn {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--froly);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--froly);
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .clear-filters-btn:hover {
+    background: rgba(245, 121, 108, 0.1);
+  }
+
   .category-chip {
     display: flex;
     align-items: center;
@@ -805,7 +963,68 @@
     font-size: 0.875rem;
     color: var(--text);
   }
-  
+
+  .category-type-badge {
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.025em;
+  }
+
+  .category-type-badge[data-type="essential"] {
+    background: rgba(2, 60, 70, 0.1);
+    color: #023c46;
+  }
+
+  .category-type-badge[data-type="discretionary"] {
+    background: rgba(254, 205, 44, 0.15);
+    color: #d89e00;
+  }
+
+  .category-type-badge[data-type="investment"] {
+    background: rgba(2, 60, 70, 0.08);
+    color: #023c46;
+  }
+
+  .category-type-badge[data-type="income"] {
+    background: rgba(122, 186, 165, 0.15);
+    color: #5ca98a;
+  }
+
+  .category-btn.has-category {
+    background: var(--surface);
+    border-color: var(--border);
+    padding: 0.25rem 0.5rem;
+    gap: 0.375rem;
+  }
+
+  .category-btn.has-category .category-icon {
+    font-size: 0.875rem;
+  }
+
+  .category-btn.has-category .category-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .category-option .category-type {
+    margin-left: auto;
+    font-size: 0.625rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .category-option.remove {
+    color: var(--froly);
+    border-top: 1px solid var(--border);
+  }
+
+  .category-option.remove:hover {
+    background: rgba(245, 121, 108, 0.1);
+  }
+
   .transaction-actions {
     display: flex;
     gap: 0.25rem;
