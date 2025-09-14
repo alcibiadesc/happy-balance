@@ -82,6 +82,11 @@ export interface ITransactionRepository {
   findByType(type: TransactionType): Promise<Result<Transaction[]>>;
 
   /**
+   * Find transactions by hash
+   */
+  findByHash(hash: string): Promise<Result<Transaction[]>>;
+
+  /**
    * Update an existing transaction
    */
   update(transaction: Transaction): Promise<Result<void>>;

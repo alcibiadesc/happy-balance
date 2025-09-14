@@ -138,7 +138,8 @@
     },
     "duplicate_reasons": {
       "file": "Identical transaction found in file",
-      "database": "Transaction already exists in database"
+      "database": "Transaction already exists in database",
+      "both": "Duplicate in both file and database"
     }
   },
   "transactions": {

@@ -6,9 +6,9 @@ export class ImportTransactionsCommand {
   constructor(
     public readonly csvContent: string,
     public readonly currency: string = 'EUR',
-    public readonly autoCategorizationEnabled: boolean = true,
     public readonly duplicateDetectionEnabled: boolean = true,
-    public readonly skipDuplicates: boolean = true
+    public readonly skipDuplicates: boolean = true,
+    public readonly autoCategorizationEnabled: boolean = true
   ) {}
 
   /**

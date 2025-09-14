@@ -111,6 +111,57 @@ export class ImportController {
     }
   }
 
+  async previewCsv(req: Request, res: Response) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const csvContent = req.file.buffer.toString('utf-8');
+      const currency = (req.body.currency || 'EUR').toUpperCase();
+
+      if (!csvContent.trim()) {
+        return res.status(400).json({ error: 'Empty CSV file' });
+      }
+
+      // Use the import command to parse and detect duplicates
+      const command = new ImportTransactionsCommand(
+        csvContent,
+        currency,
+        true,  // duplicateDetectionEnabled
+        false, // skipDuplicates - we want to see all including duplicates
+        false  // autoCategorizationEnabled - not needed for preview
+      );
+
+      const validation = command.isValid();
+      if (!validation.valid) {
+        return res.status(400).json({
+          error: 'Invalid import data',
+          details: validation.errors
+        });
+      }
+
+      // Get preview data using the use case but don't actually save anything
+      const result = await this.importTransactionsUseCase.preview(command);
+
+      if (result.isFailure()) {
+        return res.status(400).json({ error: result.getError() });
+      }
+
+      const previewData = result.getValue();
+
+      res.json({
+        success: true,
+        data: previewData
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: 'CSV preview failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
   async validateCsv(req: Request, res: Response) {
     try {
       if (!req.file) {

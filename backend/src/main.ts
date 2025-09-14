@@ -77,8 +77,34 @@ class App {
     this.app.use(helmet());
 
     // CORS configuration
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://192.168.1.139:5173',
+      'http://100.100.8.83:5173'
+    ];
+
+    // Add CORS_ORIGIN from environment if set
+    if (process.env.CORS_ORIGIN) {
+      allowedOrigins.push(process.env.CORS_ORIGIN);
+    }
+
     this.app.use(cors({
-      origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+
+        // Check if origin is in allowed list
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+
+        // For development, also allow any localhost origin
+        if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
+          return callback(null, true);
+        }
+
+        callback(new Error('CORS policy violation'), false);
+      },
       credentials: true
     }));
 

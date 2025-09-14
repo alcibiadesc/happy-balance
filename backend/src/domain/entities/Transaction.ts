@@ -14,6 +14,7 @@ export class Transaction {
   private _categoryId?: CategoryId;
   private _description: string;
   private _isSelected: boolean = true;
+  private _hash?: string;
 
   private constructor(
     private readonly _id: TransactionId,
@@ -25,6 +26,7 @@ export class Transaction {
     private readonly _createdAt: Date = new Date()
   ) {
     this._description = description;
+    this._hash = this.getHash();
   }
 
   static create(
@@ -104,6 +106,10 @@ export class Transaction {
     return new Date(this._createdAt.getTime());
   }
 
+  get hash(): string | undefined {
+    return this._hash;
+  }
+
   // Business methods
   categorize(category: Category): Result<void> {
     // Business rule: Category type must match transaction type
@@ -145,9 +151,15 @@ export class Transaction {
 
   /**
    * Check if this transaction is a duplicate of another
-   * Based on date, merchant, and amount
+   * Based on hash first, then fallback to date, merchant, and amount comparison
    */
   isDuplicateOf(other: Transaction, toleranceHours = 24): boolean {
+    // Primary check: If both transactions have hashes, use exact hash comparison
+    if (this._hash && other._hash) {
+      return this._hash === other._hash;
+    }
+
+    // Fallback to detailed comparison when hashes are not available
     // Same amount and currency
     if (!this._amount.equals(other._amount)) {
       return false;
@@ -228,6 +240,7 @@ export class Transaction {
       description: this._description,
       categoryId: this._categoryId?.value,
       isSelected: this._isSelected,
+      hash: this._hash,
       createdAt: this._createdAt.toISOString()
     };
   }
@@ -274,6 +287,7 @@ export class Transaction {
     }
 
     transaction._isSelected = snapshot.isSelected ?? true;
+    transaction._hash = snapshot.hash;
 
     return Result.ok(transaction);
   }
@@ -289,5 +303,6 @@ export interface TransactionSnapshot {
   description: string;
   categoryId?: string;
   isSelected?: boolean;
+  hash?: string;
   createdAt: string;
 }

@@ -8,6 +8,7 @@ export const createImportRoutes = (importController: ImportController): Router =
   // Import operations
   router.post('/csv', upload.single('file'), importController.importFromCsv.bind(importController));
   router.post('/excel', upload.single('file'), importController.importFromExcel.bind(importController));
+  router.post('/preview', upload.single('file'), importController.previewCsv.bind(importController));
   router.post('/validate', upload.single('file'), importController.validateCsv.bind(importController));
   router.get('/history', importController.getImportHistory.bind(importController));
 

@@ -10,6 +10,7 @@ export interface Transaction {
   status: 'completed' | 'pending' | 'hidden';
   tags: string[];
   patternHash?: string; // Hash for pattern matching
+  hash?: string; // Hash for duplicate detection
   createdAt: Date;
   updatedAt: Date;
   hidden?: boolean;

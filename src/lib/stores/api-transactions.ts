@@ -220,13 +220,21 @@ function createApiTransactionStore() {
 function mapApiToTransaction(apiTransaction: any): Transaction {
   return {
     id: apiTransaction.id,
-    amount: apiTransaction.type === 'EXPENSE' ? -apiTransaction.amount : apiTransaction.amount,
-    currency: apiTransaction.currency,
     date: apiTransaction.date,
+    time: new Date(apiTransaction.createdAt).toLocaleTimeString(),
     merchant: apiTransaction.merchant,
     description: apiTransaction.description || '',
+    amount: apiTransaction.type === 'EXPENSE' ? -apiTransaction.amount : apiTransaction.amount,
     categoryId: apiTransaction.categoryId,
-    createdAt: apiTransaction.createdAt
+    category: undefined, // Will be populated separately if needed
+    status: 'completed' as const,
+    tags: [],
+    patternHash: undefined,
+    hash: apiTransaction.hash,
+    createdAt: new Date(apiTransaction.createdAt),
+    updatedAt: new Date(apiTransaction.updatedAt || apiTransaction.createdAt),
+    hidden: false,
+    notes: undefined
   };
 }
 

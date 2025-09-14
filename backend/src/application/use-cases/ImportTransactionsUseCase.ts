@@ -20,6 +20,29 @@ export interface ImportResult {
   processingErrors: string[];
 }
 
+export interface PreviewResult {
+  totalTransactions: number;
+  duplicatesCount: number;
+  newTransactionsCount: number;
+  transactions: Array<{
+    date: string;
+    merchant: string;
+    description: string;
+    amount: number;
+    type: string;
+    currency: string;
+    isDuplicate: boolean;
+    duplicateReason?: string;
+    hash: string;
+  }>;
+  summary: {
+    total: number;
+    duplicates: number;
+    toImport: number;
+    errors: number;
+  };
+}
+
 export interface CsvParsingResult {
   transactions: Transaction[];
   errors: string[];
@@ -61,14 +84,29 @@ export class ImportTransactionsUseCase {
       let duplicatesSkipped = 0;
 
       if (command.duplicateDetectionEnabled) {
+        console.log('🔍 Duplicate detection enabled - starting process');
         const existingTransactionsResult = await this.transactionRepository.findAll();
         if (existingTransactionsResult.isFailure()) {
           return Result.fail(existingTransactionsResult.getError());
         }
 
+        const existingTransactions = existingTransactionsResult.getValue();
+        console.log(`📊 Found ${existingTransactions.length} existing transactions in database`);
+        console.log(`📊 Checking ${parsedTransactions.length} new transactions for duplicates`);
+
+        // Log first few existing transactions with their hashes
+        existingTransactions.slice(0, 3).forEach((tx, i) => {
+          console.log(`📋 Existing #${i}: ${tx.date.toDateString()} | ${tx.merchant.name} | ${tx.amount.amount} | Hash: ${tx.hash || 'NO_HASH'}`);
+        });
+
+        // Log first few parsed transactions with their hashes
+        parsedTransactions.slice(0, 3).forEach((tx, i) => {
+          console.log(`📋 Parsed #${i}: ${tx.date.toDateString()} | ${tx.merchant.name} | ${tx.amount.amount} | Hash: ${tx.hash || 'NO_HASH'}`);
+        });
+
         const duplicateResult = this.duplicateDetectionService.detectAgainstExisting(
           parsedTransactions,
-          existingTransactionsResult.getValue()
+          existingTransactions
         );
 
         if (duplicateResult.isFailure()) {
@@ -76,13 +114,16 @@ export class ImportTransactionsUseCase {
         }
 
         const { unique, duplicates } = duplicateResult.getValue();
+        console.log(`🎯 Duplicate detection results: ${unique.length} unique, ${duplicates.length} duplicates`);
 
         if (command.skipDuplicates) {
           uniqueTransactions = unique;
           duplicatesSkipped = duplicates.length;
+          console.log(`⏭️ Skipping ${duplicatesSkipped} duplicates, importing ${uniqueTransactions.length} unique transactions`);
         } else {
           // Include duplicates but mark them for user decision
           uniqueTransactions = [...unique, ...duplicates];
+          console.log(`📝 Including all transactions for user review: ${uniqueTransactions.length} total`);
         }
       }
 
@@ -300,6 +341,113 @@ export class ImportTransactionsUseCase {
     const parsed = parseFloat(normalized);
 
     return isNaN(parsed) ? 0 : parsed;
+  }
+
+  /**
+   * Preview CSV import without actually importing
+   */
+  async preview(command: ImportTransactionsCommand): Promise<Result<PreviewResult>> {
+    try {
+      // Parse the CSV
+      const parseResult = await this.parseCSV(command.csvContent, command.currency);
+
+      if (parseResult.isFailure()) {
+        return Result.fail(parseResult.getError());
+      }
+
+      const parsingResult = parseResult.getValue();
+
+      if (parsingResult.errors.length > 0) {
+        console.log('CSV parsing errors:', parsingResult.errors);
+      }
+
+      const transactions = parsingResult.transactions;
+
+      if (transactions.length === 0) {
+        return Result.fail('No valid transactions found in the CSV file');
+      }
+
+      // Get all existing transactions from repository for duplicate detection
+      const existingResult = await this.transactionRepository.findAll();
+
+      if (existingResult.isFailure()) {
+        return Result.fail(`Failed to load existing transactions: ${existingResult.getError()}`);
+      }
+
+      const existingTransactions = existingResult.getValue();
+
+      // Detect duplicates using the same logic as the main import
+      let duplicatesCount = 0;
+      const transactionData = [];
+
+      if (command.duplicateDetectionEnabled && existingTransactions.length > 0) {
+        const duplicateResult = this.duplicateDetectionService.detectAgainstExisting(
+          transactions,
+          existingTransactions
+        );
+
+        if (duplicateResult.isFailure()) {
+          return Result.fail(duplicateResult.getError());
+        }
+
+        const { unique, duplicates, duplicateReasons } = duplicateResult.getValue();
+        duplicatesCount = duplicates.length;
+
+        // Mark all transactions with their duplicate status
+        for (const transaction of transactions) {
+          const isDuplicate = duplicates.some(d => d.id.equals(transaction.id));
+          const duplicateReason = duplicateReasons.get(transaction.id.value);
+
+          transactionData.push({
+            date: transaction.date.value,
+            merchant: transaction.merchant.value,
+            description: transaction.description || '',
+            amount: transaction.amount.amount,
+            type: transaction.type.value,
+            currency: transaction.amount.currency,
+            isDuplicate,
+            duplicateReason: duplicateReason || undefined,
+            hash: transaction.hash || ''
+          });
+        }
+      } else {
+        // No duplicate detection - all transactions are considered unique
+        for (const transaction of transactions) {
+          transactionData.push({
+            date: transaction.date.value,
+            merchant: transaction.merchant.value,
+            description: transaction.description || '',
+            amount: transaction.amount.amount,
+            type: transaction.type.value,
+            currency: transaction.amount.currency,
+            isDuplicate: false,
+            duplicateReason: undefined,
+            hash: transaction.hash || ''
+          });
+        }
+      }
+
+      const newTransactionsCount = transactions.length - duplicatesCount;
+
+      const previewResult: PreviewResult = {
+        totalTransactions: transactions.length,
+        duplicatesCount,
+        newTransactionsCount,
+        transactions: transactionData,
+        summary: {
+          total: transactions.length,
+          duplicates: duplicatesCount,
+          toImport: newTransactionsCount,
+          errors: parsingResult.errors.length
+        }
+      };
+
+      return Result.ok(previewResult);
+
+    } catch (error) {
+      console.error('Preview failed:', error);
+      return Result.fail(`Preview failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**

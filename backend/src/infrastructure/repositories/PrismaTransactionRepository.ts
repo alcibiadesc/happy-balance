@@ -34,7 +34,8 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           type: snapshot.type,
           description: snapshot.description,
           categoryId: snapshot.categoryId,
-          isSelected: snapshot.isSelected
+          isSelected: snapshot.isSelected,
+          hash: snapshot.hash
         },
         create: {
           id: snapshot.id,
@@ -46,6 +47,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           description: snapshot.description,
           categoryId: snapshot.categoryId,
           isSelected: snapshot.isSelected,
+          hash: snapshot.hash,
           createdAt: new Date(snapshot.createdAt)
         }
       });
@@ -78,6 +80,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 description: snapshot.description,
                 categoryId: snapshot.categoryId,
                 isSelected: snapshot.isSelected,
+                hash: snapshot.hash,
                 createdAt: new Date(snapshot.createdAt)
               }
             });
@@ -224,6 +227,28 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     }
 
     return Result.ok(result.getValue().transactions);
+  }
+
+  async findByHash(hash: string): Promise<Result<Transaction[]>> {
+    try {
+      const prismaTransactions = await this.prisma.transaction.findMany({
+        where: { hash }
+      });
+
+      const transactions: Transaction[] = [];
+      for (const prismaTransaction of prismaTransactions) {
+        const transactionResult = this.mapFromPrisma(prismaTransaction);
+        if (transactionResult.isSuccess()) {
+          transactions.push(transactionResult.getValue());
+        }
+      }
+
+      return Result.ok(transactions);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to find transactions by hash: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 
   async update(transaction: Transaction): Promise<Result<void>> {
@@ -404,6 +429,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 description: snapshot.description,
                 categoryId: snapshot.categoryId,
                 isSelected: snapshot.isSelected,
+                hash: snapshot.hash,
                 createdAt: new Date(snapshot.createdAt)
               }
             });
@@ -419,7 +445,8 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 type: snapshot.type,
                 description: snapshot.description,
                 categoryId: snapshot.categoryId,
-                isSelected: snapshot.isSelected
+                isSelected: snapshot.isSelected,
+                hash: snapshot.hash
               },
               create: {
                 id: snapshot.id,
@@ -431,6 +458,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 description: snapshot.description,
                 categoryId: snapshot.categoryId,
                 isSelected: snapshot.isSelected,
+                hash: snapshot.hash,
                 createdAt: new Date(snapshot.createdAt)
               }
             });
@@ -563,6 +591,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       description: prismaTransaction.description,
       categoryId: prismaTransaction.categoryId,
       isSelected: prismaTransaction.isSelected,
+      hash: prismaTransaction.hash || undefined,
       createdAt: prismaTransaction.createdAt.toISOString()
     };
 
