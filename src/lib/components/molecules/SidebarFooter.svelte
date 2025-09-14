@@ -45,9 +45,9 @@
     justify-content: center;
     padding: var(--space-sm) var(--space-md);
     border-radius: var(--radius-lg);
-    border: 1px solid var(--primary);
-    background: var(--primary);
-    color: var(--text-inverse);
+    border: 1px solid var(--success-border);
+    background: var(--success-bg-hover);
+    color: var(--success-text-hover);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-weight: 500;
@@ -62,15 +62,15 @@
   }
 
   .import-button:hover {
-    background: var(--primary-hover);
-    border-color: var(--primary-hover);
+    background: var(--success-border-hover);
+    border-color: var(--success-border-hover);
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(122, 186, 165, 0.25);
   }
 
   .import-button:focus {
     outline: none;
-    box-shadow: 0 0 0 3px var(--primary-light);
+    box-shadow: 0 0 0 3px var(--success-focus-ring);
   }
 
   .import-button:active {
