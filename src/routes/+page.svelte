@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Calendar, TrendingUp, TrendingDown, Wallet, PiggyBank } from 'lucide-svelte';
+  import { Calendar, TrendingUp, TrendingDown, Wallet, PiggyBank, CalendarRange } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import { apiTransactions, apiCategories, apiTransactionStats } from '$lib/stores/api-transactions';
@@ -8,16 +8,24 @@
   import ExpensesCard from '$lib/components/molecules/ExpensesCard.svelte';
   import FinancialChart from '$lib/components/molecules/FinancialChart.svelte';
   import FinancialBarCharts from '$lib/components/molecules/FinancialBarCharts.svelte';
+  import DateRangePicker from '$lib/components/molecules/DateRangePicker.svelte';
+
+  // API Configuration
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
   
   // Period options - using i18n
   let periods = $derived([
     { value: 'week', label: $t('dashboard.periods.week') },
     { value: 'month', label: $t('dashboard.periods.month') },
     { value: 'quarter', label: $t('dashboard.periods.quarter') },
-    { value: 'year', label: $t('dashboard.periods.year') }
+    { value: 'year', label: $t('dashboard.periods.year') },
+    { value: 'custom', label: $t('dashboard.periods.custom'), icon: CalendarRange }
   ]);
-  
+
   let selectedPeriod = $state('month');
+  let customStartDate = $state('');
+  let customEndDate = $state('');
+  let showDateRangePicker = $state(false);
   let loading = $state(false);
   let dashboardData = $state<any>(null);
   let realData = $state({
@@ -42,10 +50,18 @@
   );
   
   // Load data based on period from API
-  async function loadData(period: string) {
+  async function loadData(period: string, startDate?: string, endDate?: string) {
     loading = true;
     try {
-      const response = await fetch(`http://localhost:3008/api/transactions/dashboard?period=${period}&currency=${$currentCurrency}`);
+      let url = `${API_BASE}/transactions/dashboard?currency=${$currentCurrency}`;
+
+      if (period === 'custom' && startDate && endDate) {
+        url += `&startDate=${startDate}&endDate=${endDate}`;
+      } else if (period !== 'custom') {
+        url += `&period=${period}`;
+      }
+
+      const response = await fetch(url);
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
@@ -56,18 +72,29 @@
             realData.monthlyTrend = result.data.trends.map((trend: any) => ({
               month: trend.period,
               income: trend.income?._amount || 0,
-              expenses: trend.expenses?._amount || 0,
+              expenses: Math.abs(trend.expenses?._amount || 0), // Ensure positive for display
               balance: trend.balance?._amount || 0
             }));
 
-            // For bar data, we need to split expenses into essential and discretionary
+            // For bar data, use the actual expense distribution from backend if available
+            const essentialRatio = result.data.expenseDistribution?.essentialPercentage
+              ? result.data.expenseDistribution.essentialPercentage / 100
+              : 0.67;
+            const discretionaryRatio = result.data.expenseDistribution?.discretionaryPercentage
+              ? result.data.expenseDistribution.discretionaryPercentage / 100
+              : 0.33;
+
             realData.monthlyBarData = result.data.trends.map((trend: any) => ({
               month: trend.period,
               income: trend.income?._amount || 0,
-              essentialExpenses: (trend.expenses?._amount || 0) * 0.67, // Approximate for now
-              discretionaryExpenses: (trend.expenses?._amount || 0) * 0.33, // Approximate for now
-              investments: trend.investments?._amount || 0
+              essentialExpenses: Math.abs(trend.expenses?._amount || 0) * essentialRatio,
+              discretionaryExpenses: Math.abs(trend.expenses?._amount || 0) * discretionaryRatio,
+              investments: Math.abs(trend.investments?._amount || 0)
             }));
+          } else {
+            // If no trends data, show empty charts
+            realData.monthlyTrend = [];
+            realData.monthlyBarData = [];
           }
 
           // Transform category breakdown for the categories section
@@ -136,8 +163,22 @@
   }
   
   async function handlePeriodChange(period: string) {
-    selectedPeriod = period;
-    await loadData(period);
+    if (period === 'custom') {
+      showDateRangePicker = true;
+    } else {
+      selectedPeriod = period;
+      customStartDate = '';
+      customEndDate = '';
+      await loadData(period);
+    }
+  }
+
+  async function handleCustomDateRange(event: CustomEvent) {
+    const { startDate, endDate } = event.detail;
+    customStartDate = startDate;
+    customEndDate = endDate;
+    selectedPeriod = 'custom';
+    await loadData('custom', startDate, endDate);
   }
   
   // Use the global currency formatter
@@ -164,6 +205,16 @@
     await apiTransactions.load();
     await loadData(selectedPeriod);
   });
+
+  // Format custom date range for display
+  function getCustomDateRangeLabel(): string {
+    if (customStartDate && customEndDate) {
+      const start = new Date(customStartDate).toLocaleDateString();
+      const end = new Date(customEndDate).toLocaleDateString();
+      return `${start} - ${end}`;
+    }
+    return $t('dashboard.periods.custom');
+  }
 </script>
 
 <svelte:head>
@@ -179,12 +230,17 @@
       <!-- Period Selector -->
       <div class="period-selector">
         {#each periods as period}
-          <button 
+          <button
             class="period-button"
             class:active={selectedPeriod === period.value}
             onclick={() => handlePeriodChange(period.value)}
           >
-            {period.label}
+            {#if period.icon}
+              <svelte:component this={period.icon} size={16} />
+            {/if}
+            <span>
+              {period.value === 'custom' && customStartDate && customEndDate ? getCustomDateRangeLabel() : period.label}
+            </span>
           </button>
         {/each}
       </div>
@@ -209,7 +265,7 @@
             <span class="metric-label">{$t('dashboard.metrics.income')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(dashboardData?.summary?.totalIncome?._amount || currentStats.income)}</div>
+            <div class="metric-value">{formatCurrencyAmount(Math.abs(dashboardData?.summary?.totalIncome?._amount || currentStats.income))}</div>
             <div 
               class="metric-trend"
               style="color: {getTrendColor(trends.income, 'income')}"
@@ -221,9 +277,9 @@
         
         <!-- Expenses Card with Breakdown -->
         <ExpensesCard
-          totalExpenses={dashboardData?.summary?.totalExpenses?._amount || currentStats.expenses}
-          essentialExpenses={dashboardData?.expenseDistribution?.essential?._amount || currentStats.expenses * 0.67}
-          discretionaryExpenses={dashboardData?.expenseDistribution?.discretionary?._amount || currentStats.expenses * 0.33}
+          totalExpenses={Math.abs(dashboardData?.summary?.totalExpenses?._amount || currentStats.expenses)}
+          essentialExpenses={Math.abs(dashboardData?.expenseDistribution?.essential?._amount || currentStats.expenses * 0.67)}
+          discretionaryExpenses={Math.abs(dashboardData?.expenseDistribution?.discretionary?._amount || currentStats.expenses * 0.33)}
           trend={trends.expenses}
           formatCurrency={formatCurrencyAmount}
           {formatTrend}
@@ -239,7 +295,7 @@
             <span class="metric-label">{$t('dashboard.metrics.investments')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(dashboardData?.summary?.totalInvestments?._amount || 500)}</div>
+            <div class="metric-value">{formatCurrencyAmount(Math.abs(dashboardData?.summary?.totalInvestments?._amount || currentStats.investments || 0))}</div>
             <div 
               class="metric-trend"
               style="color: {getTrendColor(trends.investments, 'investments')}"
@@ -308,6 +364,14 @@
     />
 </main>
 
+<!-- Date Range Picker Modal -->
+<DateRangePicker
+  bind:isOpen={showDateRangePicker}
+  startDate={customStartDate}
+  endDate={customEndDate}
+  on:apply={handleCustomDateRange}
+/>
+
 <style>
   /* Dashboard Layout */
   .dashboard {
@@ -358,6 +422,13 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .period-button span {
+    white-space: nowrap;
   }
   
   .period-button:hover:not(.active):not(:disabled) {

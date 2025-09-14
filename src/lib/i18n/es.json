@@ -29,7 +29,13 @@
       "week": "Semana",
       "month": "Mes",
       "quarter": "Trimestre",
-      "year": "Año"
+      "year": "Año",
+      "custom": "Personalizado"
+    },
+    "dateRange": {
+      "title": "Seleccionar Rango de Fechas",
+      "startDate": "Fecha de Inicio",
+      "endDate": "Fecha Final"
     },
     "metrics": {
       "income": "Ingresos",

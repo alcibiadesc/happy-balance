@@ -7,6 +7,9 @@
   import { userPreferences } from '$lib/stores/user-preferences';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
+
+  // API Configuration
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
   
   const currencyOptions = Object.values(currencies).map(curr => ({
     value: curr.code,
@@ -264,7 +267,7 @@
 
       // Also clear data from the database via API
       try {
-        const response = await fetch('http://localhost:3000/api/transactions', {
+        const response = await fetch(`${API_BASE}/transactions`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'

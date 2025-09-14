@@ -193,29 +193,51 @@ export class GetDashboardDataUseCase {
    */
   private generateTrendPeriods(currentPeriod: any, periodType: string) {
     const periods = [];
-    const endDate = currentPeriod.endDate.value;
+    const baseEndDate = new Date(currentPeriod.endDate.value);
 
     // Generate last 6 periods for trends
     for (let i = 5; i >= 0; i--) {
-      const periodEnd = new Date(endDate);
-      const periodStart = new Date(endDate);
+      const periodEnd = new Date(baseEndDate);
+      const periodStart = new Date(baseEndDate);
 
       switch (periodType) {
         case 'week':
-          periodEnd.setDate(periodEnd.getDate() - (i * 7));
-          periodStart.setDate(periodEnd.getDate() - 7);
+          // Calculate the end of the period (i weeks ago from base)
+          periodEnd.setDate(baseEndDate.getDate() - (i * 7));
+          // Start is 7 days before the end
+          periodStart.setDate(periodEnd.getDate() - 6);
           break;
         case 'month':
-          periodEnd.setMonth(periodEnd.getMonth() - i);
-          periodStart.setMonth(periodEnd.getMonth() - 1);
+          // Go back i months from the base date
+          periodEnd.setMonth(baseEndDate.getMonth() - i);
+          // Adjust to last day of month
+          periodEnd.setMonth(periodEnd.getMonth() + 1, 0);
+          // Start is the first day of that month
+          periodStart.setMonth(periodEnd.getMonth(), 1);
           break;
         case 'quarter':
-          periodEnd.setMonth(periodEnd.getMonth() - (i * 3));
-          periodStart.setMonth(periodEnd.getMonth() - 3);
+          // Go back i quarters (3 months each) from base
+          const quarterOffset = i * 3;
+          periodEnd.setMonth(baseEndDate.getMonth() - quarterOffset);
+          // Adjust to end of quarter
+          const endQuarter = Math.floor(periodEnd.getMonth() / 3);
+          periodEnd.setMonth((endQuarter + 1) * 3, 0);
+          // Start is 3 months before
+          periodStart.setMonth(periodEnd.getMonth() - 2, 1);
           break;
         case 'year':
-          periodEnd.setFullYear(periodEnd.getFullYear() - i);
-          periodStart.setFullYear(periodEnd.getFullYear() - 1);
+          // Go back i years from base
+          periodEnd.setFullYear(baseEndDate.getFullYear() - i);
+          periodEnd.setMonth(11, 31); // December 31st
+          periodStart.setFullYear(periodEnd.getFullYear());
+          periodStart.setMonth(0, 1); // January 1st
+          break;
+        default:
+          // Custom period - divide into 6 equal parts
+          const totalDays = Math.floor((baseEndDate.getTime() - new Date(currentPeriod.startDate.value).getTime()) / (1000 * 60 * 60 * 24));
+          const periodDays = Math.floor(totalDays / 6);
+          periodEnd.setDate(baseEndDate.getDate() - (i * periodDays));
+          periodStart.setDate(periodEnd.getDate() - periodDays + 1);
           break;
       }
 

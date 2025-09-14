@@ -29,7 +29,13 @@
       "week": "Week",
       "month": "Month",
       "quarter": "Quarter",
-      "year": "Year"
+      "year": "Year",
+      "custom": "Custom"
+    },
+    "dateRange": {
+      "title": "Select Date Range",
+      "startDate": "Start Date",
+      "endDate": "End Date"
     },
     "metrics": {
       "income": "Income",
