@@ -162,96 +162,56 @@ async function setupDatabase(workspaceInfo, ports) {
   log(`   Container: ${containerName}`, 'gray');
   log(`   Port: ${ports.dbPort}`, 'gray');
   
-  // Check if container exists
-  let containerExists = false;
+  // First, stop and remove any existing container to start fresh
+  log('🧹 Cleaning any existing container...', 'yellow');
   try {
-    const existingContainer = execSync(
-      `docker ps -a --filter "name=${containerName}" --format "{{.Names}}"`, 
-      { encoding: 'utf-8' }
-    ).trim();
-    containerExists = existingContainer === containerName;
+    execSync(`docker stop ${containerName} 2>/dev/null || true`, { stdio: 'ignore' });
+    execSync(`docker rm ${containerName} 2>/dev/null || true`, { stdio: 'ignore' });
   } catch {}
   
-  if (containerExists) {
-    log('🔄 Starting existing database container...', 'yellow');
-    try {
-      execSync(`docker start ${containerName}`, { stdio: 'ignore' });
-    } catch (error) {
-      log(`❌ Failed to start existing container: ${error.message}`, 'red');
-      return false;
-    }
-  } else {
-    log('📦 Creating new database container...', 'yellow');
+  // Create new container directly with docker run (simpler than docker-compose)
+  log('📦 Creating fresh database container...', 'yellow');
+  
+  try {
+    const dockerCommand = `docker run -d \
+      --name ${containerName} \
+      -e POSTGRES_USER=postgres \
+      -e POSTGRES_PASSWORD=postgres \
+      -e POSTGRES_DB=${dbName} \
+      -p ${ports.dbPort}:5432 \
+      --restart unless-stopped \
+      postgres:17-alpine`;
     
-    const dockerComposeContent = `version: '3.8'
-services:
-  postgres-${workspaceInfo.id}:
-    image: postgres:17-alpine
-    container_name: ${containerName}
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ${dbName}
-    ports:
-      - "${ports.dbPort}:5432"
-    volumes:
-      - postgres_data_${workspaceInfo.id}:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ${dbName}"]
-      interval: 2s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
-
-volumes:
-  postgres_data_${workspaceInfo.id}:
-    external: false
-`;
-    
-    const dockerComposeFile = resolve(rootDir, `.docker-compose.${workspaceInfo.id}.yml`);
-    writeFileSync(dockerComposeFile, dockerComposeContent);
-    
-    try {
-      execSync(`docker-compose -f "${dockerComposeFile}" up -d`, {
-        stdio: 'pipe',
-        cwd: rootDir
-      });
-    } catch (error) {
-      log(`❌ Failed to create container: ${error.message}`, 'red');
-      return false;
-    }
+    execSync(dockerCommand, { stdio: 'ignore' });
+    log('✅ Database container created', 'green');
+  } catch (error) {
+    log(`❌ Failed to create container: ${error.message}`, 'red');
+    return false;
   }
   
-  // Wait for database to be ready
+  // Wait for database to be ready with simpler check
   log('⏳ Waiting for database to be ready...', 'yellow');
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 30; i++) {
     try {
-      execSync(`docker exec ${containerName} pg_isready -U postgres -d ${dbName}`, {
+      // Simple connection test
+      execSync(`docker exec ${containerName} pg_isready -U postgres`, {
         stdio: 'ignore'
       });
       
-      // Test actual connection only once when pg_isready succeeds
-      log('🧪 Testing database connection...', 'yellow');
-      const testResult = execSync(
-        `docker exec ${containerName} psql -U postgres -d ${dbName} -c "SELECT 1;"`,
-        { encoding: 'utf-8', stdio: 'pipe' }
-      );
+      log('✅ Database is ready!', 'green');
+      return true;
       
-      if (testResult.includes('1 row')) {
-        log('✅ Database connection verified!', 'green');
-        return true;
-      } else {
-        log('⚠️  Database query failed, retrying...', 'yellow');
-      }
     } catch (error) {
-      log(`⚠️  Database not ready yet (attempt ${i + 1}/20)...`, 'gray');
+      if (i < 29) {
+        process.stdout.write('.');
+      } else {
+        log(`\n❌ Database failed to start after 30 attempts`, 'red');
+      }
     }
     
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
   
-  log('❌ Database failed to start after 20 attempts', 'red');
   return false;
 }
 
