@@ -5,7 +5,8 @@
   import {
     ChevronDown, Search, Filter, Download, Plus, Calendar,
     TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,
-    Tag, MoreVertical, ChevronLeft, ChevronRight, Layers
+    Tag, MoreVertical, ChevronLeft, ChevronRight, Layers,
+    CalendarDays, CalendarRange
   } from 'lucide-svelte';
   import {
     apiTransactions,
@@ -26,6 +27,11 @@
   let editingTransaction = $state<Transaction | null>(null);
   let showAddModal = $state(false);
   let showCategoryDropdown = $state<string | null>(null); // Transaction ID showing category dropdown
+  let showAllTransactions = $state(false); // Toggle for showing all transactions
+  let dateRangeMode = $state<'month' | 'custom'>('month');
+  let customStartDate = $state('');
+  let customEndDate = $state('');
+  let showDatePicker = $state(false);
 
   // Modal states
   let showDeleteSelectedModal = $state(false);
@@ -61,21 +67,30 @@
   let filteredTransactions = $derived(() => {
     let filtered = $apiTransactions;
     console.log('Raw API transactions:', filtered.length);
-    
+
     // Period filter
-    if (selectedPeriod) {
-      filtered = filtered.filter(t =>
-        t.date.startsWith(selectedPeriod)
-      );
+    if (!showAllTransactions) {
+      if (dateRangeMode === 'month' && selectedPeriod) {
+        filtered = filtered.filter(t =>
+          t.date.startsWith(selectedPeriod)
+        );
+      } else if (dateRangeMode === 'custom' && customStartDate && customEndDate) {
+        filtered = filtered.filter(t => {
+          const transactionDate = new Date(t.date);
+          const startDate = new Date(customStartDate);
+          const endDate = new Date(customEndDate);
+          return transactionDate >= startDate && transactionDate <= endDate;
+        });
+      }
     }
-    
+
     // Category filter
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter(t => 
+      filtered = filtered.filter(t =>
         t.categoryId && selectedCategories.includes(t.categoryId)
       );
     }
-    
+
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -84,10 +99,10 @@
         t.description.toLowerCase().includes(query)
       );
     }
-    
+
     // Hide hidden transactions (only if hidden property exists)
     // filtered = filtered.filter(t => !t.hidden); // Disabled for API transactions
-    
+
     return filtered;
   });
   
@@ -273,25 +288,6 @@
   <!-- Header -->
   <header class="transactions-header">
     <div class="header-content">
-      <!-- Period Selector -->
-      <div class="period-controls">
-        <button class="period-btn" onclick={previousPeriod} disabled={!selectedPeriod}>
-          <ChevronLeft size={16} />
-        </button>
-        <div class="period-display" onclick={showAllPeriods} style="cursor: pointer;">
-          <Calendar size={16} />
-          <span>{selectedPeriod ? new Date(selectedPeriod + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : $t('transactions.period.all_time')}</span>
-        </div>
-        <button class="period-btn" onclick={nextPeriod}>
-          <ChevronRight size={16} />
-        </button>
-        {#if selectedPeriod}
-          <button class="period-btn all-btn" onclick={showAllPeriods} title="Ver todas las transacciones">
-            <Layers size={16} />
-          </button>
-        {/if}
-      </div>
-
       <!-- Stats -->
       <div class="period-stats">
         <!-- Main Balance -->
@@ -371,8 +367,61 @@
   <!-- Toolbar -->
   <div class="toolbar">
     <div class="toolbar-content">
+      <!-- Date selector section -->
+      <div class="date-selector-section">
+        {#if !showAllTransactions}
+          {#if dateRangeMode === 'month'}
+            <button class="date-nav-btn" onclick={previousPeriod}>
+              <ChevronLeft size={14} />
+            </button>
+            <button class="date-display" onclick={() => showDatePicker = !showDatePicker}>
+              <CalendarDays size={14} />
+              <span>{selectedPeriod ? new Date(selectedPeriod + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 'Seleccionar mes'}</span>
+              <ChevronDown size={14} />
+            </button>
+            <button class="date-nav-btn" onclick={nextPeriod}>
+              <ChevronRight size={14} />
+            </button>
+          {:else}
+            <div class="custom-date-range">
+              <input
+                type="date"
+                class="date-input"
+                bind:value={customStartDate}
+                placeholder="Desde"
+              />
+              <span class="date-separator">-</span>
+              <input
+                type="date"
+                class="date-input"
+                bind:value={customEndDate}
+                placeholder="Hasta"
+              />
+            </div>
+          {/if}
+
+          <button
+            class="date-mode-btn"
+            onclick={() => dateRangeMode = dateRangeMode === 'month' ? 'custom' : 'month'}
+            title={dateRangeMode === 'month' ? 'Cambiar a rango personalizado' : 'Cambiar a selección de mes'}
+          >
+            <CalendarRange size={14} />
+          </button>
+        {/if}
+
+        <button
+          class="all-toggle-btn"
+          class:active={showAllTransactions}
+          onclick={() => showAllTransactions = !showAllTransactions}
+          title={showAllTransactions ? 'Mostrar período seleccionado' : 'Mostrar todas las transacciones'}
+        >
+          <Layers size={14} />
+        </button>
+      </div>
+
+      <!-- Search bar -->
       <div class="search-bar">
-        <Search size={16} />
+        <Search size={14} />
         <input
           type="text"
           placeholder={$t('transactions.search_placeholder')}
@@ -380,16 +429,17 @@
         />
       </div>
 
+      <!-- Action buttons -->
       <div class="toolbar-actions">
         {#if isSelectionMode}
           <button class="toolbar-btn" onclick={selectAll}>
             {$t('transactions.select_all')}
           </button>
           <button class="toolbar-btn danger" onclick={deleteSelected}>
-            <Trash2 size={16} />
+            <Trash2 size={14} />
           </button>
           <button class="toolbar-btn" onclick={hideSelected}>
-            <EyeOff size={16} />
+            <EyeOff size={14} />
           </button>
           <button class="toolbar-btn" onclick={clearSelection}>
             {$t('transactions.cancel')}
@@ -399,14 +449,49 @@
             {$t('transactions.select')}
           </button>
           <button class="toolbar-btn" onclick={() => showFilters = !showFilters}>
-            <Filter size={16} />
+            <Filter size={14} />
           </button>
           <button class="toolbar-btn">
-            <Download size={16} />
+            <Download size={14} />
           </button>
         {/if}
       </div>
     </div>
+
+    {#if showDatePicker && dateRangeMode === 'month'}
+      <div class="month-picker-dropdown">
+        <div class="month-picker-header">
+          <button class="year-nav-btn" onclick={() => {
+            const [year] = selectedPeriod.split('-');
+            selectedPeriod = `${parseInt(year) - 1}-${selectedPeriod.split('-')[1]}`;
+          }}>
+            <ChevronLeft size={14} />
+          </button>
+          <span class="year-label">{selectedPeriod.split('-')[0]}</span>
+          <button class="year-nav-btn" onclick={() => {
+            const [year] = selectedPeriod.split('-');
+            selectedPeriod = `${parseInt(year) + 1}-${selectedPeriod.split('-')[1]}`;
+          }}>
+            <ChevronRight size={14} />
+          </button>
+        </div>
+        <div class="month-grid">
+          {#each ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'] as month}
+            {@const monthDate = `${selectedPeriod.split('-')[0]}-${month}`}
+            <button
+              class="month-option"
+              class:selected={selectedPeriod === monthDate}
+              onclick={() => {
+                selectedPeriod = monthDate;
+                showDatePicker = false;
+              }}
+            >
+              {new Date(`${monthDate}-01`).toLocaleDateString('es-ES', { month: 'short' })}
+            </button>
+          {/each}
+        </div>
+      </div>
+    {/if}
     
     {#if showFilters}
       <div class="filters">
@@ -582,72 +667,214 @@
     background: var(--surface-elevated);
     border-bottom: 1px solid var(--gray-200);
     padding: var(--space-2xl) var(--space-lg);
-    position: sticky;
-    top: 0;
-    z-index: 10;
   }
-  
+
   .header-content {
     max-width: 1200px;
     margin: 0 auto;
   }
   
-  .period-controls {
+  /* Date selector styles */
+  .date-selector-section {
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
   }
-  
-  .period-btn {
-    width: 2rem;
-    height: 2rem;
-    border-radius: var(--radius-md);
-    border: 1px solid rgba(2, 60, 70, 0.1);
+
+  .date-nav-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
     background: var(--surface);
     color: var(--text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
-  }
-  
-  .period-btn:hover:not(:disabled) {
-    border-color: var(--acapulco);
-    color: var(--acapulco);
+    transition: all 0.15s ease;
   }
 
-  .period-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .date-nav-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
   }
 
-  .period-btn.all-btn {
-    margin-left: var(--space-sm);
-    background: rgba(122, 186, 165, 0.1);
-    color: var(--acapulco);
-    border-color: rgba(122, 186, 165, 0.2);
-  }
-
-  .period-btn.all-btn:hover {
-    background: rgba(122, 186, 165, 0.2);
-    border-color: var(--acapulco);
-  }
-  
-  .period-display {
+  .date-display {
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-xs);
+    padding: 0 var(--space-sm);
+    height: 1.75rem;
     background: var(--surface);
-    border-radius: var(--radius-lg);
-    font-weight: 500;
-    transition: all 0.2s;
-    user-select: none;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
   }
 
-  .period-display:hover {
-    background: rgba(122, 186, 165, 0.05);
+  .date-display:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+  }
+
+  .custom-date-range {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .date-input {
+    height: 1.75rem;
+    padding: 0 var(--space-xs);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.15s ease;
+  }
+
+  .date-input:focus {
+    border-color: var(--acapulco);
+  }
+
+  .date-separator {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+  }
+
+  .date-mode-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    margin-left: var(--space-xs);
+  }
+
+  .date-mode-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+    color: var(--acapulco);
+  }
+
+  .all-toggle-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    margin-left: var(--space-sm);
+  }
+
+  .all-toggle-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+  }
+
+  .all-toggle-btn.active {
+    background: var(--acapulco);
+    border-color: var(--acapulco);
+    color: white;
+  }
+
+  .all-toggle-btn.active:hover {
+    background: var(--acapulco-dark);
+    border-color: var(--acapulco-dark);
+  }
+
+  /* Month picker dropdown */
+  .month-picker-dropdown {
+    position: absolute;
+    top: calc(100% + var(--space-xs));
+    left: var(--space-lg);
+    background: var(--surface-elevated);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 20;
+    min-width: 240px;
+  }
+
+  .month-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .year-nav-btn {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--radius-xs);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+
+  .year-nav-btn:hover {
+    background: var(--gray-100);
+    color: var(--text-primary);
+  }
+
+  .year-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-xs);
+  }
+
+  .month-option {
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+  }
+
+  .month-option:hover {
+    background: var(--gray-50);
+    color: var(--text-primary);
+  }
+
+  .month-option.selected {
+    background: var(--acapulco);
+    color: white;
+    font-weight: 500;
   }
   
   .period-stats {
@@ -816,16 +1043,16 @@
   
   .toolbar {
     background: var(--surface-elevated);
-    border-bottom: 1px solid rgba(2, 60, 70, 0.08);
+    border-bottom: 1px solid var(--gray-200);
     position: sticky;
-    top: 73px;
-    z-index: 9;
+    top: 0;
+    z-index: 15;
   }
-  
+
   .toolbar-content {
     max-width: 1200px;
     margin: 0 auto;
-    padding: var(--space-md) var(--space-lg);
+    padding: var(--space-sm) var(--space-lg);
     display: flex;
     gap: var(--space-md);
     align-items: center;
@@ -837,54 +1064,69 @@
       flex-wrap: nowrap;
     }
   }
-  
+
   .search-bar {
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-xs);
+    padding: 0 var(--space-sm);
+    height: 1.75rem;
     background: var(--surface);
-    border: 1px solid rgba(2, 60, 70, 0.1);
-    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
     flex: 1;
-    max-width: 400px;
+    max-width: 280px;
+    transition: all 0.15s ease;
   }
-  
+
+  .search-bar:focus-within {
+    border-color: var(--acapulco);
+    box-shadow: 0 0 0 3px rgba(122, 186, 165, 0.1);
+  }
+
   .search-bar input {
     border: none;
     background: none;
     outline: none;
     flex: 1;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
   }
-  
+
+  .search-bar input::placeholder {
+    color: var(--text-muted);
+  }
+
   .toolbar-actions {
     display: flex;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
   }
-  
+
   .toolbar-btn {
-    padding: var(--space-sm) var(--space-md);
-    border: 1px solid rgba(2, 60, 70, 0.1);
-    border-radius: var(--radius-md);
+    height: 1.75rem;
+    padding: 0 var(--space-sm);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
     background: var(--surface);
     color: var(--text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: var(--space-xs);
-    font-size: 0.875rem;
-    transition: all 0.2s;
+    font-size: 0.8125rem;
+    transition: all 0.15s ease;
+    white-space: nowrap;
   }
-  
+
   .toolbar-btn:hover {
-    border-color: var(--acapulco);
-    color: var(--acapulco);
+    background: var(--gray-50);
+    border-color: var(--gray-300);
   }
-  
+
   .toolbar-btn.danger:hover {
-    border-color: var(--froly);
-    color: var(--froly);
+    background: rgba(239, 68, 68, 0.05);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: rgb(239, 68, 68);
   }
   
   .filters {
