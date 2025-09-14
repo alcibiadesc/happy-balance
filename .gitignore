@@ -37,3 +37,4 @@ ejemplo.csv
 # Test CSV files
 test-import.csv
 *.test.csv
+test_wt*
