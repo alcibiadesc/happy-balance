@@ -42,8 +42,22 @@ function log(message, color = 'reset') {
 
 // Get workspace information
 function getWorkspaceInfo() {
+  const currentPath = process.cwd();
+  const currentDir = currentPath.split('/').pop();
+  
+  // Simple and reliable detection
+  console.log(`Debug: Current path: ${currentPath}`);
+  console.log(`Debug: Current directory: ${currentDir}`);
+  console.log(`Debug: Root directory: ${rootDir}`);
+  
+  // If we're not in the root directory, we're in a worktree
+  if (currentPath !== rootDir) {
+    console.log(`Debug: Detected as worktree: ${currentDir}`);
+    return { id: currentDir, isWorktree: true };
+  }
+  
+  // Try git worktree detection as fallback
   try {
-    const currentPath = process.cwd();
     const gitWorktreeInfo = execSync('git worktree list --porcelain', { 
       encoding: 'utf-8',
       cwd: currentPath 
@@ -59,26 +73,20 @@ function getWorkspaceInfo() {
           if (lines[j].startsWith('branch ')) {
             const branchPath = lines[j].substring(7);
             const branchName = branchPath.replace('refs/heads/', '');
+            console.log(`Debug: Git detected worktree: ${branchName}`);
             return { id: branchName, isWorktree: true };
           }
         }
         // If no branch found, use directory name
-        const dirName = currentPath.split('/').pop();
-        return { id: dirName, isWorktree: true };
+        console.log(`Debug: Git detected worktree (no branch): ${currentDir}`);
+        return { id: currentDir, isWorktree: true };
       }
     }
   } catch (error) {
     console.log(`Debug: Git worktree detection failed: ${error.message}`);
   }
   
-  // Check if we're in a subdirectory that looks like a worktree
-  const currentDir = process.cwd();
-  const parentDir = resolve(currentDir, '..');
-  
-  if (currentDir !== rootDir && currentDir.includes('test-unified-ports')) {
-    return { id: 'test-unified-ports', isWorktree: true };
-  }
-  
+  console.log(`Debug: Detected as main repository`);
   return { id: 'main', isWorktree: false };
 }
 
