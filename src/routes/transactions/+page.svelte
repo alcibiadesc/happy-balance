@@ -291,7 +291,7 @@
           </button>
         {/if}
       </div>
-      
+
       <!-- Stats -->
       <div class="period-stats">
         <!-- Main Balance -->
@@ -373,13 +373,13 @@
     <div class="toolbar-content">
       <div class="search-bar">
         <Search size={16} />
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder={$t('transactions.search_placeholder')}
           bind:value={searchQuery}
         />
       </div>
-      
+
       <div class="toolbar-actions">
         {#if isSelectionMode}
           <button class="toolbar-btn" onclick={selectAll}>
@@ -590,22 +590,6 @@
   .header-content {
     max-width: 1200px;
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2xl);
-  }
-
-  @media (min-width: 768px) {
-    .header-content {
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: var(--space-3xl);
-    }
-
-    .period-stats {
-      min-width: 320px;
-    }
   }
   
   .period-controls {
@@ -670,7 +654,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-xl);
-    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
   }
 
   /* Balance Display - Featured */
@@ -842,8 +827,15 @@
     margin: 0 auto;
     padding: var(--space-md) var(--space-lg);
     display: flex;
-    justify-content: space-between;
+    gap: var(--space-md);
     align-items: center;
+    flex-wrap: wrap;
+  }
+
+  @media (min-width: 768px) {
+    .toolbar-content {
+      flex-wrap: nowrap;
+    }
   }
   
   .search-bar {
