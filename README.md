@@ -1,298 +1,322 @@
-# 💰 Expense Tracker
-.
+# Happy Balance 💰
 
-> **Enterprise-grade personal finance management application built with SvelteKit, following Domain-Driven Design, Hexagonal Architecture, and Atomic Design principles. 100% containerized - no local dependencies needed!**
+Personal finance management application built with modern technologies and clean architecture principles.
 
-## ⚡ Quick Start (Docker Only)
+## 🏗️ Architecture
 
-```bash
-# One command setup - no local dependencies needed!
-make setup
+This application follows **Domain-Driven Design (DDD)** and **Hexagonal Architecture** patterns:
 
-# Or using Docker Compose directly
-docker compose -f docker-compose.dev.yml up --build
-```
+### Frontend (SvelteKit)
+- **Presentation Layer**: Svelte components using Atomic Design
+- **Application Layer**: Use cases and stores
+- **Domain Layer**: Business logic and entities
+- **Infrastructure Layer**: API adapters and external services
 
-**🌐 Access:** http://localhost:5179 | **📊 Database Admin:** http://localhost:5050
+### Backend (Node.js/Express)
+- **Domain Layer**: Entities, Value Objects, Services, Repository Interfaces
+- **Application Layer**: Use Cases, Commands, Queries
+- **Infrastructure Layer**: Database (PostgreSQL), REST API Controllers, External Adapters
 
-**✨ Zero local setup required - everything runs in Docker!**
+## 🚀 Quick Start
 
-## 🏗️ Architecture Overview
+### Prerequisites
+- Node.js >= 20.0.0
+- pnpm >= 8.0.0
+- Docker & Docker Compose (optional, for production deployment)
+- PostgreSQL (if running without Docker)
 
-This application follows **Clean Architecture** principles with clear separation of concerns:
+### Development Setup
 
-```
-📁 src/lib/
-├── 🏛️  domain/              # Pure Business Logic
-│   ├── entities/            # Business entities (Account, Transaction)
-│   ├── value-objects/       # Immutable values (Money, TransactionDate)
-│   ├── services/            # Domain services (CategorizationEngine)
-│   └── repositories/        # Repository interfaces
-│
-├── 🎯 application/          # Application Layer (CQRS)
-│   ├── use-cases/           # Use cases (ImportTransactions)
-│   ├── commands/            # Command objects
-│   ├── queries/             # Query objects (DashboardQuery)
-│   └── handlers/            # CQRS handlers
-│
-├── 🔌 infrastructure/       # External Adapters
-│   ├── repositories/        # Prisma implementations
-│   ├── parsers/             # CSV parsers (N26, Generic)
-│   └── database/            # Database configuration
-│
-├── 🎨 ui/                   # Presentation Layer (Atomic Design)
-│   ├── atoms/               # Basic elements (Button, Input)
-│   ├── molecules/           # Simple components (MetricCard)
-│   ├── organisms/           # Complex sections (Dashboard)
-│   └── templates/           # Page layouts
-│
-└── 🔧 shared/              # Shared Utilities
-    ├── types/               # TypeScript definitions
-    ├── utils/               # Helper functions
-    └── errors/              # Error handling
-```
+1. **Install dependencies**
+   ```bash
+   pnpm install:all
+   ```
 
-### 🎯 Key Design Patterns
+2. **Setup database** (PostgreSQL)
+   ```bash
+   # Option 1: Using Docker (recommended)
+   docker-compose -f docker-compose.dev.yml up postgres -d
 
-- **Domain-Driven Design (DDD)**: Business logic isolated in domain layer
-- **Hexagonal Architecture**: Clean separation between business and technical concerns  
-- **CQRS**: Separate read/write operations for optimal performance
-- **Result Pattern**: Explicit error handling without exceptions
-- **Atomic Design**: Consistent, reusable UI component hierarchy
+   # Option 2: Local PostgreSQL
+   # Create a database named 'happy_balance' and update backend/.env
+   ```
 
-## 🐳 Docker-First Development
+3. **Configure environment**
+   ```bash
+   cp backend/.env.example backend/.env
+   # Edit backend/.env with your database connection details
+   ```
 
-**Everything runs in containers - no local Node.js, pnpm, or PostgreSQL needed!**
+4. **Setup database schema**
+   ```bash
+   pnpm db:setup
+   ```
 
-### 🚀 Essential Commands
+5. **Start development servers**
+   ```bash
+   pnpm dev
+   ```
 
-```bash
-# 🛠️ Setup & Development
-make setup            # First-time setup (builds everything)
-make dev              # Start development with hot reload
-make dev-bg           # Start development in background
+This will start:
+- Frontend at http://localhost:5173
+- Backend API at http://localhost:3000
 
-# 📊 Monitoring & Access  
-make status           # Show all container status
-make logs             # View application logs
-make shell            # Access container shell
+## 🎯 Features
 
-# 🛑 Control
-make stop             # Stop all containers
-make restart          # Restart containers
-make rebuild          # Force rebuild containers
-```
+### ✅ Implemented
+- **Transaction Management**: Create, read, update, delete transactions
+- **CSV Import**: Import transactions from bank CSV files with smart field detection
+- **Duplicate Detection**: Automatic detection of potential duplicate transactions
+- **Auto-Categorization**: Smart categorization based on merchant patterns
+- **Dashboard**: Financial overview with statistics and charts
+- **Multi-currency Support**: Handle different currencies
+- **Responsive Design**: Mobile-friendly interface
+- **Dark/Light Theme**: Theme switcher
+- **Real-time Updates**: Live data synchronization
 
-### 🐘 Database Operations (All in Docker)
+### 🚧 Planned
+- **Excel Import**: Import from Excel files
+- **Budget Management**: Set and track budgets
+- **Reporting**: Generate detailed financial reports
+- **Data Export**: Export data in various formats
+- **Bank API Integration**: Direct bank connection
+- **Investment Tracking**: Track investment portfolio
+- **Bill Reminders**: Recurring payment reminders
 
-```bash
-# 🗄️ Database Access
-make db-shell         # PostgreSQL command line
-make db-admin         # PgAdmin web interface info
-make db-logs          # Database logs
-make db-reset         # ⚠️ Reset database (destroys data)
-```
+## 📊 Database Schema
 
-### 🧪 Testing & Quality (All in Docker)
-
-```bash
-# ✅ Testing
-make test             # Run all tests
-make test-coverage    # Coverage report
-
-# 🔍 Code Quality  
-make lint             # Check code quality
-make lint-fix         # Auto-fix issues
-make typecheck        # TypeScript validation
-```
-
-### 🏭 Production Deployment
-
-```bash
-# 🚀 Production
-make prod             # Start production stack
-make prod-logs        # View production logs
-make prod-down        # Stop production
-```
-
-### 🧹 Maintenance
-
-```bash
-# 🧹 Cleanup
-make clean            # Remove containers & volumes
-make clean-all        # ⚠️ Nuclear option (removes images too)
-make urls             # Show all service URLs
-```
-
-## 🌟 Key Features
-
-### ✅ **Architecture & Quality**
-- **Clean Architecture** with DDD principles
-- **CQRS** for optimal read/write separation
-- **Comprehensive Testing** (unit, integration, e2e)
-- **Type Safety** with strict TypeScript
-- **Error Handling** with Result pattern
-
-### ✅ **Developer Experience**
-- **🐳 100% Containerized** - No local dependencies
-- **⚡ Instant Hot Reload** with bind mounts
-- **🛠️ VS Code Dev Containers** support
-- **📊 PgAdmin Web Interface** for database management
-- **🔍 One-command setup** and teardown
-
-### ✅ **Business Features**
-- **Smart CSV Import** (N26 + Generic formats)
-- **Auto-categorization** with rules engine
-- **Real-time Dashboard** with analytics
-- **Multi-currency Support** with proper rounding
-- **Savings Tracking** with goal management
-
-### ✅ **UI/UX**
-- **Atomic Design System** with shadcn/ui
-- **Dark/Light Mode** toggle
-- **Responsive Design** for all devices
-- **Accessibility** compliant (ARIA, keyboard nav)
-
-## 🎯 Use Cases
-
-### 📊 **Dashboard Analytics**
-```typescript
-// Query financial metrics with type safety
-const metricsResult = await dashboardQuery.execute({
-  startDate: new Date('2024-01-01'),
-  endDate: new Date('2024-12-31')
-});
-
-if (metricsResult.isSuccess()) {
-  const { totalIncome, savingsRate, topCategories } = metricsResult.value;
-}
-```
-
-### 💳 **Transaction Import**
-```typescript
-// Import CSV with comprehensive validation
-const importResult = await importTransactionsUseCase.execute({
-  csvContent: fileContent,
-  accountId: 'account-123',
-  fileName: 'n26-export.csv'
-});
-
-if (importResult.isSuccess()) {
-  const { imported, skipped, errors } = importResult.value;
-}
-```
-
-### 💰 **Money Operations**
-```typescript
-// Type-safe money calculations
-const incomeResult = Money.create(1500, 'EUR');
-const expensesResult = Money.create(800, 'EUR');
-
-if (incomeResult.isSuccess() && expensesResult.isSuccess()) {
-  const savingsResult = incomeResult.value.subtract(expensesResult.value);
-  // Always explicit success/failure handling
-}
-```
-
-## 🌐 Service Access
-
-| Service | URL | Credentials | Description |
-|---------|-----|-------------|-------------|
-| **🌐 Application** | http://localhost:5179 | - | Main app with hot reload |
-| **📊 PgAdmin** | http://localhost:5050 | `admin@expense-tracker.dev` / `admin` | Database web interface |
-| **🐘 PostgreSQL** | `localhost:5433` | `expense_tracker` / `dev_password_2024` | Direct database access |
-| **🔍 Health Check** | http://localhost:5179/health | - | Application status |
-
-## 💻 VS Code Integration
-
-**Open in container mode for full IDE integration:**
-
-1. **Install Extension:** `ms-vscode-remote.remote-containers`
-2. **Open in Container:** `Ctrl+Shift+P` → `Remote-Containers: Open Folder in Container`
-3. **Ready!** Full IntelliSense, debugging, and terminal access in containerized environment
+### Tables
+- **transactions**: Store all financial transactions
+- **categories**: Hierarchical category system
+- **import_logs**: Track import operations
+- **app_settings**: Application configuration
 
 ## 🛠️ Tech Stack
 
-### **Core Framework**
-- **SvelteKit 5** - Full-stack framework with latest runes
-- **TypeScript** - Strict type safety
-- **Vite** - Lightning-fast development
+### Frontend
+- **Framework**: SvelteKit 2.0
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + DaisyUI
+- **Charts**: Chart.js
+- **Icons**: Lucide Svelte
+- **i18n**: svelte-i18n
 
-### **Backend & Data**
-- **Node.js 22** - Runtime environment
-- **Prisma ORM** - Type-safe database access
-- **PostgreSQL 16** - Primary database
-- **CQRS Pattern** - Optimized read/write operations
+### Backend
+- **Runtime**: Node.js 20+
+- **Framework**: Express.js
+- **Language**: TypeScript
+- **Database**: PostgreSQL 16
+- **ORM**: Prisma
+- **Validation**: Zod
+- **File Upload**: Multer
 
-### **Frontend & UI**
-- **Tailwind CSS** - Utility-first styling
-- **shadcn/ui** - High-quality components
-- **Lucide Icons** - Consistent iconography
-- **Chart.js** - Data visualization
+### DevOps & Tools
+- **Package Manager**: pnpm
+- **Build Tool**: Vite
+- **Container**: Docker + Docker Compose
+- **Linting**: ESLint + Prettier
+- **Testing**: Vitest
+- **Type Checking**: TypeScript
 
-### **Development & DevOps**
-- **Docker** - Multi-stage containerization
-- **pnpm** - Fast package management
-- **Vitest** - Modern testing framework
-- **ESLint + Prettier** - Code quality
-- **Storybook** - Component documentation
+## 🐳 Docker Deployment
 
-## 📈 Metrics & Performance
-
-### **Code Quality**
-- **90%+ Test Coverage** across all layers
-- **Zero TypeScript Errors** in production
-- **Lighthouse Score 95+** for performance
-- **Bundle Size < 200KB** gzipped
-
-### **Architecture Benefits**
-- **Domain Logic** isolated and testable
-- **Infrastructure** easily swappable
-- **UI Components** reusable and documented
-- **Error Handling** explicit and type-safe
-
-## 🚀 Getting Started
-
-### **Prerequisites**
-- 🐳 **Docker** & **Docker Compose** (only requirement!)
-- 🛠️ **Make** (optional, for easier commands)
-
-### **First Time Setup**
+### Development
 ```bash
-# Clone and start everything
-git clone <your-repo>
-cd expense-tracker
-make setup          # Builds and starts all services
+# Start development environment (includes database)
+pnpm docker:dev
+
+# Stop development environment
+pnpm docker:dev:down
 ```
 
-### **Daily Development**
+### Production
 ```bash
-make dev            # Start with hot reload
-# Code changes are reflected instantly!
-# Access: http://localhost:5179
+# Build and start production containers
+pnpm docker:prod
+
+# Stop production containers
+pnpm docker:prod:down
 ```
 
-### **VS Code Users**
+### Services
+- **Frontend**: http://localhost:3001
+- **Backend API**: http://localhost:3000
+- **PostgreSQL**: localhost:5432
+
+## 📝 Scripts
+
+### Root Commands
 ```bash
-# Open in dev container for full IDE integration
-code .
-# Ctrl+Shift+P → "Remote-Containers: Reopen in Container"
+pnpm dev              # Start both frontend and backend in development
+pnpm build            # Build both frontend and backend
+pnpm start            # Start production frontend server
+pnpm test             # Run tests
+pnpm lint             # Run linting
+pnpm typecheck        # Run type checking
 ```
+
+### Database Commands
+```bash
+pnpm db:setup         # Generate Prisma client and push schema
+pnpm db:migrate       # Run database migrations
+pnpm db:reset         # Reset database (WARNING: deletes all data)
+```
+
+### Docker Commands
+```bash
+pnpm docker:dev       # Start development environment
+pnpm docker:prod      # Start production environment
+pnpm install:all      # Install all dependencies
+pnpm clean            # Clean build artifacts and node_modules
+```
+
+## 🗂️ Project Structure
+
+```
+happy-balance/
+├── src/                          # Frontend source
+│   ├── lib/
+│   │   ├── domain/              # Domain layer (business logic)
+│   │   ├── application/         # Application layer (use cases)
+│   │   ├── infrastructure/      # Infrastructure layer (adapters)
+│   │   └── components/          # UI components (atomic design)
+│   ├── routes/                  # SvelteKit routes
+│   └── app.html
+├── backend/                     # Backend source
+│   ├── src/
+│   │   ├── domain/             # Domain layer
+│   │   ├── application/        # Application layer
+│   │   └── infrastructure/     # Infrastructure layer
+│   ├── prisma/                 # Database schema and migrations
+│   └── package.json
+├── docker-compose.yml          # Production deployment
+├── docker-compose.dev.yml      # Development environment
+└── package.json                # Root workspace configuration
+```
+
+## 🔧 Environment Variables
+
+### Backend (.env)
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/happy_balance"
+PORT=3000
+NODE_ENV=development
+CORS_ORIGIN="http://localhost:5173"
+MAX_FILE_SIZE=10485760  # 10MB
+```
+
+### Frontend (optional)
+```env
+PUBLIC_API_URL="http://localhost:3000/api"
+```
+
+## 📄 API Documentation
+
+### Transactions
+- `POST /api/transactions` - Create transaction
+- `GET /api/transactions` - List transactions (with filters & pagination)
+- `GET /api/transactions/:id` - Get transaction by ID
+- `PUT /api/transactions/:id` - Update transaction
+- `DELETE /api/transactions/:id` - Delete transaction
+- `GET /api/transactions/statistics` - Get financial statistics
+- `GET /api/transactions/dashboard` - Get dashboard data
+
+### Import
+- `POST /api/import/csv` - Import from CSV file
+- `POST /api/import/validate` - Validate CSV file
+- `GET /api/import/history` - Get import history
+
+### Health
+- `GET /health` - Health check
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pnpm test
+
+# Run backend tests only
+pnpm test:backend
+
+# Run with coverage
+pnpm test:coverage
+```
+
+## 🔒 Security Features
+
+- **CORS Protection**: Configured for frontend domain
+- **Helmet**: Security headers
+- **Input Validation**: Zod schemas for API validation
+- **File Upload Limits**: Configurable file size limits
+- **SQL Injection Protection**: Prisma ORM with parameterized queries
+
+## 🌍 Internationalization
+
+The application supports multiple languages through svelte-i18n:
+- English (default)
+- Spanish
+- More languages can be added easily
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 📋 Development Guidelines
+
+### Code Style
+- Use TypeScript for type safety
+- Follow ESLint and Prettier configurations
+- Write tests for new features
+- Use conventional commit messages
+
+### Architecture Rules
+- Keep domain logic pure (no external dependencies)
+- Use dependency inversion (inject dependencies)
+- Implement interfaces in infrastructure layer
+- Keep components atomic and reusable
+
+### Database Migrations
+```bash
+# Create new migration
+cd backend && pnpm prisma migrate dev --name your-migration-name
+
+# Apply migrations
+pnpm db:migrate
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Database connection failed**
+   - Check PostgreSQL is running
+   - Verify DATABASE_URL in backend/.env
+   - Run `pnpm db:setup` to initialize schema
+
+2. **CORS errors**
+   - Verify CORS_ORIGIN in backend/.env matches frontend URL
+   - Check backend is running on port 3000
+
+3. **File upload fails**
+   - Check MAX_FILE_SIZE in backend/.env
+   - Verify file format is supported (CSV)
+
+4. **Docker issues**
+   - Run `docker-compose down -v` to reset volumes
+   - Check Docker has enough memory allocated
+
+## 📜 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Author
+
+Created with ❤️ using Claude Code
 
 ---
 
-## 📋 Development Checklist
-
-- ✅ **No local dependencies** - everything in Docker
-- ✅ **Hot reload** - instant code changes  
-- ✅ **Database included** - PostgreSQL + PgAdmin
-- ✅ **Type checking** - strict TypeScript
-- ✅ **Testing ready** - Vitest + coverage
-- ✅ **Production ready** - optimized builds
-- ✅ **VS Code integration** - dev containers
-
----
-
-### 🎉 **Enterprise-grade containerized development made simple!**
-
-**Start coding in 30 seconds:** `make setup && make dev`
+**Happy Balancing! 💰✨**

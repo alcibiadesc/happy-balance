@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import { ImportController } from '../controllers/ImportController';
+import { upload } from '../middleware/upload';
+
+export const createImportRoutes = (importController: ImportController): Router => {
+  const router = Router();
+
+  // Import operations
+  router.post('/csv', upload.single('file'), importController.importFromCsv.bind(importController));
+  router.post('/excel', upload.single('file'), importController.importFromExcel.bind(importController));
+  router.post('/validate', upload.single('file'), importController.validateCsv.bind(importController));
+  router.get('/history', importController.getImportHistory.bind(importController));
+
+  return router;
+};

@@ -5,23 +5,24 @@
     TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,
     Tag, MoreVertical, ChevronLeft, ChevronRight, Layers
   } from 'lucide-svelte';
-  import { 
-    transactions, 
-    categories, 
-    selectedTransactions,
-    transactionStats 
-  } from '$lib/stores/transactions';
+  import {
+    apiTransactions,
+    apiCategories,
+    apiSelectedTransactions,
+    apiTransactionStats
+  } from '$lib/stores/api-transactions';
   import type { Transaction, Category } from '$lib/types/transaction';
   
   // State
   let searchQuery = $state('');
   let showFilters = $state(false);
-  let selectedPeriod = $state(new Date().toISOString().slice(0, 7));
+  let selectedPeriod = $state(''); // Empty means show all transactions
   let selectedCategories = $state<string[]>([]);
   let isSelectionMode = $state(false);
   let showCategoryModal = $state(false);
   let editingTransaction = $state<Transaction | null>(null);
   let showAddModal = $state(false);
+  let showCategoryDropdown = $state<string | null>(null); // Transaction ID showing category dropdown
   
   // Period navigation
   function previousPeriod() {
@@ -38,11 +39,12 @@
   
   // Computed
   let filteredTransactions = $derived(() => {
-    let filtered = $transactions;
+    let filtered = $apiTransactions;
+    console.log('Raw API transactions:', filtered.length);
     
     // Period filter
     if (selectedPeriod) {
-      filtered = filtered.filter(t => 
+      filtered = filtered.filter(t =>
         t.date.startsWith(selectedPeriod)
       );
     }
@@ -63,29 +65,35 @@
       );
     }
     
-    // Hide hidden transactions
-    filtered = filtered.filter(t => !t.hidden);
+    // Hide hidden transactions (only if hidden property exists)
+    // filtered = filtered.filter(t => !t.hidden); // Disabled for API transactions
     
     return filtered;
   });
   
   let groupedTransactions = $derived(() => {
+    const filtered = filteredTransactions();
+    console.log('Filtered transactions:', filtered.length);
+
     const groups = new Map<string, Transaction[]>();
-    
-    filteredTransactions().forEach(transaction => {
+
+    filtered.forEach(transaction => {
       const date = transaction.date;
       if (!groups.has(date)) {
         groups.set(date, []);
       }
       groups.get(date)!.push(transaction);
     });
-    
-    return Array.from(groups.entries())
+
+    const result = Array.from(groups.entries())
       .sort(([a], [b]) => b.localeCompare(a))
       .map(([date, items]) => ({
         date,
-        items: items.sort((a, b) => b.time.localeCompare(a.time))
+        items: items.sort((a, b) => b.createdAt?.localeCompare(a.createdAt || '') || 0)
       }));
+
+    console.log('Grouped transactions:', result.length);
+    return result;
   });
   
   let periodStats = $derived(() => {
@@ -106,7 +114,7 @@
   
   // Actions
   function toggleSelection(id: string) {
-    selectedTransactions.update(s => {
+    apiSelectedTransactions.update(s => {
       const newSet = new Set(s);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -119,35 +127,45 @@
   
   function selectAll() {
     const allIds = filteredTransactions().map(t => t.id);
-    selectedTransactions.set(new Set(allIds));
+    apiSelectedTransactions.set(new Set(allIds));
   }
   
   function clearSelection() {
-    selectedTransactions.set(new Set());
+    apiSelectedTransactions.set(new Set());
     isSelectionMode = false;
   }
   
   async function deleteSelected() {
     if (!confirm('Delete selected transactions?')) return;
     
-    const ids = Array.from($selectedTransactions);
+    const ids = Array.from($apiSelectedTransactions);
     for (const id of ids) {
-      await transactions.delete(id);
+      await apiTransactions.delete(id);
     }
     clearSelection();
   }
   
   async function hideSelected() {
-    const ids = Array.from($selectedTransactions);
-    await transactions.bulkUpdate(ids, { hidden: true });
+    const ids = Array.from($apiSelectedTransactions);
+    await apiTransactions.bulkUpdate(ids, { hidden: true });
     clearSelection();
+  }
+
+  async function toggleHideTransaction(transaction: Transaction) {
+    const newHiddenState = !transaction.hidden;
+    await apiTransactions.update(transaction.id, { hidden: newHiddenState });
+  }
+
+  async function deleteTransaction(id: string) {
+    if (!confirm('Delete this transaction?')) return;
+    await apiTransactions.delete(id);
   }
   
   async function categorizeTransaction(transaction: Transaction, categoryId: string, applyToAll = false) {
     if (applyToAll) {
-      await transactions.applyCategoryToPattern(transaction, categoryId);
+      await apiTransactions.applyCategoryToPattern(transaction, categoryId);
     } else {
-      await transactions.update(transaction.id, { categoryId });
+      await apiTransactions.update(transaction.id, { categoryId });
     }
   }
   
@@ -182,11 +200,11 @@
   
   function getCategoryById(id?: string): Category | undefined {
     if (!id) return undefined;
-    return $categories.find(c => c.id === id);
+    return $apiCategories.find(c => c.id === id);
   }
   
-  onMount(() => {
-    transactions.load();
+  onMount(async () => {
+    await apiTransactions.load();
   });
 </script>
 
@@ -270,7 +288,7 @@
     
     {#if showFilters}
       <div class="filters">
-        {#each $categories as category}
+        {#each $apiCategories as category}
           <button 
             class="category-chip"
             class:active={selectedCategories.includes(category.id)}
@@ -293,6 +311,11 @@
   
   <!-- Transaction List -->
   <main class="transactions-list">
+    <!-- DEBUG: Show raw transaction count -->
+    <div>Total transactions: {$apiTransactions.length}</div>
+    <div>Filtered transactions: {filteredTransactions().length}</div>
+    <div>Grouped transactions: {groupedTransactions().length}</div>
+
     {#each groupedTransactions() as group}
       <div class="transaction-group">
         <h3 class="group-header">
@@ -301,17 +324,17 @@
             {formatAmount(group.items.reduce((sum, t) => sum + t.amount, 0))}
           </span>
         </h3>
-        
+
         {#each group.items as transaction}
           {@const category = getCategoryById(transaction.categoryId)}
-          <div 
+          <div
             class="transaction-card"
-            class:selected={$selectedTransactions.has(transaction.id)}
+            class:selected={$apiSelectedTransactions.has(transaction.id)}
           >
             {#if isSelectionMode}
               <input 
                 type="checkbox"
-                checked={$selectedTransactions.has(transaction.id)}
+                checked={$apiSelectedTransactions.has(transaction.id)}
                 onchange={() => toggleSelection(transaction.id)}
               />
             {/if}
@@ -340,17 +363,54 @@
               
               {#if !category}
                 <div class="category-selector">
-                  <button class="category-btn">
+                  <button
+                    class="category-btn"
+                    onclick={() => showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id}
+                  >
                     <Tag size={14} />
                     Add category
                   </button>
+
+                  {#if showCategoryDropdown === transaction.id}
+                    <div class="category-dropdown">
+                      {#each $apiCategories as cat}
+                        <button
+                          class="category-option"
+                          onclick={() => {
+                            categorizeTransaction(transaction, cat.id);
+                            showCategoryDropdown = null;
+                          }}
+                        >
+                          <span class="category-icon">{cat.icon}</span>
+                          <span class="category-name">{cat.name}</span>
+                        </button>
+                      {/each}
+                    </div>
+                  {/if}
                 </div>
               {/if}
             </div>
             
-            <button class="transaction-menu">
-              <MoreVertical size={16} />
-            </button>
+            <div class="transaction-actions">
+              <button
+                class="action-btn"
+                title={transaction.hidden ? 'Show transaction' : 'Hide transaction'}
+                onclick={() => toggleHideTransaction(transaction)}
+              >
+                {#if transaction.hidden}
+                  <Eye size={14} />
+                {:else}
+                  <EyeOff size={14} />
+                {/if}
+              </button>
+              <button
+                class="action-btn delete-btn"
+                title="Delete transaction"
+                onclick={() => deleteTransaction(transaction.id)}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         {/each}
       </div>
@@ -666,10 +726,16 @@
     background: rgba(122, 186, 165, 0.1);
   }
   
-  .transaction-menu {
-    width: 2rem;
-    height: 2rem;
-    border-radius: var(--radius-md);
+  .transaction-actions {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+  }
+
+  .action-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--radius-sm);
     border: none;
     background: transparent;
     color: var(--text-muted);
@@ -679,9 +745,15 @@
     justify-content: center;
     transition: all 0.2s;
   }
-  
-  .transaction-menu:hover {
+
+  .action-btn:hover {
     background: var(--surface);
+    color: var(--text);
+  }
+
+  .delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: rgb(239, 68, 68);
   }
   
   .fab {

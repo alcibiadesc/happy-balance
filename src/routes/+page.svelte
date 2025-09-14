@@ -3,7 +3,7 @@
   import { Calendar, TrendingUp, TrendingDown, Wallet, PiggyBank } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
-  import { transactions, categories, transactionStats } from '$lib/stores/transactions';
+  import { apiTransactions, apiCategories, apiTransactionStats } from '$lib/stores/api-transactions';
   import SpendingIndicator from '$lib/components/molecules/SpendingIndicator.svelte';
   import ExpensesCard from '$lib/components/molecules/ExpensesCard.svelte';
   import FinancialChart from '$lib/components/molecules/FinancialChart.svelte';
@@ -26,7 +26,7 @@
   });
   
   // Get current stats from store
-  let currentStats = $derived($transactionStats);
+  let currentStats = $derived($apiTransactionStats);
   
   // Calculate trends (simplified for now - can be enhanced later)
   let trends = $derived({
@@ -203,7 +203,9 @@
     return value >= 0 ? 'var(--success)' : 'var(--accent)';
   }
   
-  onMount(() => {
+  onMount(async () => {
+    // Load transactions from API
+    await apiTransactions.load();
     loadData(selectedPeriod);
   });
 </script>

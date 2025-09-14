@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { t } from '$lib/stores/i18n';
   import { onMount } from 'svelte';
+  import { apiTransactions } from '$lib/stores/api-transactions';
   
   // Types
   interface ParsedTransaction {
@@ -139,48 +140,24 @@
   }
 
   async function checkDuplicatesAgainstDatabase() {
-    const existingHashes = JSON.parse(localStorage.getItem('transaction-hashes') || '[]');
-    
-    transactions = transactions.map(tx => {
-      if (existingHashes.includes(tx.hash)) {
-        return {
-          ...tx,
-          isDuplicate: true,
-          selected: false,
-          duplicateReason: $t('import.duplicate_reasons.database')
-        };
-      }
-      return tx;
-    });
+    // Skip database duplicate check for now - the backend will handle duplicates during import
+    // The UI preview will only show file-level duplicates
   }
 
   async function importTransactions() {
+    if (!selectedFile) return;
+
     loading = true;
     step = 3;
-    
+
     try {
-      const selectedTransactions = transactions.filter(tx => tx.selected && !tx.isDuplicate);
-      
-      // Save to localStorage
-      const existingTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-      const existingHashes = JSON.parse(localStorage.getItem('transaction-hashes') || '[]');
-      
-      const newTransactions = selectedTransactions.map(tx => ({
-        id: crypto.randomUUID ? crypto.randomUUID() : `tx-${Date.now()}-${Math.random()}`,
-        date: tx.date,
-        partner: tx.partner,
-        description: tx.description,
-        amount: tx.amount,
-        hash: tx.hash
-      }));
-      
-      const newHashes = selectedTransactions.map(tx => tx.hash);
-      
-      localStorage.setItem('transactions', JSON.stringify([...existingTransactions, ...newTransactions]));
-      localStorage.setItem('transaction-hashes', JSON.stringify([...existingHashes, ...newHashes]));
-      
+      // Use API to import file
+      const result = await apiTransactions.importFile(selectedFile);
+
+      console.log('Import successful:', result);
+
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       loading = false;
       setTimeout(() => goto('/'), 2000);
     } catch (err) {
