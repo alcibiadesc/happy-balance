@@ -125,7 +125,6 @@
       <!-- Header -->
       <div class="modal-header">
         <h3>New Transaction</h3>
-        <p>Add a transaction to your records</p>
       </div>
 
       <!-- Form -->
@@ -258,37 +257,37 @@
     position: fixed;
     inset: 0;
     z-index: 50;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    animation: fade-in 0.2s ease-out;
+    animation: fade-in 0.15s ease-out;
   }
 
   .modal-content {
     background: var(--surface-elevated);
-    border-radius: 16px;
-    padding: 2rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
     width: 100%;
-    max-width: 420px;
+    max-width: 380px;
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    animation: slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    animation: slide-up 0.2s ease-out;
   }
 
   .close-btn {
     position: absolute;
     top: 1rem;
     right: 1rem;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    border: none;
-    background: rgba(0, 0, 0, 0.05);
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+    background: var(--surface);
     color: var(--text-muted);
     cursor: pointer;
     display: flex;
@@ -298,32 +297,25 @@
   }
 
   .close-btn:hover {
-    background: rgba(0, 0, 0, 0.1);
-    transform: scale(1.05);
+    border-color: var(--text-secondary);
+    color: var(--text-secondary);
   }
 
   .modal-header {
-    text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .modal-header h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 1.125rem;
+    font-weight: 500;
     color: var(--text-primary);
-    margin: 0 0 0.5rem 0;
-  }
-
-  .modal-header p {
-    color: var(--text-muted);
-    font-size: 0.875rem;
     margin: 0;
   }
 
   .form {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
   }
 
   .field-group {
@@ -333,17 +325,19 @@
   }
 
   .field-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--text-muted);
     margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .field-input {
-    padding: 0.75rem 1rem;
-    border: 1.5px solid rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
-    font-size: 1rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
     background: var(--surface);
     color: var(--text-primary);
     transition: all 0.2s ease;
@@ -352,12 +346,10 @@
 
   .field-input:focus {
     border-color: var(--acapulco);
-    box-shadow: 0 0 0 3px rgba(122, 186, 165, 0.1);
   }
 
   .field-input.error {
     border-color: var(--froly);
-    box-shadow: 0 0 0 3px rgba(245, 121, 108, 0.1);
   }
 
   .field-input::placeholder {
@@ -387,11 +379,11 @@
 
   .amount-field {
     width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2rem;
-    border: 1.5px solid rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
-    font-size: 1.25rem;
-    font-weight: 600;
+    padding: 0.625rem 0.75rem 0.625rem 2rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 1.125rem;
+    font-weight: 400;
     background: var(--surface);
     color: var(--text-primary);
     transition: all 0.2s ease;
@@ -400,12 +392,10 @@
 
   .amount-field:focus {
     border-color: var(--acapulco);
-    box-shadow: 0 0 0 3px rgba(122, 186, 165, 0.1);
   }
 
   .amount-field.error {
     border-color: var(--froly);
-    box-shadow: 0 0 0 3px rgba(245, 121, 108, 0.1);
   }
 
   .type-toggle {
@@ -413,12 +403,13 @@
   }
 
   .type-btn {
-    padding: 0.75rem 1.5rem;
-    border: 1.5px solid rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
     background: var(--surface);
     color: var(--text-secondary);
-    font-weight: 500;
+    font-weight: 400;
+    font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s ease;
     outline: none;
@@ -426,14 +417,12 @@
   }
 
   .type-btn.expense {
-    background: rgba(245, 121, 108, 0.1);
-    border-color: rgba(245, 121, 108, 0.3);
+    border-color: var(--froly);
     color: var(--froly);
   }
 
   .type-btn.income {
-    background: rgba(122, 186, 165, 0.1);
-    border-color: rgba(122, 186, 165, 0.3);
+    border-color: var(--acapulco);
     color: var(--acapulco);
   }
 
@@ -452,9 +441,9 @@
     flex-direction: column;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.75rem 0.5rem;
-    border: 1.5px solid rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
+    padding: 0.625rem 0.5rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
     background: var(--surface);
     color: var(--text-secondary);
     cursor: pointer;
@@ -464,15 +453,12 @@
 
   .category-chip:hover {
     border-color: var(--category-color);
-    transform: translateY(-1px);
   }
 
   .category-chip.selected {
     background: var(--category-color);
     border-color: var(--category-color);
     color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   .category-icon {
@@ -493,30 +479,31 @@
 
   .btn-secondary {
     flex: 1;
-    padding: 0.75rem 1.5rem;
-    border: 1.5px solid rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
     background: var(--surface);
     color: var(--text-secondary);
-    font-weight: 500;
+    font-weight: 400;
+    font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s ease;
     outline: none;
   }
 
   .btn-secondary:hover {
-    background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 0, 0, 0.15);
+    border-color: var(--text-secondary);
   }
 
   .btn-primary {
     flex: 2;
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    background: var(--acapulco);
-    color: white;
-    font-weight: 600;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--acapulco);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--acapulco);
+    font-weight: 400;
+    font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s ease;
     outline: none;
@@ -527,9 +514,7 @@
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: #6ca085;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.3);
+    background: rgba(122, 186, 165, 0.05);
   }
 
   .btn-primary:disabled {
@@ -561,11 +546,11 @@
   @keyframes slide-up {
     from {
       opacity: 0;
-      transform: translateY(20px) scale(0.95);
+      transform: translateY(10px);
     }
     to {
       opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: translateY(0);
     }
   }
 

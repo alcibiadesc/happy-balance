@@ -621,7 +621,7 @@
   
   <!-- FAB -->
   <button class="fab" onclick={() => showAddModal = true}>
-    <Plus size={20} />
+    <Plus size={16} />
   </button>
 </div>
 
@@ -1338,22 +1338,23 @@
     position: fixed;
     bottom: var(--space-xl);
     right: var(--space-xl);
-    width: 3.5rem;
-    height: 3.5rem;
-    border-radius: 50%;
-    background: var(--acapulco);
-    color: var(--bridesmaid);
-    border: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1px solid var(--gray-200);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 20px rgba(122, 186, 165, 0.4);
-    transition: all 0.3s;
+    box-shadow: none;
+    transition: all 0.2s ease;
+    font-weight: 300;
   }
-  
+
   .fab:hover {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 8px 30px rgba(122, 186, 165, 0.5);
+    border-color: var(--acapulco);
+    color: var(--acapulco);
   }
 </style>
