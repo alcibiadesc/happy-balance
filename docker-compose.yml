@@ -1,4 +1,4 @@
-# Production Docker Compose
+# Happy Balance - Development Environment with Docker Compose
 version: '3.8'
 
 services:
@@ -10,12 +10,13 @@ services:
     environment:
       POSTGRES_DB: happy_balance
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/prisma/migrations:/docker-entrypoint-initdb.d/migrations:ro
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     networks:
       - happy-balance
     healthcheck:
@@ -23,61 +24,79 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
-  # Backend API
-  backend:
+  # Backend API (Development with hot reload)
+  app:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: production
-    container_name: happy-balance-backend
+      context: .
+      dockerfile: docker/Dockerfile.dev
+      target: development
+    container_name: happy-balance-app
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/happy_balance
-      NODE_ENV: production
-      PORT: 3000
-      CORS_ORIGIN: http://localhost:3001
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/happy_balance
+      - NODE_ENV=development
+      - PORT=3000
+      - CORS_ORIGIN=http://localhost:5173
+      - ENABLE_SEED_DATA=true
+      - IN_DOCKER=true
     ports:
-      - "3000:3000"
+      - "${API_PORT:-3000}:3000"  # Backend API
+      - "${FRONTEND_PORT:-5173}:5173"  # Frontend dev server
     networks:
       - happy-balance
+    volumes:
+      # Mount source code for hot reloading
+      - ./src:/app/src:ro
+      - ./backend/src:/app/backend/src:ro
+      - ./backend/prisma:/app/backend/prisma:ro
+      # Mount package.json files to detect dependency changes
+      - ./package.json:/app/package.json:ro
+      - ./backend/package.json:/app/backend/package.json:ro
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml:ro
+      # Mount configuration files
+      - ./svelte.config.js:/app/svelte.config.js:ro
+      - ./vite.config.ts:/app/vite.config.ts:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./backend/tsconfig.json:/app/backend/tsconfig.json:ro
+      - ./tailwind.config.js:/app/tailwind.config.js:ro
+      - ./postcss.config.js:/app/postcss.config.js:ro
+      # Exclude node_modules to avoid conflicts
+      - /app/node_modules
+      - /app/backend/node_modules
     depends_on:
       postgres:
         condition: service_healthy
+    command: >
+      sh -c "
+        echo '🚀 Starting Happy Balance Development Environment...' &&
+        echo '📦 Installing dependencies...' &&
+        pnpm install --frozen-lockfile &&
+        cd backend && pnpm install --frozen-lockfile && cd .. &&
+        echo '🗄️ Setting up database...' &&
+        cd backend && 
+        pnpm db:generate &&
+        pnpm db:push &&
+        echo '🌱 Running database seed...' &&
+        pnpm db:seed &&
+        cd .. &&
+        echo '🔥 Starting development servers with hot reload...' &&
+        pnpm dev
+      "
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Frontend Application
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
-    container_name: happy-balance-frontend
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      PUBLIC_API_URL: http://localhost:3000/api
-    ports:
-      - "3001:3000"
-    networks:
-      - happy-balance
-    depends_on:
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      start_period: 60s
 
 volumes:
   postgres_data:
     driver: local
+    name: happy_balance_postgres_data
 
 networks:
   happy-balance:
     driver: bridge
+    name: happy_balance_network

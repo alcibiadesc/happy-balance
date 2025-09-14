@@ -78,6 +78,92 @@ async function main() {
   }
   console.log(`✅ Created ${settings.length} app settings`);
 
+  // Create default user preferences
+  console.log('👤 Creating default user preferences...');
+  await prisma.userPreferences.upsert({
+    where: { userId: 'default' },
+    update: {},
+    create: {
+      userId: 'default',
+      currency: 'EUR',
+      language: 'en',
+      theme: 'light'
+    }
+  });
+  console.log('✅ Created default user preferences');
+
+  // Create sample transactions for development (only if ENABLE_SEED_DATA is true)
+  if (process.env.ENABLE_SEED_DATA === 'true') {
+    console.log('📊 Creating sample transactions for development...');
+    
+    const sampleTransactions = [
+      {
+        id: 'sample-1',
+        amount: -25.50,
+        currency: 'EUR',
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        merchant: 'Starbucks Coffee',
+        type: 'EXPENSE',
+        description: 'Morning coffee',
+        categoryId: '1', // Food & Dining
+        hash: 'sample-hash-1'
+      },
+      {
+        id: 'sample-2',
+        amount: -45.20,
+        currency: 'EUR',
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        merchant: 'Uber',
+        type: 'EXPENSE',
+        description: 'Ride to work',
+        categoryId: '2', // Transportation
+        hash: 'sample-hash-2'
+      },
+      {
+        id: 'sample-3',
+        amount: 2500.00,
+        currency: 'EUR',
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        merchant: 'Company Inc.',
+        type: 'INCOME',
+        description: 'Monthly salary',
+        categoryId: '9', // Salary
+        hash: 'sample-hash-3'
+      },
+      {
+        id: 'sample-4',
+        amount: -89.99,
+        currency: 'EUR',
+        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+        merchant: 'Amazon',
+        type: 'EXPENSE',
+        description: 'Online shopping',
+        categoryId: '3', // Shopping
+        hash: 'sample-hash-4'
+      },
+      {
+        id: 'sample-5',
+        amount: -120.00,
+        currency: 'EUR',
+        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+        merchant: 'Electric Company',
+        type: 'EXPENSE',
+        description: 'Monthly electricity bill',
+        categoryId: '5', // Bills & Utilities
+        hash: 'sample-hash-5'
+      }
+    ];
+
+    for (const transaction of sampleTransactions) {
+      await prisma.transaction.upsert({
+        where: { id: transaction.id },
+        update: {},
+        create: transaction,
+      });
+    }
+    console.log(`✅ Created ${sampleTransactions.length} sample transactions`);
+  }
+
   console.log('🎉 Database seeding completed successfully!');
 }
 

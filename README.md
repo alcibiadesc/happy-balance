@@ -19,13 +19,30 @@ This application follows **Domain-Driven Design (DDD)** and **Hexagonal Architec
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js >= 20.0.0
-- pnpm >= 8.0.0
-- Docker & Docker Compose (optional, for production deployment)
-- PostgreSQL (if running without Docker)
+### Option 1: Docker Setup (Recommended) 🐳
 
-### Development Setup
+The easiest way to get started with a fully reproducible environment:
+
+```bash
+git clone <your-repo>
+cd expense-tracker
+docker compose up
+```
+
+**That's it!** The application will be available at http://localhost:5173 with hot reloading enabled.
+
+👉 **See [DOCKER_SETUP.md](./DOCKER_SETUP.md) for detailed Docker documentation**
+
+### Option 2: Local Development
+
+If you prefer to run without Docker:
+
+#### Prerequisites
+- Node.js >= 20.0.0  
+- pnpm >= 8.0.0
+- PostgreSQL 16+
+
+#### Setup Steps
 
 1. **Install dependencies**
    ```bash
@@ -34,22 +51,23 @@ This application follows **Domain-Driven Design (DDD)** and **Hexagonal Architec
 
 2. **Setup database** (PostgreSQL)
    ```bash
-   # Option 1: Using Docker (recommended)
+   # Option 1: Using Docker for database only
    docker-compose -f docker-compose.dev.yml up postgres -d
 
    # Option 2: Local PostgreSQL
-   # Create a database named 'happy_balance' and update backend/.env
+   # Create a database named 'happy_balance'
    ```
 
 3. **Configure environment**
    ```bash
-   cp backend/.env.example backend/.env
-   # Edit backend/.env with your database connection details
+   # Create backend/.env with your database connection
+   echo 'DATABASE_URL="postgresql://postgres:password@localhost:5432/happy_balance"' > backend/.env
    ```
 
 4. **Setup database schema**
    ```bash
    pnpm db:setup
+   pnpm db:seed
    ```
 
 5. **Start development servers**
