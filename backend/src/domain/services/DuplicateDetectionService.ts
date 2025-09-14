@@ -268,7 +268,7 @@ export class DuplicateDetectionService {
       const results = hashes.map(hash => ({
         hash,
         isDuplicate: existingHashes.has(hash),
-        duplicateId: existingTransactions.find(tx => tx.getHash() === hash)?.getId()
+        duplicateId: existingTransactions.find(tx => tx.getHash() === hash)?.id.value
       }));
 
       return Result.ok(results);

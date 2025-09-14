@@ -13,6 +13,7 @@ export const createImportRoutes = (importController: ImportController): Router =
 
   // Import operations
   router.post('/csv', upload.single('file'), importController.importFromCsv.bind(importController));
+  router.post('/generate-hashes', importController.generateHashes.bind(importController));
   router.post('/check-duplicates', importController.checkDuplicates.bind(importController));
   router.post('/selected', importController.importSelected.bind(importController));
   router.post('/excel', upload.single('file'), importController.importFromExcel.bind(importController));

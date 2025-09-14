@@ -41,12 +41,32 @@
       throw new Error('No valid transactions found in CSV file');
     }
 
-    // Extract hashes and check for duplicates using new DDD endpoint
-    const hashes = parseResult.transactions.map(tx => tx.hash);
+    // Generate hashes using backend service for consistency
+    const transactionsForHashing = parseResult.transactions.map(tx => ({
+      date: tx.date,
+      merchant: tx.partner,
+      amount: tx.amount,
+      currency: tx.originalCurrency || 'EUR'
+    }));
+
+    const hashResult = await apiTransactions.generateHashes(transactionsForHashing);
+    console.log('🔐 Generated hashes from backend:', hashResult);
+
+    // Update transactions with backend-generated hashes
+    const transactionsWithHashes = parseResult.transactions.map((tx, index) => {
+      const hashInfo = hashResult.hashes.find(h => h.index === index);
+      return {
+        ...tx,
+        hash: hashInfo?.hash || tx.hash // Use backend hash if available
+      };
+    });
+
+    // Check for duplicates using backend-generated hashes
+    const hashes = transactionsWithHashes.map(tx => tx.hash);
     const duplicateCheckResult = await apiTransactions.checkDuplicates(hashes);
 
     // Update transactions based on duplicate check results
-    const transactionsWithDuplicateInfo = parseResult.transactions.map(tx => {
+    const transactionsWithDuplicateInfo = transactionsWithHashes.map(tx => {
       const duplicateInfo = duplicateCheckResult.results.find(r => r.hash === tx.hash);
       return {
         ...tx,
@@ -101,6 +121,12 @@
         return;
       }
 
+      // Show message if duplicates were detected
+      const duplicateCount = transactions.filter(tx => tx.isDuplicate).length;
+      if (duplicateCount > 0) {
+        console.log(`🔍 Found ${duplicateCount} duplicate transactions that will be skipped`);
+      }
+
       step = 2;
     } catch (err) {
       error = err instanceof Error ? err.message : $t("import.errors.parse_failed");
@@ -120,9 +146,13 @@
     try {
       // Get only selected transactions that are NOT duplicates
       const selectedTransactions = transactions.filter(tx => tx.selected && !tx.isDuplicate);
+      const duplicatesSkipped = transactions.filter(tx => tx.isDuplicate).length;
 
       console.log('🔄 Importing selected transactions:', selectedTransactions.length);
       console.log('📋 Selected transactions:', selectedTransactions);
+      if (duplicatesSkipped > 0) {
+        console.log('⚠️ Skipping duplicates:', duplicatesSkipped);
+      }
 
       if (selectedTransactions.length === 0) {
         throw new Error('No transactions selected for import');
@@ -132,6 +162,9 @@
       const result = await apiTransactions.importSelectedTransactions(selectedTransactions);
 
       console.log("✅ Import successful:", result);
+
+      // Store duplicate count for success message
+      window.lastImportDuplicates = duplicatesSkipped;
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -425,11 +458,14 @@
                 {$t("import.preview.stats.selected")}
               </div>
             </div>
-            <div class="stat-card warning">
+            <div class="stat-card warning" class:pulse={duplicateCount > 0}>
               <div class="stat-value">{duplicateCount}</div>
               <div class="stat-label">
                 {$t("import.preview.stats.duplicates")}
               </div>
+              {#if duplicateCount > 0}
+                <div class="stat-hint">Ya existen en base de datos</div>
+              {/if}
             </div>
             <div class="stat-card error">
               <div class="stat-value">
@@ -664,6 +700,11 @@
               <p class="complete-subtitle">
                 {$t("import.complete.success_desc", { count: selectedCount })}
               </p>
+              {#if window.lastImportDuplicates > 0}
+                <p class="complete-info">
+                  ⚠️ {window.lastImportDuplicates} transacciones duplicadas fueron omitidas
+                </p>
+              {/if}
             </div>
           {/if}
         </div>
@@ -1170,6 +1211,30 @@
     margin-top: 0.5rem;
   }
 
+  .stat-hint {
+    font-size: 0.625rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .stat-card.warning.pulse {
+    animation: pulse-warning 2s ease-in-out;
+  }
+
+  @keyframes pulse-warning {
+    0%, 100% {
+      background: rgba(254, 205, 44, 0.1);
+      border-color: rgba(254, 205, 44, 0.2);
+    }
+    50% {
+      background: rgba(254, 205, 44, 0.2);
+      border-color: rgba(254, 205, 44, 0.4);
+    }
+  }
+
   /* Preview Controls */
   .preview-controls {
     display: flex;
@@ -1562,6 +1627,15 @@
   .complete-subtitle {
     color: var(--text-secondary);
     margin-bottom: 1rem;
+  }
+
+  .complete-info {
+    font-size: 0.875rem;
+    color: #d4a000;
+    background: rgba(254, 205, 44, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
   }
 
   .complete-redirect {

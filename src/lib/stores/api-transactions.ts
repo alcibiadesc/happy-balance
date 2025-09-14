@@ -187,6 +187,34 @@ function createApiTransactionStore() {
       }
     },
 
+    // Generate hashes using backend service
+    async generateHashes(transactions: Array<{date: string; merchant: string; amount: number; currency?: string;}>) {
+      try {
+        console.log('🔐 Frontend: Requesting hash generation for transactions:', transactions.length);
+
+        const response = await fetch(`${API_BASE}/import/generate-hashes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ transactions })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to generate hashes');
+        }
+
+        const result = await response.json();
+        console.log('✅ Frontend: Hash generation result:', result.data);
+
+        return result.data;
+      } catch (error) {
+        console.error('❌ Frontend: Failed to generate hashes:', error);
+        throw error;
+      }
+    },
+
     // Check which hashes are duplicates
     async checkDuplicates(hashes: string[]) {
       try {

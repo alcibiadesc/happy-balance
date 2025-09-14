@@ -171,7 +171,8 @@
       "expense_distribution": "Distribución de gastos",
       "essential": "Esenciales",
       "discretionary": "Discrecionales",
-      "uncategorized": "Sin categorizar"
+      "uncategorized": "Sin categorizar",
+      "all_time": "Todas las transacciones"
     },
     "search_placeholder": "Buscar transacciones...",
     "select_all": "Seleccionar Todo",

@@ -19,7 +19,7 @@
   // State
   let searchQuery = $state('');
   let showFilters = $state(false);
-  let selectedPeriod = $state(''); // Empty means show all transactions
+  let selectedPeriod = $state(new Date().toISOString().slice(0, 7)); // Current month by default
   let selectedCategories = $state<string[]>([]);
   let isSelectionMode = $state(false);
   let showCategoryModal = $state(false);
@@ -34,15 +34,27 @@
   
   // Period navigation
   function previousPeriod() {
+    if (!selectedPeriod) {
+      selectedPeriod = new Date().toISOString().slice(0, 7);
+      return;
+    }
     const [year, month] = selectedPeriod.split('-');
     const date = new Date(Number(year), Number(month) - 2);
     selectedPeriod = date.toISOString().slice(0, 7);
   }
-  
+
   function nextPeriod() {
+    if (!selectedPeriod) {
+      selectedPeriod = new Date().toISOString().slice(0, 7);
+      return;
+    }
     const [year, month] = selectedPeriod.split('-');
     const date = new Date(Number(year), Number(month));
     selectedPeriod = date.toISOString().slice(0, 7);
+  }
+
+  function showAllPeriods() {
+    selectedPeriod = '';
   }
   
   // Computed
@@ -263,16 +275,21 @@
     <div class="header-content">
       <!-- Period Selector -->
       <div class="period-controls">
-        <button class="period-btn" onclick={previousPeriod}>
+        <button class="period-btn" onclick={previousPeriod} disabled={!selectedPeriod}>
           <ChevronLeft size={16} />
         </button>
-        <div class="period-display">
+        <div class="period-display" onclick={showAllPeriods} style="cursor: pointer;">
           <Calendar size={16} />
-          <span>{new Date(selectedPeriod + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+          <span>{selectedPeriod ? new Date(selectedPeriod + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : $t('transactions.period.all_time')}</span>
         </div>
         <button class="period-btn" onclick={nextPeriod}>
           <ChevronRight size={16} />
         </button>
+        {#if selectedPeriod}
+          <button class="period-btn all-btn" onclick={showAllPeriods} title="Ver todas las transacciones">
+            <Layers size={16} />
+          </button>
+        {/if}
       </div>
       
       <!-- Stats -->
@@ -611,9 +628,26 @@
     transition: all 0.2s;
   }
   
-  .period-btn:hover {
+  .period-btn:hover:not(:disabled) {
     border-color: var(--acapulco);
     color: var(--acapulco);
+  }
+
+  .period-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .period-btn.all-btn {
+    margin-left: var(--space-sm);
+    background: rgba(122, 186, 165, 0.1);
+    color: var(--acapulco);
+    border-color: rgba(122, 186, 165, 0.2);
+  }
+
+  .period-btn.all-btn:hover {
+    background: rgba(122, 186, 165, 0.2);
+    border-color: var(--acapulco);
   }
   
   .period-display {
@@ -624,6 +658,12 @@
     background: var(--surface);
     border-radius: var(--radius-lg);
     font-weight: 500;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .period-display:hover {
+    background: rgba(122, 186, 165, 0.05);
   }
   
   .period-stats {

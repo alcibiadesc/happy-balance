@@ -5,6 +5,7 @@ import { TransactionDate } from '../value-objects/TransactionDate';
 import { Merchant } from '../value-objects/Merchant';
 import { Category, CategoryId } from './Category';
 import { TransactionType } from './TransactionType';
+import { HashGenerationService } from '../services/HashGenerationService';
 
 /**
  * Transaction entity - Rich domain model
@@ -23,10 +24,12 @@ export class Transaction {
     private readonly _merchant: Merchant,
     private readonly _type: TransactionType,
     description: string,
-    private readonly _createdAt: Date = new Date()
+    private readonly _createdAt: Date = new Date(),
+    hash?: string
   ) {
     this._description = description;
-    this._hash = this.getHash();
+    // Only generate hash if not provided (for new transactions)
+    this._hash = hash || this.generateHash();
   }
 
   static create(
@@ -65,7 +68,9 @@ export class Transaction {
       date,
       merchant,
       type,
-      description || ''
+      description || '',
+      new Date(),
+      undefined // Let constructor generate hash for new transactions
     ));
   }
 
@@ -180,20 +185,23 @@ export class Transaction {
   }
 
   /**
-   * Generate a hash for duplicate detection
+   * Get the hash for this transaction
    */
   getHash(): string {
-    const data = `${this._date.toDateString()}_${this._merchant.normalizedName}_${this._amount.amount}_${this._amount.currency}`;
+    return this._hash || this.generateHash();
+  }
 
-    // Simple hash function
-    let hash = 0;
-    for (let i = 0; i < data.length; i++) {
-      const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-
-    return Math.abs(hash).toString(36);
+  /**
+   * Generate a hash for duplicate detection using centralized service
+   */
+  private generateHash(): string {
+    const hashService = new HashGenerationService();
+    return hashService.generateTransactionHash({
+      date: this._date.toDateString(),
+      merchant: this._merchant.name, // Use raw name, service will normalize
+      amount: this._amount.amount,
+      currency: this._amount.currency
+    });
   }
 
   /**
@@ -267,7 +275,7 @@ export class Transaction {
       return Result.fail(merchantResult.getError());
     }
 
-    // Create transaction
+    // Create transaction with preserved hash
     const transaction = new Transaction(
       idResult.getValue(),
       amountResult.getValue(),
@@ -275,7 +283,8 @@ export class Transaction {
       merchantResult.getValue(),
       snapshot.type,
       snapshot.description,
-      new Date(snapshot.createdAt)
+      new Date(snapshot.createdAt),
+      snapshot.hash // Preserve the hash from snapshot
     );
 
     // Set optional fields
@@ -287,7 +296,7 @@ export class Transaction {
     }
 
     transaction._isSelected = snapshot.isSelected ?? true;
-    transaction._hash = snapshot.hash;
+    // Hash is already set in constructor, no need to set it again
 
     return Result.ok(transaction);
   }

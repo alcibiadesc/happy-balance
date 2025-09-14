@@ -171,7 +171,8 @@
       "expense_distribution": "Expense distribution",
       "essential": "Essential",
       "discretionary": "Discretionary",
-      "uncategorized": "Uncategorized"
+      "uncategorized": "Uncategorized",
+      "all_time": "All transactions"
     },
     "search_placeholder": "Search transactions...",
     "select_all": "Select All",

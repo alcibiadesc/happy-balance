@@ -4,6 +4,7 @@ import { ImportTransactionsCommand } from '@application/commands/ImportTransacti
 import { ImportTransactionsUseCase } from '@application/use-cases/ImportTransactionsUseCase';
 import { CheckDuplicateHashesUseCase, CheckDuplicateHashesCommand } from '@application/use-cases/CheckDuplicateHashesUseCase';
 import { ImportSelectedTransactionsUseCase, ImportSelectedTransactionsCommand } from '@application/use-cases/ImportSelectedTransactionsUseCase';
+import { GenerateHashesUseCase, GenerateHashesCommand } from '@application/use-cases/GenerateHashesUseCase';
 
 const ImportConfigSchema = z.object({
   currency: z.string().min(3).max(3).default('EUR'),
@@ -48,12 +49,56 @@ const CheckDuplicateHashesSchema = z.object({
   hashes: z.array(z.string()).min(1, 'At least one hash is required')
 });
 
+const GenerateHashesSchema = z.object({
+  transactions: z.array(z.object({
+    date: z.string(),
+    merchant: z.string(),
+    amount: z.number(),
+    currency: z.string().optional()
+  })).min(1, 'At least one transaction is required')
+});
+
 export class ImportController {
+  private readonly generateHashesUseCase: GenerateHashesUseCase;
+
   constructor(
     private readonly importTransactionsUseCase: ImportTransactionsUseCase,
     private readonly checkDuplicateHashesUseCase: CheckDuplicateHashesUseCase,
     private readonly importSelectedTransactionsUseCase: ImportSelectedTransactionsUseCase
-  ) {}
+  ) {
+    this.generateHashesUseCase = new GenerateHashesUseCase();
+  }
+
+  async generateHashes(req: Request, res: Response) {
+    try {
+      const validation = GenerateHashesSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid request',
+          details: validation.error.errors
+        });
+      }
+
+      const command: GenerateHashesCommand = {
+        transactions: validation.data.transactions
+      };
+
+      const result = await this.generateHashesUseCase.execute(command);
+      if (result.isFailure()) {
+        return res.status(400).json({ error: result.getError() });
+      }
+
+      res.json({
+        success: true,
+        data: result.getValue()
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: 'Hash generation failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
 
   async checkDuplicates(req: Request, res: Response) {
     try {

@@ -1,0 +1,111 @@
+import { Result } from '../shared/Result';
+
+/**
+ * Domain service for generating transaction hashes
+ * Centralizes hash generation logic following DDD principles
+ * Single source of truth for hash generation across the system
+ */
+export class HashGenerationService {
+
+  /**
+   * Generate a hash for a transaction based on its key attributes
+   * This is the single source of truth for hash generation
+   */
+  generateTransactionHash(params: {
+    date: string;        // YYYY-MM-DD format
+    merchant: string;    // Raw merchant name
+    amount: number;      // Absolute amount
+    currency: string;    // Currency code
+  }): string {
+    // Normalize merchant name consistently
+    const normalizedMerchant = this.normalizeMerchant(params.merchant);
+
+    // Ensure consistent date format (YYYY-MM-DD)
+    const normalizedDate = this.normalizeDate(params.date);
+
+    // Use absolute amount for consistency
+    const absoluteAmount = Math.abs(params.amount);
+
+    // Build hash data string
+    const hashData = `${normalizedDate}_${normalizedMerchant}_${absoluteAmount}_${params.currency}`;
+
+    // Generate hash using simple hash function
+    return this.computeHash(hashData);
+  }
+
+  /**
+   * Generate hashes for multiple transactions
+   */
+  generateBulkHashes(transactions: Array<{
+    date: string;
+    merchant: string;
+    amount: number;
+    currency: string;
+  }>): Result<Map<number, string>> {
+    try {
+      const hashes = new Map<number, string>();
+
+      transactions.forEach((tx, index) => {
+        const hash = this.generateTransactionHash(tx);
+        hashes.set(index, hash);
+      });
+
+      return Result.ok(hashes);
+    } catch (error) {
+      return Result.fail(`Failed to generate hashes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Normalize merchant name for consistent hashing
+   */
+  private normalizeMerchant(merchant: string): string {
+    return merchant
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '') // Remove special characters but keep word chars and spaces
+      .replace(/\s+/g, ' ')    // Normalize whitespace to single spaces
+      .trim();
+  }
+
+  /**
+   * Normalize date to ensure consistent format
+   */
+  private normalizeDate(date: string): string {
+    // Expect YYYY-MM-DD format, but handle Date objects if needed
+    if (date.includes('T')) {
+      // ISO string, extract date part
+      return date.split('T')[0];
+    }
+    return date;
+  }
+
+  /**
+   * Compute hash using simple hash function
+   * Consistent with existing implementation
+   */
+  private computeHash(data: string): string {
+    let hash = 0;
+    for (let i = 0; i < data.length; i++) {
+      const char = data.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(36);
+  }
+
+  /**
+   * Validate if a hash looks valid
+   */
+  isValidHash(hash: string): boolean {
+    // Hash should be a base36 string
+    return /^[0-9a-z]+$/.test(hash) && hash.length > 0 && hash.length <= 20;
+  }
+
+  /**
+   * Compare two hashes
+   */
+  compareHashes(hash1: string, hash2: string): boolean {
+    return hash1 === hash2;
+  }
+}
