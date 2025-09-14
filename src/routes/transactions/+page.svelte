@@ -325,11 +325,6 @@
   
   <!-- Transaction List -->
   <main class="transactions-list">
-    <!-- DEBUG: Show raw transaction count -->
-    <div>Total transactions: {$apiTransactions.length}</div>
-    <div>Filtered transactions: {filteredTransactions().length}</div>
-    <div>Grouped transactions: {groupedTransactions().length}</div>
-
     {#each groupedTransactions() as group}
       <div class="transaction-group">
         <h3 class="group-header">
