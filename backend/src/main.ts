@@ -164,18 +164,34 @@ class App {
   }
 
   public async start() {
-    const port = process.env.PORT || 3000;
+    const preferredPort = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
     try {
       // Test database connection
       await prisma.$connect();
       console.log('✅ Database connected successfully');
 
-      // Start server
-      this.app.listen(port, () => {
-        console.log(`🚀 Server running on port ${port}`);
+      // Start server with automatic port detection
+      const server = this.app.listen(preferredPort, () => {
+        const actualPort = (server.address() as any)?.port || preferredPort;
+        console.log(`🚀 Server running on port ${actualPort}`);
         console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`🔗 API Base URL: http://localhost:${port}/api`);
+        console.log(`🔗 API Base URL: http://localhost:${actualPort}/api`);
+      });
+
+      server.on('error', (error: any) => {
+        if (error.code === 'EADDRINUSE') {
+          console.log(`⚠️ Port ${preferredPort} is in use, trying next available port...`);
+          // Let Node.js find an available port
+          const fallbackServer = this.app.listen(0, () => {
+            const actualPort = (fallbackServer.address() as any)?.port;
+            console.log(`🚀 Server running on port ${actualPort}`);
+            console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`🔗 API Base URL: http://localhost:${actualPort}/api`);
+          });
+        } else {
+          throw error;
+        }
       });
     } catch (error) {
       console.error('❌ Failed to start server:', error);
