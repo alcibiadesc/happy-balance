@@ -9,8 +9,8 @@
     "backend"
   ],
   "scripts": {
-    "dev": "npm run kill-ports && concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
-    "kill-ports": "npx kill-port 3000 5173 5432 || true",
+    "dev": "node scripts/kill-ports-if-needed.js && concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "kill-ports": "node scripts/kill-ports-if-needed.js",
     "dev:frontend": "vite dev --host 0.0.0.0 --port 5173",
     "dev:backend": "cd backend && pnpm dev",
     "build": "npm run build:frontend && npm run build:backend",
