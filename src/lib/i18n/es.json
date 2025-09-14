@@ -17,6 +17,7 @@
     "done": "Hecho"
   },
   "navigation": {
+    "transactions": "Transacciones",
     "dashboard": "Panel",
     "settings": "Configuración",
     "import": "Importar"
@@ -206,5 +207,12 @@
     "deleted": "Eliminado exitosamente",
     "imported": "Importado exitosamente",
     "exported": "Exportado exitosamente"
+  },
+  "modal": {
+    "confirm_action": "Confirmar Acción",
+    "are_you_sure": "¿Estás seguro?",
+    "delete_all_title": "Eliminar Todos los Datos",
+    "delete_all_message": "⚠️ Esto eliminará permanentemente TODAS tus transacciones, categorías y configuraciones tanto de la aplicación como de la base de datos. ¡Esta acción no se puede deshacer!",
+    "delete_everything": "Eliminar Todo"
   }
 }

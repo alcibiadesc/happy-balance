@@ -17,6 +17,7 @@
     "done": "Done"
   },
   "navigation": {
+    "transactions": "Transactions",
     "dashboard": "Dashboard",
     "settings": "Settings",
     "import": "Import"
@@ -206,5 +207,12 @@
     "deleted": "Deleted successfully",
     "imported": "Imported successfully",
     "exported": "Exported successfully"
+  },
+  "modal": {
+    "confirm_action": "Confirm Action",
+    "are_you_sure": "Are you sure?",
+    "delete_all_title": "Delete All Data",
+    "delete_all_message": "⚠️ This will permanently delete ALL your transactions, categories, and settings from both the app and the database. This action cannot be undone!",
+    "delete_everything": "Delete Everything"
   }
 }
