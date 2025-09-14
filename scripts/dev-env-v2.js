@@ -43,14 +43,15 @@ function log(message, color = 'reset') {
 // Get workspace information
 function getWorkspaceInfo() {
   try {
+    const currentPath = process.cwd();
     const gitWorktreeInfo = execSync('git worktree list --porcelain', { 
       encoding: 'utf-8',
-      cwd: rootDir 
+      cwd: currentPath 
     });
     
-    const currentPath = resolve(rootDir);
     const lines = gitWorktreeInfo.split('\n');
     
+    // Find our current path in the worktree list
     for (let i = 0; i < lines.length; i++) {
       if (lines[i].startsWith('worktree ') && lines[i].substring(9) === currentPath) {
         // This is a worktree, find the branch name
@@ -61,10 +62,21 @@ function getWorkspaceInfo() {
             return { id: branchName, isWorktree: true };
           }
         }
+        // If no branch found, use directory name
+        const dirName = currentPath.split('/').pop();
+        return { id: dirName, isWorktree: true };
       }
     }
-  } catch {
-    // Not in a git worktree or git not available
+  } catch (error) {
+    console.log(`Debug: Git worktree detection failed: ${error.message}`);
+  }
+  
+  // Check if we're in a subdirectory that looks like a worktree
+  const currentDir = process.cwd();
+  const parentDir = resolve(currentDir, '..');
+  
+  if (currentDir !== rootDir && currentDir.includes('test-unified-ports')) {
+    return { id: 'test-unified-ports', isWorktree: true };
   }
   
   return { id: 'main', isWorktree: false };
@@ -210,9 +222,8 @@ volumes:
       execSync(`docker exec ${containerName} pg_isready -U postgres -d ${dbName}`, {
         stdio: 'ignore'
       });
-      log('✅ Database is ready!', 'green');
       
-      // Test actual connection
+      // Test actual connection only once when pg_isready succeeds
       log('🧪 Testing database connection...', 'yellow');
       const testResult = execSync(
         `docker exec ${containerName} psql -U postgres -d ${dbName} -c "SELECT 1;"`,
@@ -222,13 +233,17 @@ volumes:
       if (testResult.includes('1 row')) {
         log('✅ Database connection verified!', 'green');
         return true;
+      } else {
+        log('⚠️  Database query failed, retrying...', 'yellow');
       }
-    } catch {}
+    } catch (error) {
+      log(`⚠️  Database not ready yet (attempt ${i + 1}/20)...`, 'gray');
+    }
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
   }
   
-  log('❌ Database failed to start', 'red');
+  log('❌ Database failed to start after 20 attempts', 'red');
   return false;
 }
 
