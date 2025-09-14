@@ -45,9 +45,9 @@
       en: `For every ${formatCurrencyAmount(10)} I earn, I spend {amount}`,
       es: `Por cada ${formatCurrencyAmount(10)} que ingreso, gasto {amount}`
     };
-    
+
     const template = templates[language as keyof typeof templates] || templates.en;
-    return template.replace('{amount}', `<strong>${rate}</strong>`);
+    return template.replace('{amount}', `<strong>${formatCurrencyAmount(rate)}</strong>`);
   });
 </script>
 
@@ -80,18 +80,18 @@
 
   /* Status-based backgrounds */
   .spending-summary.good {
-    background: linear-gradient(135deg, #22c55e10 0%, #16a34a10 100%);
-    border-color: #22c55e30;
+    background: linear-gradient(135deg, #22c55e25 0%, #16a34a25 100%);
+    border-color: #22c55e60;
   }
 
   .spending-summary.medium {
-    background: linear-gradient(135deg, #f59e0b10 0%, #ea580c10 100%);
-    border-color: #f59e0b30;
+    background: linear-gradient(135deg, #f59e0b25 0%, #ea580c25 100%);
+    border-color: #f59e0b60;
   }
 
   .spending-summary.regular {
-    background: linear-gradient(135deg, #ef444410 0%, #dc262610 100%);
-    border-color: #ef444430;
+    background: linear-gradient(135deg, #ef444425 0%, #dc262625 100%);
+    border-color: #ef444460;
   }
 
   /* Responsive */
