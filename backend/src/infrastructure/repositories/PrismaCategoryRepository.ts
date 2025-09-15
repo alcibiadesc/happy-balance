@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Category as PrismaCategory } from '@prisma/client';
 import { Result } from '@domain/shared/Result';
 import { ICategoryRepository, CategoryFilters } from '@domain/repositories/ICategoryRepository';
 import { Category, CategoryId, CategorySnapshot } from '@domain/entities/Category';
@@ -7,7 +7,7 @@ import { TransactionType, TransactionTypeHelper } from '@domain/entities/Transac
 export class PrismaCategoryRepository implements ICategoryRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  private prismaToDomain(prismaCategory: any): Result<Category> {
+  private prismaToDomain(prismaCategory: PrismaCategory): Result<Category> {
     const categoryIdResult = CategoryId.create(prismaCategory.id);
     if (categoryIdResult.isFailure()) {
       return Result.fail(categoryIdResult.getError());
