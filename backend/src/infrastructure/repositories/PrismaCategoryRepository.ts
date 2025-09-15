@@ -2,10 +2,43 @@ import { PrismaClient } from '@prisma/client';
 import { Result } from '@domain/shared/Result';
 import { ICategoryRepository, CategoryFilters } from '@domain/repositories/ICategoryRepository';
 import { Category, CategoryId, CategorySnapshot } from '@domain/entities/Category';
-import { TransactionType } from '@domain/entities/TransactionType';
+import { TransactionType, TransactionTypeHelper } from '@domain/entities/TransactionType';
 
 export class PrismaCategoryRepository implements ICategoryRepository {
   constructor(private readonly prisma: PrismaClient) {}
+
+  private prismaToDomain(prismaCategory: any): Result<Category> {
+    const categoryIdResult = CategoryId.create(prismaCategory.id);
+    if (categoryIdResult.isFailure()) {
+      return Result.fail(categoryIdResult.getError());
+    }
+
+    const transactionType = TransactionTypeHelper.fromString(prismaCategory.type);
+    if (!transactionType) {
+      return Result.failWithMessage(`Invalid transaction type: ${prismaCategory.type}`);
+    }
+
+    return Category.fromSnapshot({
+      id: prismaCategory.id,
+      name: prismaCategory.name,
+      color: prismaCategory.color || '#3B82F6',
+      icon: prismaCategory.icon || '💰',
+      type: transactionType,
+      isActive: prismaCategory.isActive,
+      createdAt: prismaCategory.createdAt.toISOString()
+    });
+  }
+
+  private domainToPrisma(category: Category) {
+    return {
+      id: category.id.value,
+      name: category.name,
+      color: category.color,
+      icon: category.icon,
+      type: category.type,
+      isActive: category.isActive
+    };
+  }
 
   async findAll(): Promise<Result<Category[]>> {
     try {
@@ -15,17 +48,16 @@ export class PrismaCategoryRepository implements ICategoryRepository {
         }
       });
 
-      const domainCategories = categories.map(cat => ({
-        id: { value: cat.id },
-        name: cat.name,
-        description: cat.description,
-        type: cat.type as TransactionType,
-        isActive: cat.isActive,
-        createdAt: cat.createdAt,
-        updatedAt: cat.updatedAt
-      }));
+      const domainCategories: Category[] = [];
+      for (const category of categories) {
+        const domainCategoryResult = this.prismaToDomain(category);
+        if (domainCategoryResult.isFailure()) {
+          return Result.fail(domainCategoryResult.getError());
+        }
+        domainCategories.push(domainCategoryResult.getValue());
+      }
 
-      return Result.ok(domainCategories as Category[]);
+      return Result.ok(domainCategories);
     } catch (error) {
       return Result.failWithMessage(
         `Failed to fetch categories: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -44,17 +76,16 @@ export class PrismaCategoryRepository implements ICategoryRepository {
         }
       });
 
-      const domainCategories = categories.map(cat => ({
-        id: { value: cat.id },
-        name: cat.name,
-        description: cat.description,
-        type: cat.type as TransactionType,
-        isActive: cat.isActive,
-        createdAt: cat.createdAt,
-        updatedAt: cat.updatedAt
-      }));
+      const domainCategories: Category[] = [];
+      for (const category of categories) {
+        const domainCategoryResult = this.prismaToDomain(category);
+        if (domainCategoryResult.isFailure()) {
+          return Result.fail(domainCategoryResult.getError());
+        }
+        domainCategories.push(domainCategoryResult.getValue());
+      }
 
-      return Result.ok(domainCategories as Category[]);
+      return Result.ok(domainCategories);
     } catch (error) {
       return Result.failWithMessage(
         `Failed to fetch active categories: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -74,17 +105,12 @@ export class PrismaCategoryRepository implements ICategoryRepository {
         return Result.ok(null);
       }
 
-      const domainCategory = {
-        id: { value: category.id },
-        name: category.name,
-        description: category.description,
-        type: category.type as TransactionType,
-        isActive: category.isActive,
-        createdAt: category.createdAt,
-        updatedAt: category.updatedAt
-      };
+      const domainCategoryResult = this.prismaToDomain(category);
+      if (domainCategoryResult.isFailure()) {
+        return Result.fail(domainCategoryResult.getError());
+      }
 
-      return Result.ok(domainCategory as Category);
+      return Result.ok(domainCategoryResult.getValue());
     } catch (error) {
       return Result.failWithMessage(
         `Failed to fetch category: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -95,15 +121,9 @@ export class PrismaCategoryRepository implements ICategoryRepository {
   async save(category: Category): Promise<Result<void>> {
     try {
       await this.prisma.category.create({
-        data: {
-          id: category.id.value,
-          name: category.name,
-          description: category.description || null,
-          type: category.type || 'EXPENSE',
-          isActive: category.isActive !== undefined ? category.isActive : true
-        }
+        data: this.domainToPrisma(category)
       });
-      return Result.ok();
+      return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
         `Failed to save category: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -114,13 +134,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
   async saveMany(categories: Category[]): Promise<Result<number>> {
     try {
       const result = await this.prisma.category.createMany({
-        data: categories.map(cat => ({
-          id: cat.id.value,
-          name: cat.name,
-          description: cat.description || null,
-          type: cat.type || 'EXPENSE',
-          isActive: cat.isActive !== undefined ? cat.isActive : true
-        }))
+        data: categories.map(cat => this.domainToPrisma(cat))
       });
       return Result.ok(result.count);
     } catch (error) {
@@ -156,17 +170,16 @@ export class PrismaCategoryRepository implements ICategoryRepository {
         }
       });
 
-      const domainCategories = categories.map(cat => ({
-        id: { value: cat.id },
-        name: cat.name,
-        description: cat.description,
-        type: cat.type as TransactionType,
-        isActive: cat.isActive,
-        createdAt: cat.createdAt,
-        updatedAt: cat.updatedAt
-      }));
+      const domainCategories: Category[] = [];
+      for (const category of categories) {
+        const domainCategoryResult = this.prismaToDomain(category);
+        if (domainCategoryResult.isFailure()) {
+          return Result.fail(domainCategoryResult.getError());
+        }
+        domainCategories.push(domainCategoryResult.getValue());
+      }
 
-      return Result.ok(domainCategories as Category[]);
+      return Result.ok(domainCategories);
     } catch (error) {
       return Result.failWithMessage(
         `Failed to fetch categories with filters: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -184,18 +197,14 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async update(category: Category): Promise<Result<void>> {
     try {
+      const { id, ...updateData } = this.domainToPrisma(category);
       await this.prisma.category.update({
         where: {
           id: category.id.value
         },
-        data: {
-          name: category.name,
-          description: category.description,
-          type: category.type,
-          isActive: category.isActive
-        }
+        data: updateData
       });
-      return Result.ok();
+      return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
         `Failed to update category: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -213,7 +222,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
           isActive: false
         }
       });
-      return Result.ok();
+      return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
         `Failed to delete category: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -228,7 +237,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
           id: id.value
         }
       });
-      return Result.ok();
+      return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
         `Failed to permanently delete category: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -326,7 +335,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
       return Result.ok({
         transactionCount: stats._count,
-        totalAmount: stats._sum.amount || 0,
+        totalAmount: Number(stats._sum.amount || 0),
         lastUsed: stats._max.date || undefined
       });
     } catch (error) {
@@ -344,7 +353,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
   async clear(): Promise<Result<void>> {
     try {
       await this.prisma.category.deleteMany({});
-      return Result.ok();
+      return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
         `Failed to clear categories: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -359,15 +368,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     }
 
     const categories = categoriesResult.getValue();
-    const snapshots = categories.map(cat => ({
-      id: cat.id.value,
-      name: cat.name,
-      description: cat.description,
-      type: cat.type,
-      isActive: cat.isActive,
-      createdAt: cat.createdAt.toISOString(),
-      updatedAt: cat.updatedAt.toISOString()
-    }));
+    const snapshots = categories.map(cat => cat.toSnapshot());
 
     return Result.ok(snapshots);
   }
@@ -378,11 +379,11 @@ export class PrismaCategoryRepository implements ICategoryRepository {
         data: snapshots.map(snap => ({
           id: snap.id,
           name: snap.name,
-          description: snap.description || null,
+          color: snap.color,
+          icon: snap.icon,
           type: snap.type,
           isActive: snap.isActive !== undefined ? snap.isActive : true,
-          createdAt: new Date(snap.createdAt),
-          updatedAt: new Date(snap.updatedAt)
+          createdAt: new Date(snap.createdAt)
         })),
         skipDuplicates: true
       });

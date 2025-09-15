@@ -172,13 +172,22 @@ class App {
       // Start server with automatic port detection
       const server = this.app.listen(preferredPort, () => {
         const actualPort = (server.address() as any)?.port || preferredPort;
+        console.log('✅ Server is running!');
+        console.log(`📍 Port: ${actualPort}`);
+        console.log(`🔗 Health check: http://localhost:${actualPort}/health`);
+        console.log(`🚀 API Base: http://localhost:${actualPort}/api`);
       });
 
       server.on('error', (error: any) => {
         if (error.code === 'EADDRINUSE') {
+          console.log(`⚠️ Port ${preferredPort} is in use, finding another...`);
           // Let Node.js find an available port
           const fallbackServer = this.app.listen(0, () => {
             const actualPort = (fallbackServer.address() as any)?.port;
+            console.log('✅ Server is running on fallback port!');
+            console.log(`📍 Port: ${actualPort}`);
+            console.log(`🔗 Health check: http://localhost:${actualPort}/health`);
+            console.log(`🚀 API Base: http://localhost:${actualPort}/api`);
           });
         } else {
           throw error;

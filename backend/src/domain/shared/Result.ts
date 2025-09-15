@@ -49,16 +49,16 @@ export class Result<T, E = Error> {
 
   map<U>(fn: (value: T) => U): Result<U, E> {
     if (this._isSuccess && this._value !== undefined) {
-      return Result.ok(fn(this._value));
+      return Result.ok(fn(this._value)) as Result<U, E>;
     }
-    return Result.fail(this._error!);
+    return Result.fail(this._error!) as Result<U, E>;
   }
 
   mapError<F>(fn: (error: E) => F): Result<T, F> {
     if (this._isSuccess) {
-      return Result.ok(this._value!);
+      return Result.ok(this._value!) as Result<T, F>;
     }
-    return Result.fail(fn(this._error!));
+    return Result.fail(fn(this._error!)) as Result<T, F>;
   }
 
   flatMap<U>(fn: (value: T) => Result<U, E>): Result<U, E> {

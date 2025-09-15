@@ -10,7 +10,7 @@ export interface ImportTransactionData {
   date: string;
   merchant: string;
   amount: number;
-  type: 'INCOME' | 'EXPENSE';
+  type: 'INCOME' | 'EXPENSE' | 'INVESTMENT';
   description: string;
   currency: string;
 }
@@ -56,9 +56,19 @@ export class TransactionFactory {
       }
 
       // Convert string type to TransactionType enum
-      const transactionType = data.type === 'INCOME' ? TransactionType.INCOME :
-                             data.type === 'INVESTMENT' ? TransactionType.INVESTMENT :
-                             TransactionType.EXPENSE;
+      let transactionType: TransactionType;
+      switch (data.type) {
+        case 'INCOME':
+          transactionType = TransactionType.INCOME;
+          break;
+        case 'INVESTMENT':
+          transactionType = TransactionType.INVESTMENT;
+          break;
+        case 'EXPENSE':
+        default:
+          transactionType = TransactionType.EXPENSE;
+          break;
+      }
 
       // Create transaction using correct parameters
       const transaction = Transaction.create(
@@ -85,7 +95,7 @@ export class TransactionFactory {
     currency: string;
     date: string;
     merchant: string;
-    type: 'INCOME' | 'EXPENSE';
+    type: 'INCOME' | 'EXPENSE' | 'INVESTMENT';
     description?: string;
     categoryId?: string | null;
   }): Result<Transaction> {

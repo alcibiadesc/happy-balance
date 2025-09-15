@@ -334,7 +334,7 @@ export class ImportController {
         totalRows: lines.length - 1,
         headers,
         detectedFields,
-        issues: []
+        issues: [] as string[]
       };
 
       if (!detectedFields.requiredFields.includes('date')) {
