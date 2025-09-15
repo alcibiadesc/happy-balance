@@ -1,6 +1,6 @@
 <script lang="ts">
   import { LayoutDashboard, Settings, Receipt } from 'lucide-svelte';
-  
+
   interface Props {
     href: string;
     icon: string; // Icon name as string
@@ -9,32 +9,38 @@
     isImportant?: boolean;
     onclick?: () => void;
   }
-  
-  let { 
-    href, 
+
+  let {
+    href,
     icon,
     children,
-    isActive = false, 
+    isActive = false,
     isImportant = false,
-    onclick 
+    onclick
   }: Props = $props();
-  
+
   // Icon mapping
   const iconMap = {
     'layout-dashboard': LayoutDashboard,
     'receipt': Receipt,
     'settings': Settings
   };
-  
+
   const IconComponent = iconMap[icon as keyof typeof iconMap];
+
+  function handleClick() {
+    if (onclick) {
+      onclick();
+    }
+  }
 </script>
 
-<a 
+<a
   {href}
   class="nav-item"
   class:nav-item--active={isActive}
   class:nav-item--important={isImportant}
-  {onclick}
+  onclick={handleClick}
   aria-current={isActive ? 'page' : undefined}
 >
   <div class="nav-item__icon">

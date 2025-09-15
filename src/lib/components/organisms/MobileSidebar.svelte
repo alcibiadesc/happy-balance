@@ -48,7 +48,7 @@
 
     <!-- Mobile Navigation -->
     <nav class="mobile-sidebar-navigation">
-      <NavList collapsed={false} />
+      <NavList collapsed={false} onItemClick={onClose} />
     </nav>
   </div>
 </aside>
