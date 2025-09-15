@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Plus, X, Calendar, DollarSign, Building, FileText } from 'lucide-svelte';
   import type { Transaction, Category } from '$lib/types/transaction';
+  import { t } from '$lib/stores/i18n';
 
   // Props
   export let isOpen = false;
@@ -38,21 +39,21 @@
     errors = {};
 
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      errors.amount = 'Please enter a valid amount greater than 0';
+      errors.amount = $t('transactions.modal.validation.amount_required');
     }
 
     if (!merchant.trim()) {
-      errors.merchant = 'Merchant is required';
+      errors.merchant = $t('transactions.modal.validation.merchant_required');
     }
 
     if (!date) {
-      errors.date = 'Date is required';
+      errors.date = $t('transactions.modal.validation.date_required');
     } else {
       const selectedDate = new Date(date);
       const today = new Date();
       today.setHours(23, 59, 59, 999);
       if (selectedDate > today) {
-        errors.date = 'Date cannot be in the future';
+        errors.date = $t('transactions.modal.validation.future_date');
       }
     }
 
@@ -124,7 +125,7 @@
 
       <!-- Header -->
       <div class="modal-header">
-        <h3>New Transaction</h3>
+        <h3>{$t('transactions.modal.new_transaction')}</h3>
       </div>
 
       <!-- Form -->
@@ -139,7 +140,7 @@
                 step="0.01"
                 min="0"
                 bind:value={amount}
-                placeholder="0.00"
+                placeholder={$t('transactions.modal.amount_placeholder')}
                 class="amount-field"
                 class:error={errors.amount}
                 id="amount"
@@ -154,7 +155,7 @@
                 class:income={type === 'income'}
                 on:click={toggleType}
               >
-                {type === 'expense' ? 'Expense' : 'Income'}
+                {type === 'expense' ? $t('transactions.modal.expense') : $t('transactions.modal.income')}
               </button>
             </div>
           </div>
@@ -165,11 +166,11 @@
 
         <!-- Merchant -->
         <div class="field-group">
-          <label class="field-label" for="merchant">Where?</label>
+          <label class="field-label" for="merchant">{$t('transactions.modal.where_label')}</label>
           <input
             type="text"
             bind:value={merchant}
-            placeholder="e.g., Amazon, Starbucks, Salary..."
+            placeholder={$t('transactions.modal.merchant_placeholder')}
             class="field-input"
             class:error={errors.merchant}
             id="merchant"
@@ -182,11 +183,11 @@
 
         <!-- Description -->
         <div class="field-group">
-          <label class="field-label" for="description">What for?</label>
+          <label class="field-label" for="description">{$t('transactions.modal.what_for_label')}</label>
           <input
             type="text"
             bind:value={description}
-            placeholder="Optional description..."
+            placeholder={$t('transactions.modal.description_placeholder')}
             class="field-input"
             id="description"
             maxlength="200"
@@ -195,7 +196,7 @@
 
         <!-- Date -->
         <div class="field-group">
-          <label class="field-label" for="date">When?</label>
+          <label class="field-label" for="date">{$t('transactions.modal.when_label')}</label>
           <input
             type="date"
             bind:value={date}
@@ -211,7 +212,7 @@
         <!-- Category -->
         {#if categories.length > 0}
           <div class="field-group">
-            <label class="field-label" for="category">Category</label>
+            <label class="field-label" for="category">{$t('transactions.category')}</label>
             <div class="category-grid">
               {#each categories.filter(c => (type === 'income' && c.type === 'income') || (type === 'expense' && ['essential', 'discretionary'].includes(c.type))) as category}
                 <button
@@ -232,7 +233,7 @@
         <!-- Submit buttons -->
         <div class="form-actions">
           <button type="button" class="btn-secondary" on:click={closeModal}>
-            Cancel
+            {$t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -241,9 +242,9 @@
           >
             {#if isSubmitting}
               <div class="spinner"></div>
-              Saving...
+              {$t('transactions.modal.saving')}
             {:else}
-              Save Transaction
+              {$t('transactions.modal.save_transaction')}
             {/if}
           </button>
         </div>

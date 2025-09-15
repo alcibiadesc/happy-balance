@@ -164,6 +164,25 @@
       "expense": "Expense",
       "investment": "Investment"
     },
+    "modal": {
+      "new_transaction": "New Transaction",
+      "amount_placeholder": "0.00",
+      "where_label": "Where?",
+      "merchant_placeholder": "e.g., Amazon, Starbucks, Salary...",
+      "what_for_label": "What for?",
+      "description_placeholder": "Optional description...",
+      "when_label": "When?",
+      "expense": "Expense",
+      "income": "Income",
+      "save_transaction": "Save Transaction",
+      "saving": "Saving...",
+      "validation": {
+        "amount_required": "Please enter a valid amount greater than 0",
+        "merchant_required": "Merchant is required",
+        "date_required": "Date is required",
+        "future_date": "Date cannot be in the future"
+      }
+    },
     "no_transactions": "No transactions",
     "delete_confirmation": "Are you sure you want to delete this transaction?",
     "delete_selected_title": "Delete Selected Transactions",

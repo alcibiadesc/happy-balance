@@ -164,6 +164,25 @@
       "expense": "Gasto",
       "investment": "Inversión"
     },
+    "modal": {
+      "new_transaction": "Nueva Transacción",
+      "amount_placeholder": "0.00",
+      "where_label": "¿Dónde?",
+      "merchant_placeholder": "ej., Amazon, Starbucks, Salario...",
+      "what_for_label": "¿Para qué?",
+      "description_placeholder": "Descripción opcional...",
+      "when_label": "¿Cuándo?",
+      "expense": "Gasto",
+      "income": "Ingreso",
+      "save_transaction": "Guardar Transacción",
+      "saving": "Guardando...",
+      "validation": {
+        "amount_required": "Por favor ingresa una cantidad válida mayor a 0",
+        "merchant_required": "El comercio es obligatorio",
+        "date_required": "La fecha es obligatoria",
+        "future_date": "La fecha no puede estar en el futuro"
+      }
+    },
     "no_transactions": "No hay transacciones",
     "delete_confirmation": "¿Estás seguro de que quieres eliminar esta transacción?",
     "delete_selected_title": "Eliminar Transacciones Seleccionadas",
