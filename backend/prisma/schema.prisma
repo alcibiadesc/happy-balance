@@ -17,6 +17,7 @@ model Transaction {
   description String    @default("")
   categoryId  String?   @db.VarChar(36)
   isSelected  Boolean   @default(true)
+  hidden      Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   hash        String?   @db.VarChar(50)
@@ -29,6 +30,7 @@ model Transaction {
   @@index([currency])
   @@index([createdAt])
   @@index([hash])
+  @@index([hidden])
   @@map("transactions")
 }
 

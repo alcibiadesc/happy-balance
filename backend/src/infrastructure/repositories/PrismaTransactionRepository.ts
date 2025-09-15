@@ -35,7 +35,8 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           description: snapshot.description,
           categoryId: snapshot.categoryId,
           isSelected: snapshot.isSelected,
-          hash: snapshot.hash
+          hash: snapshot.hash,
+          hidden: (transaction as any).hidden || false
         },
         create: {
           id: snapshot.id,
@@ -48,6 +49,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           categoryId: snapshot.categoryId,
           isSelected: snapshot.isSelected,
           hash: snapshot.hash,
+          hidden: (transaction as any).hidden || false,
           createdAt: new Date(snapshot.createdAt)
         }
       });
@@ -81,6 +83,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 categoryId: snapshot.categoryId,
                 isSelected: snapshot.isSelected,
                 hash: snapshot.hash,
+                hidden: false,
                 createdAt: new Date(snapshot.createdAt)
               }
             });
@@ -577,6 +580,11 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       where.currency = filters.currency;
     }
 
+    // By default, exclude hidden transactions unless explicitly requested
+    if (!(filters as any).includeHidden) {
+      where.hidden = false;
+    }
+
     return where;
   }
 
@@ -595,6 +603,10 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       createdAt: prismaTransaction.createdAt.toISOString()
     };
 
-    return Transaction.fromSnapshot(snapshot);
+    const result = Transaction.fromSnapshot(snapshot);
+    if (result.isSuccess() && (prismaTransaction as any).hidden !== undefined) {
+      (result.getValue() as any).hidden = (prismaTransaction as any).hidden;
+    }
+    return result;
   }
 }

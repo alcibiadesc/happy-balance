@@ -63,6 +63,9 @@
     selectedPeriod = '';
   }
   
+  // State for showing/hiding hidden transactions
+  let showHiddenTransactions = $state(false);
+
   // Computed
   let filteredTransactions = $derived(() => {
     let filtered = $apiTransactions;
@@ -100,8 +103,10 @@
       );
     }
 
-    // Hide hidden transactions (only if hidden property exists)
-    // filtered = filtered.filter(t => !t.hidden); // Disabled for API transactions
+    // Hide hidden transactions unless explicitly showing them
+    if (!showHiddenTransactions) {
+      filtered = filtered.filter(t => !t.hidden);
+    }
 
     return filtered;
   });
@@ -133,11 +138,14 @@
   
   let periodStats = $derived(() => {
     const filtered = filteredTransactions();
-    const income = filtered
+    // Exclude hidden transactions from statistics
+    const visibleTransactions = filtered.filter(t => !t.hidden);
+
+    const income = visibleTransactions
       .filter(t => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const expenseTransactions = filtered.filter(t => t.amount < 0);
+    const expenseTransactions = visibleTransactions.filter(t => t.amount < 0);
     const totalExpenses = expenseTransactions
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
@@ -417,6 +425,19 @@
         >
           <Layers size={14} />
         </button>
+
+        <button
+          class="hidden-toggle-btn"
+          class:active={showHiddenTransactions}
+          onclick={() => showHiddenTransactions = !showHiddenTransactions}
+          title={showHiddenTransactions ? 'Ocultar gastos excluidos' : 'Mostrar gastos excluidos'}
+        >
+          {#if showHiddenTransactions}
+            <EyeOff size={14} />
+          {:else}
+            <Eye size={14} />
+          {/if}
+        </button>
       </div>
 
       <!-- Search bar -->
@@ -532,6 +553,7 @@
           <div
             class="transaction-card"
             class:selected={$apiSelectedTransactions.has(transaction.id)}
+            class:hidden={transaction.hidden}
           >
             {#if isSelectionMode}
               <input 
@@ -600,9 +622,9 @@
                 onclick={() => toggleHideTransaction(transaction)}
               >
                 {#if transaction.hidden}
-                  <Eye size={14} />
-                {:else}
                   <EyeOff size={14} />
+                {:else}
+                  <Eye size={14} />
                 {/if}
               </button>
               <button
@@ -798,6 +820,37 @@
   .all-toggle-btn.active:hover {
     background: var(--acapulco-dark);
     border-color: var(--acapulco-dark);
+  }
+
+  .hidden-toggle-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    margin-left: var(--space-xs);
+  }
+
+  .hidden-toggle-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+  }
+
+  .hidden-toggle-btn.active {
+    background: var(--gray-600);
+    border-color: var(--gray-600);
+    color: white;
+  }
+
+  .hidden-toggle-btn.active:hover {
+    background: var(--gray-700);
+    border-color: var(--gray-700);
   }
 
   /* Month picker dropdown */
@@ -1198,6 +1251,23 @@
   .transaction-card.selected {
     background: rgba(122, 186, 165, 0.1);
     border-color: var(--acapulco);
+  }
+
+  .transaction-card.hidden {
+    opacity: 0.5;
+    background: var(--gray-50);
+  }
+
+  .transaction-card.hidden:hover {
+    transform: none;
+    border-color: var(--gray-300);
+  }
+
+  .transaction-card.hidden .transaction-description,
+  .transaction-card.hidden .transaction-amount,
+  .transaction-card.hidden .transaction-meta {
+    color: var(--text-muted);
+    text-decoration: line-through;
   }
   
   .transaction-category {

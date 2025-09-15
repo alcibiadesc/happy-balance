@@ -91,7 +91,9 @@ function createApiTransactionStore() {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            description: updates.description
+            description: updates.description,
+            hidden: updates.hidden,
+            categoryId: updates.categoryId
           })
         });
 
@@ -337,7 +339,7 @@ function mapApiToTransaction(apiTransaction: any): Transaction {
     hash: apiTransaction.hash,
     createdAt: new Date(apiTransaction.createdAt),
     updatedAt: new Date(apiTransaction.updatedAt || apiTransaction.createdAt),
-    hidden: false,
+    hidden: apiTransaction.hidden || false,
     notes: undefined
   };
 }

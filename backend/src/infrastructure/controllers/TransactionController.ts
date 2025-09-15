@@ -22,7 +22,9 @@ const CreateTransactionSchema = z.object({
   categoryId: z.string().uuid().optional()
 });
 
-const UpdateTransactionSchema = CreateTransactionSchema.partial();
+const UpdateTransactionSchema = CreateTransactionSchema.partial().extend({
+  hidden: z.boolean().optional()
+});
 
 const TransactionFiltersSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -33,6 +35,7 @@ const TransactionFiltersSchema = z.object({
   minAmount: z.number().optional(),
   maxAmount: z.number().optional(),
   currency: z.string().min(3).max(3).optional(),
+  includeHidden: z.boolean().optional().default(false),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20)
 });
@@ -166,6 +169,9 @@ export class TransactionController {
         domainFilters.currency = transactionFilters.currency;
       }
 
+      // By default, exclude hidden transactions unless explicitly requested
+      domainFilters.includeHidden = filters.includeHidden;
+
       const pagination = {
         offset: (page - 1) * limit,
         limit
@@ -267,9 +273,21 @@ export class TransactionController {
         }
       }
 
+      // Update hidden status if provided
+      if (data.hidden !== undefined) {
+        // For now, we'll handle this directly in the repository
+        // as it's not a domain concern
+        (existingTransaction as any).hidden = data.hidden;
+      }
+
+      // Update categoryId if provided
+      if (data.categoryId !== undefined) {
+        // For now, we'll handle this directly in the repository
+        (existingTransaction as any).categoryId = data.categoryId;
+      }
+
       // TODO: Add support for updating other fields if needed
-      // For now, we only support updating description as other fields
-      // would require recreating the transaction due to immutable value objects
+      // For now, we only support updating description, hidden, and categoryId
 
       const saveResult = await this.transactionRepository.update(existingTransaction);
       if (saveResult.isFailure()) {
