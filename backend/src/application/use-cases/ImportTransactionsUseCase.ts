@@ -4,7 +4,7 @@ import { Category } from '../../domain/entities/Category';
 import { Money } from '../../domain/value-objects/Money';
 import { TransactionDate } from '../../domain/value-objects/TransactionDate';
 import { Merchant } from '../../domain/value-objects/Merchant';
-import { TransactionType } from '../../domain/entities/TransactionType';
+import { TransactionType, TransactionTypeHelper } from '../../domain/entities/TransactionType';
 import { ITransactionRepository } from '../../domain/repositories/ITransactionRepository';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 import { DuplicateDetectionService } from '../../domain/services/DuplicateDetectionService';
@@ -274,6 +274,7 @@ export class ImportTransactionsUseCase {
       const merchantName = this.cleanString(values[mapping.merchant] || '');
       const amountStr = values[mapping.amount] || '0';
       const description = this.cleanString(values[mapping.description] || '');
+      const typeStr = this.cleanString(values[mapping.type] || '');
 
       if (!dateStr || !merchantName) {
         return Result.failWithMessage('Missing required fields (date or merchant)');
@@ -296,8 +297,15 @@ export class ImportTransactionsUseCase {
         return Result.fail(moneyResult.getError());
       }
 
-      // Determine transaction type based on amount sign
-      const type = amount < 0 ? TransactionType.EXPENSE : TransactionType.INCOME;
+      // Determine transaction type from CSV field or amount sign
+      let type: TransactionType;
+      if (typeStr && TransactionTypeHelper.isValidType(typeStr)) {
+        const parsedType = TransactionTypeHelper.fromString(typeStr);
+        type = parsedType || (amount < 0 ? TransactionType.EXPENSE : TransactionType.INCOME);
+      } else {
+        // Fallback to amount sign if no valid type provided
+        type = amount < 0 ? TransactionType.EXPENSE : TransactionType.INCOME;
+      }
 
       // Create transaction
       const transactionResult = Transaction.create(

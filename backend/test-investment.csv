@@ -1,0 +1,4 @@
+date,merchant,amount,type,description,currency
+2025-01-28,Vanguard S&P 500,-1000.00,INVESTMENT,Monthly investment,EUR
+2025-01-29,Bitcoin Purchase,-500.00,INVESTMENT,Crypto investment,EUR
+2025-01-30,Real Estate REIT,-2000.00,INVESTMENT,REIT investment,EUR
