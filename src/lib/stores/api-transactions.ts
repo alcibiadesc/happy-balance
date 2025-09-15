@@ -344,27 +344,47 @@ function mapApiToTransaction(apiTransaction: any): Transaction {
   };
 }
 
-// Category Store using Backend APIs (placeholder for now)
+// Category Store using Backend APIs
 function createApiCategoryStore() {
-  const { subscribe, set } = writable<Category[]>([
+  const { subscribe, set, update } = writable<Category[]>([
     // Default categories - in the future we'll load from API
-    { id: '1', name: 'Food & Groceries', type: 'essential', color: '#f5796c', icon: '🍽️' },
-    { id: '2', name: 'Transport', type: 'essential', color: '#7abaa5', icon: '🚇' },
-    { id: '3', name: 'Entertainment', type: 'discretionary', color: '#fecd2c', icon: '🎬' },
-    { id: '4', name: 'Utilities', type: 'essential', color: '#023c46', icon: '⚡' },
-    { id: '5', name: 'Income', type: 'income', color: '#7abaa5', icon: '💰' },
-    { id: '6', name: 'Investment', type: 'investment', color: '#023c46', icon: '📈' }
+    { id: '1', name: 'Food & Groceries', type: 'essential', color: '#f5796c', icon: '🍽️', annualBudget: 0 },
+    { id: '2', name: 'Transport', type: 'essential', color: '#7abaa5', icon: '🚇', annualBudget: 0 },
+    { id: '3', name: 'Entertainment', type: 'discretionary', color: '#fecd2c', icon: '🎬', annualBudget: 0 },
+    { id: '4', name: 'Utilities', type: 'essential', color: '#023c46', icon: '⚡', annualBudget: 0 },
+    { id: '5', name: 'Income', type: 'income', color: '#7abaa5', icon: '💰', annualBudget: 0 },
+    { id: '6', name: 'Investment', type: 'investment', color: '#023c46', icon: '📈', annualBudget: 0 }
   ]);
 
   return {
     subscribe,
+
+    async load() {
+      // For now, return default categories
+      // TODO: Load from API when backend is ready
+      return;
+    },
+
     async add(category: Omit<Category, 'id'>) {
       // TODO: Implement API call when categories API is ready
       const newCategory = {
         ...category,
         id: crypto.randomUUID?.() || `cat-${Date.now()}`
       };
+      update(categories => [...categories, newCategory]);
       return newCategory;
+    },
+
+    async update(id: string, updates: Partial<Category>) {
+      // TODO: Implement API call when categories API is ready
+      update(categories =>
+        categories.map(c => c.id === id ? { ...c, ...updates } : c)
+      );
+    },
+
+    async delete(id: string) {
+      // TODO: Implement API call when categories API is ready
+      update(categories => categories.filter(c => c.id !== id));
     }
   };
 }

@@ -19,6 +19,7 @@
   "navigation": {
     "transactions": "Transactions",
     "dashboard": "Dashboard",
+    "categories": "Categories",
     "settings": "Settings",
     "import": "Import"
   },

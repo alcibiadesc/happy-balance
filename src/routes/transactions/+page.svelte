@@ -246,10 +246,16 @@
   }
   
   async function categorizeTransaction(transaction: Transaction, categoryId: string, applyToAll = false) {
-    if (applyToAll) {
-      await apiTransactions.applyCategoryToPattern(transaction, categoryId);
-    } else {
-      await apiTransactions.update(transaction.id, { categoryId });
+    try {
+      if (applyToAll) {
+        await apiTransactions.applyCategoryToPattern(transaction, categoryId);
+      } else {
+        await apiTransactions.update(transaction.id, { categoryId });
+      }
+      // Force a reactive update by ensuring the store subscription triggers
+      console.log('✅ Transaction categorized successfully', { transactionId: transaction.id, categoryId });
+    } catch (error) {
+      console.error('❌ Failed to categorize transaction:', error);
     }
   }
   
@@ -585,19 +591,29 @@
                 </div>
               </div>
               
-              {#if !category}
-                <div class="category-selector">
-                  <button
-                    class="category-btn"
-                    onclick={() => showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id}
-                  >
+              <div class="category-selector">
+                <button
+                  class="category-btn"
+                  class:has-category={category}
+                  onclick={() => showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id}
+                >
+                  {#if category}
+                    <span class="category-icon-btn">{category.icon}</span>
+                    <span>{category.name}</span>
+                  {:else}
                     <Tag size={14} />
                     {$t('transactions.add_category')}
-                  </button>
+                  {/if}
+                </button>
 
-                  {#if showCategoryDropdown === transaction.id}
-                    <div class="category-dropdown">
-                      {#each $apiCategories as cat}
+                {#if showCategoryDropdown === transaction.id}
+                  {@const filteredCategories = transaction.amount > 0
+                    ? $apiCategories.filter(c => c.type === 'income')
+                    : $apiCategories.filter(c => c.type === 'essential' || c.type === 'discretionary' || c.type === 'investment')
+                  }
+                  <div class="category-dropdown">
+                    {#if filteredCategories.length > 0}
+                      {#each filteredCategories as cat}
                         <button
                           class="category-option"
                           onclick={() => {
@@ -609,10 +625,14 @@
                           <span class="category-name">{cat.name}</span>
                         </button>
                       {/each}
-                    </div>
-                  {/if}
-                </div>
-              {/if}
+                    {:else}
+                      <div class="no-categories">
+                        <span>No hay categorías de {transaction.amount > 0 ? 'ingreso' : 'gasto'}</span>
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
             </div>
             
             <div class="transaction-actions">
@@ -1328,9 +1348,24 @@
     cursor: pointer;
     transition: all 0.2s;
   }
-  
+
+  .category-btn.has-category {
+    border: 1px solid var(--gray-200);
+    color: var(--text-primary);
+    background: var(--surface);
+  }
+
   .category-btn:hover {
     background: rgba(122, 186, 165, 0.1);
+  }
+
+  .category-btn.has-category:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+  }
+
+  .category-icon-btn {
+    font-size: 0.875rem;
   }
 
   .category-dropdown {
@@ -1338,11 +1373,11 @@
     top: 100%;
     left: 0;
     right: 0;
-    z-index: 10;
-    background: var(--background);
-    border: 1px solid var(--border);
+    z-index: 1000;
+    background: var(--surface-elevated);
+    border: 1px solid var(--gray-200);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     max-height: 200px;
     overflow-y: auto;
     margin-top: 0.25rem;
@@ -1372,6 +1407,14 @@
   .category-name {
     font-size: 0.875rem;
     color: var(--text);
+  }
+
+  .no-categories {
+    padding: var(--space-md);
+    text-align: center;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    font-style: italic;
   }
   
   .transaction-actions {

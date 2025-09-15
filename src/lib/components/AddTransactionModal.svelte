@@ -116,7 +116,7 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if isOpen}
-  <div class="modal-backdrop" on:click={handleBackdropClick} role="dialog">
+  <div class="modal-backdrop" on:click={handleBackdropClick} role="dialog" tabindex="-1">
     <div class="modal-content">
       <!-- Close button -->
       <button class="close-btn" on:click={closeModal} aria-label="Close">
@@ -214,7 +214,7 @@
           <div class="field-group">
             <label class="field-label" for="category">{$t('transactions.category')}</label>
             <div class="category-grid">
-              {#each categories.filter(c => (type === 'income' && c.type === 'income') || (type === 'expense' && ['essential', 'discretionary'].includes(c.type))) as category}
+              {#each categories.filter(c => (type === 'income' && c.type === 'income') || (type === 'expense' && ['essential', 'discretionary', 'investment'].includes(c.type))) as category}
                 <button
                   type="button"
                   class="category-chip"

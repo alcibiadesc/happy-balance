@@ -19,6 +19,7 @@
   "navigation": {
     "transactions": "Transacciones",
     "dashboard": "Panel",
+    "categories": "Categorías",
     "settings": "Configuración",
     "import": "Importar"
   },

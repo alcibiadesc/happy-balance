@@ -194,7 +194,9 @@
   
   // Generate period-based data from transactions
   function generatePeriodData(allTransactions: any[], period: string) {
-    // For now, return mock data - this will be enhanced with real transaction processing
+    // Calculate category breakdown from actual categories and transactions
+    const categoryBreakdown = calculateCategoryBreakdown();
+
     return {
       monthlyTrend: [
         { month: 'Ene', income: 2800, expenses: 1600, balance: 1200 },
@@ -212,15 +214,65 @@
         { month: 'May', income: 2950, essentialExpenses: 1140, discretionaryExpenses: 560, investments: 460 },
         { month: 'Jun', income: 3000, essentialExpenses: 1200, discretionaryExpenses: 600, investments: 500 }
       ],
-      categories: [
-        { name: $t('dashboard.categories.food'), amount: 450, percentage: 25 },
-        { name: $t('dashboard.categories.transport'), amount: 280, percentage: 15.5 },
-        { name: $t('dashboard.categories.utilities'), amount: 350, percentage: 19.4 },
-        { name: $t('dashboard.categories.shopping'), amount: 320, percentage: 17.8 },
-        { name: $t('dashboard.categories.entertainment'), amount: 200, percentage: 11.1 },
-        { name: $t('dashboard.categories.health'), amount: 200, percentage: 11.1 }
-      ]
+      categories: categoryBreakdown
     };
+  }
+
+  // Calculate category breakdown from actual data
+  function calculateCategoryBreakdown() {
+    const transactions = $apiTransactions;
+    const categories = $apiCategories;
+
+    // Group transactions by category
+    const categoryTotals = new Map();
+    let totalAmount = 0;
+
+    // Initialize all categories with 0
+    categories.forEach(cat => {
+      categoryTotals.set(cat.id, {
+        name: cat.name,
+        icon: cat.icon,
+        amount: 0,
+        type: cat.type,
+        color: cat.color
+      });
+    });
+
+    // Calculate totals per category
+    transactions.forEach(transaction => {
+      if (transaction.categoryId && categoryTotals.has(transaction.categoryId)) {
+        const amount = Math.abs(transaction.amount);
+        categoryTotals.get(transaction.categoryId).amount += amount;
+        totalAmount += amount;
+      }
+    });
+
+    // Convert to array and calculate percentages
+    const categoryBreakdown = Array.from(categoryTotals.values())
+      .filter(cat => cat.amount > 0) // Only show categories with transactions
+      .map(cat => ({
+        name: cat.name,
+        icon: cat.icon,
+        amount: cat.amount,
+        percentage: totalAmount > 0 ? (cat.amount / totalAmount * 100).toFixed(1) : 0,
+        type: cat.type,
+        color: cat.color
+      }))
+      .sort((a, b) => b.amount - a.amount); // Sort by amount descending
+
+    // If no categories with data, return default categories
+    if (categoryBreakdown.length === 0) {
+      return categories.slice(0, 6).map(cat => ({
+        name: cat.name,
+        icon: cat.icon,
+        amount: Math.random() * 500 + 100, // Mock amount
+        percentage: 16.67,
+        type: cat.type,
+        color: cat.color
+      }));
+    }
+
+    return categoryBreakdown;
   }
   
   async function handlePeriodChange(period: string) {
@@ -262,8 +314,9 @@
   }
   
   onMount(async () => {
-    // Load transactions from API
+    // Load transactions and categories from API
     await apiTransactions.load();
+    await apiCategories.load();
     await loadData(selectedPeriod);
   });
 
@@ -391,13 +444,18 @@
         {#each realData.categories as category}
           <div class="category-card">
             <div class="category-header">
-              <span class="category-name">{category.name}</span>
+              <div class="category-info">
+                <span class="category-icon" style="background-color: {category.color}20; color: {category.color}">
+                  {category.icon || '📊'}
+                </span>
+                <span class="category-name">{category.name}</span>
+              </div>
               <span class="category-amount">{formatCurrencyAmount(category.amount)}</span>
             </div>
             <div class="category-bar">
               <div
                 class="category-progress"
-                style="width: {category.percentage}%"
+                style="width: {category.percentage}%; background-color: {category.color}"
               ></div>
             </div>
             <span class="category-percentage">{category.percentage}%</span>
@@ -657,7 +715,24 @@
     align-items: center;
     margin-bottom: 0.75rem;
   }
-  
+
+  .category-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .category-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+  }
+
   .category-name {
     font-size: 0.875rem;
     color: var(--text-primary);

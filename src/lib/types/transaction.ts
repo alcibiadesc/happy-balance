@@ -25,6 +25,7 @@ export interface Category {
   icon: string;
   parentId?: string; // For subcategories
   description?: string;
+  annualBudget?: number; // Annual budget for this category
 }
 
 export interface CategoryRule {

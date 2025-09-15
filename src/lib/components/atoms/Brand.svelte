@@ -21,12 +21,10 @@
 
 <div class="flex items-center gap-3">
   <!-- Logo Icon -->
-  <div class="brand-icon {sizeClasses[size]} overflow-hidden">
-    <img 
-      src="/logo/happy-balance-logo-without-text.png" 
-      alt="Happy Balance Logo" 
-      class="w-full h-full object-cover object-center"
-    />
+  <div class="brand-icon {sizeClasses[size]}">
+    <span class="logo-emoji" style="font-size: {size === 'sm' ? '1.25rem' : size === 'md' ? '1.5rem' : '1.75rem'}">
+      💰
+    </span>
   </div>
   
   <!-- Brand Text -->
@@ -52,6 +50,12 @@
     padding: 4px;
     transition: all 0.3s ease;
     border: 1px solid rgba(122, 186, 165, 0.2);
+  }
+
+  .logo-emoji {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .brand-icon:hover {
