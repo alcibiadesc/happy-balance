@@ -46,60 +46,100 @@
 </script>
 
 <div class="spending-summary {spendingStatus}">
-  <span class="spending-text">
-    {@html spendingSummaryText}
-  </span>
+  <div class="spending-indicator">
+    <span class="spending-dot"></span>
+    <span class="spending-text">
+      {@html spendingSummaryText}
+    </span>
+  </div>
 </div>
 
 <style>
   .spending-summary {
     background: var(--surface-elevated);
-    border-radius: 12px;
-    padding: 1rem 1.5rem;
-    margin-bottom: 2rem;
-    text-align: center;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
     border: 1px solid var(--border-color, transparent);
+    display: inline-block;
+    min-width: 280px;
   }
-  
+
+  .spending-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .spending-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
   .spending-text {
-    font-size: 1rem;
-    color: var(--text-primary);
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
     line-height: 1.4;
   }
-  
+
   .spending-text :global(strong) {
-    font-size: 1.125rem;
-    font-weight: 700;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 1rem;
   }
 
-  /* Status-based backgrounds */
-  .spending-summary.good {
-    background: linear-gradient(135deg, #22c55e25 0%, #16a34a25 100%);
-    border-color: #22c55e60;
+  /* Minimal status indicators - just a dot */
+  .spending-summary.good .spending-dot {
+    background: #22c55e;
   }
 
-  .spending-summary.medium {
-    background: linear-gradient(135deg, #f59e0b25 0%, #ea580c25 100%);
-    border-color: #f59e0b60;
+  .spending-summary.medium .spending-dot {
+    background: #f59e0b;
   }
 
-  .spending-summary.regular {
-    background: linear-gradient(135deg, #ef444425 0%, #dc262625 100%);
-    border-color: #ef444460;
+  .spending-summary.regular .spending-dot {
+    background: #ef4444;
+  }
+
+  /* Subtle pulse animation on the dot for high spending */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.1);
+    }
+  }
+
+  .spending-summary.regular .spending-dot {
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  /* Subtle hover effect */
+  .spending-summary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
   /* Responsive */
   @media (max-width: 768px) {
     .spending-summary {
-      padding: 0.875rem 1.25rem;
+      min-width: auto;
+      width: 100%;
+      padding: 0.875rem 1rem;
     }
-    
+
     .spending-text {
-      font-size: 0.9375rem;
+      font-size: 0.875rem;
     }
-    
+
     .spending-text :global(strong) {
-      font-size: 1.0625rem;
+      font-size: 0.9375rem;
     }
   }
 </style>
