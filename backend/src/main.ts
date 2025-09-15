@@ -13,6 +13,7 @@ import { createTransactionRoutes } from '@infrastructure/routes/transactionRoute
 import { createImportRoutes } from '@infrastructure/routes/importRoutes';
 import { createUserPreferencesRoutes } from '@infrastructure/routes/userPreferencesRoutes';
 import { errorHandler } from '@infrastructure/middleware/errorHandler';
+import { apiLimiter, uploadLimiter, dashboardLimiter, createTransactionLimiter } from '@infrastructure/middleware/rateLimiter';
 
 // Import use cases and services
 import { GetDashboardDataUseCase } from '@application/use-cases/GetDashboardDataUseCase';
@@ -94,6 +95,9 @@ class App {
     // Security middleware
     this.app.use(helmet());
 
+    // Rate limiting
+    this.app.use('/api/', apiLimiter);
+
     // CORS configuration
     const allowedOrigins = [
       'http://localhost:5173',
@@ -143,6 +147,11 @@ class App {
         uptime: process.uptime()
       });
     });
+
+    // API routes with specific rate limiters
+    this.app.use('/api/transactions/dashboard', dashboardLimiter);
+    this.app.post('/api/transactions', createTransactionLimiter);
+    this.app.use('/api/import', uploadLimiter);
 
     // API routes
     this.app.use('/api/transactions', createTransactionRoutes(this.transactionController));
