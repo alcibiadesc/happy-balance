@@ -9,7 +9,8 @@
     "backend"
   ],
   "scripts": {
-    "dev": "node scripts/dev.js",
+    "dev": "node scripts/dev-local.js",
+    "dev:docker": "node scripts/dev.js",
     "setup": "node scripts/dev.js setup",
     "db:start": "node scripts/db-manager.js start",
     "db:stop": "node scripts/db-manager.js stop",

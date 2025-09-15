@@ -68,15 +68,40 @@
           dashboardData = result.data;
 
           // Transform trends data for charts
-          if (result.data.trends && result.data.trends.length > 0) {
-            realData.monthlyTrend = result.data.trends.map((trend: any) => ({
-              month: trend.period,
-              income: trend.income?._amount || 0,
-              expenses: Math.abs(trend.expenses?._amount || 0), // Ensure positive for display
-              balance: trend.balance?._amount || 0
-            }));
+          console.log('Dashboard data received:', result.data);
+          console.log('Trends:', result.data.trends);
+          console.log('Summary:', result.data.summary);
 
-            // For bar data, use the actual expense distribution from backend if available
+          if (result.data.trends && result.data.trends.length > 0) {
+            // Filter out empty trends (all zeros)
+            const nonEmptyTrends = result.data.trends.filter((trend: any) =>
+              (trend.income?._amount || 0) > 0 ||
+              (trend.expenses?._amount || 0) > 0 ||
+              (trend.investments?._amount || 0) > 0
+            );
+
+            // If we have non-empty trends, use them
+            if (nonEmptyTrends.length > 0) {
+              realData.monthlyTrend = nonEmptyTrends.map((trend: any) => ({
+                month: trend.period,
+                income: trend.income?._amount || 0,
+                expenses: Math.abs(trend.expenses?._amount || 0),
+                balance: trend.balance?._amount || 0
+              }));
+            } else {
+              // If all trends are empty, use summary data as a single point
+              const currentPeriodLabel = result.data.summary?.period?.label || 'Current';
+              realData.monthlyTrend = [{
+                month: currentPeriodLabel,
+                income: result.data.summary?.totalIncome?._amount || 0,
+                expenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0),
+                balance: result.data.summary?.balance?._amount || 0
+              }];
+            }
+
+            console.log('Monthly trend data for chart:', realData.monthlyTrend);
+
+            // For bar data
             const essentialRatio = result.data.expenseDistribution?.essentialPercentage
               ? result.data.expenseDistribution.essentialPercentage / 100
               : 0.67;
@@ -84,17 +109,53 @@
               ? result.data.expenseDistribution.discretionaryPercentage / 100
               : 0.33;
 
-            realData.monthlyBarData = result.data.trends.map((trend: any) => ({
-              month: trend.period,
-              income: trend.income?._amount || 0,
-              essentialExpenses: Math.abs(trend.expenses?._amount || 0) * essentialRatio,
-              discretionaryExpenses: Math.abs(trend.expenses?._amount || 0) * discretionaryRatio,
-              investments: Math.abs(trend.investments?._amount || 0)
-            }));
+            // Use the same approach for bar data
+            if (nonEmptyTrends && nonEmptyTrends.length > 0) {
+              realData.monthlyBarData = nonEmptyTrends.map((trend: any) => ({
+                month: trend.period,
+                income: trend.income?._amount || 0,
+                essentialExpenses: Math.abs(trend.expenses?._amount || 0) * essentialRatio,
+                discretionaryExpenses: Math.abs(trend.expenses?._amount || 0) * discretionaryRatio,
+                investments: Math.abs(trend.investments?._amount || 0)
+              }));
+            } else {
+              // Use summary data
+              const currentPeriodLabel = result.data.summary?.period?.label || 'Current';
+              realData.monthlyBarData = [{
+                month: currentPeriodLabel,
+                income: result.data.summary?.totalIncome?._amount || 0,
+                essentialExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * essentialRatio,
+                discretionaryExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * discretionaryRatio,
+                investments: Math.abs(result.data.summary?.totalInvestments?._amount || 0)
+              }];
+            }
+
+            console.log('Monthly bar data for chart:', realData.monthlyBarData);
           } else {
-            // If no trends data, show empty charts
-            realData.monthlyTrend = [];
-            realData.monthlyBarData = [];
+            console.log('No trends data, using summary as fallback');
+            // Use summary data as fallback
+            const currentPeriodLabel = result.data.summary?.period?.label || 'Current';
+            realData.monthlyTrend = [{
+              month: currentPeriodLabel,
+              income: result.data.summary?.totalIncome?._amount || 0,
+              expenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0),
+              balance: result.data.summary?.balance?._amount || 0
+            }];
+
+            const essentialRatio = result.data.expenseDistribution?.essentialPercentage
+              ? result.data.expenseDistribution.essentialPercentage / 100
+              : 0.67;
+            const discretionaryRatio = result.data.expenseDistribution?.discretionaryPercentage
+              ? result.data.expenseDistribution.discretionaryPercentage / 100
+              : 0.33;
+
+            realData.monthlyBarData = [{
+              month: currentPeriodLabel,
+              income: result.data.summary?.totalIncome?._amount || 0,
+              essentialExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * essentialRatio,
+              discretionaryExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * discretionaryRatio,
+              investments: Math.abs(result.data.summary?.totalInvestments?._amount || 0)
+            }];
           }
 
           // Transform category breakdown for the categories section

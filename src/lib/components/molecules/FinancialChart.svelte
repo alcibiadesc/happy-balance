@@ -195,12 +195,19 @@
   
   // Update chart when data changes
   $effect(() => {
-    if (chart && data) {
-      chart.data.labels = data.map(d => d.month);
-      chart.data.datasets[0].data = data.map(d => d.income);
-      chart.data.datasets[1].data = data.map(d => d.expenses);
-      chart.data.datasets[2].data = data.map(d => d.balance);
-      chart.update();
+    if (data && data.length > 0) {
+      console.log('FinancialChart received data:', data);
+      if (!chart && canvas) {
+        // Initialize chart if not exists
+        initChart();
+      } else if (chart) {
+        // Update existing chart
+        chart.data.labels = data.map(d => d.month);
+        chart.data.datasets[0].data = data.map(d => d.income);
+        chart.data.datasets[1].data = data.map(d => d.expenses);
+        chart.data.datasets[2].data = data.map(d => d.balance);
+        chart.update();
+      }
     }
   });
   
