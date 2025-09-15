@@ -824,7 +824,7 @@
   }
 
   .all-toggle-btn:hover {
-    background: var(--gray-50);
+    background: var(--gray-100);
     border-color: var(--gray-300);
   }
 
@@ -835,8 +835,8 @@
   }
 
   .all-toggle-btn.active:hover {
-    background: var(--acapulco-dark);
-    border-color: var(--acapulco-dark);
+    background: var(--success-hover);
+    border-color: var(--success-hover);
   }
 
   .hidden-toggle-btn {
