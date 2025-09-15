@@ -3,29 +3,33 @@
   import '../app.css';
   import '../lib/styles/japan-palette.css';
   import NewNavbar from '../lib/components/organisms/NewNavbar.svelte';
-  import { initLanguage } from '$lib/stores/i18n';
-  import { initCurrency } from '$lib/stores/currency';
-  import { theme, applyTheme } from '$lib/stores/theme';
+  import { setLanguage } from '$lib/stores/i18n';
+  import { setCurrency } from '$lib/stores/currency';
+  import { setTheme, applyTheme } from '$lib/stores/theme';
   import { transactions, categories } from '$lib/stores/transactions';
   import { sidebarCollapsed } from '$lib/stores/sidebar';
+  import { userPreferences } from '$lib/stores/user-preferences';
 
   let { children } = $props();
 
   // Initialize stores and apply theme on mount
-  onMount(() => {
-    initLanguage();
-    initCurrency();
+  onMount(async () => {
+    // Load user preferences first (with localStorage fallback)
+    await userPreferences.load();
+
+    // Subscribe to user preferences and sync with individual stores
+    userPreferences.subscribe(prefs => {
+      setLanguage(prefs.language);
+      setCurrency(prefs.currency);
+      setTheme(prefs.theme);
+      applyTheme(prefs.theme);
+    });
 
     // Load transaction data only once
     if (typeof window !== 'undefined' && !window.__transactions_loaded__) {
       transactions.load();
       window.__transactions_loaded__ = true;
     }
-
-    // Apply the current theme (this ensures consistency with the inline script)
-    theme.subscribe(currentTheme => {
-      applyTheme(currentTheme);
-    });
   });
 </script>
 

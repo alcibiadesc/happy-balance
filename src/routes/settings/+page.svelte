@@ -9,7 +9,7 @@
   import { onMount } from 'svelte';
 
   // API Configuration
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
   
   const currencyOptions = Object.values(currencies).map(curr => ({
     value: curr.code,

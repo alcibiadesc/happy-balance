@@ -1,5 +1,4 @@
 import { writable, derived } from 'svelte/store';
-import { browser } from '$app/environment';
 
 // Import JSON translation files
 import enTranslations from '../i18n/en.json';
@@ -43,18 +42,5 @@ export const t = derived(
 // Función para cambiar idioma
 export function setLanguage(lang: string) {
   currentLanguage.set(lang);
-  
-  if (browser) {
-    localStorage.setItem('expense-tracker-language', lang);
-  }
 }
 
-// Función para inicializar el idioma desde localStorage
-export function initLanguage() {
-  if (browser) {
-    const savedLang = localStorage.getItem('expense-tracker-language');
-    if (savedLang && (savedLang === 'en' || savedLang === 'es')) {
-      currentLanguage.set(savedLang);
-    }
-  }
-}

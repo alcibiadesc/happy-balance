@@ -1,5 +1,4 @@
 import { writable } from 'svelte/store';
-import { browser } from '$app/environment';
 
 export interface Currency {
   code: string;
@@ -65,18 +64,5 @@ export function formatCurrency(amount: number, currencyCode?: string): string {
 // Función para cambiar moneda
 export function setCurrency(currencyCode: string) {
   currentCurrency.set(currencyCode);
-  
-  if (browser) {
-    localStorage.setItem('expense-tracker-currency', currencyCode);
-  }
 }
 
-// Función para inicializar la moneda desde localStorage
-export function initCurrency() {
-  if (browser) {
-    const savedCurrency = localStorage.getItem('expense-tracker-currency');
-    if (savedCurrency && currencies[savedCurrency]) {
-      currentCurrency.set(savedCurrency);
-    }
-  }
-}

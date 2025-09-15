@@ -36,7 +36,6 @@ export const effectiveTheme = derived(theme, ($theme) => {
 export function setTheme(newTheme: Theme) {
   theme.set(newTheme);
   if (browser) {
-    localStorage.setItem('theme', newTheme);
     applyTheme(newTheme);
   }
 }
