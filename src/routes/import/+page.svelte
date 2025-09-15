@@ -823,17 +823,21 @@
 
   .progress-container {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    max-width: 32rem;
+    max-width: 40rem;
     margin: 0 auto;
     gap: 2rem;
+    padding: 0 1rem;
   }
 
   .step-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.75rem;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
   }
 
   .step-circle {
@@ -866,6 +870,9 @@
 
   .step-text {
     text-align: center;
+    min-width: 0;
+    flex: 1;
+    max-width: 120px;
   }
 
   .step-title {
@@ -873,6 +880,9 @@
     font-weight: 500;
     color: var(--text-muted);
     transition: color 0.3s ease;
+    word-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.2;
   }
 
   .step-title.active {
@@ -883,6 +893,9 @@
     font-size: 0.75rem;
     color: var(--text-muted);
     margin-top: 0.25rem;
+    word-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.3;
   }
 
   .step-line {
@@ -890,6 +903,8 @@
     height: 2px;
     background: var(--border-color);
     transition: background-color 0.3s ease;
+    margin-top: 20px;
+    min-width: 2rem;
   }
 
   .step-line.active {
@@ -1784,6 +1799,36 @@
     .import-container {
       max-width: calc(100vw - 320px);
     }
+
+    .progress-container {
+      max-width: 35rem;
+    }
+
+    .step-text {
+      max-width: 110px;
+    }
+  }
+
+  /* Ajustes para tablets */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .progress-container {
+      gap: 1.5rem;
+      max-width: 36rem;
+    }
+
+    .step-item {
+      min-width: 90px;
+      max-width: 110px;
+    }
+
+    .step-text {
+      max-width: 110px;
+    }
+
+    .step-line {
+      margin-top: 18px;
+      min-width: 1.5rem;
+    }
   }
 
   /* Responsive Design */
@@ -1794,17 +1839,30 @@
 
     .progress-container {
       gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: space-around;
     }
 
     .step-item {
       flex-direction: column;
       text-align: center;
+      min-width: 80px;
+      max-width: 100px;
+    }
+
+    .step-text {
+      max-width: 100px;
     }
 
     .step-circle {
       width: 32px;
       height: 32px;
       font-size: 0.75rem;
+    }
+
+    .step-line {
+      margin-top: 16px;
+      min-width: 1.5rem;
     }
 
     .upload-step,
@@ -1885,12 +1943,32 @@
   }
 
   @media (max-width: 480px) {
+    .progress-container {
+      max-width: 100%;
+      gap: 0.5rem;
+    }
+
+    .step-item {
+      min-width: 60px;
+      max-width: 80px;
+    }
+
     .step-text {
-      display: none;
+      max-width: 80px;
+    }
+
+    .step-title {
+      font-size: 0.75rem;
+    }
+
+    .step-desc {
+      font-size: 0.625rem;
     }
 
     .step-line {
-      max-width: 2rem;
+      max-width: 1.5rem;
+      min-width: 1rem;
+      margin-top: 14px;
     }
 
     .stats-grid {
