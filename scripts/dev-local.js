@@ -24,9 +24,6 @@ const colors = {
   magenta: '\x1b[35m'
 };
 
-function log(message, color = 'reset') {
-  console.log(`${colors[color]}${message}${colors.reset}`);
-}
 
 // Setup environment files if they don't exist
 function setupEnvironment() {

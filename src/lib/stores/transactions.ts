@@ -18,7 +18,6 @@ function createTransactionStore() {
         const stored = localStorage.getItem('transactions');
         if (stored) {
           const transactions = JSON.parse(stored);
-          console.log('Loaded transactions from localStorage');
           set(transactions);
           return;
         }
@@ -27,7 +26,6 @@ function createTransactionStore() {
       }
 
       // If localStorage fails or is empty, use empty array
-      console.log('Starting with empty transactions');
       set([]);
     },
     

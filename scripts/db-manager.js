@@ -34,7 +34,6 @@ async function isPostgresRunning() {
  * Start PostgreSQL container
  */
 async function startPostgres() {
-  console.log('🐘 Starting PostgreSQL...');
 
   const dockerCommand = `
     docker run -d \
@@ -49,15 +48,12 @@ async function startPostgres() {
 
   try {
     await execAsync(dockerCommand);
-    console.log('✅ PostgreSQL started successfully');
 
     // Wait for database to be ready
-    console.log('⏳ Waiting for database to be ready...');
     await waitForDatabase();
 
   } catch (error) {
     if (error.message.includes('already in use')) {
-      console.log('✅ PostgreSQL container already exists');
     } else {
       throw error;
     }
@@ -71,7 +67,6 @@ async function waitForDatabase(maxAttempts = 30) {
   for (let i = 0; i < maxAttempts; i++) {
     try {
       await execAsync(`docker exec expense-tracker-db pg_isready -U ${DB_CONFIG.user}`);
-      console.log('✅ Database is ready');
       return;
     } catch {
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -88,15 +83,12 @@ async function createWorkspaceDatabase(workspaceName) {
     ? DB_CONFIG.mainDb
     : `${DB_CONFIG.mainDb}_${workspaceName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`;
 
-  console.log(`📦 Creating database: ${dbName}`);
 
   try {
     const createDbCommand = `docker exec expense-tracker-db psql -U ${DB_CONFIG.user} -c "CREATE DATABASE ${dbName};"`;
     await execAsync(createDbCommand);
-    console.log(`✅ Database ${dbName} created`);
   } catch (error) {
     if (error.message.includes('already exists')) {
-      console.log(`✅ Database ${dbName} already exists`);
     } else {
       console.error(`⚠️ Warning: ${error.message}`);
     }
@@ -109,13 +101,10 @@ async function createWorkspaceDatabase(workspaceName) {
  * Stop PostgreSQL container
  */
 async function stopPostgres() {
-  console.log('🛑 Stopping PostgreSQL...');
   try {
     await execAsync('docker stop expense-tracker-db');
     await execAsync('docker rm expense-tracker-db');
-    console.log('✅ PostgreSQL stopped');
   } catch (error) {
-    console.log('ℹ️ PostgreSQL was not running');
   }
 }
 
@@ -123,7 +112,6 @@ async function stopPostgres() {
  * Reset database
  */
 async function resetDatabase(dbName) {
-  console.log(`🔄 Resetting database: ${dbName}`);
 
   try {
     const dropCommand = `docker exec expense-tracker-db psql -U ${DB_CONFIG.user} -c "DROP DATABASE IF EXISTS ${dbName};"`;
@@ -131,7 +119,6 @@ async function resetDatabase(dbName) {
 
     await execAsync(dropCommand);
     await execAsync(createCommand);
-    console.log(`✅ Database ${dbName} reset successfully`);
   } catch (error) {
     console.error(`❌ Reset failed: ${error.message}`);
   }
@@ -163,6 +150,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       resetDatabase(dbName).catch(console.error);
       break;
     default:
-      console.log('Usage: db-manager.js [start|stop|reset] [database_name]');
   }
 }

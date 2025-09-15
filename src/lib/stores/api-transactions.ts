@@ -23,22 +23,17 @@ function createApiTransactionStore() {
 
     // Load transactions from API
     async load() {
-      console.log('🔄 Loading transactions from API...');
       try {
         const response = await fetch(`${API_BASE}/transactions`);
-        console.log('📡 API Response status:', response.status);
         if (!response.ok) {
           throw new Error(`Failed to load transactions: ${response.status}`);
         }
 
         const result = await response.json();
-        console.log('📊 API Result:', result);
         if (result.success && result.data.transactions) {
           const transactions = result.data.transactions.map(mapApiToTransaction);
-          console.log('✅ Loaded transactions from API:', transactions.length, transactions);
           set(transactions);
         } else {
-          console.log('❌ No transactions found in API response');
           set([]);
         }
       } catch (error) {
@@ -177,7 +172,6 @@ function createApiTransactionStore() {
         }
 
         const result = await response.json();
-        console.log('Import result:', result.data);
 
         // Reload transactions after successful import
         await this.load();
@@ -192,7 +186,6 @@ function createApiTransactionStore() {
     // Generate hashes using backend service
     async generateHashes(transactions: Array<{date: string; merchant: string; amount: number; currency?: string;}>) {
       try {
-        console.log('🔐 Frontend: Requesting hash generation for transactions:', transactions.length);
 
         const response = await fetch(`${API_BASE}/import/generate-hashes`, {
           method: 'POST',
@@ -208,7 +201,6 @@ function createApiTransactionStore() {
         }
 
         const result = await response.json();
-        console.log('✅ Frontend: Hash generation result:', result.data);
 
         return result.data;
       } catch (error) {
@@ -220,7 +212,6 @@ function createApiTransactionStore() {
     // Check which hashes are duplicates
     async checkDuplicates(hashes: string[]) {
       try {
-        console.log('🔍 Frontend: Checking duplicates for hashes:', hashes.length);
 
         const response = await fetch(`${API_BASE}/import/check-duplicates`, {
           method: 'POST',
@@ -236,7 +227,6 @@ function createApiTransactionStore() {
         }
 
         const result = await response.json();
-        console.log('✅ Frontend: Duplicate check result:', result.data);
 
         return result.data;
       } catch (error) {
@@ -248,7 +238,6 @@ function createApiTransactionStore() {
     // Import selected transactions only
     async importSelectedTransactions(selectedTransactions: any[]) {
       try {
-        console.log('🔄 Frontend: Preparing to import selected transactions:', selectedTransactions.length);
 
         const requestBody = {
           transactions: selectedTransactions.map(tx => ({
@@ -265,7 +254,6 @@ function createApiTransactionStore() {
           autoCategorizationEnabled: true
         };
 
-        console.log('📤 Frontend: Request body:', requestBody);
 
         const response = await fetch(`${API_BASE}/import/selected`, {
           method: 'POST',
@@ -281,7 +269,6 @@ function createApiTransactionStore() {
         }
 
         const result = await response.json();
-        console.log('Import selected transactions result:', result.data);
 
         // Reload transactions after successful import
         await this.load();

@@ -31,9 +31,6 @@ const colors = {
   magenta: '\x1b[35m'
 };
 
-function log(message, color = 'reset') {
-  console.log(`${colors[color]}${message}${colors.reset}`);
-}
 
 /**
  * Detect if we're in a worktree or main repository

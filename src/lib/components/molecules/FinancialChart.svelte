@@ -196,7 +196,6 @@
   // Update chart when data changes
   $effect(() => {
     if (data && data.length > 0) {
-      console.log('FinancialChart received data:', data);
       if (!chart && canvas) {
         // Initialize chart if not exists
         initChart();

@@ -68,9 +68,6 @@
           dashboardData = result.data;
 
           // Transform trends data for charts
-          console.log('Dashboard data received:', result.data);
-          console.log('Trends:', result.data.trends);
-          console.log('Summary:', result.data.summary);
 
           if (result.data.trends && result.data.trends.length > 0) {
             // Filter out empty trends (all zeros)
@@ -99,7 +96,6 @@
               }];
             }
 
-            console.log('Monthly trend data for chart:', realData.monthlyTrend);
 
             // For bar data
             const essentialRatio = result.data.expenseDistribution?.essentialPercentage
@@ -130,9 +126,7 @@
               }];
             }
 
-            console.log('Monthly bar data for chart:', realData.monthlyBarData);
           } else {
-            console.log('No trends data, using summary as fallback');
             // Use summary data as fallback
             const currentPeriodLabel = result.data.summary?.period?.label || 'Current';
             realData.monthlyTrend = [{

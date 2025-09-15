@@ -84,25 +84,13 @@ export class ImportTransactionsUseCase {
       let duplicatesSkipped = 0;
 
       if (command.duplicateDetectionEnabled) {
-        console.log('🔍 Duplicate detection enabled - starting process');
         const existingTransactionsResult = await this.transactionRepository.findAll();
         if (existingTransactionsResult.isFailure()) {
           return Result.fail(existingTransactionsResult.getError());
         }
 
         const existingTransactions = existingTransactionsResult.getValue();
-        console.log(`📊 Found ${existingTransactions.length} existing transactions in database`);
-        console.log(`📊 Checking ${parsedTransactions.length} new transactions for duplicates`);
 
-        // Log first few existing transactions with their hashes
-        existingTransactions.slice(0, 3).forEach((tx, i) => {
-          console.log(`📋 Existing #${i}: ${tx.date.toDateString()} | ${tx.merchant.name} | ${tx.amount.amount} | Hash: ${tx.hash || 'NO_HASH'}`);
-        });
-
-        // Log first few parsed transactions with their hashes
-        parsedTransactions.slice(0, 3).forEach((tx, i) => {
-          console.log(`📋 Parsed #${i}: ${tx.date.toDateString()} | ${tx.merchant.name} | ${tx.amount.amount} | Hash: ${tx.hash || 'NO_HASH'}`);
-        });
 
         const duplicateResult = this.duplicateDetectionService.detectAgainstExisting(
           parsedTransactions,
@@ -114,16 +102,13 @@ export class ImportTransactionsUseCase {
         }
 
         const { unique, duplicates } = duplicateResult.getValue();
-        console.log(`🎯 Duplicate detection results: ${unique.length} unique, ${duplicates.length} duplicates`);
 
         if (command.skipDuplicates) {
           uniqueTransactions = unique;
           duplicatesSkipped = duplicates.length;
-          console.log(`⏭️ Skipping ${duplicatesSkipped} duplicates, importing ${uniqueTransactions.length} unique transactions`);
         } else {
           // Include duplicates but mark them for user decision
           uniqueTransactions = [...unique, ...duplicates];
-          console.log(`📝 Including all transactions for user review: ${uniqueTransactions.length} total`);
         }
       }
 
@@ -358,7 +343,6 @@ export class ImportTransactionsUseCase {
       const parsingResult = parseResult.getValue();
 
       if (parsingResult.errors.length > 0) {
-        console.log('CSV parsing errors:', parsingResult.errors);
       }
 
       const transactions = parsingResult.transactions;

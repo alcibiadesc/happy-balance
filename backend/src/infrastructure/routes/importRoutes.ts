@@ -5,11 +5,6 @@ import { upload } from '../middleware/upload';
 export const createImportRoutes = (importController: ImportController): Router => {
   const router = Router();
 
-  // Log all requests to import routes
-  router.use((req, res, next) => {
-    console.log(`🔍 Import route: ${req.method} ${req.path}`);
-    next();
-  });
 
   // Import operations
   router.post('/csv', upload.single('file'), importController.importFromCsv.bind(importController));

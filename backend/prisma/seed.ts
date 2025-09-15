@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seeding...');
 
   // Create default categories
   const categories = [
@@ -30,7 +29,6 @@ async function main() {
     { id: '16', name: 'Real Estate', type: 'INVESTMENT', color: '#E17055', icon: '🏠' },
   ];
 
-  console.log('📂 Creating categories...');
   for (const category of categories) {
     await prisma.category.upsert({
       where: { id: category.id },
@@ -38,7 +36,6 @@ async function main() {
       create: category,
     });
   }
-  console.log(`✅ Created ${categories.length} categories`);
 
   // Create default app settings
   const settings = [
@@ -68,7 +65,6 @@ async function main() {
     }
   ];
 
-  console.log('⚙️ Creating app settings...');
   for (const setting of settings) {
     await prisma.appSettings.upsert({
       where: { key: setting.key },
@@ -76,10 +72,8 @@ async function main() {
       create: setting,
     });
   }
-  console.log(`✅ Created ${settings.length} app settings`);
 
   // Create default user preferences
-  console.log('👤 Creating default user preferences...');
   await prisma.userPreferences.upsert({
     where: { userId: 'default' },
     update: {},
@@ -90,11 +84,9 @@ async function main() {
       theme: 'light'
     }
   });
-  console.log('✅ Created default user preferences');
 
   // Create sample transactions for development (only if ENABLE_SEED_DATA is true)
   if (process.env.ENABLE_SEED_DATA === 'true') {
-    console.log('📊 Creating sample transactions for development...');
     
     const sampleTransactions = [
       {
@@ -161,10 +153,8 @@ async function main() {
         create: transaction,
       });
     }
-    console.log(`✅ Created ${sampleTransactions.length} sample transactions`);
   }
 
-  console.log('🎉 Database seeding completed successfully!');
 }
 
 main()

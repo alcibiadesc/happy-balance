@@ -168,25 +168,17 @@ class App {
     try {
       // Test database connection
       await prisma.$connect();
-      console.log('✅ Database connected successfully');
 
       // Start server with automatic port detection
       const server = this.app.listen(preferredPort, () => {
         const actualPort = (server.address() as any)?.port || preferredPort;
-        console.log(`🚀 Server running on port ${actualPort}`);
-        console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`🔗 API Base URL: http://localhost:${actualPort}/api`);
       });
 
       server.on('error', (error: any) => {
         if (error.code === 'EADDRINUSE') {
-          console.log(`⚠️ Port ${preferredPort} is in use, trying next available port...`);
           // Let Node.js find an available port
           const fallbackServer = this.app.listen(0, () => {
             const actualPort = (fallbackServer.address() as any)?.port;
-            console.log(`🚀 Server running on port ${actualPort}`);
-            console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`🔗 API Base URL: http://localhost:${actualPort}/api`);
           });
         } else {
           throw error;
@@ -208,13 +200,11 @@ const app = new App();
 
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('Received SIGTERM. Shutting down gracefully...');
   await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('Received SIGINT. Shutting down gracefully...');
   await prisma.$disconnect();
   process.exit(0);
 });

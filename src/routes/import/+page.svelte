@@ -34,8 +34,6 @@
       });
     }
 
-    console.log('📋 CSV Headers:', parseResult.headers);
-    console.log('📋 Parsed transactions:', parseResult.transactions.length);
 
     if (parseResult.transactions.length === 0) {
       throw new Error('No valid transactions found in CSV file');
@@ -52,7 +50,6 @@
     }));
 
     const hashResult = await apiTransactions.generateHashes(transactionsForHashing);
-    console.log('🔐 Generated hashes from backend:', hashResult);
 
     // Update transactions with backend-generated hashes
     const transactionsWithHashes = parseResult.transactions.map((tx, index) => {
@@ -126,7 +123,6 @@
       // Show message if duplicates were detected
       const duplicateCount = transactions.filter(tx => tx.isDuplicate).length;
       if (duplicateCount > 0) {
-        console.log(`🔍 Found ${duplicateCount} duplicate transactions that will be skipped`);
       }
 
       step = 2;
@@ -150,11 +146,6 @@
       const selectedTransactions = transactions.filter(tx => tx.selected && !tx.isDuplicate);
       const duplicatesSkipped = transactions.filter(tx => tx.isDuplicate).length;
 
-      console.log('🔄 Importing selected transactions:', selectedTransactions.length);
-      console.log('📋 Selected transactions:', selectedTransactions);
-      if (duplicatesSkipped > 0) {
-        console.log('⚠️ Skipping duplicates:', duplicatesSkipped);
-      }
 
       if (selectedTransactions.length === 0) {
         throw new Error('No transactions selected for import');
@@ -163,7 +154,6 @@
       // Use new DDD endpoint to import selected transactions
       const result = await apiTransactions.importSelectedTransactions(selectedTransactions);
 
-      console.log("✅ Import successful:", result);
 
       // Store duplicate count for success message
       window.lastImportDuplicates = duplicatesSkipped;

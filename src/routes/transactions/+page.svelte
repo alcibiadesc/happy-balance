@@ -69,7 +69,6 @@
   // Computed
   let filteredTransactions = $derived(() => {
     let filtered = $apiTransactions;
-    console.log('Raw API transactions:', filtered.length);
 
     // Period filter
     if (!showAllTransactions) {
@@ -113,7 +112,6 @@
   
   let groupedTransactions = $derived(() => {
     const filtered = filteredTransactions();
-    console.log('Filtered transactions:', filtered.length);
 
     const groups = new Map<string, Transaction[]>();
 
@@ -132,7 +130,6 @@
         items: items.sort((a, b) => b.createdAt?.localeCompare(a.createdAt || '') || 0)
       }));
 
-    console.log('Grouped transactions:', result.length);
     return result;
   });
   
