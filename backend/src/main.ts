@@ -29,9 +29,9 @@ class App {
   private transactionRepository: PrismaTransactionRepository;
   private categoryRepository: PrismaCategoryRepository;
   private userPreferencesRepository: PrismaUserPreferencesRepository;
-  private transactionController: TransactionController;
-  private importController: ImportController;
-  private userPreferencesController: UserPreferencesController;
+  private transactionController!: TransactionController;
+  private importController!: ImportController;
+  private userPreferencesController!: UserPreferencesController;
 
   constructor() {
     this.app = express();

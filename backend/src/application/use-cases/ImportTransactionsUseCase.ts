@@ -123,9 +123,11 @@ export class ImportTransactionsUseCase {
             const suggestionResult = this.categorizationService.suggestCategory(transaction, categories);
             if (suggestionResult.isSuccess() && suggestionResult.getValue().suggestedCategory) {
               const { suggestedCategory } = suggestionResult.getValue();
-              const categorizeResult = transaction.categorize(suggestedCategory);
-              if (categorizeResult.isSuccess()) {
-                categorized++;
+              if (suggestedCategory) {
+                const categorizeResult = transaction.categorize(suggestedCategory);
+                if (categorizeResult.isSuccess()) {
+                  categorized++;
+                }
               }
             }
           }
@@ -348,14 +350,14 @@ export class ImportTransactionsUseCase {
       const transactions = parsingResult.transactions;
 
       if (transactions.length === 0) {
-        return Result.fail('No valid transactions found in the CSV file');
+        return Result.failWithMessage('No valid transactions found in the CSV file');
       }
 
       // Get all existing transactions from repository for duplicate detection
       const existingResult = await this.transactionRepository.findAll();
 
       if (existingResult.isFailure()) {
-        return Result.fail(`Failed to load existing transactions: ${existingResult.getError()}`);
+        return Result.failWithMessage(`Failed to load existing transactions: ${existingResult.getError()}`);
       }
 
       const existingTransactions = existingResult.getValue();
@@ -383,11 +385,11 @@ export class ImportTransactionsUseCase {
           const duplicateReason = duplicateReasons.get(transaction.id.value);
 
           transactionData.push({
-            date: transaction.date.value,
-            merchant: transaction.merchant.value,
+            date: transaction.date.value.toISOString().split('T')[0],
+            merchant: transaction.merchant.name,
             description: transaction.description || '',
             amount: transaction.amount.amount,
-            type: transaction.type.value,
+            type: transaction.type,
             currency: transaction.amount.currency,
             isDuplicate,
             duplicateReason: duplicateReason || undefined,
@@ -398,11 +400,11 @@ export class ImportTransactionsUseCase {
         // No duplicate detection - all transactions are considered unique
         for (const transaction of transactions) {
           transactionData.push({
-            date: transaction.date.value,
-            merchant: transaction.merchant.value,
+            date: transaction.date.value.toISOString().split('T')[0],
+            merchant: transaction.merchant.name,
             description: transaction.description || '',
             amount: transaction.amount.amount,
-            type: transaction.type.value,
+            type: transaction.type,
             currency: transaction.amount.currency,
             isDuplicate: false,
             duplicateReason: undefined,
@@ -430,7 +432,7 @@ export class ImportTransactionsUseCase {
 
     } catch (error) {
       console.error('Preview failed:', error);
-      return Result.fail(`Preview failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(`Preview failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

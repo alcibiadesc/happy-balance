@@ -33,14 +33,14 @@ export class GenerateHashesUseCase {
     try {
       // Input validation
       if (!command.transactions || command.transactions.length === 0) {
-        return Result.fail('No transactions provided');
+        return Result.failWithMessage('No transactions provided');
       }
 
       // Validate each transaction
       for (let i = 0; i < command.transactions.length; i++) {
         const tx = command.transactions[i];
         if (!tx.date || !tx.merchant || tx.amount === undefined) {
-          return Result.fail(`Invalid transaction data at index ${i}`);
+          return Result.failWithMessage(`Invalid transaction data at index ${i}`);
         }
       }
 
@@ -62,7 +62,7 @@ export class GenerateHashesUseCase {
       return Result.ok({ hashes });
 
     } catch (error) {
-      return Result.fail(`Failed to generate hashes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(`Failed to generate hashes: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

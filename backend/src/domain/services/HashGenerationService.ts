@@ -52,7 +52,7 @@ export class HashGenerationService {
 
       return Result.ok(hashes);
     } catch (error) {
-      return Result.fail(`Failed to generate hashes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(`Failed to generate hashes: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

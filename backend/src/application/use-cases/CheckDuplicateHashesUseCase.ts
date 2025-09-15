@@ -29,13 +29,13 @@ export class CheckDuplicateHashesUseCase {
     try {
       // Input validation
       if (!command.hashes || command.hashes.length === 0) {
-        return Result.fail('No hashes provided');
+        return Result.failWithMessage('No hashes provided');
       }
 
       // Get all existing transactions for comparison
       const existingTransactionsResult = await this.transactionRepository.findAll();
       if (existingTransactionsResult.isFailure()) {
-        return Result.fail(`Failed to fetch existing transactions: ${existingTransactionsResult.getError()}`);
+        return Result.failWithMessage(`Failed to fetch existing transactions: ${existingTransactionsResult.getError()}`);
       }
 
       const existingTransactions = existingTransactionsResult.getValue();
@@ -66,7 +66,7 @@ export class CheckDuplicateHashesUseCase {
       });
 
     } catch (error) {
-      return Result.fail(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

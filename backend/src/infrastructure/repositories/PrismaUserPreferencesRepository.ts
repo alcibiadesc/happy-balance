@@ -12,9 +12,9 @@ export class PrismaUserPreferencesRepository implements UserPreferencesRepositor
         where: { userId },
       });
 
-      return Result.success(preferences);
+      return Result.ok(preferences);
     } catch (error) {
-      return Result.failure(`Failed to find user preferences: ${error}`);
+      return Result.failWithMessage(`Failed to find user preferences: ${error}`);
     }
   }
 
@@ -29,9 +29,9 @@ export class PrismaUserPreferencesRepository implements UserPreferencesRepositor
         },
       });
 
-      return Result.success(preferences);
+      return Result.ok(preferences);
     } catch (error) {
-      return Result.failure(`Failed to create user preferences: ${error}`);
+      return Result.failWithMessage(`Failed to create user preferences: ${error}`);
     }
   }
 
@@ -46,9 +46,9 @@ export class PrismaUserPreferencesRepository implements UserPreferencesRepositor
         },
       });
 
-      return Result.success(preferences);
+      return Result.ok(preferences);
     } catch (error) {
-      return Result.failure(`Failed to update user preferences: ${error}`);
+      return Result.failWithMessage(`Failed to update user preferences: ${error}`);
     }
   }
 
@@ -58,9 +58,9 @@ export class PrismaUserPreferencesRepository implements UserPreferencesRepositor
         where: { userId },
       });
 
-      return Result.success(undefined);
+      return Result.ok(undefined);
     } catch (error) {
-      return Result.failure(`Failed to delete user preferences: ${error}`);
+      return Result.failWithMessage(`Failed to delete user preferences: ${error}`);
     }
   }
 }

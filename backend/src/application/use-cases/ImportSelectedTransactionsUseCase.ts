@@ -54,7 +54,7 @@ export class ImportSelectedTransactionsUseCase {
     try {
       // Input validation
       if (!command.transactions || command.transactions.length === 0) {
-        return Result.fail('No transactions provided');
+        return Result.failWithMessage('No transactions provided');
       }
 
       // Convert selected transaction data to Transaction entities
@@ -72,7 +72,7 @@ export class ImportSelectedTransactionsUseCase {
       // Check for factory errors
       const failedCreations = transactionResults.filter(result => result.isFailure());
       if (failedCreations.length > 0) {
-        return Result.fail(`Failed to create transactions: ${failedCreations[0].getError()}`);
+        return Result.failWithMessage(`Failed to create transactions: ${failedCreations[0].getError()}`);
       }
 
       const transactions = transactionResults.map(result => result.getValue());
@@ -85,7 +85,7 @@ export class ImportSelectedTransactionsUseCase {
         // Get existing transactions for comparison
         const existingTransactionsResult = await this.transactionRepository.findAll();
         if (existingTransactionsResult.isFailure()) {
-          return Result.fail(`Failed to fetch existing transactions: ${existingTransactionsResult.getError()}`);
+          return Result.failWithMessage(`Failed to fetch existing transactions: ${existingTransactionsResult.getError()}`);
         }
 
         const existingTransactions = existingTransactionsResult.getValue();
@@ -154,7 +154,7 @@ export class ImportSelectedTransactionsUseCase {
       return Result.ok(response);
 
     } catch (error) {
-      return Result.fail(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

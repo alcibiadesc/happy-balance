@@ -597,7 +597,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       merchant: prismaTransaction.merchant,
       type: prismaTransaction.type as TransactionType,
       description: prismaTransaction.description,
-      categoryId: prismaTransaction.categoryId,
+      categoryId: prismaTransaction.categoryId || undefined,
       isSelected: prismaTransaction.isSelected,
       hash: prismaTransaction.hash || undefined,
       createdAt: prismaTransaction.createdAt.toISOString()

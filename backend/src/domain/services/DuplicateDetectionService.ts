@@ -273,7 +273,7 @@ export class DuplicateDetectionService {
 
       return Result.ok(results);
     } catch (error) {
-      return Result.fail(`Failed to check hashes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(`Failed to check hashes: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

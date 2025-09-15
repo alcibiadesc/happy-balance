@@ -42,17 +42,17 @@ export class TransactionFactory {
 
       // Validate amount
       if (amount.isFailure()) {
-        return Result.fail(`Invalid amount: ${amount.getError()}`);
+        return Result.fail(amount.getError());
       }
 
       // Validate date
       if (date.isFailure()) {
-        return Result.fail(`Invalid date: ${date.getError()}`);
+        return Result.fail(date.getError());
       }
 
       // Validate merchant
       if (merchant.isFailure()) {
-        return Result.fail(`Invalid merchant: ${merchant.getError()}`);
+        return Result.fail(merchant.getError());
       }
 
       // Convert string type to TransactionType enum
@@ -73,7 +73,7 @@ export class TransactionFactory {
       return transaction;
 
     } catch (error) {
-      return Result.fail(`Failed to create transaction: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(`Failed to create transaction: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
