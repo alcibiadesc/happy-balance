@@ -23,6 +23,8 @@
   let showFilters = $state(false);
   let selectedPeriod = $state(new Date().toISOString().slice(0, 7)); // Current month by default
   let selectedCategories = $state<string[]>([]);
+  let transactionTypeFilter = $state<'all' | 'income' | 'expenses'>('all');
+  let showCategoryFilterDropdown = $state(false);
   let isSelectionMode = $state(false);
   let showCategoryModal = $state(false);
   let editingTransaction = $state<Transaction | null>(null);
@@ -87,6 +89,13 @@
       }
     }
 
+    // Transaction type filter
+    if (transactionTypeFilter === 'income') {
+      filtered = filtered.filter(t => t.amount > 0);
+    } else if (transactionTypeFilter === 'expenses') {
+      filtered = filtered.filter(t => t.amount < 0);
+    }
+
     // Category filter
     if (selectedCategories.length > 0) {
       filtered = filtered.filter(t =>
@@ -111,6 +120,11 @@
     return filtered;
   });
   
+  function clearAllFilters() {
+    selectedCategories = [];
+    transactionTypeFilter = 'all';
+  }
+
   let groupedTransactions = $derived(() => {
     const filtered = filteredTransactions();
 
@@ -554,24 +568,82 @@
     {/if}
     
     {#if showFilters}
-      <div class="filters">
-        {#each $apiCategories as category}
-          <button 
-            class="category-chip"
-            class:active={selectedCategories.includes(category.id)}
-            style="--chip-color: {category.color}"
-            onclick={() => {
-              if (selectedCategories.includes(category.id)) {
-                selectedCategories = selectedCategories.filter(c => c !== category.id);
-              } else {
-                selectedCategories = [...selectedCategories, category.id];
-              }
-            }}
+      <div class="filters-minimal">
+        <!-- Type filters -->
+        <div class="type-filters">
+          <button
+            class="type-filter-btn"
+            class:active={transactionTypeFilter === 'income'}
+            onclick={() => transactionTypeFilter = transactionTypeFilter === 'income' ? 'all' : 'income'}
           >
-            <span>{category.icon}</span>
-            <span>{category.name}</span>
+            <TrendingUp size={14} />
+            <span>Todos los ingresos</span>
           </button>
-        {/each}
+          <button
+            class="type-filter-btn"
+            class:active={transactionTypeFilter === 'expenses'}
+            onclick={() => transactionTypeFilter = transactionTypeFilter === 'expenses' ? 'all' : 'expenses'}
+          >
+            <TrendingDown size={14} />
+            <span>Todos los gastos</span>
+          </button>
+        </div>
+
+        <!-- Category filter dropdown -->
+        <div class="category-filter">
+          <button
+            class="category-dropdown-btn"
+            class:active={selectedCategories.length > 0}
+            onclick={() => showCategoryFilterDropdown = !showCategoryFilterDropdown}
+          >
+            <Tag size={14} />
+            <span>
+              {selectedCategories.length > 0
+                ? `${selectedCategories.length} categorías`
+                : 'Seleccionar categorías'}
+            </span>
+            <ChevronDown size={14} class="chevron {showCategoryFilterDropdown ? 'rotated' : ''}" />
+          </button>
+
+          {#if showCategoryFilterDropdown}
+            <div class="category-filter-dropdown">
+              <div class="dropdown-header">
+                <span class="dropdown-title">Categorías</span>
+                {#if selectedCategories.length > 0}
+                  <button class="clear-btn" onclick={clearAllFilters}>
+                    Limpiar filtros
+                  </button>
+                {/if}
+              </div>
+
+              <div class="category-options">
+                {#each $apiCategories as category}
+                  <button
+                    class="category-option"
+                    class:selected={selectedCategories.includes(category.id)}
+                    onclick={() => {
+                      if (selectedCategories.includes(category.id)) {
+                        selectedCategories = selectedCategories.filter(c => c !== category.id);
+                      } else {
+                        selectedCategories = [...selectedCategories, category.id];
+                      }
+                    }}
+                  >
+                    <div class="category-info">
+                      <span class="category-emoji">{category.icon}</span>
+                      <span class="category-name">{category.name}</span>
+                    </div>
+                    <div class="category-checkbox">
+                      {#if selectedCategories.includes(category.id)}
+                        <Check size={12} />
+                      {/if}
+                    </div>
+                  </button>
+                {/each}
+              </div>
+            </div>
+          {/if}
+        </div>
       </div>
     {/if}
   </div>
@@ -1160,9 +1232,43 @@
     margin: 0 auto;
     padding: var(--space-sm) var(--space-lg);
     display: flex;
-    gap: var(--space-md);
+    gap: var(--space-sm);
     align-items: center;
     flex-wrap: wrap;
+  }
+
+  @media (max-width: 768px) {
+    .toolbar-content {
+      gap: var(--space-xs);
+      padding: var(--space-sm) var(--space-md);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .toolbar-content {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-sm);
+    }
+
+    .date-selector-section,
+    .search-bar,
+    .toolbar-actions {
+      width: 100%;
+    }
+
+    .date-selector-section {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .search-bar {
+      max-width: none;
+    }
+
+    .toolbar-actions {
+      justify-content: center;
+    }
   }
 
   @media (min-width: 768px) {
@@ -1235,32 +1341,231 @@
     color: rgb(239, 68, 68);
   }
   
-  .filters {
+  .filters-minimal {
     padding: var(--space-md) var(--space-lg);
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
-    gap: var(--space-sm);
+    gap: var(--space-md);
+    align-items: flex-start;
     flex-wrap: wrap;
   }
-  
-  .category-chip {
+
+  .type-filters {
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .type-filter-btn {
     display: flex;
     align-items: center;
     gap: var(--space-xs);
-    padding: var(--space-xs) var(--space-md);
-    border: 1px solid rgba(2, 60, 70, 0.1);
-    border-radius: var(--radius-xl);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
     background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
     cursor: pointer;
-    font-size: 0.875rem;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
+    white-space: nowrap;
   }
-  
-  .category-chip.active {
-    background: var(--chip-color);
-    border-color: var(--chip-color);
+
+  .type-filter-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+    color: var(--text-primary);
+  }
+
+  .type-filter-btn.active {
+    background: var(--acapulco);
+    border-color: var(--acapulco);
     color: white;
+  }
+
+  .category-filter {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .category-dropdown-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    justify-content: space-between;
+  }
+
+  .category-dropdown-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+    color: var(--text-primary);
+  }
+
+  .category-dropdown-btn.active {
+    background: var(--surface-elevated);
+    border-color: var(--acapulco);
+    color: var(--acapulco);
+  }
+
+  .chevron {
+    transition: transform 0.2s ease;
+  }
+
+  .chevron.rotated {
+    transform: rotate(180deg);
+  }
+
+  .category-filter-dropdown {
+    position: absolute;
+    top: calc(100% + var(--space-xs));
+    left: 0;
+    right: 0;
+    background: var(--surface-elevated);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 50;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .dropdown-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .clear-btn {
+    padding: var(--space-xs) var(--space-sm);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--froly);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .clear-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .category-options {
+    padding: var(--space-sm);
+  }
+
+  .category-option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: var(--space-xs);
+  }
+
+  .category-option:hover {
+    background: var(--gray-50);
+  }
+
+  .category-option.selected {
+    background: rgba(122, 186, 165, 0.1);
+  }
+
+  .category-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .category-emoji {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+  }
+
+  .category-name {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .category-checkbox {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--gray-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.2s ease;
+  }
+
+  .category-option.selected .category-checkbox {
+    background: var(--acapulco);
+    border-color: var(--acapulco);
+  }
+
+  @media (max-width: 768px) {
+    .filters-minimal {
+      flex-direction: column;
+      gap: var(--space-sm);
+      padding: var(--space-md);
+    }
+
+    .type-filters {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .type-filter-btn {
+      flex: 1;
+    }
+
+    .category-filter {
+      width: 100%;
+      min-width: auto;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .type-filters {
+      flex-direction: column;
+    }
+
+    .type-filter-btn {
+      text-align: center;
+    }
+
+    .category-filter-dropdown {
+      max-height: 250px;
+    }
   }
   
   .transactions-list {
