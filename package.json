@@ -1,0 +1,91 @@
+{
+  "name": "happy-balance-workspace",
+  "version": "1.0.0",
+  "description": "Happy Balance - Personal finance management workspace",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    ".",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev-local.js",
+    "dev:docker": "node scripts/dev.js",
+    "setup": "node scripts/dev.js setup",
+    "db:start": "node scripts/db-manager.js start",
+    "db:stop": "node scripts/db-manager.js stop",
+    "db:reset": "node scripts/db-manager.js reset",
+    "db:setup": "cd backend && pnpm db:generate && pnpm db:push",
+    "db:migrate": "cd backend && pnpm db:migrate",
+    "db:seed": "cd backend && pnpm db:seed",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "vite build",
+    "build:backend": "cd backend && pnpm build",
+    "start": "npm run start:frontend",
+    "start:frontend": "vite preview",
+    "start:backend": "cd backend && pnpm start",
+    "test": "vitest",
+    "test:backend": "cd backend && pnpm test",
+    "lint": "prettier --check . && eslint .",
+    "lint:fix": "prettier --write . && eslint . --fix && cd backend && pnpm lint:fix",
+    "typecheck": "svelte-kit sync && tsc --noEmit && cd backend && pnpm typecheck",
+    "clean": "rm -rf node_modules dist build backend/node_modules backend/dist",
+    "install:all": "pnpm install && cd backend && pnpm install",
+    "worktree:setup": "pnpm install && cd backend && pnpm install",
+    "setup-worktree": "node scripts/setup-worktree.js"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.0",
+    "lucide-svelte": "^0.542.0",
+    "svelte-i18n": "^4.0.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@sveltejs/adapter-node": "^5.3.2",
+    "@sveltejs/kit": "^2.39.1",
+    "@sveltejs/vite-plugin-svelte": "^6.2.0",
+    "@tailwindcss/typography": "^0.5.10",
+    "@types/node": "^20.10.4",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "daisyui": "^5.1.10",
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-svelte": "^3.12.3",
+    "jsdom": "^25.0.0",
+    "postcss": "^8.4.32",
+    "prettier": "^3.1.0",
+    "prettier-plugin-svelte": "^3.4.0",
+    "prettier-plugin-tailwindcss": "^0.5.7",
+    "svelte": "^5.38.10",
+    "svelte-check": "^4.3.1",
+    "tailwindcss": "^3.3.6",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3",
+    "vite": "^6.3.6",
+    "vitest": "^1.0.4"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "keywords": [
+    "expense-tracker",
+    "finance",
+    "svelte",
+    "sveltekit",
+    "typescript",
+    "ddd",
+    "hexagonal-architecture",
+    "postgresql"
+  ],
+  "author": "Claude Code",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/expense-tracker.git"
+  }
+}

@@ -1,0 +1,271 @@
+{
+  "common": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "save": "Guardar",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "reset": "Restablecer",
+    "apply": "Aplicar",
+    "yes": "Sí",
+    "no": "No",
+    "back": "Atrás",
+    "done": "Hecho"
+  },
+  "navigation": {
+    "transactions": "Transacciones",
+    "dashboard": "Panel",
+    "categories": "Categorías",
+    "settings": "Configuración",
+    "import": "Importar"
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "spending_summary": "Gastas {amount} de cada 10 euros",
+    "periods": {
+      "week": "Semana",
+      "month": "Mes",
+      "quarter": "Trimestre",
+      "year": "Año",
+      "custom": "Personalizado"
+    },
+    "dateRange": {
+      "title": "Seleccionar Rango de Fechas",
+      "startDate": "Fecha de Inicio",
+      "endDate": "Fecha Final"
+    },
+    "metrics": {
+      "income": "Ingresos",
+      "expenses": "Gastos",
+      "investments": "Inversiones",
+      "balance": "Balance",
+      "essential_expenses": "Gastos esenciales",
+      "discretionary_expenses": "Gastos discrecionales",
+      "saved_percentage": "{percentage}% ahorrado"
+    },
+    "charts": {
+      "temporal_evolution": "Evolución temporal",
+      "expense_distribution": "Distribución de gastos e inversiones",
+      "temporal_evolution_subtitle": "Tendencias de ingresos y gastos a lo largo del tiempo",
+      "expense_distribution_subtitle": "Comparación mensual de gastos esenciales, discrecionales e inversiones",
+      "income_evolution": "Evolución de Ingresos",
+      "expense_evolution": "Evolución de Gastos",
+      "detailed_breakdown": "Desglose detallado",
+      "detailed_breakdown_subtitle": "Análisis mensual de gastos por categoría"
+    },
+    "categories": {
+      "title": "Desglose de gastos",
+      "food": "Alimentación",
+      "transport": "Transporte",
+      "utilities": "Servicios",
+      "shopping": "Compras",
+      "entertainment": "Entretenimiento",
+      "health": "Salud"
+    },
+    "status": {
+      "excellent_control": "Control excelente",
+      "moderate_control": "Control moderado",
+      "high_spending": "Gasto elevado"
+    }
+  },
+  "import": {
+    "title": "Importar Transacciones",
+    "subtitle": "Carga y procesa tus archivos CSV bancarios con elegancia minimalista japonesa",
+    "steps": {
+      "upload": "Cargar",
+      "upload_desc": "Elegir archivo",
+      "preview": "Vista previa",
+      "preview_desc": "Revisar y Editar",
+      "complete": "Completar",
+      "complete_desc": "Importación Hecha"
+    },
+    "settings": {
+      "title": "Configuración de Importación",
+      "enable_preview": "Habilitar vista previa antes de importar",
+      "enable_preview_desc": "La vista previa te permite revisar y editar transacciones antes de guardar"
+    },
+    "upload": {
+      "choose_file": "Elige un archivo CSV",
+      "drag_drop": "O arrastra y suelta tu archivo aquí • Máx 10MB",
+      "processing": "Procesando...",
+      "ready": "Listo"
+    },
+    "preview": {
+      "stats": {
+        "total": "Total",
+        "selected": "Seleccionadas",
+        "duplicates": "Duplicados",
+        "skipped": "Omitidas"
+      },
+      "controls": {
+        "show_duplicates": "Mostrar duplicados",
+        "show_all": "Mostrar todas las transacciones",
+        "select_all": "Seleccionar Todo",
+        "deselect_all": "Deseleccionar Todo"
+      },
+      "table": {
+        "select": "Seleccionar",
+        "date": "Fecha",
+        "partner": "Comercio",
+        "description": "Descripción",
+        "amount": "Cantidad",
+        "status": "Estado"
+      },
+      "status": {
+        "duplicate": "Duplicado",
+        "ready": "Listo",
+        "skipped": "Omitido"
+      },
+      "pagination": {
+        "showing": "Mostrando las primeras 10 de {total} transacciones",
+        "show_all": "Mostrar todas"
+      }
+    },
+    "complete": {
+      "importing": "Importando Transacciones",
+      "importing_desc": "Por favor espera mientras guardamos tus datos...",
+      "success": "¡Importación Completada!",
+      "success_desc": "Se importaron exitosamente {count} transacciones",
+      "redirecting": "Redirigiendo al panel...",
+      "import_another": "Importar Otro Archivo"
+    },
+    "actions": {
+      "import_count": "Importar {count} Transacción",
+      "import_count_plural": "Importar {count} Transacciones"
+    },
+    "errors": {
+      "invalid_file": "Por favor selecciona un archivo CSV",
+      "file_too_large": "El archivo debe ser menor a 10MB",
+      "no_transactions": "No se encontraron transacciones válidas en el archivo",
+      "parse_failed": "Error al procesar el archivo CSV",
+      "import_failed": "Error al importar transacciones"
+    },
+    "duplicate_reasons": {
+      "file": "Transacción idéntica encontrada en el archivo",
+      "database": "La transacción ya existe en la base de datos",
+      "both": "Duplicado tanto en el archivo como en la base de datos"
+    }
+  },
+  "transactions": {
+    "title": "Transacciones",
+    "add_transaction": "Agregar Transacción",
+    "edit_transaction": "Editar Transacción",
+    "description": "Descripción",
+    "amount": "Cantidad",
+    "category": "Categoría",
+    "date": "Fecha",
+    "merchant": "Comercio",
+    "time": "Hora",
+    "type": {
+      "income": "Ingreso",
+      "expense": "Gasto",
+      "investment": "Inversión"
+    },
+    "modal": {
+      "new_transaction": "Nueva Transacción",
+      "amount_placeholder": "0.00",
+      "where_label": "¿Dónde?",
+      "merchant_placeholder": "ej., Amazon, Starbucks, Salario...",
+      "what_for_label": "¿Para qué?",
+      "description_placeholder": "Descripción opcional...",
+      "when_label": "¿Cuándo?",
+      "expense": "Gasto",
+      "income": "Ingreso",
+      "save_transaction": "Guardar Transacción",
+      "saving": "Guardando...",
+      "validation": {
+        "amount_required": "Por favor ingresa una cantidad válida mayor a 0",
+        "merchant_required": "El comercio es obligatorio",
+        "date_required": "La fecha es obligatoria",
+        "future_date": "La fecha no puede estar en el futuro"
+      }
+    },
+    "no_transactions": "No hay transacciones",
+    "delete_confirmation": "¿Estás seguro de que quieres eliminar esta transacción?",
+    "delete_selected_title": "Eliminar Transacciones Seleccionadas",
+    "delete_selected_message": "¿Estás seguro de que quieres eliminar {count} transacciones seleccionadas? Esta acción no se puede deshacer.",
+    "delete_single_title": "Eliminar Transacción",
+    "delete_single_message": "¿Estás seguro de que quieres eliminar esta transacción? Esta acción no se puede deshacer.",
+    "period": {
+      "balance": "Balance del período",
+      "income": "Ingresos",
+      "total_expenses": "Gastos totales",
+      "expense_distribution": "Distribución de gastos",
+      "essential": "Esenciales",
+      "discretionary": "Discrecionales",
+      "uncategorized": "Sin categorizar",
+      "all_time": "Todas las transacciones"
+    },
+    "search_placeholder": "Buscar transacciones...",
+    "select_all": "Seleccionar Todo",
+    "select": "Seleccionar",
+    "cancel": "Cancelar",
+    "add_category": "Añadir categoría",
+    "show_transaction": "Mostrar transacción",
+    "hide_transaction": "Ocultar transacción",
+    "delete_transaction": "Eliminar transacción",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "delete_all": "Eliminar Todo"
+  },
+  "categories": {
+    "title": "Categorías",
+    "add_category": "Agregar Categoría",
+    "edit_category": "Editar Categoría",
+    "name": "Nombre",
+    "color": "Color",
+    "icon": "Icono",
+    "type": "Tipo",
+    "no_categories": "No hay categorías",
+    "delete_confirmation": "¿Estás seguro de que quieres eliminar esta categoría?"
+  },
+  "settings": {
+    "title": "Configuración",
+    "language": "Idioma",
+    "currency": "Moneda",
+    "theme": "Tema",
+    "themes": {
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema"
+    },
+    "data": "Datos",
+    "export_data": "Exportar Datos",
+    "import_data": "Importar Datos",
+    "clear_data": "Limpiar Datos",
+    "clear_data_confirmation": "¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.",
+    "export_success": "Datos exportados exitosamente",
+    "import_success": "Se importaron exitosamente {count} transacciones",
+    "import_invalid_file": "Por favor selecciona un archivo JSON válido",
+    "import_file_too_large": "El archivo debe ser menor a 10MB",
+    "import_invalid_format": "Formato de archivo de respaldo inválido",
+    "import_confirmation": "Esto importará {transactions} transacciones desde {date}. ¿Continuar?",
+    "import_parse_error": "Error al analizar archivo de respaldo",
+    "import_read_error": "Error al leer archivo de respaldo"
+  },
+  "errors": {
+    "generic": "Ocurrió un error",
+    "network": "Error de conexión",
+    "validation": "Error de validación",
+    "not_found": "No encontrado",
+    "unauthorized": "No autorizado",
+    "forbidden": "Prohibido"
+  },
+  "success": {
+    "saved": "Guardado exitosamente",
+    "deleted": "Eliminado exitosamente",
+    "imported": "Importado exitosamente",
+    "exported": "Exportado exitosamente"
+  },
+  "modal": {
+    "confirm_action": "Confirmar Acción",
+    "are_you_sure": "¿Estás seguro?",
+    "delete_all_title": "Eliminar Todos los Datos",
+    "delete_all_message": "⚠️ Esto eliminará permanentemente TODAS tus transacciones, categorías y configuraciones tanto de la aplicación como de la base de datos. ¡Esta acción no se puede deshacer!",
+    "delete_everything": "Eliminar Todo"
+  }
+}

@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  id          String    @id @db.VarChar(36)
+  amount      Decimal   @db.Decimal(15, 2)
+  currency    String    @db.VarChar(3)
+  date        DateTime  @db.Date
+  merchant    String    @db.VarChar(200)
+  type        String    @db.VarChar(20)
+  description String    @default("")
+  categoryId  String?   @db.VarChar(36)
+  isSelected  Boolean   @default(true)
+  hidden      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  hash        String?   @db.VarChar(50)
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([date])
+  @@index([merchant])
+  @@index([type])
+  @@index([categoryId])
+  @@index([currency])
+  @@index([createdAt])
+  @@index([hash])
+  @@index([hidden])
+  @@map("transactions")
+}
+
+model Category {
+  id           String        @id @db.VarChar(36)
+  name         String        @db.VarChar(100)
+  type         String        @db.VarChar(20)
+  color        String        @default("#3B82F6") @db.VarChar(7)
+  icon         String        @default("💰") @db.VarChar(10)
+  isActive     Boolean       @default(true)
+  parentId     String?       @db.VarChar(36)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  parent       Category?     @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Category[]    @relation("CategoryHierarchy")
+  transactions Transaction[]
+
+  @@unique([name, type])
+  @@index([type])
+  @@index([isActive])
+  @@index([parentId])
+  @@map("categories")
+}
+
+model ImportLog {
+  id                String    @id @db.VarChar(36)
+  filename          String    @db.VarChar(500)
+  totalProcessed    Int       @default(0)
+  imported          Int       @default(0)
+  duplicatesSkipped Int       @default(0)
+  errors            Int       @default(0)
+  categorized       Int       @default(0)
+  status            String    @db.VarChar(20)
+  errorDetails      Json?
+  metadata          Json?
+  startedAt         DateTime  @default(now())
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([status])
+  @@index([startedAt])
+  @@map("import_logs")
+}
+
+model AppSettings {
+  id          String   @id @db.VarChar(36)
+  key         String   @unique @db.VarChar(100)
+  value       Json
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("app_settings")
+}
+
+model UserPreferences {
+  id        String   @id @default(cuid()) @db.VarChar(36)
+  userId    String   @unique @default("default") @db.VarChar(36)
+  currency  String   @default("EUR") @db.VarChar(3)
+  language  String   @default("en") @db.VarChar(5)
+  theme     String   @default("light") @db.VarChar(10)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_preferences")
+}

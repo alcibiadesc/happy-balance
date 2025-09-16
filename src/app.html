@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="%lang%">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.ico" />
+    <link
+      rel="icon"
+      href="%sveltekit.assets%/favicon.svg"
+      type="image/svg+xml"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="%sveltekit.assets%/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="%sveltekit.assets%/favicon-16x16.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="%sveltekit.assets%/apple-touch-icon.png"
+    />
+    <link rel="manifest" href="%sveltekit.assets%/site.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#023c46" />
+    <meta
+      name="description"
+      content="Happy Balance - Personal finance management for a happier financial life"
+    />
+    <script>
+      // Theme initialization (must run before page render to prevent flash)
+      const initTheme = () => {
+        // Check user preferences first, fallback to regular theme store
+        const userPrefs = localStorage.getItem("userPreferences");
+        let saved = "system";
+
+        if (userPrefs) {
+          try {
+            const prefs = JSON.parse(userPrefs);
+            saved = prefs.theme || "system";
+          } catch (e) {
+            saved = localStorage.getItem("theme") || "system";
+          }
+        } else {
+          saved = localStorage.getItem("theme") || "system";
+        }
+
+        const systemDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        const isDark = saved === "dark" || (saved === "system" && systemDark);
+
+        if (isDark) {
+          document.documentElement.classList.add("dark");
+          document.documentElement.setAttribute("data-theme", "dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      };
+
+      // Apply theme immediately
+      initTheme();
+
+      // Update body class based on sidebar state
+      const updateSidebarClass = () => {
+        const sidebarCollapsed = JSON.parse(
+          localStorage.getItem("sidebar-collapsed") || "false",
+        );
+        document.body.classList.toggle("sidebar-collapsed", sidebarCollapsed);
+      };
+
+      // Apply on load
+      document.addEventListener("DOMContentLoaded", updateSidebarClass);
+
+      // Listen for storage changes
+      window.addEventListener("storage", (e) => {
+        if (e.key === "sidebar-collapsed") {
+          updateSidebarClass();
+        } else if (e.key === "theme" || e.key === "userPreferences") {
+          initTheme();
+        }
+      });
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover" class="%sveltekit.theme%">
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

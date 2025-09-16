@@ -1,0 +1,271 @@
+{
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "save": "Save",
+    "close": "Close",
+    "loading": "Loading...",
+    "search": "Search",
+    "filter": "Filter",
+    "reset": "Reset",
+    "apply": "Apply",
+    "yes": "Yes",
+    "no": "No",
+    "back": "Back",
+    "done": "Done"
+  },
+  "navigation": {
+    "transactions": "Transactions",
+    "dashboard": "Dashboard",
+    "categories": "Categories",
+    "settings": "Settings",
+    "import": "Import"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "spending_summary": "You spend {amount} out of every 10 euros",
+    "periods": {
+      "week": "Week",
+      "month": "Month",
+      "quarter": "Quarter",
+      "year": "Year",
+      "custom": "Custom"
+    },
+    "dateRange": {
+      "title": "Select Date Range",
+      "startDate": "Start Date",
+      "endDate": "End Date"
+    },
+    "metrics": {
+      "income": "Income",
+      "expenses": "Expenses",
+      "investments": "Investments",
+      "balance": "Balance",
+      "essential_expenses": "Essential expenses",
+      "discretionary_expenses": "Discretionary expenses",
+      "saved_percentage": "{percentage}% saved"
+    },
+    "charts": {
+      "temporal_evolution": "Temporal evolution",
+      "expense_distribution": "Expense and investment distribution",
+      "temporal_evolution_subtitle": "Income and expense trends over time",
+      "expense_distribution_subtitle": "Monthly comparison of essential, discretionary expenses and investments",
+      "income_evolution": "Income Evolution",
+      "expense_evolution": "Expense Evolution",
+      "detailed_breakdown": "Detailed breakdown",
+      "detailed_breakdown_subtitle": "Monthly expense analysis by category"
+    },
+    "categories": {
+      "title": "Expense breakdown",
+      "food": "Food",
+      "transport": "Transport",
+      "utilities": "Utilities",
+      "shopping": "Shopping",
+      "entertainment": "Entertainment",
+      "health": "Health"
+    },
+    "status": {
+      "excellent_control": "Excellent control",
+      "moderate_control": "Moderate control",
+      "high_spending": "High spending"
+    }
+  },
+  "import": {
+    "title": "Import Transactions",
+    "subtitle": "Upload and process your bank CSV files with Japanese minimalist elegance",
+    "steps": {
+      "upload": "Upload",
+      "upload_desc": "Choose file",
+      "preview": "Preview",
+      "preview_desc": "Review & Edit",
+      "complete": "Complete",
+      "complete_desc": "Import Done"
+    },
+    "settings": {
+      "title": "Import Settings",
+      "enable_preview": "Enable preview before import",
+      "enable_preview_desc": "Preview allows you to review and edit transactions before saving"
+    },
+    "upload": {
+      "choose_file": "Choose a CSV file",
+      "drag_drop": "Or drag and drop your file here • Max 10MB",
+      "processing": "Processing...",
+      "ready": "Ready"
+    },
+    "preview": {
+      "stats": {
+        "total": "Total",
+        "selected": "Selected",
+        "duplicates": "Duplicates",
+        "skipped": "Skipped"
+      },
+      "controls": {
+        "show_duplicates": "Show duplicates",
+        "show_all": "Show all transactions",
+        "select_all": "Select All",
+        "deselect_all": "Deselect All"
+      },
+      "table": {
+        "select": "Select",
+        "date": "Date",
+        "partner": "Partner",
+        "description": "Description",
+        "amount": "Amount",
+        "status": "Status"
+      },
+      "status": {
+        "duplicate": "Duplicate",
+        "ready": "Ready",
+        "skipped": "Skipped"
+      },
+      "pagination": {
+        "showing": "Showing first 10 of {total} transactions",
+        "show_all": "Show all"
+      }
+    },
+    "complete": {
+      "importing": "Importing Transactions",
+      "importing_desc": "Please wait while we save your data...",
+      "success": "Import Complete!",
+      "success_desc": "Successfully imported {count} transactions",
+      "redirecting": "Redirecting to dashboard...",
+      "import_another": "Import Another File"
+    },
+    "actions": {
+      "import_count": "Import {count} Transaction",
+      "import_count_plural": "Import {count} Transactions"
+    },
+    "errors": {
+      "invalid_file": "Please select a CSV file",
+      "file_too_large": "File size must be less than 10MB",
+      "no_transactions": "No valid transactions found in file",
+      "parse_failed": "Failed to parse CSV file",
+      "import_failed": "Failed to import transactions"
+    },
+    "duplicate_reasons": {
+      "file": "Identical transaction found in file",
+      "database": "Transaction already exists in database",
+      "both": "Duplicate in both file and database"
+    }
+  },
+  "transactions": {
+    "title": "Transactions",
+    "add_transaction": "Add Transaction",
+    "edit_transaction": "Edit Transaction",
+    "description": "Description",
+    "amount": "Amount",
+    "category": "Category",
+    "date": "Date",
+    "merchant": "Merchant",
+    "time": "Time",
+    "type": {
+      "income": "Income",
+      "expense": "Expense",
+      "investment": "Investment"
+    },
+    "modal": {
+      "new_transaction": "New Transaction",
+      "amount_placeholder": "0.00",
+      "where_label": "Where?",
+      "merchant_placeholder": "e.g., Amazon, Starbucks, Salary...",
+      "what_for_label": "What for?",
+      "description_placeholder": "Optional description...",
+      "when_label": "When?",
+      "expense": "Expense",
+      "income": "Income",
+      "save_transaction": "Save Transaction",
+      "saving": "Saving...",
+      "validation": {
+        "amount_required": "Please enter a valid amount greater than 0",
+        "merchant_required": "Merchant is required",
+        "date_required": "Date is required",
+        "future_date": "Date cannot be in the future"
+      }
+    },
+    "no_transactions": "No transactions",
+    "delete_confirmation": "Are you sure you want to delete this transaction?",
+    "delete_selected_title": "Delete Selected Transactions",
+    "delete_selected_message": "Are you sure you want to delete {count} selected transactions? This action cannot be undone.",
+    "delete_single_title": "Delete Transaction",
+    "delete_single_message": "Are you sure you want to delete this transaction? This action cannot be undone.",
+    "period": {
+      "balance": "Period balance",
+      "income": "Income",
+      "total_expenses": "Total expenses",
+      "expense_distribution": "Expense distribution",
+      "essential": "Essential",
+      "discretionary": "Discretionary",
+      "uncategorized": "Uncategorized",
+      "all_time": "All transactions"
+    },
+    "search_placeholder": "Search transactions...",
+    "select_all": "Select All",
+    "select": "Select",
+    "cancel": "Cancel",
+    "add_category": "Add category",
+    "show_transaction": "Show transaction",
+    "hide_transaction": "Hide transaction",
+    "delete_transaction": "Delete transaction",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "delete_all": "Delete All"
+  },
+  "categories": {
+    "title": "Categories",
+    "add_category": "Add Category",
+    "edit_category": "Edit Category",
+    "name": "Name",
+    "color": "Color",
+    "icon": "Icon",
+    "type": "Type",
+    "no_categories": "No categories",
+    "delete_confirmation": "Are you sure you want to delete this category?"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "currency": "Currency",
+    "theme": "Theme",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "data": "Data",
+    "export_data": "Export Data",
+    "import_data": "Import Data",
+    "clear_data": "Clear Data",
+    "clear_data_confirmation": "Are you sure you want to delete all data? This action cannot be undone.",
+    "export_success": "Data exported successfully",
+    "import_success": "Successfully imported {count} transactions",
+    "import_invalid_file": "Please select a valid JSON file",
+    "import_file_too_large": "File size must be less than 10MB",
+    "import_invalid_format": "Invalid backup file format",
+    "import_confirmation": "This will import {transactions} transactions from {date}. Continue?",
+    "import_parse_error": "Error parsing backup file",
+    "import_read_error": "Error reading backup file"
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "network": "Connection error",
+    "validation": "Validation error",
+    "not_found": "Not found",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Forbidden"
+  },
+  "success": {
+    "saved": "Saved successfully",
+    "deleted": "Deleted successfully",
+    "imported": "Imported successfully",
+    "exported": "Exported successfully"
+  },
+  "modal": {
+    "confirm_action": "Confirm Action",
+    "are_you_sure": "Are you sure?",
+    "delete_all_title": "Delete All Data",
+    "delete_all_message": "⚠️ This will permanently delete ALL your transactions, categories, and settings from both the app and the database. This action cannot be undone!",
+    "delete_everything": "Delete Everything"
+  }
+}
