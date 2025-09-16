@@ -1,9 +1,15 @@
-import { PrismaClient } from '@prisma/client';
-import { UserPreferencesRepository } from '../../domain/repositories/UserPreferencesRepository';
-import { UserPreferences, CreateUserPreferencesData, UpdateUserPreferencesData } from '../../domain/entities/UserPreferences';
-import { Result } from '../../domain/shared/Result';
+import { PrismaClient } from "@prisma/client";
+import { UserPreferencesRepository } from "../../domain/repositories/UserPreferencesRepository";
+import {
+  UserPreferences,
+  CreateUserPreferencesData,
+  UpdateUserPreferencesData,
+} from "../../domain/entities/UserPreferences";
+import { Result } from "../../domain/shared/Result";
 
-export class PrismaUserPreferencesRepository implements UserPreferencesRepository {
+export class PrismaUserPreferencesRepository
+  implements UserPreferencesRepository
+{
   constructor(private readonly prisma: PrismaClient) {}
 
   async findByUserId(userId: string): Promise<Result<UserPreferences | null>> {
@@ -14,28 +20,37 @@ export class PrismaUserPreferencesRepository implements UserPreferencesRepositor
 
       return Result.ok(preferences);
     } catch (error) {
-      return Result.failWithMessage(`Failed to find user preferences: ${error}`);
+      return Result.failWithMessage(
+        `Failed to find user preferences: ${error}`,
+      );
     }
   }
 
-  async create(data: CreateUserPreferencesData): Promise<Result<UserPreferences>> {
+  async create(
+    data: CreateUserPreferencesData,
+  ): Promise<Result<UserPreferences>> {
     try {
       const preferences = await this.prisma.userPreferences.create({
         data: {
-          userId: data.userId || 'default',
-          currency: data.currency || 'EUR',
-          language: data.language || 'en',
-          theme: data.theme || 'light',
+          userId: data.userId || "default",
+          currency: data.currency || "EUR",
+          language: data.language || "en",
+          theme: data.theme || "light",
         },
       });
 
       return Result.ok(preferences);
     } catch (error) {
-      return Result.failWithMessage(`Failed to create user preferences: ${error}`);
+      return Result.failWithMessage(
+        `Failed to create user preferences: ${error}`,
+      );
     }
   }
 
-  async update(userId: string, data: UpdateUserPreferencesData): Promise<Result<UserPreferences>> {
+  async update(
+    userId: string,
+    data: UpdateUserPreferencesData,
+  ): Promise<Result<UserPreferences>> {
     try {
       const preferences = await this.prisma.userPreferences.update({
         where: { userId },
@@ -48,7 +63,9 @@ export class PrismaUserPreferencesRepository implements UserPreferencesRepositor
 
       return Result.ok(preferences);
     } catch (error) {
-      return Result.failWithMessage(`Failed to update user preferences: ${error}`);
+      return Result.failWithMessage(
+        `Failed to update user preferences: ${error}`,
+      );
     }
   }
 
@@ -60,7 +77,9 @@ export class PrismaUserPreferencesRepository implements UserPreferencesRepositor
 
       return Result.ok(undefined);
     } catch (error) {
-      return Result.failWithMessage(`Failed to delete user preferences: ${error}`);
+      return Result.failWithMessage(
+        `Failed to delete user preferences: ${error}`,
+      );
     }
   }
 }

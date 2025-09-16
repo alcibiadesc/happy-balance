@@ -1,7 +1,7 @@
 # 🚀 Simplified Docker Compose for Development
 # Clean architecture with minimal configuration
 
-version: '3.8'
+version: "3.8"
 
 services:
   # PostgreSQL Database - Shared instance with multiple databases

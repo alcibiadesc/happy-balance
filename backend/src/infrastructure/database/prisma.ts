@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -7,25 +7,27 @@ declare global {
 
 // PrismaClient is attached to the `global` object in development to prevent
 // exhausting your database connection limit.
-export const prisma = globalThis.__prisma ?? new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
-});
+export const prisma =
+  globalThis.__prisma ??
+  new PrismaClient({
+    log: ["query", "info", "warn", "error"],
+  });
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === "development") {
   globalThis.__prisma = prisma;
 }
 
 // Graceful shutdown
-process.on('beforeExit', async () => {
+process.on("beforeExit", async () => {
   await prisma.$disconnect();
 });
 
-process.on('SIGINT', async () => {
+process.on("SIGINT", async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
 
-process.on('SIGTERM', async () => {
+process.on("SIGTERM", async () => {
   await prisma.$disconnect();
   process.exit(0);
 });

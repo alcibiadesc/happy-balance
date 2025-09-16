@@ -127,7 +127,11 @@
       .sort(([a], [b]) => b.localeCompare(a))
       .map(([date, items]) => ({
         date,
-        items: items.sort((a, b) => b.createdAt?.localeCompare(a.createdAt || '') || 0)
+        items: items.sort((a, b) => {
+          const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return bTime - aTime;
+        })
       }));
 
     return result;

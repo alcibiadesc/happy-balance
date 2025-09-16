@@ -1,5 +1,5 @@
-import { Transaction } from '../entities/Transaction';
-import { Result } from '../shared/Result';
+import { Transaction } from "../entities/Transaction";
+import { Result } from "../shared/Result";
 
 export interface DuplicateDetectionResult {
   original: Transaction;
@@ -19,7 +19,7 @@ export class DuplicateDetectionService {
    */
   detectDuplicates(
     transactions: Transaction[],
-    toleranceHours = this.DEFAULT_TOLERANCE_HOURS
+    toleranceHours = this.DEFAULT_TOLERANCE_HOURS,
   ): DuplicateDetectionResult[] {
     const results: DuplicateDetectionResult[] = [];
     const processed = new Set<string>();
@@ -50,7 +50,7 @@ export class DuplicateDetectionService {
         results.push({
           original: transaction,
           duplicates,
-          reason: this.buildDuplicateReason(transaction, duplicates[0])
+          reason: this.buildDuplicateReason(transaction, duplicates[0]),
         });
         processed.add(transaction.id.value);
       }
@@ -64,7 +64,7 @@ export class DuplicateDetectionService {
    */
   filterUnique(
     transactions: Transaction[],
-    toleranceHours = this.DEFAULT_TOLERANCE_HOURS
+    toleranceHours = this.DEFAULT_TOLERANCE_HOURS,
   ): Transaction[] {
     const unique: Transaction[] = [];
     const hashMap = new Map<string, Transaction>();
@@ -97,7 +97,7 @@ export class DuplicateDetectionService {
   areDuplicates(
     transaction1: Transaction,
     transaction2: Transaction,
-    toleranceHours = this.DEFAULT_TOLERANCE_HOURS
+    toleranceHours = this.DEFAULT_TOLERANCE_HOURS,
   ): boolean {
     return transaction1.isDuplicateOf(transaction2, toleranceHours);
   }
@@ -108,7 +108,7 @@ export class DuplicateDetectionService {
   detectAgainstExisting(
     newTransactions: Transaction[],
     existingTransactions: Transaction[],
-    toleranceHours = this.DEFAULT_TOLERANCE_HOURS
+    toleranceHours = this.DEFAULT_TOLERANCE_HOURS,
   ): Result<{
     unique: Transaction[];
     duplicates: Transaction[];
@@ -122,11 +122,17 @@ export class DuplicateDetectionService {
       let isDuplicate = false;
 
       for (const existingTransaction of existingTransactions) {
-        if (this.areDuplicates(newTransaction, existingTransaction, toleranceHours)) {
+        if (
+          this.areDuplicates(
+            newTransaction,
+            existingTransaction,
+            toleranceHours,
+          )
+        ) {
           duplicates.push(newTransaction);
           duplicateReasons.set(
             newTransaction.id.value,
-            `Duplicate of existing transaction from ${existingTransaction.date.toDisplayString()}`
+            `Duplicate of existing transaction from ${existingTransaction.date.toDisplayString()}`,
           );
           isDuplicate = true;
           break;
@@ -141,7 +147,7 @@ export class DuplicateDetectionService {
     return Result.ok({
       unique,
       duplicates,
-      duplicateReasons
+      duplicateReasons,
     });
   }
 
@@ -152,14 +158,14 @@ export class DuplicateDetectionService {
     transactions: Transaction[],
     criteria: {
       amountTolerance?: number; // percentage tolerance for amount differences
-      timeTolerance?: number;   // hours tolerance
+      timeTolerance?: number; // hours tolerance
       merchantSimilarity?: number; // similarity threshold (0-1)
-    } = {}
+    } = {},
   ): DuplicateDetectionResult[] {
     const {
       amountTolerance = 0,
       timeTolerance = this.DEFAULT_TOLERANCE_HOURS,
-      merchantSimilarity = 0.9
+      merchantSimilarity = 0.9,
     } = criteria;
 
     const results: DuplicateDetectionResult[] = [];
@@ -181,11 +187,13 @@ export class DuplicateDetectionService {
           continue;
         }
 
-        if (this.areDuplicatesWithCriteria(
-          transaction,
-          candidate,
-          { amountTolerance, timeTolerance, merchantSimilarity }
-        )) {
+        if (
+          this.areDuplicatesWithCriteria(transaction, candidate, {
+            amountTolerance,
+            timeTolerance,
+            merchantSimilarity,
+          })
+        ) {
           duplicates.push(candidate);
           processed.add(candidate.id.value);
         }
@@ -195,7 +203,11 @@ export class DuplicateDetectionService {
         results.push({
           original: transaction,
           duplicates,
-          reason: this.buildAdvancedDuplicateReason(transaction, duplicates[0], criteria)
+          reason: this.buildAdvancedDuplicateReason(
+            transaction,
+            duplicates[0],
+            criteria,
+          ),
         });
         processed.add(transaction.id.value);
       }
@@ -211,7 +223,7 @@ export class DuplicateDetectionService {
       amountTolerance: number;
       timeTolerance: number;
       merchantSimilarity: number;
-    }
+    },
   ): boolean {
     // Check currency match
     if (t1.amount.currency !== t2.amount.currency) {
@@ -233,15 +245,20 @@ export class DuplicateDetectionService {
     }
 
     // Check time tolerance
-    const timeDiffMs = Math.abs(t1.date.value.getTime() - t2.date.value.getTime());
+    const timeDiffMs = Math.abs(
+      t1.date.value.getTime() - t2.date.value.getTime(),
+    );
     const toleranceMs = criteria.timeTolerance * 60 * 60 * 1000;
 
     return timeDiffMs <= toleranceMs;
   }
 
-  private buildDuplicateReason(original: Transaction, duplicate: Transaction): string {
+  private buildDuplicateReason(
+    original: Transaction,
+    duplicate: Transaction,
+  ): string {
     const timeDiff = Math.abs(
-      original.date.value.getTime() - duplicate.date.value.getTime()
+      original.date.value.getTime() - duplicate.date.value.getTime(),
     );
     const hoursDiff = Math.round(timeDiff / (1000 * 60 * 60));
 
@@ -251,28 +268,30 @@ export class DuplicateDetectionService {
   private buildAdvancedDuplicateReason(
     original: Transaction,
     duplicate: Transaction,
-    criteria: any
+    criteria: any,
   ): string {
     const reasons: string[] = [];
 
     if (original.amount.equals(duplicate.amount)) {
-      reasons.push('identical amount');
+      reasons.push("identical amount");
     } else {
       reasons.push(`similar amount (${criteria.amountTolerance}% tolerance)`);
     }
 
     if (original.merchant.equals(duplicate.merchant)) {
-      reasons.push('identical merchant');
+      reasons.push("identical merchant");
     } else {
-      reasons.push(`similar merchant (${criteria.merchantSimilarity} similarity)`);
+      reasons.push(
+        `similar merchant (${criteria.merchantSimilarity} similarity)`,
+      );
     }
 
     const timeDiff = Math.abs(
-      original.date.value.getTime() - duplicate.date.value.getTime()
+      original.date.value.getTime() - duplicate.date.value.getTime(),
     );
     const hoursDiff = Math.round(timeDiff / (1000 * 60 * 60));
     reasons.push(`within ${hoursDiff} hours`);
 
-    return reasons.join(', ');
+    return reasons.join(", ");
   }
 }

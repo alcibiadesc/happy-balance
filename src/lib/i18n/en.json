@@ -61,7 +61,7 @@
       "title": "Expense breakdown",
       "food": "Food",
       "transport": "Transport",
-      "utilities": "Utilities", 
+      "utilities": "Utilities",
       "shopping": "Shopping",
       "entertainment": "Entertainment",
       "health": "Health"
@@ -97,7 +97,7 @@
     "preview": {
       "stats": {
         "total": "Total",
-        "selected": "Selected", 
+        "selected": "Selected",
         "duplicates": "Duplicates",
         "skipped": "Skipped"
       },
@@ -110,7 +110,7 @@
       "table": {
         "select": "Select",
         "date": "Date",
-        "partner": "Partner", 
+        "partner": "Partner",
         "description": "Description",
         "amount": "Amount",
         "status": "Status"

@@ -1,10 +1,10 @@
-import { Result } from '../shared/Result';
-import { TransactionId } from '../value-objects/TransactionId';
-import { Money } from '../value-objects/Money';
-import { TransactionDate } from '../value-objects/TransactionDate';
-import { Merchant } from '../value-objects/Merchant';
-import { Category, CategoryId } from './Category';
-import { TransactionType } from './TransactionType';
+import { Result } from "../shared/Result";
+import { TransactionId } from "../value-objects/TransactionId";
+import { Money } from "../value-objects/Money";
+import { TransactionDate } from "../value-objects/TransactionDate";
+import { Merchant } from "../value-objects/Merchant";
+import { Category, CategoryId } from "./Category";
+import { TransactionType } from "./TransactionType";
 
 /**
  * Transaction entity - Rich domain model
@@ -22,7 +22,7 @@ export class Transaction {
     private readonly _merchant: Merchant,
     private readonly _type: TransactionType,
     description: string,
-    private readonly _createdAt: Date = new Date()
+    private readonly _createdAt: Date = new Date(),
   ) {
     this._description = description;
   }
@@ -33,38 +33,46 @@ export class Transaction {
     merchant: Merchant,
     type: TransactionType,
     description: string,
-    id?: TransactionId
+    id?: TransactionId,
   ): Result<Transaction> {
     // Business rule: Income transactions should have positive amounts
     if (type === TransactionType.INCOME && amount.amount <= 0) {
-      return Result.failWithMessage('Income transactions must have positive amounts');
+      return Result.failWithMessage(
+        "Income transactions must have positive amounts",
+      );
     }
 
     // Business rule: Expense transactions should have positive amounts
     if (type === TransactionType.EXPENSE && amount.amount <= 0) {
-      return Result.failWithMessage('Expense transactions must have positive amounts');
+      return Result.failWithMessage(
+        "Expense transactions must have positive amounts",
+      );
     }
 
     // Business rule: Investment transactions should have positive amounts
     if (type === TransactionType.INVESTMENT && amount.amount <= 0) {
-      return Result.failWithMessage('Investment transactions must have positive amounts');
+      return Result.failWithMessage(
+        "Investment transactions must have positive amounts",
+      );
     }
 
     // Validate description
     if (description && description.length > 200) {
-      return Result.failWithMessage('Description cannot exceed 200 characters');
+      return Result.failWithMessage("Description cannot exceed 200 characters");
     }
 
     const transactionId = id || TransactionId.generate();
 
-    return Result.ok(new Transaction(
-      transactionId,
-      amount,
-      date,
-      merchant,
-      type,
-      description || ''
-    ));
+    return Result.ok(
+      new Transaction(
+        transactionId,
+        amount,
+        date,
+        merchant,
+        type,
+        description || "",
+      ),
+    );
   }
 
   // Getters
@@ -109,13 +117,13 @@ export class Transaction {
     // Business rule: Category type must match transaction type
     if (category.type !== this._type) {
       return Result.failWithMessage(
-        `Category type ${category.type} does not match transaction type ${this._type}`
+        `Category type ${category.type} does not match transaction type ${this._type}`,
       );
     }
 
     // Business rule: Cannot categorize inactive categories
     if (!category.isActive) {
-      return Result.failWithMessage('Cannot categorize with inactive category');
+      return Result.failWithMessage("Cannot categorize with inactive category");
     }
 
     this._categoryId = category.id;
@@ -128,10 +136,10 @@ export class Transaction {
 
   updateDescription(newDescription: string): Result<void> {
     if (newDescription && newDescription.length > 200) {
-      return Result.failWithMessage('Description cannot exceed 200 characters');
+      return Result.failWithMessage("Description cannot exceed 200 characters");
     }
 
-    this._description = newDescription || '';
+    this._description = newDescription || "";
     return Result.ok(undefined);
   }
 
@@ -160,7 +168,7 @@ export class Transaction {
 
     // Within tolerance time window
     const timeDiffMs = Math.abs(
-      this._date.value.getTime() - other._date.value.getTime()
+      this._date.value.getTime() - other._date.value.getTime(),
     );
     const toleranceMs = toleranceHours * 60 * 60 * 1000;
 
@@ -177,7 +185,7 @@ export class Transaction {
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
       const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
 
@@ -201,9 +209,11 @@ export class Transaction {
   matches(searchTerm: string): boolean {
     const term = searchTerm.toLowerCase();
 
-    return this._merchant.name.toLowerCase().includes(term) ||
-           this._description.toLowerCase().includes(term) ||
-           this._amount.format().toLowerCase().includes(term);
+    return (
+      this._merchant.name.toLowerCase().includes(term) ||
+      this._description.toLowerCase().includes(term) ||
+      this._amount.format().toLowerCase().includes(term)
+    );
   }
 
   /**
@@ -228,7 +238,7 @@ export class Transaction {
       description: this._description,
       categoryId: this._categoryId?.value,
       isSelected: this._isSelected,
-      createdAt: this._createdAt.toISOString()
+      createdAt: this._createdAt.toISOString(),
     };
   }
 
@@ -262,7 +272,7 @@ export class Transaction {
       merchantResult.getValue(),
       snapshot.type,
       snapshot.description,
-      new Date(snapshot.createdAt)
+      new Date(snapshot.createdAt),
     );
 
     // Set optional fields

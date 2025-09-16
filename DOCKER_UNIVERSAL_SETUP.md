@@ -17,18 +17,21 @@ pnpm dev
 ## 🎯 **CARACTERÍSTICAS PRINCIPALES**
 
 ### ✅ **Aislamiento Perfecto por Worktree**
+
 - Cada worktree tiene sus propios puertos únicos
 - Base de datos compartida con esquemas separados
 - Configuración automática sin conflictos
 - Volúmenes Docker independientes
 
 ### ✅ **Setup Instantáneo**
+
 - Detección automática de workspace (main/worktree)
 - Asignación determinística de puertos
 - Configuración automática de variables de entorno
 - Instalación inteligente de dependencias
 
 ### ✅ **Hot Reload Completo**
+
 - Frontend (SvelteKit) con recarga instantánea
 - Backend (Node.js) con recarga automática
 - Sincronización perfecta entre servicios
@@ -38,6 +41,7 @@ pnpm dev
 ## 🚀 **COMANDOS DISPONIBLES**
 
 ### **Comandos Principales**
+
 ```bash
 # 🔧 Setup inicial del workspace
 pnpm setup
@@ -50,6 +54,7 @@ pnpm info
 ```
 
 ### **Comandos Docker**
+
 ```bash
 # 📋 Ver logs en tiempo real
 pnpm dev:logs
@@ -65,6 +70,7 @@ pnpm dev:docker
 ```
 
 ### **Comandos Alternativos**
+
 ```bash
 # 🖥️ Desarrollo nativo (sin Docker)
 pnpm dev:native
@@ -91,6 +97,7 @@ pnpm dev:legacy
 ### **Componentes:**
 
 #### 🐘 **PostgreSQL Database**
+
 - **Contenedor único compartido** entre todos los worktrees
 - **Puerto fijo**: 5432
 - **Bases de datos separadas** por worktree:
@@ -99,13 +106,15 @@ pnpm dev:legacy
   - `happy_balance_bugfix_123` (worktree: bugfix-123)
 
 #### 🏗️ **Backend (Node.js + Prisma)**
+
 - **Contenedor independiente** por worktree
 - **Puertos únicos**: 3000 (main), 3001+ (worktrees)
 - **Hot reload** completo desde `./backend/src`
 - **Migraciones automáticas** al iniciar
 
 #### 🎨 **Frontend (SvelteKit + Vite)**
-- **Contenedor independiente** por worktree  
+
+- **Contenedor independiente** por worktree
 - **Puertos únicos**: 5173 (main), 5174+ (worktrees)
 - **Hot reload** completo desde `./src`
 - **Configuración automática** de API endpoints
@@ -115,6 +124,7 @@ pnpm dev:legacy
 ## 📋 **FLUJO DE TRABAJO**
 
 ### **1. Repositorio Principal (Main)**
+
 ```bash
 cd /path/to/expense-tracker
 pnpm setup    # Configura puertos estándar (3000, 5173, 5432)
@@ -122,6 +132,7 @@ pnpm dev      # Levanta entorno en puertos estándar
 ```
 
 ### **2. Crear y Usar Worktree**
+
 ```bash
 # Crear worktree
 git worktree add ../expense-tracker-feature feature-branch
@@ -137,9 +148,11 @@ pnpm dev      # Levanta en puertos únicos, sin conflictos
 ```
 
 ### **3. Ver Información del Workspace**
+
 ```bash
 pnpm info
 ```
+
 ```
 📊 WORKSPACE INFORMATION
 ════════════════════════════════════════
@@ -168,6 +181,7 @@ Database:  postgresql://localhost:5432/happy_balance_feature_branch
 El sistema crea automáticamente:
 
 ### **Backend `.env`**
+
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/happy_balance_feature_branch"
 PORT=3142
@@ -177,6 +191,7 @@ WORKSPACE_ID="feature-branch"
 ```
 
 ### **Frontend `.env.local`**
+
 ```env
 VITE_API_URL=http://localhost:3142/api
 VITE_PORT=5287
@@ -184,6 +199,7 @@ WORKSPACE_ID="feature-branch"
 ```
 
 ### **Docker `.env`**
+
 ```env
 WORKSPACE_ID=feature-branch
 DB_PORT=5432
@@ -197,6 +213,7 @@ DATABASE_URL=postgresql://postgres:postgres@postgres:5432/happy_balance_feature_
 ## 🛠️ **SOLUCIÓN DE PROBLEMAS**
 
 ### **Limpiar y Reiniciar**
+
 ```bash
 # Limpiar completamente
 pnpm dev:clean
@@ -209,6 +226,7 @@ pnpm dev
 ```
 
 ### **Ver Logs Detallados**
+
 ```bash
 # Logs en tiempo real
 pnpm dev:logs
@@ -219,6 +237,7 @@ docker compose -f docker-compose.dev.yml logs frontend
 ```
 
 ### **Problemas de Puertos**
+
 ```bash
 # Verificar puertos en uso
 lsof -i :3000
@@ -232,41 +251,43 @@ pnpm docker:kill
 
 ## 🌟 **VENTAJAS vs. SISTEMA ANTERIOR**
 
-| **Anterior** | **Nuevo** |
-|--------------|-----------|
-| Scripts complejos múltiples | Un solo comando `pnpm dev` |
-| Puertos dinámicos inestables | Puertos determinísticos |
-| Conflictos entre worktrees | Aislamiento perfecto |
-| Setup manual de BD | Base de datos automática |
-| Configuración manual | Configuración automática |
-| Múltiples contenedores BD | Una sola BD compartida |
-| Sincronización problemática | Todo coordinado |
+| **Anterior**                 | **Nuevo**                  |
+| ---------------------------- | -------------------------- |
+| Scripts complejos múltiples  | Un solo comando `pnpm dev` |
+| Puertos dinámicos inestables | Puertos determinísticos    |
+| Conflictos entre worktrees   | Aislamiento perfecto       |
+| Setup manual de BD           | Base de datos automática   |
+| Configuración manual         | Configuración automática   |
+| Múltiples contenedores BD    | Una sola BD compartida     |
+| Sincronización problemática  | Todo coordinado            |
 
 ---
 
 ## 🎯 **CASOS DE USO**
 
 ### **Desarrollo en Paralelo**
+
 ```bash
 # Terminal 1 - Main branch
 cd expense-tracker
 pnpm dev          # → http://localhost:5173
 
-# Terminal 2 - Feature branch  
+# Terminal 2 - Feature branch
 cd expense-tracker-feature
 pnpm dev          # → http://localhost:5287
 
 # Terminal 3 - Bugfix branch
-cd expense-tracker-bugfix  
+cd expense-tracker-bugfix
 pnpm dev          # → http://localhost:5341
 ```
 
 ### **Testing Cross-Branch**
+
 ```bash
 # Probar API de feature desde main frontend
 VITE_API_URL=http://localhost:3142/api pnpm dev:frontend
 
-# Probar main API desde feature frontend  
+# Probar main API desde feature frontend
 VITE_API_URL=http://localhost:3000/api pnpm dev:frontend
 ```
 

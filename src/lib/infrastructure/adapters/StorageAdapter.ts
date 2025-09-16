@@ -1,4 +1,4 @@
-import { Result } from '../../domain/shared/Result';
+import { Result } from "../../domain/shared/Result";
 
 /**
  * Storage adapter interface - Port for data persistence
@@ -38,11 +38,13 @@ export interface IStorageAdapter {
   /**
    * Get storage size information
    */
-  getStorageInfo(): Promise<Result<{
-    used: number;
-    available: number;
-    keys: number;
-  }>>;
+  getStorageInfo(): Promise<
+    Result<{
+      used: number;
+      available: number;
+      keys: number;
+    }>
+  >;
 }
 
 /**
@@ -54,8 +56,8 @@ export class LocalStorageAdapter implements IStorageAdapter {
   private readonly keyPrefix: string;
 
   constructor(
-    keyPrefix = 'expense_tracker_',
-    encryptionEnabled = false // Future enhancement
+    keyPrefix = "expense_tracker_",
+    encryptionEnabled = false, // Future enhancement
   ) {
     this.keyPrefix = keyPrefix;
     this.encryptionEnabled = encryptionEnabled;
@@ -63,8 +65,8 @@ export class LocalStorageAdapter implements IStorageAdapter {
 
   async getItem<T>(key: string): Promise<Result<T | null>> {
     try {
-      if (typeof window === 'undefined' || !window.localStorage) {
-        return Result.failWithMessage('LocalStorage is not available');
+      if (typeof window === "undefined" || !window.localStorage) {
+        return Result.failWithMessage("LocalStorage is not available");
       }
 
       const fullKey = this.keyPrefix + key;
@@ -82,18 +84,17 @@ export class LocalStorageAdapter implements IStorageAdapter {
       }
 
       return Result.ok(parsed as T);
-
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get item '${key}': ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to get item '${key}': ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
 
   async setItem<T>(key: string, value: T): Promise<Result<void>> {
     try {
-      if (typeof window === 'undefined' || !window.localStorage) {
-        return Result.failWithMessage('LocalStorage is not available');
+      if (typeof window === "undefined" || !window.localStorage) {
+        return Result.failWithMessage("LocalStorage is not available");
       }
 
       let dataToStore = value;
@@ -114,46 +115,47 @@ export class LocalStorageAdapter implements IStorageAdapter {
         const { available } = storageInfo.getValue();
         if (estimatedSize > available) {
           return Result.failWithMessage(
-            `Storage quota exceeded. Need ${estimatedSize} bytes, only ${available} available`
+            `Storage quota exceeded. Need ${estimatedSize} bytes, only ${available} available`,
           );
         }
       }
 
       localStorage.setItem(fullKey, serialized);
       return Result.ok(undefined);
-
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-        return Result.failWithMessage('Storage quota exceeded');
+      if (
+        error instanceof DOMException &&
+        error.name === "QuotaExceededError"
+      ) {
+        return Result.failWithMessage("Storage quota exceeded");
       }
 
       return Result.failWithMessage(
-        `Failed to set item '${key}': ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to set item '${key}': ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
 
   async removeItem(key: string): Promise<Result<void>> {
     try {
-      if (typeof window === 'undefined' || !window.localStorage) {
-        return Result.failWithMessage('LocalStorage is not available');
+      if (typeof window === "undefined" || !window.localStorage) {
+        return Result.failWithMessage("LocalStorage is not available");
       }
 
       const fullKey = this.keyPrefix + key;
       localStorage.removeItem(fullKey);
       return Result.ok(undefined);
-
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to remove item '${key}': ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to remove item '${key}': ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
 
   async clear(): Promise<Result<void>> {
     try {
-      if (typeof window === 'undefined' || !window.localStorage) {
-        return Result.failWithMessage('LocalStorage is not available');
+      if (typeof window === "undefined" || !window.localStorage) {
+        return Result.failWithMessage("LocalStorage is not available");
       }
 
       // Only clear items with our prefix
@@ -165,20 +167,19 @@ export class LocalStorageAdapter implements IStorageAdapter {
         }
       }
 
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
       return Result.ok(undefined);
-
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to clear storage: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to clear storage: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
 
   async getAllKeys(): Promise<Result<string[]>> {
     try {
-      if (typeof window === 'undefined' || !window.localStorage) {
-        return Result.failWithMessage('LocalStorage is not available');
+      if (typeof window === "undefined" || !window.localStorage) {
+        return Result.failWithMessage("LocalStorage is not available");
       }
 
       const keys: string[] = [];
@@ -190,38 +191,38 @@ export class LocalStorageAdapter implements IStorageAdapter {
       }
 
       return Result.ok(keys);
-
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get keys: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to get keys: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
 
   async hasKey(key: string): Promise<Result<boolean>> {
     try {
-      if (typeof window === 'undefined' || !window.localStorage) {
+      if (typeof window === "undefined" || !window.localStorage) {
         return Result.ok(false);
       }
 
       const fullKey = this.keyPrefix + key;
       return Result.ok(localStorage.getItem(fullKey) !== null);
-
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to check key existence: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to check key existence: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
 
-  async getStorageInfo(): Promise<Result<{
-    used: number;
-    available: number;
-    keys: number;
-  }>> {
+  async getStorageInfo(): Promise<
+    Result<{
+      used: number;
+      available: number;
+      keys: number;
+    }>
+  > {
     try {
-      if (typeof window === 'undefined' || !window.localStorage) {
-        return Result.failWithMessage('LocalStorage is not available');
+      if (typeof window === "undefined" || !window.localStorage) {
+        return Result.failWithMessage("LocalStorage is not available");
       }
 
       // Calculate used space
@@ -246,12 +247,11 @@ export class LocalStorageAdapter implements IStorageAdapter {
       return Result.ok({
         used,
         available,
-        keys
+        keys,
       });
-
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get storage info: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to get storage info: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -275,15 +275,20 @@ export class LocalStorageAdapter implements IStorageAdapter {
         }
       }
 
-      return Result.ok(JSON.stringify({
-        exportedAt: new Date().toISOString(),
-        version: '1.0',
-        data
-      }, null, 2));
-
+      return Result.ok(
+        JSON.stringify(
+          {
+            exportedAt: new Date().toISOString(),
+            version: "1.0",
+            data,
+          },
+          null,
+          2,
+        ),
+      );
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to export data: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to export data: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -295,8 +300,8 @@ export class LocalStorageAdapter implements IStorageAdapter {
     try {
       const backup = JSON.parse(jsonData);
 
-      if (!backup.data || typeof backup.data !== 'object') {
-        return Result.failWithMessage('Invalid backup format');
+      if (!backup.data || typeof backup.data !== "object") {
+        return Result.failWithMessage("Invalid backup format");
       }
 
       let imported = 0;
@@ -309,10 +314,9 @@ export class LocalStorageAdapter implements IStorageAdapter {
       }
 
       return Result.ok(imported);
-
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to import data: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to import data: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }

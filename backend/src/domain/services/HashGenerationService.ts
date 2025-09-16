@@ -1,4 +1,4 @@
-import { Result } from '../shared/Result';
+import { Result } from "../shared/Result";
 
 /**
  * Domain service for generating transaction hashes
@@ -6,16 +6,15 @@ import { Result } from '../shared/Result';
  * Single source of truth for hash generation across the system
  */
 export class HashGenerationService {
-
   /**
    * Generate a hash for a transaction based on its key attributes
    * This is the single source of truth for hash generation
    */
   generateTransactionHash(params: {
-    date: string;        // YYYY-MM-DD format
-    merchant: string;    // Raw merchant name
-    amount: number;      // Absolute amount
-    currency: string;    // Currency code
+    date: string; // YYYY-MM-DD format
+    merchant: string; // Raw merchant name
+    amount: number; // Absolute amount
+    currency: string; // Currency code
   }): string {
     // Normalize merchant name consistently
     const normalizedMerchant = this.normalizeMerchant(params.merchant);
@@ -36,12 +35,14 @@ export class HashGenerationService {
   /**
    * Generate hashes for multiple transactions
    */
-  generateBulkHashes(transactions: Array<{
-    date: string;
-    merchant: string;
-    amount: number;
-    currency: string;
-  }>): Result<Map<number, string>> {
+  generateBulkHashes(
+    transactions: Array<{
+      date: string;
+      merchant: string;
+      amount: number;
+      currency: string;
+    }>,
+  ): Result<Map<number, string>> {
     try {
       const hashes = new Map<number, string>();
 
@@ -52,7 +53,9 @@ export class HashGenerationService {
 
       return Result.ok(hashes);
     } catch (error) {
-      return Result.failWithMessage(`Failed to generate hashes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(
+        `Failed to generate hashes: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -63,13 +66,13 @@ export class HashGenerationService {
     const normalized = merchant
       .trim()
       .toLowerCase()
-      .replace(/[^\w\s]/g, '') // Remove special characters but keep word chars and spaces
-      .replace(/\s+/g, ' ')    // Normalize whitespace to single spaces
+      .replace(/[^\w\s]/g, "") // Remove special characters but keep word chars and spaces
+      .replace(/\s+/g, " ") // Normalize whitespace to single spaces
       .trim();
 
     // If normalization results in empty string (e.g., "." or other special chars only)
     // use a consistent placeholder to ensure consistent hashing
-    return normalized || 'unknown';
+    return normalized || "unknown";
   }
 
   /**
@@ -77,9 +80,9 @@ export class HashGenerationService {
    */
   private normalizeDate(date: string): string {
     // Expect YYYY-MM-DD format, but handle Date objects if needed
-    if (date.includes('T')) {
+    if (date.includes("T")) {
       // ISO string, extract date part
-      return date.split('T')[0];
+      return date.split("T")[0];
     }
     return date;
   }
@@ -92,7 +95,7 @@ export class HashGenerationService {
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
       const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(36);

@@ -1,6 +1,9 @@
-import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
-import { DuplicateDetectionService, DuplicateCheckResult } from '@domain/services/DuplicateDetectionService';
-import { Result } from '@domain/shared/Result';
+import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
+import {
+  DuplicateDetectionService,
+  DuplicateCheckResult,
+} from "@domain/services/DuplicateDetectionService";
+import { Result } from "@domain/shared/Result";
 
 export interface CheckDuplicateHashesCommand {
   hashes: string[];
@@ -22,20 +25,25 @@ export interface CheckDuplicateHashesResponse {
 export class CheckDuplicateHashesUseCase {
   constructor(
     private readonly transactionRepository: ITransactionRepository,
-    private readonly duplicateDetectionService: DuplicateDetectionService
+    private readonly duplicateDetectionService: DuplicateDetectionService,
   ) {}
 
-  async execute(command: CheckDuplicateHashesCommand): Promise<Result<CheckDuplicateHashesResponse>> {
+  async execute(
+    command: CheckDuplicateHashesCommand,
+  ): Promise<Result<CheckDuplicateHashesResponse>> {
     try {
       // Input validation
       if (!command.hashes || command.hashes.length === 0) {
-        return Result.failWithMessage('No hashes provided');
+        return Result.failWithMessage("No hashes provided");
       }
 
       // Get all existing transactions for comparison
-      const existingTransactionsResult = await this.transactionRepository.findAll();
+      const existingTransactionsResult =
+        await this.transactionRepository.findAll();
       if (existingTransactionsResult.isFailure()) {
-        return Result.failWithMessage(`Failed to fetch existing transactions: ${existingTransactionsResult.getError()}`);
+        return Result.failWithMessage(
+          `Failed to fetch existing transactions: ${existingTransactionsResult.getError()}`,
+        );
       }
 
       const existingTransactions = existingTransactionsResult.getValue();
@@ -43,7 +51,7 @@ export class CheckDuplicateHashesUseCase {
       // Use domain service to check duplicates
       const checkResult = this.duplicateDetectionService.checkHashesDuplicates(
         command.hashes,
-        existingTransactions
+        existingTransactions,
       );
 
       if (checkResult.isFailure()) {
@@ -53,20 +61,21 @@ export class CheckDuplicateHashesUseCase {
       const results = checkResult.getValue();
 
       // Calculate summary
-      const duplicateCount = results.filter(r => r.isDuplicate).length;
+      const duplicateCount = results.filter((r) => r.isDuplicate).length;
       const summary = {
         total: results.length,
         duplicates: duplicateCount,
-        unique: results.length - duplicateCount
+        unique: results.length - duplicateCount,
       };
 
       return Result.ok({
         results,
-        summary
+        summary,
       });
-
     } catch (error) {
-      return Result.failWithMessage(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(
+        `Unexpected error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 }

@@ -1,5 +1,5 @@
-import { HashGenerationService } from '@domain/services/HashGenerationService';
-import { Result } from '@domain/shared/Result';
+import { HashGenerationService } from "@domain/services/HashGenerationService";
+import { Result } from "@domain/shared/Result";
 
 export interface GenerateHashesCommand {
   transactions: Array<{
@@ -29,18 +29,22 @@ export class GenerateHashesUseCase {
     this.hashGenerationService = new HashGenerationService();
   }
 
-  async execute(command: GenerateHashesCommand): Promise<Result<GenerateHashesResponse>> {
+  async execute(
+    command: GenerateHashesCommand,
+  ): Promise<Result<GenerateHashesResponse>> {
     try {
       // Input validation
       if (!command.transactions || command.transactions.length === 0) {
-        return Result.failWithMessage('No transactions provided');
+        return Result.failWithMessage("No transactions provided");
       }
 
       // Validate each transaction
       for (let i = 0; i < command.transactions.length; i++) {
         const tx = command.transactions[i];
         if (!tx.date || !tx.merchant || tx.amount === undefined) {
-          return Result.failWithMessage(`Invalid transaction data at index ${i}`);
+          return Result.failWithMessage(
+            `Invalid transaction data at index ${i}`,
+          );
         }
       }
 
@@ -53,16 +57,17 @@ export class GenerateHashesUseCase {
           date: tx.date,
           merchant: tx.merchant,
           amount: tx.amount,
-          currency: tx.currency || 'EUR'
+          currency: tx.currency || "EUR",
         });
 
         hashes.push({ index: i, hash });
       }
 
       return Result.ok({ hashes });
-
     } catch (error) {
-      return Result.failWithMessage(`Failed to generate hashes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(
+        `Failed to generate hashes: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 }

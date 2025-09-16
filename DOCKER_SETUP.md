@@ -12,12 +12,14 @@ This guide will help you set up a reproducible development environment for Happy
 ### One-Command Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone <your-repo-url>
    cd expense-tracker
    ```
 
 2. **Create environment file** (optional - has sensible defaults)
+
    ```bash
    # Create a .env.local file for custom configuration (optional)
    cat > .env.local << EOF
@@ -36,6 +38,7 @@ This guide will help you set up a reproducible development environment for Happy
    ```
 
 That's it! The application will be available at:
+
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3000
 - **Database**: localhost:5432
@@ -43,12 +46,14 @@ That's it! The application will be available at:
 ## 🔥 Features
 
 ### ✅ Hot Reloading
+
 - Frontend automatically reloads when you modify `.svelte`, `.ts`, `.js`, or `.css` files
 - Backend automatically restarts when you modify backend source files
 - Tailwind CSS changes are instantly reflected
 - Configuration changes are automatically picked up
 
 ### ✅ Database Management
+
 ```bash
 # Run migrations
 docker compose exec app pnpm prisma migrate dev
@@ -61,6 +66,7 @@ pnpm docker:db
 ```
 
 ### ✅ Development Tools
+
 ```bash
 # View logs
 pnpm docker:logs
@@ -93,17 +99,18 @@ pnpm docker:clean
 
 The Docker setup uses these environment variables with sensible defaults:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `POSTGRES_PASSWORD` | `password` | PostgreSQL password |
-| `POSTGRES_PORT` | `5432` | Database port |
-| `API_PORT` | `3000` | Backend API port |
-| `FRONTEND_PORT` | `5173` | Frontend dev server port |
-| `ENABLE_SEED_DATA` | `true` | Create sample data on setup |
+| Variable            | Default    | Description                 |
+| ------------------- | ---------- | --------------------------- |
+| `POSTGRES_PASSWORD` | `password` | PostgreSQL password         |
+| `POSTGRES_PORT`     | `5432`     | Database port               |
+| `API_PORT`          | `3000`     | Backend API port            |
+| `FRONTEND_PORT`     | `5173`     | Frontend dev server port    |
+| `ENABLE_SEED_DATA`  | `true`     | Create sample data on setup |
 
 ## 📊 Database Schema & Seeding
 
 The environment automatically:
+
 1. Creates the PostgreSQL database
 2. Runs Prisma migrations
 3. Generates the Prisma client
@@ -115,16 +122,19 @@ The environment automatically:
 ## 🛠️ Development Workflow
 
 ### Making Code Changes
+
 1. Edit files in `src/` (frontend) or `backend/src/` (backend)
 2. Changes are automatically detected and servers restart/reload
 3. Database changes require running migrations
 
 ### Database Changes
+
 1. Modify `backend/prisma/schema.prisma`
 2. Create migration: `docker compose exec app pnpm prisma migrate dev`
 3. Migration is applied automatically
 
 ### Adding Dependencies
+
 1. Add to `package.json` or `backend/package.json`
 2. Restart containers: `docker compose restart app`
 3. Or rebuild: `docker compose up --build`
@@ -132,6 +142,7 @@ The environment automatically:
 ## 🚨 Troubleshooting
 
 ### Database Connection Issues
+
 ```bash
 # Check database status
 docker compose exec postgres pg_isready -U postgres
@@ -144,6 +155,7 @@ pnpm docker:clean && docker compose up
 ```
 
 ### Build Issues
+
 ```bash
 # Force rebuild
 docker compose up --build --force-recreate
@@ -153,6 +165,7 @@ docker system prune -a
 ```
 
 ### Port Conflicts
+
 ```bash
 # Check if ports are in use
 lsof -i :5173  # Frontend
@@ -164,33 +177,36 @@ lsof -i :5432  # Database
 
 ## 📋 Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `pnpm docker:up` | Start the development environment |
-| `pnpm docker:down` | Stop the environment |
-| `pnpm docker:logs` | View application logs |
-| `pnpm docker:shell` | Access container shell |
-| `pnpm docker:db` | Connect to PostgreSQL |
-| `pnpm docker:migrate` | Run database migrations |
-| `pnpm docker:seed` | Run database seeding |
-| `pnpm docker:reset` | Reset database with migrations |
-| `pnpm docker:clean` | Clean up everything (containers, volumes) |
+| Script                | Description                               |
+| --------------------- | ----------------------------------------- |
+| `pnpm docker:up`      | Start the development environment         |
+| `pnpm docker:down`    | Stop the environment                      |
+| `pnpm docker:logs`    | View application logs                     |
+| `pnpm docker:shell`   | Access container shell                    |
+| `pnpm docker:db`      | Connect to PostgreSQL                     |
+| `pnpm docker:migrate` | Run database migrations                   |
+| `pnpm docker:seed`    | Run database seeding                      |
+| `pnpm docker:reset`   | Reset database with migrations            |
+| `pnpm docker:clean`   | Clean up everything (containers, volumes) |
 
 ## 🔄 Migration Management
 
 ### Creating Migrations
+
 ```bash
 # After modifying schema.prisma
 docker compose exec app sh -c "cd backend && pnpm prisma migrate dev --name your-migration-name"
 ```
 
 ### Applying Migrations in Team
+
 ```bash
 # When pulling new migrations from git
 docker compose exec app sh -c "cd backend && pnpm prisma migrate dev"
 ```
 
 ### Reset Everything
+
 ```bash
 # Reset database and apply all migrations
 docker compose exec app sh -c "cd backend && pnpm prisma migrate reset"
@@ -199,6 +215,7 @@ docker compose exec app sh -c "cd backend && pnpm prisma migrate reset"
 ## 🎯 Production Considerations
 
 This setup is optimized for development. For production:
+
 1. Use the production Dockerfile stages
 2. Set `NODE_ENV=production`
 3. Use secure passwords and environment variables
@@ -208,12 +225,14 @@ This setup is optimized for development. For production:
 ## 🤝 Team Development
 
 ### Sharing the Environment
+
 1. Commit your changes to git
 2. Team members run: `git pull && docker compose up --build`
 3. Migrations are automatically applied
 4. Everyone has the same environment
 
 ### Best Practices
+
 - Always commit schema changes with migrations
 - Use `docker compose up --build` when pulling dependency changes
 - Reset database locally if schema conflicts occur

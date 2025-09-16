@@ -1,8 +1,8 @@
-import { Result } from '../shared/Result';
-import { Transaction, TransactionSnapshot } from '../entities/Transaction';
-import { TransactionId } from '../value-objects/TransactionId';
-import { TransactionDate } from '../value-objects/TransactionDate';
-import { TransactionType } from '../entities/TransactionType';
+import { Result } from "../shared/Result";
+import { Transaction, TransactionSnapshot } from "../entities/Transaction";
+import { TransactionId } from "../value-objects/TransactionId";
+import { TransactionDate } from "../value-objects/TransactionDate";
+import { TransactionType } from "../entities/TransactionType";
 
 export interface TransactionFilters {
   startDate?: TransactionDate;
@@ -55,7 +55,7 @@ export interface ITransactionRepository {
    */
   findWithFilters(
     filters?: TransactionFilters,
-    pagination?: PaginationOptions
+    pagination?: PaginationOptions,
   ): Promise<Result<TransactionQueryResult>>;
 
   /**
@@ -63,7 +63,7 @@ export interface ITransactionRepository {
    */
   findByDateRange(
     startDate: TransactionDate,
-    endDate: TransactionDate
+    endDate: TransactionDate,
   ): Promise<Result<Transaction[]>>;
 
   /**
@@ -117,20 +117,22 @@ export interface ITransactionRepository {
   getStatistics(
     startDate: TransactionDate,
     endDate: TransactionDate,
-    currency: string
-  ): Promise<Result<{
-    totalIncome: number;
-    totalExpenses: number;
-    totalInvestments: number;
-    transactionCount: number;
-  }>>;
+    currency: string,
+  ): Promise<
+    Result<{
+      totalIncome: number;
+      totalExpenses: number;
+      totalInvestments: number;
+      transactionCount: number;
+    }>
+  >;
 
   /**
    * Find potential duplicates
    */
   findPotentialDuplicates(
     transaction: Transaction,
-    toleranceHours?: number
+    toleranceHours?: number,
   ): Promise<Result<Transaction[]>>;
 
   /**
@@ -138,12 +140,14 @@ export interface ITransactionRepository {
    */
   bulkImport(
     transactions: Transaction[],
-    conflictStrategy: 'skip' | 'update' | 'fail'
-  ): Promise<Result<{
-    imported: number;
-    skipped: number;
-    errors: string[];
-  }>>;
+    conflictStrategy: "skip" | "update" | "fail",
+  ): Promise<
+    Result<{
+      imported: number;
+      skipped: number;
+      errors: string[];
+    }>
+  >;
 
   /**
    * Clear all transactions (for testing/reset purposes)

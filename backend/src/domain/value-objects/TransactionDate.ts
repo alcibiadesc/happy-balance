@@ -1,4 +1,4 @@
-import { Result } from '../shared/Result';
+import { Result } from "../shared/Result";
 
 /**
  * Transaction Date value object
@@ -10,27 +10,29 @@ export class TransactionDate {
   static create(date: Date | string): Result<TransactionDate> {
     let parsedDate: Date;
 
-    if (typeof date === 'string') {
+    if (typeof date === "string") {
       parsedDate = new Date(date);
     } else {
       parsedDate = new Date(date.getTime());
     }
 
     if (isNaN(parsedDate.getTime())) {
-      return Result.failWithMessage('Invalid date provided');
+      return Result.failWithMessage("Invalid date provided");
     }
 
     // Business rule: transactions cannot be in the future
     const now = new Date();
     if (parsedDate > now) {
-      return Result.failWithMessage('Transaction date cannot be in the future');
+      return Result.failWithMessage("Transaction date cannot be in the future");
     }
 
     // Business rule: transactions cannot be older than 10 years
     const tenYearsAgo = new Date();
     tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
     if (parsedDate < tenYearsAgo) {
-      return Result.failWithMessage('Transaction date cannot be older than 10 years');
+      return Result.failWithMessage(
+        "Transaction date cannot be older than 10 years",
+      );
     }
 
     return Result.ok(new TransactionDate(parsedDate));
@@ -39,7 +41,7 @@ export class TransactionDate {
   static today(): TransactionDate {
     const result = TransactionDate.create(new Date());
     if (result.isFailure()) {
-      throw new Error('Failed to create today\'s date');
+      throw new Error("Failed to create today's date");
     }
     return result.getValue();
   }
@@ -94,7 +96,9 @@ export class TransactionDate {
   }
 
   isSameMonth(other: TransactionDate): boolean {
-    return this.getYear() === other.getYear() && this.getMonth() === other.getMonth();
+    return (
+      this.getYear() === other.getYear() && this.getMonth() === other.getMonth()
+    );
   }
 
   isBefore(other: TransactionDate): boolean {
@@ -112,14 +116,14 @@ export class TransactionDate {
   }
 
   toDateString(): string {
-    return this._date.toISOString().split('T')[0];
+    return this._date.toISOString().split("T")[0];
   }
 
-  toDisplayString(locale = 'en-US'): string {
+  toDisplayString(locale = "en-US"): string {
     return this._date.toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   }
 

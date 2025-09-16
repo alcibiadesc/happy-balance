@@ -1,11 +1,11 @@
-import { Result } from '../shared/Result';
-import { TransactionId } from '../value-objects/TransactionId';
-import { Money } from '../value-objects/Money';
-import { TransactionDate } from '../value-objects/TransactionDate';
-import { Merchant } from '../value-objects/Merchant';
-import { Category, CategoryId } from './Category';
-import { TransactionType } from './TransactionType';
-import { HashGenerationService } from '../services/HashGenerationService';
+import { Result } from "../shared/Result";
+import { TransactionId } from "../value-objects/TransactionId";
+import { Money } from "../value-objects/Money";
+import { TransactionDate } from "../value-objects/TransactionDate";
+import { Merchant } from "../value-objects/Merchant";
+import { Category, CategoryId } from "./Category";
+import { TransactionType } from "./TransactionType";
+import { HashGenerationService } from "../services/HashGenerationService";
 
 /**
  * Transaction entity - Rich domain model
@@ -25,7 +25,7 @@ export class Transaction {
     private readonly _type: TransactionType,
     description: string,
     private readonly _createdAt: Date = new Date(),
-    hash?: string
+    hash?: string,
   ) {
     this._description = description;
     // Only generate hash if not provided (for new transactions)
@@ -38,40 +38,48 @@ export class Transaction {
     merchant: Merchant,
     type: TransactionType,
     description: string,
-    id?: TransactionId
+    id?: TransactionId,
   ): Result<Transaction> {
     // Business rule: Income transactions should have positive amounts
     if (type === TransactionType.INCOME && amount.amount <= 0) {
-      return Result.failWithMessage('Income transactions must have positive amounts');
+      return Result.failWithMessage(
+        "Income transactions must have positive amounts",
+      );
     }
 
     // Business rule: Expense transactions should have positive amounts
     if (type === TransactionType.EXPENSE && amount.amount <= 0) {
-      return Result.failWithMessage('Expense transactions must have positive amounts');
+      return Result.failWithMessage(
+        "Expense transactions must have positive amounts",
+      );
     }
 
     // Business rule: Investment transactions should have positive amounts
     if (type === TransactionType.INVESTMENT && amount.amount <= 0) {
-      return Result.failWithMessage('Investment transactions must have positive amounts');
+      return Result.failWithMessage(
+        "Investment transactions must have positive amounts",
+      );
     }
 
     // Validate description
     if (description && description.length > 200) {
-      return Result.failWithMessage('Description cannot exceed 200 characters');
+      return Result.failWithMessage("Description cannot exceed 200 characters");
     }
 
     const transactionId = id || TransactionId.generate();
 
-    return Result.ok(new Transaction(
-      transactionId,
-      amount,
-      date,
-      merchant,
-      type,
-      description || '',
-      new Date(),
-      undefined // Let constructor generate hash for new transactions
-    ));
+    return Result.ok(
+      new Transaction(
+        transactionId,
+        amount,
+        date,
+        merchant,
+        type,
+        description || "",
+        new Date(),
+        undefined, // Let constructor generate hash for new transactions
+      ),
+    );
   }
 
   // Getters
@@ -120,13 +128,13 @@ export class Transaction {
     // Business rule: Category type must match transaction type
     if (category.type !== this._type) {
       return Result.failWithMessage(
-        `Category type ${category.type} does not match transaction type ${this._type}`
+        `Category type ${category.type} does not match transaction type ${this._type}`,
       );
     }
 
     // Business rule: Cannot categorize inactive categories
     if (!category.isActive) {
-      return Result.failWithMessage('Cannot categorize with inactive category');
+      return Result.failWithMessage("Cannot categorize with inactive category");
     }
 
     this._categoryId = category.id;
@@ -139,10 +147,10 @@ export class Transaction {
 
   updateDescription(newDescription: string): Result<void> {
     if (newDescription && newDescription.length > 200) {
-      return Result.failWithMessage('Description cannot exceed 200 characters');
+      return Result.failWithMessage("Description cannot exceed 200 characters");
     }
 
-    this._description = newDescription || '';
+    this._description = newDescription || "";
     return Result.ok(undefined);
   }
 
@@ -177,7 +185,7 @@ export class Transaction {
 
     // Within tolerance time window
     const timeDiffMs = Math.abs(
-      this._date.value.getTime() - other._date.value.getTime()
+      this._date.value.getTime() - other._date.value.getTime(),
     );
     const toleranceMs = toleranceHours * 60 * 60 * 1000;
 
@@ -200,7 +208,7 @@ export class Transaction {
       date: this._date.toDateString(),
       merchant: this._merchant.name, // Use raw name, service will normalize
       amount: this._amount.amount,
-      currency: this._amount.currency
+      currency: this._amount.currency,
     });
   }
 
@@ -221,9 +229,11 @@ export class Transaction {
   matches(searchTerm: string): boolean {
     const term = searchTerm.toLowerCase();
 
-    return this._merchant.name.toLowerCase().includes(term) ||
-           this._description.toLowerCase().includes(term) ||
-           this._amount.format().toLowerCase().includes(term);
+    return (
+      this._merchant.name.toLowerCase().includes(term) ||
+      this._description.toLowerCase().includes(term) ||
+      this._amount.format().toLowerCase().includes(term)
+    );
   }
 
   /**
@@ -249,7 +259,7 @@ export class Transaction {
       categoryId: this._categoryId?.value,
       isSelected: this._isSelected,
       hash: this._hash,
-      createdAt: this._createdAt.toISOString()
+      createdAt: this._createdAt.toISOString(),
     };
   }
 
@@ -284,7 +294,7 @@ export class Transaction {
       snapshot.type,
       snapshot.description,
       new Date(snapshot.createdAt),
-      snapshot.hash // Preserve the hash from snapshot
+      snapshot.hash, // Preserve the hash from snapshot
     );
 
     // Set optional fields

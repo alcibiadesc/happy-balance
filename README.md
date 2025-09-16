@@ -7,12 +7,14 @@ Personal finance management application built with modern technologies and clean
 This application follows **Domain-Driven Design (DDD)** and **Hexagonal Architecture** patterns:
 
 ### Frontend (SvelteKit)
+
 - **Presentation Layer**: Svelte components using Atomic Design
 - **Application Layer**: Use cases and stores
 - **Domain Layer**: Business logic and entities
 - **Infrastructure Layer**: API adapters and external services
 
 ### Backend (Node.js/Express)
+
 - **Domain Layer**: Entities, Value Objects, Services, Repository Interfaces
 - **Application Layer**: Use Cases, Commands, Queries
 - **Infrastructure Layer**: Database (PostgreSQL), REST API Controllers, External Adapters
@@ -38,18 +40,21 @@ docker compose up
 If you prefer to run without Docker:
 
 #### Prerequisites
-- Node.js >= 20.0.0  
+
+- Node.js >= 20.0.0
 - pnpm >= 8.0.0
 - PostgreSQL 16+
 
 #### Setup Steps
 
 1. **Install dependencies**
+
    ```bash
    pnpm install:all
    ```
 
 2. **Setup database** (PostgreSQL)
+
    ```bash
    # Option 1: Using Docker for database only
    docker-compose -f docker-compose.dev.yml up postgres -d
@@ -59,12 +64,14 @@ If you prefer to run without Docker:
    ```
 
 3. **Configure environment**
+
    ```bash
    # Create backend/.env with your database connection
    echo 'DATABASE_URL="postgresql://postgres:password@localhost:5432/happy_balance"' > backend/.env
    ```
 
 4. **Setup database schema**
+
    ```bash
    pnpm db:setup
    pnpm db:seed
@@ -76,12 +83,14 @@ If you prefer to run without Docker:
    ```
 
 This will start:
+
 - Frontend at http://localhost:5173
 - Backend API at http://localhost:3000
 
 ## 🎯 Features
 
 ### ✅ Implemented
+
 - **Transaction Management**: Create, read, update, delete transactions
 - **CSV Import**: Import transactions from bank CSV files with smart field detection
 - **Duplicate Detection**: Automatic detection of potential duplicate transactions
@@ -93,6 +102,7 @@ This will start:
 - **Real-time Updates**: Live data synchronization
 
 ### 🚧 Planned
+
 - **Excel Import**: Import from Excel files
 - **Budget Management**: Set and track budgets
 - **Reporting**: Generate detailed financial reports
@@ -104,6 +114,7 @@ This will start:
 ## 📊 Database Schema
 
 ### Tables
+
 - **transactions**: Store all financial transactions
 - **categories**: Hierarchical category system
 - **import_logs**: Track import operations
@@ -112,6 +123,7 @@ This will start:
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - **Framework**: SvelteKit 2.0
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS + DaisyUI
@@ -120,6 +132,7 @@ This will start:
 - **i18n**: svelte-i18n
 
 ### Backend
+
 - **Runtime**: Node.js 20+
 - **Framework**: Express.js
 - **Language**: TypeScript
@@ -129,6 +142,7 @@ This will start:
 - **File Upload**: Multer
 
 ### DevOps & Tools
+
 - **Package Manager**: pnpm
 - **Build Tool**: Vite
 - **Container**: Docker + Docker Compose
@@ -139,6 +153,7 @@ This will start:
 ## 🐳 Docker Deployment
 
 ### Development
+
 ```bash
 # Start development environment (includes database)
 pnpm docker:dev
@@ -148,6 +163,7 @@ pnpm docker:dev:down
 ```
 
 ### Production
+
 ```bash
 # Build and start production containers
 pnpm docker:prod
@@ -157,6 +173,7 @@ pnpm docker:prod:down
 ```
 
 ### Services
+
 - **Frontend**: http://localhost:3001
 - **Backend API**: http://localhost:3000
 - **PostgreSQL**: localhost:5432
@@ -164,6 +181,7 @@ pnpm docker:prod:down
 ## 📝 Scripts
 
 ### Root Commands
+
 ```bash
 pnpm dev              # Start both frontend and backend in development
 pnpm build            # Build both frontend and backend
@@ -174,6 +192,7 @@ pnpm typecheck        # Run type checking
 ```
 
 ### Database Commands
+
 ```bash
 pnpm db:setup         # Generate Prisma client and push schema
 pnpm db:migrate       # Run database migrations
@@ -181,6 +200,7 @@ pnpm db:reset         # Reset database (WARNING: deletes all data)
 ```
 
 ### Docker Commands
+
 ```bash
 pnpm docker:dev       # Start development environment
 pnpm docker:prod      # Start production environment
@@ -215,6 +235,7 @@ happy-balance/
 ## 🔧 Environment Variables
 
 ### Backend (.env)
+
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/happy_balance"
 PORT=3000
@@ -224,6 +245,7 @@ MAX_FILE_SIZE=10485760  # 10MB
 ```
 
 ### Frontend (optional)
+
 ```env
 PUBLIC_API_URL="http://localhost:3000/api"
 ```
@@ -231,6 +253,7 @@ PUBLIC_API_URL="http://localhost:3000/api"
 ## 📄 API Documentation
 
 ### Transactions
+
 - `POST /api/transactions` - Create transaction
 - `GET /api/transactions` - List transactions (with filters & pagination)
 - `GET /api/transactions/:id` - Get transaction by ID
@@ -240,11 +263,13 @@ PUBLIC_API_URL="http://localhost:3000/api"
 - `GET /api/transactions/dashboard` - Get dashboard data
 
 ### Import
+
 - `POST /api/import/csv` - Import from CSV file
 - `POST /api/import/validate` - Validate CSV file
 - `GET /api/import/history` - Get import history
 
 ### Health
+
 - `GET /health` - Health check
 
 ## 🧪 Testing
@@ -271,6 +296,7 @@ pnpm test:coverage
 ## 🌍 Internationalization
 
 The application supports multiple languages through svelte-i18n:
+
 - English (default)
 - Spanish
 - More languages can be added easily
@@ -286,18 +312,21 @@ The application supports multiple languages through svelte-i18n:
 ## 📋 Development Guidelines
 
 ### Code Style
+
 - Use TypeScript for type safety
 - Follow ESLint and Prettier configurations
 - Write tests for new features
 - Use conventional commit messages
 
 ### Architecture Rules
+
 - Keep domain logic pure (no external dependencies)
 - Use dependency inversion (inject dependencies)
 - Implement interfaces in infrastructure layer
 - Keep components atomic and reusable
 
 ### Database Migrations
+
 ```bash
 # Create new migration
 cd backend && pnpm prisma migrate dev --name your-migration-name

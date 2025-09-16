@@ -1,35 +1,41 @@
-import { Request, Response } from 'express';
-import { z } from 'zod';
-import { TransactionId } from '@domain/value-objects/TransactionId';
-import { TransactionDate } from '@domain/value-objects/TransactionDate';
-import { Money } from '@domain/value-objects/Money';
-import { Merchant } from '@domain/value-objects/Merchant';
-import { TransactionType } from '@domain/entities/TransactionType';
-import { Transaction } from '@domain/entities/Transaction';
-import { CreateTransactionCommand } from '@application/commands/CreateTransactionCommand';
-import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
-import { GetDashboardDataUseCase } from '@application/use-cases/GetDashboardDataUseCase';
-import { DashboardQuery } from '@application/queries/DashboardQuery';
-import { TransactionListQuery } from '@application/queries/TransactionListQuery';
+import { Request, Response } from "express";
+import { z } from "zod";
+import { TransactionId } from "@domain/value-objects/TransactionId";
+import { TransactionDate } from "@domain/value-objects/TransactionDate";
+import { Money } from "@domain/value-objects/Money";
+import { Merchant } from "@domain/value-objects/Merchant";
+import { TransactionType } from "@domain/entities/TransactionType";
+import { Transaction } from "@domain/entities/Transaction";
+import { CreateTransactionCommand } from "@application/commands/CreateTransactionCommand";
+import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
+import { GetDashboardDataUseCase } from "@application/use-cases/GetDashboardDataUseCase";
+import { DashboardQuery } from "@application/queries/DashboardQuery";
+import { TransactionListQuery } from "@application/queries/TransactionListQuery";
 
 const CreateTransactionSchema = z.object({
   amount: z.number().positive(),
   currency: z.string().min(3).max(3),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   merchant: z.string().min(1).max(200),
-  type: z.enum(['INCOME', 'EXPENSE', 'INVESTMENT']),
+  type: z.enum(["INCOME", "EXPENSE", "INVESTMENT"]),
   description: z.string().max(200).optional(),
-  categoryId: z.string().uuid().optional()
+  categoryId: z.string().uuid().optional(),
 });
 
 const UpdateTransactionSchema = CreateTransactionSchema.partial().extend({
-  hidden: z.boolean().optional()
+  hidden: z.boolean().optional(),
 });
 
 const TransactionFiltersSchema = z.object({
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  type: z.enum(['INCOME', 'EXPENSE', 'INVESTMENT']).optional(),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  type: z.enum(["INCOME", "EXPENSE", "INVESTMENT"]).optional(),
   categoryId: z.string().uuid().optional(),
   merchantName: z.string().optional(),
   minAmount: z.number().optional(),
@@ -37,21 +43,30 @@ const TransactionFiltersSchema = z.object({
   currency: z.string().min(3).max(3).optional(),
   includeHidden: z.boolean().optional().default(false),
   page: z.number().min(1).default(1),
-  limit: z.number().min(1).max(100).default(20)
+  limit: z.number().min(1).max(100).default(20),
 });
 
 const DashboardQuerySchema = z.object({
-  period: z.enum(['week', 'month', 'quarter', 'year']).optional().default('month'),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  currency: z.string().min(3).max(3).optional().default('EUR'),
-  includeInvestments: z.boolean().optional().default(true)
+  period: z
+    .enum(["week", "month", "quarter", "year"])
+    .optional()
+    .default("month"),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  currency: z.string().min(3).max(3).optional().default("EUR"),
+  includeInvestments: z.boolean().optional().default(true),
 });
 
 export class TransactionController {
   constructor(
     private readonly transactionRepository: ITransactionRepository,
-    private readonly getDashboardDataUseCase: GetDashboardDataUseCase
+    private readonly getDashboardDataUseCase: GetDashboardDataUseCase,
   ) {}
 
   async createTransaction(req: Request, res: Response) {
@@ -59,8 +74,8 @@ export class TransactionController {
       const validationResult = CreateTransactionSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors
+          error: "Validation error",
+          details: validationResult.error.errors,
         });
       }
 
@@ -88,7 +103,7 @@ export class TransactionController {
         dateResult.getValue(),
         merchantResult.getValue(),
         data.type as TransactionType,
-        data.description || ''
+        data.description || "",
       );
 
       if (transactionResult.isFailure()) {
@@ -105,12 +120,12 @@ export class TransactionController {
 
       res.status(201).json({
         success: true,
-        data: transaction.toSnapshot()
+        data: transaction.toSnapshot(),
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -120,8 +135,8 @@ export class TransactionController {
       const validationResult = TransactionFiltersSchema.safeParse(req.query);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors
+          error: "Validation error",
+          details: validationResult.error.errors,
         });
       }
 
@@ -132,14 +147,18 @@ export class TransactionController {
       const domainFilters: any = {};
 
       if (transactionFilters.startDate) {
-        const dateResult = TransactionDate.fromString(transactionFilters.startDate);
+        const dateResult = TransactionDate.fromString(
+          transactionFilters.startDate,
+        );
         if (dateResult.isSuccess()) {
           domainFilters.startDate = dateResult.getValue();
         }
       }
 
       if (transactionFilters.endDate) {
-        const dateResult = TransactionDate.fromString(transactionFilters.endDate);
+        const dateResult = TransactionDate.fromString(
+          transactionFilters.endDate,
+        );
         if (dateResult.isSuccess()) {
           domainFilters.endDate = dateResult.getValue();
         }
@@ -174,10 +193,13 @@ export class TransactionController {
 
       const pagination = {
         offset: (page - 1) * limit,
-        limit
+        limit,
       };
 
-      const result = await this.transactionRepository.findWithFilters(domainFilters, pagination);
+      const result = await this.transactionRepository.findWithFilters(
+        domainFilters,
+        pagination,
+      );
       if (result.isFailure()) {
         return res.status(500).json({ error: result.getError() });
       }
@@ -187,19 +209,19 @@ export class TransactionController {
       res.json({
         success: true,
         data: {
-          transactions: transactions.map(t => t.toSnapshot()),
+          transactions: transactions.map((t) => t.toSnapshot()),
           pagination: {
             page,
             limit,
             totalCount,
-            totalPages: Math.ceil(totalCount / limit)
-          }
-        }
+            totalPages: Math.ceil(totalCount / limit),
+          },
+        },
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -213,24 +235,26 @@ export class TransactionController {
         return res.status(400).json({ error: transactionIdResult.getError() });
       }
 
-      const result = await this.transactionRepository.findById(transactionIdResult.getValue());
+      const result = await this.transactionRepository.findById(
+        transactionIdResult.getValue(),
+      );
       if (result.isFailure()) {
         return res.status(500).json({ error: result.getError() });
       }
 
       const transaction = result.getValue();
       if (!transaction) {
-        return res.status(404).json({ error: 'Transaction not found' });
+        return res.status(404).json({ error: "Transaction not found" });
       }
 
       res.json({
         success: true,
-        data: transaction.toSnapshot()
+        data: transaction.toSnapshot(),
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -247,27 +271,31 @@ export class TransactionController {
       const validationResult = UpdateTransactionSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors
+          error: "Validation error",
+          details: validationResult.error.errors,
         });
       }
 
       // Find existing transaction
-      const existingResult = await this.transactionRepository.findById(transactionIdResult.getValue());
+      const existingResult = await this.transactionRepository.findById(
+        transactionIdResult.getValue(),
+      );
       if (existingResult.isFailure()) {
         return res.status(500).json({ error: existingResult.getError() });
       }
 
       const existingTransaction = existingResult.getValue();
       if (!existingTransaction) {
-        return res.status(404).json({ error: 'Transaction not found' });
+        return res.status(404).json({ error: "Transaction not found" });
       }
 
       const data = validationResult.data;
 
       // Update description if provided
       if (data.description !== undefined) {
-        const updateResult = existingTransaction.updateDescription(data.description);
+        const updateResult = existingTransaction.updateDescription(
+          data.description,
+        );
         if (updateResult.isFailure()) {
           return res.status(400).json({ error: updateResult.getError() });
         }
@@ -289,19 +317,20 @@ export class TransactionController {
       // TODO: Add support for updating other fields if needed
       // For now, we only support updating description, hidden, and categoryId
 
-      const saveResult = await this.transactionRepository.update(existingTransaction);
+      const saveResult =
+        await this.transactionRepository.update(existingTransaction);
       if (saveResult.isFailure()) {
         return res.status(500).json({ error: saveResult.getError() });
       }
 
       res.json({
         success: true,
-        data: existingTransaction.toSnapshot()
+        data: existingTransaction.toSnapshot(),
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -315,19 +344,21 @@ export class TransactionController {
         return res.status(400).json({ error: transactionIdResult.getError() });
       }
 
-      const result = await this.transactionRepository.delete(transactionIdResult.getValue());
+      const result = await this.transactionRepository.delete(
+        transactionIdResult.getValue(),
+      );
       if (result.isFailure()) {
         return res.status(500).json({ error: result.getError() });
       }
 
       res.json({
         success: true,
-        message: 'Transaction deleted successfully'
+        message: "Transaction deleted successfully",
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -336,29 +367,31 @@ export class TransactionController {
     try {
       // Parse with defaults
       const queryData = {
-        period: req.query.period || 'month',
-        currency: req.query.currency || 'EUR',
-        includeInvestments: req.query.includeInvestments === 'false' ? false : true,
+        period: req.query.period || "month",
+        currency: req.query.currency || "EUR",
+        includeInvestments:
+          req.query.includeInvestments === "false" ? false : true,
         startDate: req.query.startDate as string | undefined,
-        endDate: req.query.endDate as string | undefined
+        endDate: req.query.endDate as string | undefined,
       };
 
       const validationResult = DashboardQuerySchema.safeParse(queryData);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors
+          error: "Validation error",
+          details: validationResult.error.errors,
         });
       }
 
-      const { period, startDate, endDate, currency, includeInvestments } = validationResult.data;
+      const { period, startDate, endDate, currency, includeInvestments } =
+        validationResult.data;
 
       const query = new DashboardQuery(
         currency,
         period,
         startDate,
         endDate,
-        includeInvestments
+        includeInvestments,
       );
 
       const result = await this.getDashboardDataUseCase.execute(query);
@@ -368,22 +401,24 @@ export class TransactionController {
 
       res.json({
         success: true,
-        data: result.getValue()
+        data: result.getValue(),
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
 
   async getStatistics(req: Request, res: Response) {
     try {
-      const { startDate, endDate, currency = 'EUR' } = req.query;
+      const { startDate, endDate, currency = "EUR" } = req.query;
 
       if (!startDate || !endDate) {
-        return res.status(400).json({ error: 'startDate and endDate are required' });
+        return res
+          .status(400)
+          .json({ error: "startDate and endDate are required" });
       }
 
       const startDateResult = TransactionDate.fromString(startDate as string);
@@ -399,7 +434,7 @@ export class TransactionController {
       const result = await this.transactionRepository.getStatistics(
         startDateResult.getValue(),
         endDateResult.getValue(),
-        currency as string
+        currency as string,
       );
 
       if (result.isFailure()) {
@@ -408,12 +443,12 @@ export class TransactionController {
 
       res.json({
         success: true,
-        data: result.getValue()
+        data: result.getValue(),
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -425,19 +460,19 @@ export class TransactionController {
 
       if (result.isFailure()) {
         return res.status(500).json({
-          error: 'Failed to delete all transactions',
-          message: result.getError()
+          error: "Failed to delete all transactions",
+          message: result.getError(),
         });
       }
 
       res.json({
         success: true,
-        message: 'All transactions deleted successfully'
+        message: "All transactions deleted successfully",
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Failed to delete all transactions',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Failed to delete all transactions",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }

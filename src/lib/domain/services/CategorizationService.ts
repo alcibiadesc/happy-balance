@@ -1,6 +1,6 @@
-import { Transaction } from '../entities/Transaction';
-import { Category } from '../entities/Category';
-import { Result } from '../shared/Result';
+import { Transaction } from "../entities/Transaction";
+import { Category } from "../entities/Category";
+import { Result } from "../shared/Result";
 
 export interface CategorizationRule {
   id: string;
@@ -30,26 +30,29 @@ export class CategorizationService {
    */
   suggestCategory(
     transaction: Transaction,
-    availableCategories: Category[]
+    availableCategories: Category[],
   ): Result<CategorizationResult> {
     const eligibleCategories = availableCategories.filter(
-      category => category.isActive && category.type === transaction.type
+      (category) => category.isActive && category.type === transaction.type,
     );
 
     if (eligibleCategories.length === 0) {
       return Result.ok({
         transaction,
         confidence: 0,
-        reason: 'No eligible categories available'
+        reason: "No eligible categories available",
       });
     }
 
     let bestMatch: Category | undefined;
     let highestConfidence = 0;
-    let matchReason = '';
+    let matchReason = "";
 
     for (const category of eligibleCategories) {
-      const confidence = this.calculateCategoryConfidence(transaction, category);
+      const confidence = this.calculateCategoryConfidence(
+        transaction,
+        category,
+      );
 
       if (confidence > highestConfidence) {
         highestConfidence = confidence;
@@ -60,9 +63,12 @@ export class CategorizationService {
 
     return Result.ok({
       transaction,
-      suggestedCategory: highestConfidence >= this.MIN_CONFIDENCE_THRESHOLD ? bestMatch : undefined,
+      suggestedCategory:
+        highestConfidence >= this.MIN_CONFIDENCE_THRESHOLD
+          ? bestMatch
+          : undefined,
       confidence: highestConfidence,
-      reason: matchReason || 'No suitable category match found'
+      reason: matchReason || "No suitable category match found",
     });
   }
 
@@ -72,13 +78,17 @@ export class CategorizationService {
   categorizeTransactions(
     transactions: Transaction[],
     availableCategories: Category[],
-    rules: CategorizationRule[] = []
+    rules: CategorizationRule[] = [],
   ): Result<CategorizationResult[]> {
     const results: CategorizationResult[] = [];
 
     for (const transaction of transactions) {
       // First try rule-based categorization
-      const ruleResult = this.applyRules(transaction, availableCategories, rules);
+      const ruleResult = this.applyRules(
+        transaction,
+        availableCategories,
+        rules,
+      );
 
       if (ruleResult.isSuccess() && ruleResult.getValue().suggestedCategory) {
         results.push(ruleResult.getValue());
@@ -86,7 +96,10 @@ export class CategorizationService {
       }
 
       // Fall back to ML-like categorization
-      const suggestionResult = this.suggestCategory(transaction, availableCategories);
+      const suggestionResult = this.suggestCategory(
+        transaction,
+        availableCategories,
+      );
       if (suggestionResult.isSuccess()) {
         results.push(suggestionResult.getValue());
       }
@@ -101,16 +114,16 @@ export class CategorizationService {
   applyRules(
     transaction: Transaction,
     availableCategories: Category[],
-    rules: CategorizationRule[]
+    rules: CategorizationRule[],
   ): Result<CategorizationResult> {
     const activeRules = rules
-      .filter(rule => rule.isActive)
+      .filter((rule) => rule.isActive)
       .sort((a, b) => b.priority - a.priority); // Higher priority first
 
     for (const rule of activeRules) {
       if (this.ruleMatches(transaction, rule)) {
         const category = availableCategories.find(
-          cat => cat.id.value === rule.categoryId && cat.isActive
+          (cat) => cat.id.value === rule.categoryId && cat.isActive,
         );
 
         if (category && category.type === transaction.type) {
@@ -118,7 +131,7 @@ export class CategorizationService {
             transaction,
             suggestedCategory: category,
             confidence: 0.95, // Rule-based matches have high confidence
-            reason: `Matched rule: ${rule.name}`
+            reason: `Matched rule: ${rule.name}`,
           });
         }
       }
@@ -127,7 +140,7 @@ export class CategorizationService {
     return Result.ok({
       transaction,
       confidence: 0,
-      reason: 'No rules matched'
+      reason: "No rules matched",
     });
   }
 
@@ -138,10 +151,12 @@ export class CategorizationService {
     name: string,
     categoryId: string,
     exampleTransactions: Transaction[],
-    priority = 1
+    priority = 1,
   ): Result<CategorizationRule> {
     if (exampleTransactions.length === 0) {
-      return Result.failWithMessage('At least one example transaction is required');
+      return Result.failWithMessage(
+        "At least one example transaction is required",
+      );
     }
 
     // Extract keywords from merchant names and descriptions
@@ -153,7 +168,7 @@ export class CategorizationService {
       keywords,
       categoryId,
       priority,
-      isActive: true
+      isActive: true,
     };
 
     return Result.ok(rule);
@@ -165,9 +180,12 @@ export class CategorizationService {
   updateConfidenceFromFeedback(
     transaction: Transaction,
     suggestedCategory: Category,
-    userAccepted: boolean
+    userAccepted: boolean,
   ): number {
-    const baseConfidence = this.calculateCategoryConfidence(transaction, suggestedCategory);
+    const baseConfidence = this.calculateCategoryConfidence(
+      transaction,
+      suggestedCategory,
+    );
 
     if (userAccepted) {
       // Increase confidence for accepted suggestions
@@ -180,7 +198,7 @@ export class CategorizationService {
 
   private calculateCategoryConfidence(
     transaction: Transaction,
-    category: Category
+    category: Category,
   ): number {
     let confidence = 0;
 
@@ -196,7 +214,10 @@ export class CategorizationService {
     }
 
     // Description keyword matching
-    const descriptionMatch = this.matchesDescription(transaction.description, category);
+    const descriptionMatch = this.matchesDescription(
+      transaction.description,
+      category,
+    );
     confidence += descriptionMatch * 0.4;
 
     // Normalize confidence to 0-1 range
@@ -212,7 +233,10 @@ export class CategorizationService {
     let matchCount = 0;
     for (const descWord of descWords) {
       for (const categoryWord of categoryWords) {
-        if (descWord.includes(categoryWord) || categoryWord.includes(descWord)) {
+        if (
+          descWord.includes(categoryWord) ||
+          categoryWord.includes(descWord)
+        ) {
           matchCount++;
         }
       }
@@ -221,11 +245,15 @@ export class CategorizationService {
     return matchCount / Math.max(descWords.length, categoryWords.length);
   }
 
-  private ruleMatches(transaction: Transaction, rule: CategorizationRule): boolean {
-    const searchText = `${transaction.merchant.name} ${transaction.description}`.toLowerCase();
+  private ruleMatches(
+    transaction: Transaction,
+    rule: CategorizationRule,
+  ): boolean {
+    const searchText =
+      `${transaction.merchant.name} ${transaction.description}`.toLowerCase();
 
-    return rule.keywords.some(keyword =>
-      searchText.includes(keyword.toLowerCase())
+    return rule.keywords.some((keyword) =>
+      searchText.includes(keyword.toLowerCase()),
     );
   }
 
@@ -251,21 +279,62 @@ export class CategorizationService {
   private extractWordsFromTransaction(transaction: Transaction): string[] {
     const text = `${transaction.merchant.name} ${transaction.description}`
       .toLowerCase()
-      .replace(/[^\w\s]/g, ' ') // Remove special characters
-      .replace(/\s+/g, ' ')     // Normalize whitespace
+      .replace(/[^\w\s]/g, " ") // Remove special characters
+      .replace(/\s+/g, " ") // Normalize whitespace
       .trim();
 
-    return text.split(' ')
-      .filter(word => word.length > 2) // Filter short words
-      .filter(word => !this.isCommonWord(word)); // Filter common words
+    return text
+      .split(" ")
+      .filter((word) => word.length > 2) // Filter short words
+      .filter((word) => !this.isCommonWord(word)); // Filter common words
   }
 
   private isCommonWord(word: string): boolean {
     const commonWords = new Set([
-      'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'her', 'was', 'one',
-      'our', 'had', 'have', 'what', 'were', 'said', 'each', 'which', 'she', 'how', 'will',
-      'may', 'been', 'when', 'who', 'more', 'some', 'very', 'time', 'has', 'its', 'now',
-      'get', 'use', 'your', 'way', 'about', 'many', 'then', 'them', 'these', 'him'
+      "the",
+      "and",
+      "for",
+      "are",
+      "but",
+      "not",
+      "you",
+      "all",
+      "can",
+      "her",
+      "was",
+      "one",
+      "our",
+      "had",
+      "have",
+      "what",
+      "were",
+      "said",
+      "each",
+      "which",
+      "she",
+      "how",
+      "will",
+      "may",
+      "been",
+      "when",
+      "who",
+      "more",
+      "some",
+      "very",
+      "time",
+      "has",
+      "its",
+      "now",
+      "get",
+      "use",
+      "your",
+      "way",
+      "about",
+      "many",
+      "then",
+      "them",
+      "these",
+      "him",
     ]);
 
     return commonWords.has(word);
@@ -274,25 +343,26 @@ export class CategorizationService {
   private buildMatchReason(
     transaction: Transaction,
     category: Category,
-    confidence: number
+    confidence: number,
   ): string {
     const reasons: string[] = [];
 
     if (category.matchesMerchant(transaction.merchant.name)) {
-      reasons.push('merchant name match');
+      reasons.push("merchant name match");
     }
 
     const merchantHints = transaction.merchant.getCategoryHints();
     if (merchantHints.includes(category.name.toLowerCase())) {
-      reasons.push('merchant category hint');
+      reasons.push("merchant category hint");
     }
 
     if (this.matchesDescription(transaction.description, category) > 0.3) {
-      reasons.push('description keywords');
+      reasons.push("description keywords");
     }
 
     const confidencePercent = Math.round(confidence * 100);
-    const reasonText = reasons.length > 0 ? reasons.join(', ') : 'general similarity';
+    const reasonText =
+      reasons.length > 0 ? reasons.join(", ") : "general similarity";
 
     return `${confidencePercent}% confidence based on ${reasonText}`;
   }

@@ -1,31 +1,49 @@
-import { Request, Response } from 'express';
-import { z } from 'zod';
-import { ImportTransactionsCommand } from '@application/commands/ImportTransactionsCommand';
-import { ImportTransactionsUseCase } from '@application/use-cases/ImportTransactionsUseCase';
-import { CheckDuplicateHashesUseCase, CheckDuplicateHashesCommand } from '@application/use-cases/CheckDuplicateHashesUseCase';
-import { ImportSelectedTransactionsUseCase, ImportSelectedTransactionsCommand } from '@application/use-cases/ImportSelectedTransactionsUseCase';
-import { GenerateHashesUseCase, GenerateHashesCommand } from '@application/use-cases/GenerateHashesUseCase';
+import { Request, Response } from "express";
+import { z } from "zod";
+import { ImportTransactionsCommand } from "@application/commands/ImportTransactionsCommand";
+import { ImportTransactionsUseCase } from "@application/use-cases/ImportTransactionsUseCase";
+import {
+  CheckDuplicateHashesUseCase,
+  CheckDuplicateHashesCommand,
+} from "@application/use-cases/CheckDuplicateHashesUseCase";
+import {
+  ImportSelectedTransactionsUseCase,
+  ImportSelectedTransactionsCommand,
+} from "@application/use-cases/ImportSelectedTransactionsUseCase";
+import {
+  GenerateHashesUseCase,
+  GenerateHashesCommand,
+} from "@application/use-cases/GenerateHashesUseCase";
 
 const ImportConfigSchema = z.object({
-  currency: z.string().min(3).max(3).default('EUR'),
-  duplicateDetectionEnabled: z.union([z.boolean(), z.string()]).transform(val => {
-    if (typeof val === 'string') {
-      return val === 'true';
-    }
-    return val;
-  }).default(true),
-  skipDuplicates: z.union([z.boolean(), z.string()]).transform(val => {
-    if (typeof val === 'string') {
-      return val === 'true';
-    }
-    return val;
-  }).default(true),
-  autoCategorizationEnabled: z.union([z.boolean(), z.string()]).transform(val => {
-    if (typeof val === 'string') {
-      return val === 'true';
-    }
-    return val;
-  }).default(true)
+  currency: z.string().min(3).max(3).default("EUR"),
+  duplicateDetectionEnabled: z
+    .union([z.boolean(), z.string()])
+    .transform((val) => {
+      if (typeof val === "string") {
+        return val === "true";
+      }
+      return val;
+    })
+    .default(true),
+  skipDuplicates: z
+    .union([z.boolean(), z.string()])
+    .transform((val) => {
+      if (typeof val === "string") {
+        return val === "true";
+      }
+      return val;
+    })
+    .default(true),
+  autoCategorizationEnabled: z
+    .union([z.boolean(), z.string()])
+    .transform((val) => {
+      if (typeof val === "string") {
+        return val === "true";
+      }
+      return val;
+    })
+    .default(true),
 });
 
 const SelectedTransactionSchema = z.object({
@@ -33,29 +51,33 @@ const SelectedTransactionSchema = z.object({
   date: z.string(),
   merchant: z.string(),
   amount: z.number(),
-  description: z.string().optional().default(''),
-  currency: z.string().min(3).max(3).default('EUR')
+  description: z.string().optional().default(""),
+  currency: z.string().min(3).max(3).default("EUR"),
 });
 
 const ImportSelectedTransactionsSchema = z.object({
   transactions: z.array(SelectedTransactionSchema),
-  currency: z.string().min(3).max(3).default('EUR'),
+  currency: z.string().min(3).max(3).default("EUR"),
   duplicateDetectionEnabled: z.boolean().default(true),
   skipDuplicates: z.boolean().default(true),
-  autoCategorizationEnabled: z.boolean().default(true)
+  autoCategorizationEnabled: z.boolean().default(true),
 });
 
 const CheckDuplicateHashesSchema = z.object({
-  hashes: z.array(z.string()).min(1, 'At least one hash is required')
+  hashes: z.array(z.string()).min(1, "At least one hash is required"),
 });
 
 const GenerateHashesSchema = z.object({
-  transactions: z.array(z.object({
-    date: z.string(),
-    merchant: z.string(),
-    amount: z.number(),
-    currency: z.string().optional()
-  })).min(1, 'At least one transaction is required')
+  transactions: z
+    .array(
+      z.object({
+        date: z.string(),
+        merchant: z.string(),
+        amount: z.number(),
+        currency: z.string().optional(),
+      }),
+    )
+    .min(1, "At least one transaction is required"),
 });
 
 export class ImportController {
@@ -64,7 +86,7 @@ export class ImportController {
   constructor(
     private readonly importTransactionsUseCase: ImportTransactionsUseCase,
     private readonly checkDuplicateHashesUseCase: CheckDuplicateHashesUseCase,
-    private readonly importSelectedTransactionsUseCase: ImportSelectedTransactionsUseCase
+    private readonly importSelectedTransactionsUseCase: ImportSelectedTransactionsUseCase,
   ) {
     this.generateHashesUseCase = new GenerateHashesUseCase();
   }
@@ -74,13 +96,13 @@ export class ImportController {
       const validation = GenerateHashesSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: 'Invalid request',
-          details: validation.error.errors
+          error: "Invalid request",
+          details: validation.error.errors,
         });
       }
 
       const command: GenerateHashesCommand = {
-        transactions: validation.data.transactions
+        transactions: validation.data.transactions,
       };
 
       const result = await this.generateHashesUseCase.execute(command);
@@ -90,12 +112,12 @@ export class ImportController {
 
       res.json({
         success: true,
-        data: result.getValue()
+        data: result.getValue(),
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Hash generation failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Hash generation failed",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -105,15 +127,15 @@ export class ImportController {
       const validation = CheckDuplicateHashesSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: 'Invalid request',
-          details: validation.error.errors
+          error: "Invalid request",
+          details: validation.error.errors,
         });
       }
 
       const { hashes } = validation.data;
 
       const command: CheckDuplicateHashesCommand = {
-        hashes
+        hashes,
       };
 
       const result = await this.checkDuplicateHashesUseCase.execute(command);
@@ -123,12 +145,12 @@ export class ImportController {
 
       res.json({
         success: true,
-        data: result.getValue()
+        data: result.getValue(),
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Duplicate check failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Duplicate check failed",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -138,8 +160,8 @@ export class ImportController {
       const validation = ImportSelectedTransactionsSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: 'Invalid request',
-          details: validation.error.errors
+          error: "Invalid request",
+          details: validation.error.errors,
         });
       }
 
@@ -150,22 +172,23 @@ export class ImportController {
         currency: validatedData.currency,
         duplicateDetectionEnabled: validatedData.duplicateDetectionEnabled,
         skipDuplicates: validatedData.skipDuplicates,
-        autoCategorizationEnabled: validatedData.autoCategorizationEnabled
+        autoCategorizationEnabled: validatedData.autoCategorizationEnabled,
       };
 
-      const result = await this.importSelectedTransactionsUseCase.execute(command);
+      const result =
+        await this.importSelectedTransactionsUseCase.execute(command);
       if (result.isFailure()) {
         return res.status(400).json({ error: result.getError() });
       }
 
       res.json({
         success: true,
-        data: result.getValue()
+        data: result.getValue(),
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Import selected transactions failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Import selected transactions failed",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -173,22 +196,22 @@ export class ImportController {
   async importFromCsv(req: Request, res: Response) {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
+        return res.status(400).json({ error: "No file uploaded" });
       }
 
       const configValidation = ImportConfigSchema.safeParse(req.body);
       if (!configValidation.success) {
         return res.status(400).json({
-          error: 'Invalid configuration',
-          details: configValidation.error.errors
+          error: "Invalid configuration",
+          details: configValidation.error.errors,
         });
       }
 
       const config = configValidation.data;
-      const csvContent = req.file.buffer.toString('utf-8');
+      const csvContent = req.file.buffer.toString("utf-8");
 
       if (!csvContent.trim()) {
-        return res.status(400).json({ error: 'Empty CSV file' });
+        return res.status(400).json({ error: "Empty CSV file" });
       }
 
       const command = new ImportTransactionsCommand(
@@ -196,7 +219,7 @@ export class ImportController {
         config.currency,
         config.duplicateDetectionEnabled,
         config.skipDuplicates,
-        config.autoCategorizationEnabled
+        config.autoCategorizationEnabled,
       );
 
       const result = await this.importTransactionsUseCase.execute(command);
@@ -206,29 +229,28 @@ export class ImportController {
 
       res.json({
         success: true,
-        data: result.getValue()
+        data: result.getValue(),
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Import failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Import failed",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
-
 
   async importFromExcel(req: Request, res: Response) {
     try {
       // TODO: Implement Excel import
       // For now, return a placeholder response
       res.status(501).json({
-        error: 'Excel import not yet implemented',
-        message: 'Please use CSV import for now'
+        error: "Excel import not yet implemented",
+        message: "Please use CSV import for now",
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Import failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Import failed",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -241,13 +263,13 @@ export class ImportController {
         success: true,
         data: {
           imports: [],
-          totalCount: 0
-        }
+          totalCount: 0,
+        },
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Failed to get import history',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Failed to get import history",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -255,30 +277,30 @@ export class ImportController {
   async previewCsv(req: Request, res: Response) {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
+        return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const csvContent = req.file.buffer.toString('utf-8');
-      const currency = (req.body.currency || 'EUR').toUpperCase();
+      const csvContent = req.file.buffer.toString("utf-8");
+      const currency = (req.body.currency || "EUR").toUpperCase();
 
       if (!csvContent.trim()) {
-        return res.status(400).json({ error: 'Empty CSV file' });
+        return res.status(400).json({ error: "Empty CSV file" });
       }
 
       // Use the import command to parse and detect duplicates
       const command = new ImportTransactionsCommand(
         csvContent,
         currency,
-        true,  // duplicateDetectionEnabled
+        true, // duplicateDetectionEnabled
         false, // skipDuplicates - we want to see all including duplicates
-        false  // autoCategorizationEnabled - not needed for preview
+        false, // autoCategorizationEnabled - not needed for preview
       );
 
       const validation = command.isValid();
       if (!validation.valid) {
         return res.status(400).json({
-          error: 'Invalid import data',
-          details: validation.errors
+          error: "Invalid import data",
+          details: validation.errors,
         });
       }
 
@@ -293,12 +315,12 @@ export class ImportController {
 
       res.json({
         success: true,
-        data: previewData
+        data: previewData,
       });
     } catch (error) {
       res.status(500).json({
-        error: 'CSV preview failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "CSV preview failed",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -306,20 +328,20 @@ export class ImportController {
   async validateCsv(req: Request, res: Response) {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
+        return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const csvContent = req.file.buffer.toString('utf-8');
+      const csvContent = req.file.buffer.toString("utf-8");
 
       if (!csvContent.trim()) {
-        return res.status(400).json({ error: 'Empty CSV file' });
+        return res.status(400).json({ error: "Empty CSV file" });
       }
 
-      const lines = csvContent.split('\n').filter(line => line.trim());
+      const lines = csvContent.split("\n").filter((line) => line.trim());
 
       if (lines.length < 2) {
         return res.status(400).json({
-          error: 'CSV must have header and at least one data row'
+          error: "CSV must have header and at least one data row",
         });
       }
 
@@ -334,36 +356,36 @@ export class ImportController {
         totalRows: lines.length - 1,
         headers,
         detectedFields,
-        issues: [] as string[]
+        issues: [] as string[],
       };
 
-      if (!detectedFields.requiredFields.includes('date')) {
-        validation.issues.push('Date field not detected');
+      if (!detectedFields.requiredFields.includes("date")) {
+        validation.issues.push("Date field not detected");
       }
 
-      if (!detectedFields.requiredFields.includes('merchant')) {
-        validation.issues.push('Merchant field not detected');
+      if (!detectedFields.requiredFields.includes("merchant")) {
+        validation.issues.push("Merchant field not detected");
       }
 
-      if (!detectedFields.requiredFields.includes('amount')) {
-        validation.issues.push('Amount field not detected');
+      if (!detectedFields.requiredFields.includes("amount")) {
+        validation.issues.push("Amount field not detected");
       }
 
       res.json({
         success: true,
-        data: validation
+        data: validation,
       });
     } catch (error) {
       res.status(500).json({
-        error: 'CSV validation failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "CSV validation failed",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
 
   private parseCSVLine(line: string): string[] {
     const result: string[] = [];
-    let current = '';
+    let current = "";
     let inQuotes = false;
     let i = 0;
 
@@ -378,9 +400,9 @@ export class ImportController {
           inQuotes = !inQuotes;
           i++;
         }
-      } else if (char === ',' && !inQuotes) {
+      } else if (char === "," && !inQuotes) {
         result.push(current.trim());
-        current = '';
+        current = "";
         i++;
       } else {
         current += char;
@@ -396,10 +418,12 @@ export class ImportController {
     const fieldPatterns = {
       date: /booking\s*date|fecha\s*reserva|date|fecha/i,
       valueDate: /value\s*date|fecha\s*valor/i,
-      merchant: /partner\s*name|nombre\s*socio|beneficiario|partner|merchant|comercio/i,
+      merchant:
+        /partner\s*name|nombre\s*socio|beneficiario|partner|merchant|comercio/i,
       iban: /partner\s*iban|iban\s*socio|iban/i,
       type: /type|tipo|transaction\s*type/i,
-      description: /payment\s*reference|referencia\s*pago|concepto|description|descripci[oó]n/i,
+      description:
+        /payment\s*reference|referencia\s*pago|concepto|description|descripci[oó]n/i,
       account: /account\s*name|nombre\s*cuenta|account/i,
       amount: /amount.*eur|importe.*eur|cantidad|amount|importe/i,
     };
@@ -407,7 +431,7 @@ export class ImportController {
     const detectedFields = {
       requiredFields: [] as string[],
       optionalFields: [] as string[],
-      mapping: {} as Record<string, number>
+      mapping: {} as Record<string, number>,
     };
 
     headers.forEach((header, index) => {
@@ -415,7 +439,7 @@ export class ImportController {
         if (pattern.test(header) && !detectedFields.mapping[field]) {
           detectedFields.mapping[field] = index;
 
-          if (['date', 'merchant', 'amount'].includes(field)) {
+          if (["date", "merchant", "amount"].includes(field)) {
             detectedFields.requiredFields.push(field);
           } else {
             detectedFields.optionalFields.push(field);

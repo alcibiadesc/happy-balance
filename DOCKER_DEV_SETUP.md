@@ -27,18 +27,21 @@ pnpm dev:clean
 ## 🎯 Lo Que Incluye
 
 ### 🐘 PostgreSQL
+
 - **Puerto**: 5432
 - **Base de datos**: `happy_balance`
 - **Usuario**: `postgres`
 - **Contraseña**: `postgres`
 
 ### 🏗️ Backend (Node.js + Prisma)
+
 - **Puerto**: 3000
 - **API**: http://localhost:3000/api
 - **Health**: http://localhost:3000/health
 - **Hot reload**: ✅ (montado desde `./backend/src`)
 
 ### 🎨 Frontend (SvelteKit + Vite)
+
 - **Puerto**: 5173
 - **URL**: http://localhost:5173
 - **Hot reload**: ✅ (montado desde `./src`)
@@ -76,14 +79,14 @@ pnpm dev:down
 
 ## 🌟 Ventajas vs. Sistema Anterior
 
-| Anterior | Nuevo |
-|----------|-------|
-| Scripts complejos | `pnpm dev` |
-| Puertos dinámicos | Puertos fijos |
+| Anterior                    | Nuevo           |
+| --------------------------- | --------------- |
+| Scripts complejos           | `pnpm dev`      |
+| Puertos dinámicos           | Puertos fijos   |
 | Problemas de sincronización | Todo coordinado |
-| Setup manual de DB | Automático |
-| Conflictos entre worktrees | Sin conflictos |
-| Múltiples comandos | Un solo comando |
+| Setup manual de DB          | Automático      |
+| Conflictos entre worktrees  | Sin conflictos  |
+| Múltiples comandos          | Un solo comando |
 
 ## 🎯 Para Worktrees
 
@@ -91,7 +94,7 @@ pnpm dev:down
 # Crear nuevo worktree
 git worktree add feature-branch
 
-# Ir al worktree  
+# Ir al worktree
 cd feature-branch
 
 # Levantar entorno (cada worktree es independiente)

@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { get } from 'svelte/store';
-import { userPreferences, currency, language, theme } from '../user-preferences';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { get } from "svelte/store";
+import {
+  userPreferences,
+  currency,
+  language,
+  theme,
+} from "../user-preferences";
 
 // Mock fetch
 global.fetch = vi.fn();
@@ -23,90 +28,93 @@ const localStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 });
 
 // Mock browser environment
-vi.mock('$app/environment', () => ({
+vi.mock("$app/environment", () => ({
   browser: true,
 }));
 
-describe('User Preferences Store', () => {
+describe("User Preferences Store", () => {
   beforeEach(() => {
     localStorageMock.clear();
     vi.clearAllMocks();
   });
 
-  it('should have default preferences', () => {
+  it("should have default preferences", () => {
     const prefs = get(userPreferences);
-    expect(prefs.currency).toBe('EUR');
-    expect(prefs.language).toBe('en');
-    expect(prefs.theme).toBe('light');
+    expect(prefs.currency).toBe("EUR");
+    expect(prefs.language).toBe("en");
+    expect(prefs.theme).toBe("light");
   });
 
-  it('should provide derived stores', () => {
-    expect(get(currency)).toBe('EUR');
-    expect(get(language)).toBe('en');
-    expect(get(theme)).toBe('light');
+  it("should provide derived stores", () => {
+    expect(get(currency)).toBe("EUR");
+    expect(get(language)).toBe("en");
+    expect(get(theme)).toBe("light");
   });
 
-  it('should load preferences from localStorage when API fails', async () => {
+  it("should load preferences from localStorage when API fails", async () => {
     // Mock API failure
-    (global.fetch as any).mockRejectedValue(new Error('API unavailable'));
+    (global.fetch as any).mockRejectedValue(new Error("API unavailable"));
 
     // Set up localStorage
     const storedPrefs = {
-      userId: 'default',
-      currency: 'USD',
-      language: 'es',
-      theme: 'dark',
+      userId: "default",
+      currency: "USD",
+      language: "es",
+      theme: "dark",
     };
-    localStorageMock.setItem('userPreferences', JSON.stringify(storedPrefs));
+    localStorageMock.setItem("userPreferences", JSON.stringify(storedPrefs));
 
     await userPreferences.load();
 
     const prefs = get(userPreferences);
-    expect(prefs.currency).toBe('USD');
-    expect(prefs.language).toBe('es');
-    expect(prefs.theme).toBe('dark');
+    expect(prefs.currency).toBe("USD");
+    expect(prefs.language).toBe("es");
+    expect(prefs.theme).toBe("dark");
   });
 
-  it('should save preferences to localStorage when API fails', async () => {
+  it("should save preferences to localStorage when API fails", async () => {
     // Mock API failure
-    (global.fetch as any).mockRejectedValue(new Error('API unavailable'));
+    (global.fetch as any).mockRejectedValue(new Error("API unavailable"));
 
-    await userPreferences.save({ currency: 'GBP' });
+    await userPreferences.save({ currency: "GBP" });
 
-    const stored = JSON.parse(localStorageMock.getItem('userPreferences') || '{}');
-    expect(stored.currency).toBe('GBP');
+    const stored = JSON.parse(
+      localStorageMock.getItem("userPreferences") || "{}",
+    );
+    expect(stored.currency).toBe("GBP");
   });
 
-  it('should update individual preference types', async () => {
+  it("should update individual preference types", async () => {
     // Mock successful API response
     (global.fetch as any).mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        userId: 'default',
-        currency: 'JPY',
-        language: 'en',
-        theme: 'light',
-      }),
+      json: () =>
+        Promise.resolve({
+          userId: "default",
+          currency: "JPY",
+          language: "en",
+          theme: "light",
+        }),
     });
 
-    await userPreferences.updateCurrency('JPY');
+    await userPreferences.updateCurrency("JPY");
 
     const prefs = get(userPreferences);
-    expect(prefs.currency).toBe('JPY');
+    expect(prefs.currency).toBe("JPY");
   });
 
-  it('should sync preferences with API and localStorage', async () => {
+  it("should sync preferences with API and localStorage", async () => {
     const mockPrefs = {
-      id: '1',
-      userId: 'default',
-      currency: 'USD',
-      language: 'es',
-      theme: 'dark',
+      id: "1",
+      userId: "default",
+      currency: "USD",
+      language: "es",
+      theme: "dark",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -120,14 +128,16 @@ describe('User Preferences Store', () => {
     await userPreferences.load();
 
     const prefs = get(userPreferences);
-    expect(prefs.currency).toBe('USD');
-    expect(prefs.language).toBe('es');
-    expect(prefs.theme).toBe('dark');
+    expect(prefs.currency).toBe("USD");
+    expect(prefs.language).toBe("es");
+    expect(prefs.theme).toBe("dark");
 
     // Check localStorage sync
-    const stored = JSON.parse(localStorageMock.getItem('userPreferences') || '{}');
-    expect(stored.currency).toBe('USD');
-    expect(stored.language).toBe('es');
-    expect(stored.theme).toBe('dark');
+    const stored = JSON.parse(
+      localStorageMock.getItem("userPreferences") || "{}",
+    );
+    expect(stored.currency).toBe("USD");
+    expect(stored.language).toBe("es");
+    expect(stored.theme).toBe("dark");
   });
 });

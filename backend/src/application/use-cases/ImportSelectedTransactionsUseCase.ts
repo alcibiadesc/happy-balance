@@ -1,8 +1,8 @@
-import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
-import { DuplicateDetectionService } from '@domain/services/DuplicateDetectionService';
-import { TransactionFactory } from '@domain/factories/TransactionFactory';
-import { Result } from '@domain/shared/Result';
-import { Transaction } from '@domain/entities/Transaction';
+import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
+import { DuplicateDetectionService } from "@domain/services/DuplicateDetectionService";
+import { TransactionFactory } from "@domain/factories/TransactionFactory";
+import { Result } from "@domain/shared/Result";
+import { Transaction } from "@domain/entities/Transaction";
 
 export interface ImportSelectedTransactionData {
   hash: string;
@@ -47,35 +47,43 @@ export class ImportSelectedTransactionsUseCase {
   constructor(
     private readonly transactionRepository: ITransactionRepository,
     private readonly duplicateDetectionService: DuplicateDetectionService,
-    private readonly transactionFactory: TransactionFactory
+    private readonly transactionFactory: TransactionFactory,
   ) {}
 
-  async execute(command: ImportSelectedTransactionsCommand): Promise<Result<ImportSelectedTransactionsResponse>> {
+  async execute(
+    command: ImportSelectedTransactionsCommand,
+  ): Promise<Result<ImportSelectedTransactionsResponse>> {
     try {
       // Input validation
       if (!command.transactions || command.transactions.length === 0) {
-        return Result.failWithMessage('No transactions provided');
+        return Result.failWithMessage("No transactions provided");
       }
 
       // Convert selected transaction data to Transaction entities
-      const transactionResults = command.transactions.map(txData => {
+      const transactionResults = command.transactions.map((txData) => {
         return this.transactionFactory.createFromImportData({
           date: txData.date,
           merchant: txData.merchant,
           amount: txData.amount,
-          type: txData.amount < 0 ? 'EXPENSE' : 'INCOME',
-          description: txData.description || '',
-          currency: txData.currency
+          type: txData.amount < 0 ? "EXPENSE" : "INCOME",
+          description: txData.description || "",
+          currency: txData.currency,
         });
       });
 
       // Check for factory errors
-      const failedCreations = transactionResults.filter(result => result.isFailure());
+      const failedCreations = transactionResults.filter((result) =>
+        result.isFailure(),
+      );
       if (failedCreations.length > 0) {
-        return Result.failWithMessage(`Failed to create transactions: ${failedCreations[0].getError()}`);
+        return Result.failWithMessage(
+          `Failed to create transactions: ${failedCreations[0].getError()}`,
+        );
       }
 
-      const transactions = transactionResults.map(result => result.getValue());
+      const transactions = transactionResults.map((result) =>
+        result.getValue(),
+      );
 
       // Handle duplicate detection if enabled
       let uniqueTransactions = transactions;
@@ -83,18 +91,22 @@ export class ImportSelectedTransactionsUseCase {
 
       if (command.duplicateDetectionEnabled) {
         // Get existing transactions for comparison
-        const existingTransactionsResult = await this.transactionRepository.findAll();
+        const existingTransactionsResult =
+          await this.transactionRepository.findAll();
         if (existingTransactionsResult.isFailure()) {
-          return Result.failWithMessage(`Failed to fetch existing transactions: ${existingTransactionsResult.getError()}`);
+          return Result.failWithMessage(
+            `Failed to fetch existing transactions: ${existingTransactionsResult.getError()}`,
+          );
         }
 
         const existingTransactions = existingTransactionsResult.getValue();
 
         // Use domain service to detect duplicates against existing
-        const duplicateResult = this.duplicateDetectionService.detectAgainstExisting(
-          transactions,
-          existingTransactions
-        );
+        const duplicateResult =
+          this.duplicateDetectionService.detectAgainstExisting(
+            transactions,
+            existingTransactions,
+          );
 
         if (duplicateResult.isFailure()) {
           return Result.fail(duplicateResult.getError());
@@ -113,7 +125,9 @@ export class ImportSelectedTransactionsUseCase {
 
       // Save unique transactions
       const saveResults = await Promise.allSettled(
-        uniqueTransactions.map(transaction => this.transactionRepository.save(transaction))
+        uniqueTransactions.map((transaction) =>
+          this.transactionRepository.save(transaction),
+        ),
       );
 
       const successfulSaves: Transaction[] = [];
@@ -123,7 +137,7 @@ export class ImportSelectedTransactionsUseCase {
         const result = saveResults[i];
         const transaction = uniqueTransactions[i];
 
-        if (result.status === 'fulfilled' && result.value.isSuccess()) {
+        if (result.status === "fulfilled" && result.value.isSuccess()) {
           successfulSaves.push(transaction);
         } else {
           failedSaves.push(result);
@@ -136,25 +150,26 @@ export class ImportSelectedTransactionsUseCase {
       const response: ImportSelectedTransactionsResponse = {
         imported: {
           count: importedTransactions.length,
-          transactions: importedTransactions
+          transactions: importedTransactions,
         },
         skipped: {
           count: duplicateCount + failedSaves.length,
           duplicates: duplicateCount,
-          errors: failedSaves.length
+          errors: failedSaves.length,
         },
         summary: {
           total: command.transactions.length,
           successful: importedTransactions.length,
           failed: failedSaves.length,
-          duplicates: duplicateCount
-        }
+          duplicates: duplicateCount,
+        },
       };
 
       return Result.ok(response);
-
     } catch (error) {
-      return Result.failWithMessage(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(
+        `Unexpected error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 }

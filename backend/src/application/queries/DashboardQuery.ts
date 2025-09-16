@@ -1,4 +1,4 @@
-import { TransactionType } from '../../domain/entities/TransactionType';
+import { TransactionType } from "../../domain/entities/TransactionType";
 
 /**
  * Query for dashboard financial data
@@ -6,11 +6,11 @@ import { TransactionType } from '../../domain/entities/TransactionType';
  */
 export class DashboardQuery {
   constructor(
-    public readonly currency: string = 'EUR',
-    public readonly period: 'week' | 'month' | 'quarter' | 'year' = 'month',
+    public readonly currency: string = "EUR",
+    public readonly period: "week" | "month" | "quarter" | "year" = "month",
     public readonly startDate?: string,
     public readonly endDate?: string,
-    public readonly includeInvestments: boolean = true
+    public readonly includeInvestments: boolean = true,
   ) {}
 
   /**
@@ -20,29 +20,33 @@ export class DashboardQuery {
     const errors: string[] = [];
 
     if (!this.currency || this.currency.length !== 3) {
-      errors.push('Currency must be a 3-letter ISO code');
+      errors.push("Currency must be a 3-letter ISO code");
     }
 
-    const validPeriods = ['week', 'month', 'quarter', 'year'];
+    const validPeriods = ["week", "month", "quarter", "year"];
     if (!validPeriods.includes(this.period)) {
-      errors.push('Period must be one of: week, month, quarter, year');
+      errors.push("Period must be one of: week, month, quarter, year");
     }
 
     if (this.startDate && isNaN(Date.parse(this.startDate))) {
-      errors.push('Start date must be a valid date string');
+      errors.push("Start date must be a valid date string");
     }
 
     if (this.endDate && isNaN(Date.parse(this.endDate))) {
-      errors.push('End date must be a valid date string');
+      errors.push("End date must be a valid date string");
     }
 
-    if (this.startDate && this.endDate && new Date(this.startDate) > new Date(this.endDate)) {
-      errors.push('Start date cannot be after end date');
+    if (
+      this.startDate &&
+      this.endDate &&
+      new Date(this.startDate) > new Date(this.endDate)
+    ) {
+      errors.push("Start date cannot be after end date");
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -53,7 +57,7 @@ export class DashboardQuery {
     if (this.startDate && this.endDate) {
       return {
         startDate: new Date(this.startDate),
-        endDate: new Date(this.endDate)
+        endDate: new Date(this.endDate),
       };
     }
 
@@ -61,16 +65,16 @@ export class DashboardQuery {
     const startDate = new Date();
 
     switch (this.period) {
-      case 'week':
+      case "week":
         startDate.setDate(endDate.getDate() - 7);
         break;
-      case 'month':
+      case "month":
         startDate.setMonth(endDate.getMonth() - 1);
         break;
-      case 'quarter':
+      case "quarter":
         startDate.setMonth(endDate.getMonth() - 3);
         break;
-      case 'year':
+      case "year":
         startDate.setFullYear(endDate.getFullYear() - 1);
         break;
     }

@@ -1,16 +1,16 @@
-import { Transaction } from '../entities/Transaction';
-import { TransactionType } from '../entities/TransactionType';
-import { Money } from '../value-objects/Money';
-import { TransactionDate } from '../value-objects/TransactionDate';
-import { Merchant } from '../value-objects/Merchant';
-import { TransactionId } from '../value-objects/TransactionId';
-import { Result } from '../shared/Result';
+import { Transaction } from "../entities/Transaction";
+import { TransactionType } from "../entities/TransactionType";
+import { Money } from "../value-objects/Money";
+import { TransactionDate } from "../value-objects/TransactionDate";
+import { Merchant } from "../value-objects/Merchant";
+import { TransactionId } from "../value-objects/TransactionId";
+import { Result } from "../shared/Result";
 
 export interface ImportTransactionData {
   date: string;
   merchant: string;
   amount: number;
-  type: 'INCOME' | 'EXPENSE' | 'INVESTMENT';
+  type: "INCOME" | "EXPENSE" | "INVESTMENT";
   description: string;
   currency: string;
 }
@@ -20,7 +20,6 @@ export interface ImportTransactionData {
  * Follows DDD patterns for complex object creation
  */
 export class TransactionFactory {
-
   /**
    * Create a transaction from import data
    */
@@ -35,9 +34,10 @@ export class TransactionFactory {
       const date = TransactionDate.create(data.date);
 
       // Handle empty or invalid merchant names
-      const merchantName = data.merchant && data.merchant.trim().length >= 2
-        ? data.merchant.trim()
-        : 'Unknown Merchant';
+      const merchantName =
+        data.merchant && data.merchant.trim().length >= 2
+          ? data.merchant.trim()
+          : "Unknown Merchant";
       const merchant = Merchant.create(merchantName);
 
       // Validate amount
@@ -58,13 +58,13 @@ export class TransactionFactory {
       // Convert string type to TransactionType enum
       let transactionType: TransactionType;
       switch (data.type) {
-        case 'INCOME':
+        case "INCOME":
           transactionType = TransactionType.INCOME;
           break;
-        case 'INVESTMENT':
+        case "INVESTMENT":
           transactionType = TransactionType.INVESTMENT;
           break;
-        case 'EXPENSE':
+        case "EXPENSE":
         default:
           transactionType = TransactionType.EXPENSE;
           break;
@@ -76,14 +76,15 @@ export class TransactionFactory {
         date.getValue(),
         merchant.getValue(),
         transactionType,
-        data.description || '',
-        id
+        data.description || "",
+        id,
       );
 
       return transaction;
-
     } catch (error) {
-      return Result.failWithMessage(`Failed to create transaction: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(
+        `Failed to create transaction: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -95,7 +96,7 @@ export class TransactionFactory {
     currency: string;
     date: string;
     merchant: string;
-    type: 'INCOME' | 'EXPENSE' | 'INVESTMENT';
+    type: "INCOME" | "EXPENSE" | "INVESTMENT";
     description?: string;
     categoryId?: string | null;
   }): Result<Transaction> {
@@ -104,8 +105,8 @@ export class TransactionFactory {
       merchant: data.merchant,
       amount: data.amount,
       type: data.type,
-      description: data.description || '',
-      currency: data.currency
+      description: data.description || "",
+      currency: data.currency,
     });
   }
 }

@@ -6,7 +6,7 @@ export class Result<T, E = Error> {
   private constructor(
     private readonly _isSuccess: boolean,
     private readonly _value?: T,
-    private readonly _error?: E
+    private readonly _error?: E,
   ) {}
 
   static ok<T>(value: T): Result<T> {
@@ -31,20 +31,22 @@ export class Result<T, E = Error> {
 
   getValue(): T {
     if (!this._isSuccess || this._value === undefined) {
-      throw new Error('Cannot get value from failed result');
+      throw new Error("Cannot get value from failed result");
     }
     return this._value;
   }
 
   getError(): E {
     if (this._isSuccess || this._error === undefined) {
-      throw new Error('Cannot get error from successful result');
+      throw new Error("Cannot get error from successful result");
     }
     return this._error;
   }
 
   getValueOrDefault(defaultValue: T): T {
-    return this._isSuccess && this._value !== undefined ? this._value : defaultValue;
+    return this._isSuccess && this._value !== undefined
+      ? this._value
+      : defaultValue;
   }
 
   map<U>(fn: (value: T) => U): Result<U, E> {

@@ -1,48 +1,50 @@
-import { describe, it, expect } from 'vitest';
-import { Money } from '@domain/value-objects/Money';
+import { describe, it, expect } from "vitest";
+import { Money } from "@domain/value-objects/Money";
 
-describe('Money Value Object', () => {
-  describe('create', () => {
-    it('should create a valid Money instance', () => {
-      const result = Money.create(100, 'EUR');
+describe("Money Value Object", () => {
+  describe("create", () => {
+    it("should create a valid Money instance", () => {
+      const result = Money.create(100, "EUR");
 
       expect(result.isSuccess()).toBe(true);
       const money = result.getValue();
       expect(money.amount).toBe(100);
-      expect(money.currency).toBe('EUR');
+      expect(money.currency).toBe("EUR");
     });
 
-    it('should fail with negative amount', () => {
-      const result = Money.create(-100, 'EUR');
+    it("should fail with negative amount", () => {
+      const result = Money.create(-100, "EUR");
 
       expect(result.isFailure()).toBe(true);
-      expect(result.getError().message).toContain('Amount must be positive');
+      expect(result.getError().message).toContain("Amount must be positive");
     });
 
-    it('should fail with invalid currency', () => {
-      const result = Money.create(100, 'INVALID');
+    it("should fail with invalid currency", () => {
+      const result = Money.create(100, "INVALID");
 
       expect(result.isFailure()).toBe(true);
-      expect(result.getError().message).toContain('Invalid currency');
+      expect(result.getError().message).toContain("Invalid currency");
     });
 
-    it('should fail with NaN amount', () => {
-      const result = Money.create(NaN, 'EUR');
+    it("should fail with NaN amount", () => {
+      const result = Money.create(NaN, "EUR");
 
       expect(result.isFailure()).toBe(true);
-      expect(result.getError().message).toContain('Amount must be a valid number');
+      expect(result.getError().message).toContain(
+        "Amount must be a valid number",
+      );
     });
 
-    it('should handle zero amount', () => {
-      const result = Money.create(0, 'EUR');
+    it("should handle zero amount", () => {
+      const result = Money.create(0, "EUR");
 
       expect(result.isSuccess()).toBe(true);
       const money = result.getValue();
       expect(money.amount).toBe(0);
     });
 
-    it('should handle decimal amounts', () => {
-      const result = Money.create(99.99, 'EUR');
+    it("should handle decimal amounts", () => {
+      const result = Money.create(99.99, "EUR");
 
       expect(result.isSuccess()).toBe(true);
       const money = result.getValue();
@@ -50,10 +52,10 @@ describe('Money Value Object', () => {
     });
   });
 
-  describe('operations', () => {
-    it('should add two Money values with same currency', () => {
-      const money1 = Money.create(100, 'EUR').getValue();
-      const money2 = Money.create(50, 'EUR').getValue();
+  describe("operations", () => {
+    it("should add two Money values with same currency", () => {
+      const money1 = Money.create(100, "EUR").getValue();
+      const money2 = Money.create(50, "EUR").getValue();
 
       const result = money1.add(money2);
 
@@ -61,19 +63,19 @@ describe('Money Value Object', () => {
       expect(result.getValue().amount).toBe(150);
     });
 
-    it('should fail adding Money with different currencies', () => {
-      const money1 = Money.create(100, 'EUR').getValue();
-      const money2 = Money.create(50, 'USD').getValue();
+    it("should fail adding Money with different currencies", () => {
+      const money1 = Money.create(100, "EUR").getValue();
+      const money2 = Money.create(50, "USD").getValue();
 
       const result = money1.add(money2);
 
       expect(result.isFailure()).toBe(true);
-      expect(result.getError().message).toContain('Currency mismatch');
+      expect(result.getError().message).toContain("Currency mismatch");
     });
 
-    it('should subtract two Money values with same currency', () => {
-      const money1 = Money.create(100, 'EUR').getValue();
-      const money2 = Money.create(30, 'EUR').getValue();
+    it("should subtract two Money values with same currency", () => {
+      const money1 = Money.create(100, "EUR").getValue();
+      const money2 = Money.create(30, "EUR").getValue();
 
       const result = money1.subtract(money2);
 
@@ -81,8 +83,8 @@ describe('Money Value Object', () => {
       expect(result.getValue().amount).toBe(70);
     });
 
-    it('should multiply Money by a scalar', () => {
-      const money = Money.create(100, 'EUR').getValue();
+    it("should multiply Money by a scalar", () => {
+      const money = Money.create(100, "EUR").getValue();
 
       const result = money.multiply(1.5);
 
@@ -90,8 +92,8 @@ describe('Money Value Object', () => {
       expect(result.getValue().amount).toBe(150);
     });
 
-    it('should divide Money by a scalar', () => {
-      const money = Money.create(100, 'EUR').getValue();
+    it("should divide Money by a scalar", () => {
+      const money = Money.create(100, "EUR").getValue();
 
       const result = money.divide(2);
 
@@ -99,64 +101,64 @@ describe('Money Value Object', () => {
       expect(result.getValue().amount).toBe(50);
     });
 
-    it('should fail dividing by zero', () => {
-      const money = Money.create(100, 'EUR').getValue();
+    it("should fail dividing by zero", () => {
+      const money = Money.create(100, "EUR").getValue();
 
       const result = money.divide(0);
 
       expect(result.isFailure()).toBe(true);
-      expect(result.getError().message).toContain('Cannot divide by zero');
+      expect(result.getError().message).toContain("Cannot divide by zero");
     });
   });
 
-  describe('comparison', () => {
-    it('should correctly compare equal Money values', () => {
-      const money1 = Money.create(100, 'EUR').getValue();
-      const money2 = Money.create(100, 'EUR').getValue();
+  describe("comparison", () => {
+    it("should correctly compare equal Money values", () => {
+      const money1 = Money.create(100, "EUR").getValue();
+      const money2 = Money.create(100, "EUR").getValue();
 
       expect(money1.equals(money2)).toBe(true);
     });
 
-    it('should correctly compare different amounts', () => {
-      const money1 = Money.create(100, 'EUR').getValue();
-      const money2 = Money.create(200, 'EUR').getValue();
+    it("should correctly compare different amounts", () => {
+      const money1 = Money.create(100, "EUR").getValue();
+      const money2 = Money.create(200, "EUR").getValue();
 
       expect(money1.equals(money2)).toBe(false);
       expect(money1.isLessThan(money2)).toBe(true);
       expect(money2.isGreaterThan(money1)).toBe(true);
     });
 
-    it('should not compare Money with different currencies', () => {
-      const money1 = Money.create(100, 'EUR').getValue();
-      const money2 = Money.create(100, 'USD').getValue();
+    it("should not compare Money with different currencies", () => {
+      const money1 = Money.create(100, "EUR").getValue();
+      const money2 = Money.create(100, "USD").getValue();
 
       expect(money1.equals(money2)).toBe(false);
     });
   });
 
-  describe('formatting', () => {
-    it('should format Money as string', () => {
-      const money = Money.create(1234.56, 'EUR').getValue();
+  describe("formatting", () => {
+    it("should format Money as string", () => {
+      const money = Money.create(1234.56, "EUR").getValue();
 
-      expect(money.toString()).toBe('€1,234.56');
+      expect(money.toString()).toBe("€1,234.56");
     });
 
-    it('should format USD correctly', () => {
-      const money = Money.create(1234.56, 'USD').getValue();
+    it("should format USD correctly", () => {
+      const money = Money.create(1234.56, "USD").getValue();
 
-      expect(money.toString()).toBe('$1,234.56');
+      expect(money.toString()).toBe("$1,234.56");
     });
 
-    it('should handle zero formatting', () => {
-      const money = Money.create(0, 'EUR').getValue();
+    it("should handle zero formatting", () => {
+      const money = Money.create(0, "EUR").getValue();
 
-      expect(money.toString()).toBe('€0.00');
+      expect(money.toString()).toBe("€0.00");
     });
 
-    it('should round to 2 decimal places', () => {
-      const money = Money.create(99.999, 'EUR').getValue();
+    it("should round to 2 decimal places", () => {
+      const money = Money.create(99.999, "EUR").getValue();
 
-      expect(money.toString()).toBe('€100.00');
+      expect(money.toString()).toBe("€100.00");
     });
   });
 });

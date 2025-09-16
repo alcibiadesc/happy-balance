@@ -17,10 +17,12 @@ This project uses an **isolated development environment** system that allows mul
 ### Workspace Detection
 
 The system detects if you're working in:
+
 - **Main repository**: Uses branch name as identifier
 - **Git worktree**: Uses worktree name as identifier
 
 Each workspace gets its own:
+
 - Database instance: `happy_balance_[workspace_id]`
 - Unique ports for database, backend, and frontend
 - Environment configuration files
@@ -28,6 +30,7 @@ Each workspace gets its own:
 ### Port Assignment
 
 Ports are assigned based on a hash of the workspace ID:
+
 - Database: `5432 + offset`
 - Backend: `3000 + offset`
 - Frontend: `5173 + offset`
@@ -43,6 +46,7 @@ pnpm setup && pnpm dev
 ```
 
 This two-step flow will:
+
 1. Detect your workspace (main repo or worktree)
 2. Generate unique ports for your workspace
 3. Start a PostgreSQL database in Docker
@@ -52,12 +56,14 @@ This two-step flow will:
 7. Display all URLs and ports
 
 Notes:
+
 - On main: uses standard ports (5432, 3000, 5173). If Postgres is not running, a local Docker container is provisioned automatically.
 - On worktrees: unique, deterministic ports are assigned and a dedicated Postgres container is provisioned per worktree.
 
 ### Clean Up
 
 To stop everything, press `Ctrl+C`. The script will:
+
 - Stop all servers
 - Stop the Docker container
 - Clean up gracefully
@@ -87,6 +93,7 @@ pnpm run dev
 ```
 
 Each worktree will have:
+
 - Its own database with isolated data
 - Unique ports (no conflicts with other worktrees)
 - Independent environment configuration
@@ -129,11 +136,13 @@ open -a Docker
 The system automatically manages environment files:
 
 ### Backend (.env)
+
 - `DATABASE_URL`: Points to workspace-specific database
 - `PORT`: Unique backend port
 - `CORS_ORIGIN`: Points to workspace-specific frontend
 
 ### Frontend (.env.local)
+
 - `VITE_API_URL`: Points to workspace-specific backend
 - `VITE_PORT`: Unique frontend port
 

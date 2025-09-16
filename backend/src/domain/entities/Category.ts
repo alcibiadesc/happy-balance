@@ -1,5 +1,5 @@
-import { Result } from '../shared/Result';
-import { TransactionType, TransactionTypeHelper } from './TransactionType';
+import { Result } from "../shared/Result";
+import { TransactionType, TransactionTypeHelper } from "./TransactionType";
 
 /**
  * Category ID value object
@@ -9,7 +9,7 @@ export class CategoryId {
 
   static create(value: string): Result<CategoryId> {
     if (!value || value.trim().length === 0) {
-      return Result.failWithMessage('Category ID cannot be empty');
+      return Result.failWithMessage("Category ID cannot be empty");
     }
 
     return Result.ok(new CategoryId(value.trim()));
@@ -45,7 +45,7 @@ export class Category {
     private _icon: string,
     private readonly _type: TransactionType,
     private _isActive: boolean = true,
-    private readonly _createdAt: Date = new Date()
+    private readonly _createdAt: Date = new Date(),
   ) {}
 
   static create(
@@ -53,37 +53,41 @@ export class Category {
     color: string,
     icon: string,
     type: TransactionType,
-    id?: CategoryId
+    id?: CategoryId,
   ): Result<Category> {
     // Validate name
     if (!name || name.trim().length === 0) {
-      return Result.failWithMessage('Category name cannot be empty');
+      return Result.failWithMessage("Category name cannot be empty");
     }
 
     if (name.length > 50) {
-      return Result.failWithMessage('Category name cannot exceed 50 characters');
+      return Result.failWithMessage(
+        "Category name cannot exceed 50 characters",
+      );
     }
 
     // Validate color (hex format)
     const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
     if (!colorRegex.test(color)) {
-      return Result.failWithMessage('Color must be a valid hex color code');
+      return Result.failWithMessage("Color must be a valid hex color code");
     }
 
     // Validate icon (basic validation)
     if (!icon || icon.trim().length === 0) {
-      return Result.failWithMessage('Category icon cannot be empty');
+      return Result.failWithMessage("Category icon cannot be empty");
     }
 
     const categoryId = id || CategoryId.generate();
 
-    return Result.ok(new Category(
-      categoryId,
-      name.trim(),
-      color.toLowerCase(),
-      icon.trim(),
-      type
-    ));
+    return Result.ok(
+      new Category(
+        categoryId,
+        name.trim(),
+        color.toLowerCase(),
+        icon.trim(),
+        type,
+      ),
+    );
   }
 
   // Getters
@@ -118,11 +122,13 @@ export class Category {
   // Business methods
   changeName(newName: string): Result<void> {
     if (!newName || newName.trim().length === 0) {
-      return Result.failWithMessage('Category name cannot be empty');
+      return Result.failWithMessage("Category name cannot be empty");
     }
 
     if (newName.length > 50) {
-      return Result.failWithMessage('Category name cannot exceed 50 characters');
+      return Result.failWithMessage(
+        "Category name cannot exceed 50 characters",
+      );
     }
 
     this._name = newName.trim();
@@ -132,7 +138,7 @@ export class Category {
   changeColor(newColor: string): Result<void> {
     const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
     if (!colorRegex.test(newColor)) {
-      return Result.failWithMessage('Color must be a valid hex color code');
+      return Result.failWithMessage("Color must be a valid hex color code");
     }
 
     this._color = newColor.toLowerCase();
@@ -141,7 +147,7 @@ export class Category {
 
   changeIcon(newIcon: string): Result<void> {
     if (!newIcon || newIcon.trim().length === 0) {
-      return Result.failWithMessage('Category icon cannot be empty');
+      return Result.failWithMessage("Category icon cannot be empty");
     }
 
     this._icon = newIcon.trim();
@@ -170,18 +176,20 @@ export class Category {
 
     // Check for common patterns
     const keywords = this.getMatchingKeywords();
-    return keywords.some(keyword => normalizedMerchant.includes(keyword.toLowerCase()));
+    return keywords.some((keyword) =>
+      normalizedMerchant.includes(keyword.toLowerCase()),
+    );
   }
 
   private getMatchingKeywords(): string[] {
     // Return category-specific keywords for matching
     const keywordMap: Record<string, string[]> = {
-      'food': ['restaurant', 'cafe', 'pizza', 'burger', 'kitchen', 'bistro'],
-      'transport': ['taxi', 'uber', 'gas', 'fuel', 'parking', 'bus'],
-      'shopping': ['store', 'shop', 'market', 'amazon', 'mall'],
-      'utilities': ['electric', 'water', 'internet', 'phone'],
-      'health': ['pharmacy', 'hospital', 'clinic', 'medical'],
-      'entertainment': ['cinema', 'movie', 'theater', 'gym', 'fitness']
+      food: ["restaurant", "cafe", "pizza", "burger", "kitchen", "bistro"],
+      transport: ["taxi", "uber", "gas", "fuel", "parking", "bus"],
+      shopping: ["store", "shop", "market", "amazon", "mall"],
+      utilities: ["electric", "water", "internet", "phone"],
+      health: ["pharmacy", "hospital", "clinic", "medical"],
+      entertainment: ["cinema", "movie", "theater", "gym", "fitness"],
     };
 
     return keywordMap[this._name.toLowerCase()] || [];
@@ -199,7 +207,7 @@ export class Category {
       icon: this._icon,
       type: this._type,
       isActive: this._isActive,
-      createdAt: this._createdAt.toISOString()
+      createdAt: this._createdAt.toISOString(),
     };
   }
 
@@ -211,7 +219,9 @@ export class Category {
 
     const typeResult = TransactionTypeHelper.fromString(snapshot.type);
     if (!typeResult) {
-      return Result.failWithMessage(`Invalid transaction type: ${snapshot.type}`);
+      return Result.failWithMessage(
+        `Invalid transaction type: ${snapshot.type}`,
+      );
     }
 
     const category = new Category(
@@ -221,7 +231,7 @@ export class Category {
       snapshot.icon,
       typeResult,
       snapshot.isActive,
-      new Date(snapshot.createdAt)
+      new Date(snapshot.createdAt),
     );
 
     return Result.ok(category);

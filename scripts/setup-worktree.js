@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process';
-import { existsSync } from 'fs';
-import path from 'path';
+import { execSync } from "child_process";
+import { existsSync } from "fs";
+import path from "path";
 
 function runCommand(command, options = {}) {
   try {
     console.log(`\n🔧 Ejecutando: ${command}`);
     const result = execSync(command, {
-      stdio: 'inherit',
-      encoding: 'utf8',
-      ...options
+      stdio: "inherit",
+      encoding: "utf8",
+      ...options,
     });
     return result;
   } catch (error) {
@@ -36,10 +36,10 @@ function setupWorktree(worktreePath) {
   console.log(`📁 Directorio actual: ${currentDir}`);
 
   // Instalar dependencias del frontend y backend
-  console.log('\n📦 Instalando dependencias...');
-  runCommand('pnpm worktree:setup');
+  console.log("\n📦 Instalando dependencias...");
+  runCommand("pnpm worktree:setup");
 
-  console.log('\n✅ Worktree configurado correctamente!');
+  console.log("\n✅ Worktree configurado correctamente!");
   console.log(`💡 Ahora puedes ejecutar "pnpm run dev" en ${worktreePath}`);
 }
 
@@ -47,8 +47,10 @@ function setupWorktree(worktreePath) {
 const worktreePath = process.argv[2];
 
 if (!worktreePath) {
-  console.error('❌ Uso: node scripts/setup-worktree.js <path-to-worktree>');
-  console.log('💡 Ejemplo: node scripts/setup-worktree.js /tmp/vibe-kanban/worktrees/mi-worktree');
+  console.error("❌ Uso: node scripts/setup-worktree.js <path-to-worktree>");
+  console.log(
+    "💡 Ejemplo: node scripts/setup-worktree.js /tmp/vibe-kanban/worktrees/mi-worktree",
+  );
   process.exit(1);
 }
 

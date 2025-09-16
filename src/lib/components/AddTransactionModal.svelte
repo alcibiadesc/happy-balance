@@ -71,7 +71,6 @@
 
       const transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'> = {
         amount: finalAmount,
-        currency: 'EUR',
         date,
         time: new Date().toLocaleTimeString(),
         merchant: merchant.trim(),

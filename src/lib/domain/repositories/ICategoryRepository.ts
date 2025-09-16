@@ -1,6 +1,6 @@
-import { Result } from '../shared/Result';
-import { Category, CategoryId, CategorySnapshot } from '../entities/Category';
-import { TransactionType } from '../entities/TransactionType';
+import { Result } from "../shared/Result";
+import { Category, CategoryId, CategorySnapshot } from "../entities/Category";
+import { TransactionType } from "../entities/TransactionType";
 
 export interface CategoryFilters {
   type?: TransactionType;
@@ -96,16 +96,21 @@ export interface ICategoryRepository {
   /**
    * Get category usage statistics
    */
-  getUsageStatistics(id: CategoryId): Promise<Result<{
-    transactionCount: number;
-    totalAmount: number;
-    lastUsed?: Date;
-  }>>;
+  getUsageStatistics(id: CategoryId): Promise<
+    Result<{
+      transactionCount: number;
+      totalAmount: number;
+      lastUsed?: Date;
+    }>
+  >;
 
   /**
    * Find categories that might match a merchant name
    */
-  findMatchingCategories(merchantName: string, type: TransactionType): Promise<Result<Category[]>>;
+  findMatchingCategories(
+    merchantName: string,
+    type: TransactionType,
+  ): Promise<Result<Category[]>>;
 
   /**
    * Clear all categories (for testing/reset purposes)

@@ -1,15 +1,15 @@
-import { Result } from '../../domain/shared/Result';
-import { Transaction } from '../../domain/entities/Transaction';
-import { Category } from '../../domain/entities/Category';
-import { Money } from '../../domain/value-objects/Money';
-import { TransactionDate } from '../../domain/value-objects/TransactionDate';
-import { Merchant } from '../../domain/value-objects/Merchant';
-import { TransactionType } from '../../domain/entities/TransactionType';
-import { ITransactionRepository } from '../../domain/repositories/ITransactionRepository';
-import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
-import { DuplicateDetectionService } from '../../domain/services/DuplicateDetectionService';
-import { CategorizationService } from '../../domain/services/CategorizationService';
-import { ImportTransactionsCommand } from '../commands/ImportTransactionsCommand';
+import { Result } from "../../domain/shared/Result";
+import { Transaction } from "../../domain/entities/Transaction";
+import { Category } from "../../domain/entities/Category";
+import { Money } from "../../domain/value-objects/Money";
+import { TransactionDate } from "../../domain/value-objects/TransactionDate";
+import { Merchant } from "../../domain/value-objects/Merchant";
+import { TransactionType } from "../../domain/entities/TransactionType";
+import { ITransactionRepository } from "../../domain/repositories/ITransactionRepository";
+import { ICategoryRepository } from "../../domain/repositories/ICategoryRepository";
+import { DuplicateDetectionService } from "../../domain/services/DuplicateDetectionService";
+import { CategorizationService } from "../../domain/services/CategorizationService";
+import { ImportTransactionsCommand } from "../commands/ImportTransactionsCommand";
 
 export interface ImportResult {
   totalProcessed: number;
@@ -34,42 +34,52 @@ export class ImportTransactionsUseCase {
     private readonly transactionRepository: ITransactionRepository,
     private readonly categoryRepository: ICategoryRepository,
     private readonly duplicateDetectionService: DuplicateDetectionService,
-    private readonly categorizationService: CategorizationService
+    private readonly categorizationService: CategorizationService,
   ) {}
 
   /**
    * Execute the import process
    */
-  async execute(command: ImportTransactionsCommand): Promise<Result<ImportResult>> {
+  async execute(
+    command: ImportTransactionsCommand,
+  ): Promise<Result<ImportResult>> {
     // Validate command
     const validation = command.isValid();
     if (!validation.valid) {
-      return Result.failWithMessage(`Invalid command: ${validation.errors.join(', ')}`);
+      return Result.failWithMessage(
+        `Invalid command: ${validation.errors.join(", ")}`,
+      );
     }
 
     try {
       // Step 1: Parse CSV content
-      const parseResult = await this.parseCSV(command.csvContent, command.currency);
+      const parseResult = await this.parseCSV(
+        command.csvContent,
+        command.currency,
+      );
       if (parseResult.isFailure()) {
         return Result.fail(parseResult.getError());
       }
 
-      const { transactions: parsedTransactions, errors: parseErrors } = parseResult.getValue();
+      const { transactions: parsedTransactions, errors: parseErrors } =
+        parseResult.getValue();
 
       // Step 2: Detect duplicates if enabled
       let uniqueTransactions = parsedTransactions;
       let duplicatesSkipped = 0;
 
       if (command.duplicateDetectionEnabled) {
-        const existingTransactionsResult = await this.transactionRepository.findAll();
+        const existingTransactionsResult =
+          await this.transactionRepository.findAll();
         if (existingTransactionsResult.isFailure()) {
           return Result.fail(existingTransactionsResult.getError());
         }
 
-        const duplicateResult = this.duplicateDetectionService.detectAgainstExisting(
-          parsedTransactions,
-          existingTransactionsResult.getValue()
-        );
+        const duplicateResult =
+          this.duplicateDetectionService.detectAgainstExisting(
+            parsedTransactions,
+            existingTransactionsResult.getValue(),
+          );
 
         if (duplicateResult.isFailure()) {
           return Result.fail(duplicateResult.getError());
@@ -94,10 +104,17 @@ export class ImportTransactionsUseCase {
           const categories = categoriesResult.getValue();
 
           for (const transaction of uniqueTransactions) {
-            const suggestionResult = this.categorizationService.suggestCategory(transaction, categories);
-            if (suggestionResult.isSuccess() && suggestionResult.getValue().suggestedCategory) {
+            const suggestionResult = this.categorizationService.suggestCategory(
+              transaction,
+              categories,
+            );
+            if (
+              suggestionResult.isSuccess() &&
+              suggestionResult.getValue().suggestedCategory
+            ) {
               const { suggestedCategory } = suggestionResult.getValue();
-              const categorizeResult = transaction.categorize(suggestedCategory);
+              const categorizeResult =
+                transaction.categorize(suggestedCategory);
               if (categorizeResult.isSuccess()) {
                 categorized++;
               }
@@ -107,7 +124,8 @@ export class ImportTransactionsUseCase {
       }
 
       // Step 4: Save transactions
-      const saveResult = await this.transactionRepository.saveMany(uniqueTransactions);
+      const saveResult =
+        await this.transactionRepository.saveMany(uniqueTransactions);
       if (saveResult.isFailure()) {
         return Result.fail(saveResult.getError());
       }
@@ -121,12 +139,11 @@ export class ImportTransactionsUseCase {
         duplicatesSkipped,
         errors: parseErrors.length,
         categorized,
-        processingErrors: parseErrors
+        processingErrors: parseErrors,
       });
-
     } catch (error) {
       return Result.failWithMessage(
-        `Unexpected error during import: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Unexpected error during import: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -134,11 +151,16 @@ export class ImportTransactionsUseCase {
   /**
    * Parse CSV content into Transaction entities
    */
-  private async parseCSV(csvContent: string, currency: string): Promise<Result<CsvParsingResult>> {
-    const lines = csvContent.split('\n').filter(line => line.trim());
+  private async parseCSV(
+    csvContent: string,
+    currency: string,
+  ): Promise<Result<CsvParsingResult>> {
+    const lines = csvContent.split("\n").filter((line) => line.trim());
 
     if (lines.length < 2) {
-      return Result.failWithMessage('CSV must have header and at least one data row');
+      return Result.failWithMessage(
+        "CSV must have header and at least one data row",
+      );
     }
 
     const headerLine = lines[0];
@@ -153,7 +175,12 @@ export class ImportTransactionsUseCase {
         const values = this.parseCSVLine(lines[i]);
         if (values.length === 0) continue;
 
-        const transactionResult = this.mapToTransaction(values, fieldMapping, currency, i + 1);
+        const transactionResult = this.mapToTransaction(
+          values,
+          fieldMapping,
+          currency,
+          i + 1,
+        );
         if (transactionResult.isSuccess()) {
           transactions.push(transactionResult.getValue());
         } else {
@@ -161,7 +188,7 @@ export class ImportTransactionsUseCase {
         }
       } catch (error) {
         errors.push(
-          `Row ${i + 1}: ${error instanceof Error ? error.message : 'Unknown parsing error'}`
+          `Row ${i + 1}: ${error instanceof Error ? error.message : "Unknown parsing error"}`,
         );
       }
     }
@@ -174,7 +201,7 @@ export class ImportTransactionsUseCase {
    */
   private parseCSVLine(line: string): string[] {
     const result: string[] = [];
-    let current = '';
+    let current = "";
     let inQuotes = false;
     let i = 0;
 
@@ -189,9 +216,9 @@ export class ImportTransactionsUseCase {
           inQuotes = !inQuotes;
           i++;
         }
-      } else if (char === ',' && !inQuotes) {
+      } else if (char === "," && !inQuotes) {
         result.push(current.trim());
-        current = '';
+        current = "";
         i++;
       } else {
         current += char;
@@ -212,10 +239,12 @@ export class ImportTransactionsUseCase {
     const fieldPatterns = {
       date: /booking\s*date|fecha\s*reserva|date|fecha/i,
       valueDate: /value\s*date|fecha\s*valor/i,
-      merchant: /partner\s*name|nombre\s*socio|beneficiario|partner|merchant|comercio/i,
+      merchant:
+        /partner\s*name|nombre\s*socio|beneficiario|partner|merchant|comercio/i,
       iban: /partner\s*iban|iban\s*socio|iban/i,
       type: /type|tipo|transaction\s*type/i,
-      description: /payment\s*reference|referencia\s*pago|concepto|description|descripci[oó]n/i,
+      description:
+        /payment\s*reference|referencia\s*pago|concepto|description|descripci[oó]n/i,
       account: /account\s*name|nombre\s*cuenta|account/i,
       amount: /amount.*eur|importe.*eur|cantidad|amount|importe/i,
     };
@@ -238,17 +267,19 @@ export class ImportTransactionsUseCase {
     values: string[],
     mapping: Record<string, number>,
     currency: string,
-    rowNumber: number
+    rowNumber: number,
   ): Result<Transaction> {
     try {
       // Parse required fields
-      const dateStr = values[mapping.date] || '';
-      const merchantName = this.cleanString(values[mapping.merchant] || '');
-      const amountStr = values[mapping.amount] || '0';
-      const description = this.cleanString(values[mapping.description] || '');
+      const dateStr = values[mapping.date] || "";
+      const merchantName = this.cleanString(values[mapping.merchant] || "");
+      const amountStr = values[mapping.amount] || "0";
+      const description = this.cleanString(values[mapping.description] || "");
 
       if (!dateStr || !merchantName) {
-        return Result.failWithMessage('Missing required fields (date or merchant)');
+        return Result.failWithMessage(
+          "Missing required fields (date or merchant)",
+        );
       }
 
       // Create value objects
@@ -269,7 +300,8 @@ export class ImportTransactionsUseCase {
       }
 
       // Determine transaction type based on amount sign
-      const type = amount < 0 ? TransactionType.EXPENSE : TransactionType.INCOME;
+      const type =
+        amount < 0 ? TransactionType.EXPENSE : TransactionType.INCOME;
 
       // Create transaction
       const transactionResult = Transaction.create(
@@ -277,14 +309,13 @@ export class ImportTransactionsUseCase {
         dateResult.getValue(),
         merchantResult.getValue(),
         type,
-        description
+        description,
       );
 
       return transactionResult;
-
     } catch (error) {
       return Result.failWithMessage(
-        `Error processing row ${rowNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Error processing row ${rowNumber}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -295,8 +326,8 @@ export class ImportTransactionsUseCase {
   private parseAmount(amountStr: string): number {
     if (!amountStr) return 0;
 
-    const cleaned = amountStr.replace(/[^\d.,+\-]/g, '');
-    const normalized = cleaned.replace(/,/g, '.');
+    const cleaned = amountStr.replace(/[^\d.,+\-]/g, "");
+    const normalized = cleaned.replace(/,/g, ".");
     const parsed = parseFloat(normalized);
 
     return isNaN(parsed) ? 0 : parsed;
@@ -306,6 +337,6 @@ export class ImportTransactionsUseCase {
    * Clean string values
    */
   private cleanString(str: string): string {
-    return str.replace(/^"|"$/g, '').trim();
+    return str.replace(/^"|"$/g, "").trim();
   }
 }

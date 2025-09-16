@@ -1,8 +1,18 @@
-import { PrismaClient, Category as PrismaCategory } from '@prisma/client';
-import { Result } from '@domain/shared/Result';
-import { ICategoryRepository, CategoryFilters } from '@domain/repositories/ICategoryRepository';
-import { Category, CategoryId, CategorySnapshot } from '@domain/entities/Category';
-import { TransactionType, TransactionTypeHelper } from '@domain/entities/TransactionType';
+import { PrismaClient, Category as PrismaCategory } from "@prisma/client";
+import { Result } from "@domain/shared/Result";
+import {
+  ICategoryRepository,
+  CategoryFilters,
+} from "@domain/repositories/ICategoryRepository";
+import {
+  Category,
+  CategoryId,
+  CategorySnapshot,
+} from "@domain/entities/Category";
+import {
+  TransactionType,
+  TransactionTypeHelper,
+} from "@domain/entities/TransactionType";
 
 export class PrismaCategoryRepository implements ICategoryRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -13,19 +23,23 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.fail(categoryIdResult.getError());
     }
 
-    const transactionType = TransactionTypeHelper.fromString(prismaCategory.type);
+    const transactionType = TransactionTypeHelper.fromString(
+      prismaCategory.type,
+    );
     if (!transactionType) {
-      return Result.failWithMessage(`Invalid transaction type: ${prismaCategory.type}`);
+      return Result.failWithMessage(
+        `Invalid transaction type: ${prismaCategory.type}`,
+      );
     }
 
     return Category.fromSnapshot({
       id: prismaCategory.id,
       name: prismaCategory.name,
-      color: prismaCategory.color || '#3B82F6',
-      icon: prismaCategory.icon || '💰',
+      color: prismaCategory.color || "#3B82F6",
+      icon: prismaCategory.icon || "💰",
       type: transactionType,
       isActive: prismaCategory.isActive,
-      createdAt: prismaCategory.createdAt.toISOString()
+      createdAt: prismaCategory.createdAt.toISOString(),
     });
   }
 
@@ -36,7 +50,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       color: category.color,
       icon: category.icon,
       type: category.type,
-      isActive: category.isActive
+      isActive: category.isActive,
     };
   }
 
@@ -44,8 +58,8 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     try {
       const categories = await this.prisma.category.findMany({
         orderBy: {
-          name: 'asc'
-        }
+          name: "asc",
+        },
       });
 
       const domainCategories: Category[] = [];
@@ -60,7 +74,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(domainCategories);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to fetch categories: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -69,11 +83,11 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     try {
       const categories = await this.prisma.category.findMany({
         where: {
-          isActive: true
+          isActive: true,
         },
         orderBy: {
-          name: 'asc'
-        }
+          name: "asc",
+        },
       });
 
       const domainCategories: Category[] = [];
@@ -88,7 +102,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(domainCategories);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch active categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to fetch active categories: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -97,8 +111,8 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     try {
       const category = await this.prisma.category.findUnique({
         where: {
-          id: id.value
-        }
+          id: id.value,
+        },
       });
 
       if (!category) {
@@ -113,7 +127,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(domainCategoryResult.getValue());
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch category: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to fetch category: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -121,12 +135,12 @@ export class PrismaCategoryRepository implements ICategoryRepository {
   async save(category: Category): Promise<Result<void>> {
     try {
       await this.prisma.category.create({
-        data: this.domainToPrisma(category)
+        data: this.domainToPrisma(category),
       });
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save category: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to save category: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -134,17 +148,19 @@ export class PrismaCategoryRepository implements ICategoryRepository {
   async saveMany(categories: Category[]): Promise<Result<number>> {
     try {
       const result = await this.prisma.category.createMany({
-        data: categories.map(cat => this.domainToPrisma(cat))
+        data: categories.map((cat) => this.domainToPrisma(cat)),
       });
       return Result.ok(result.count);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to save categories: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
 
-  async findWithFilters(filters?: CategoryFilters): Promise<Result<Category[]>> {
+  async findWithFilters(
+    filters?: CategoryFilters,
+  ): Promise<Result<Category[]>> {
     try {
       const where: any = {};
 
@@ -159,15 +175,15 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       if (filters?.searchTerm) {
         where.name = {
           contains: filters.searchTerm,
-          mode: 'insensitive'
+          mode: "insensitive",
         };
       }
 
       const categories = await this.prisma.category.findMany({
         where,
         orderBy: {
-          name: 'asc'
-        }
+          name: "asc",
+        },
       });
 
       const domainCategories: Category[] = [];
@@ -182,7 +198,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(domainCategories);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch categories with filters: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to fetch categories with filters: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -200,14 +216,14 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       const { id, ...updateData } = this.domainToPrisma(category);
       await this.prisma.category.update({
         where: {
-          id: category.id.value
+          id: category.id.value,
         },
-        data: updateData
+        data: updateData,
       });
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to update category: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to update category: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -216,16 +232,16 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     try {
       await this.prisma.category.update({
         where: {
-          id: id.value
+          id: id.value,
         },
         data: {
-          isActive: false
-        }
+          isActive: false,
+        },
       });
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to delete category: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to delete category: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -234,13 +250,13 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     try {
       await this.prisma.category.delete({
         where: {
-          id: id.value
-        }
+          id: id.value,
+        },
       });
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to permanently delete category: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to permanently delete category: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -249,29 +265,32 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     try {
       const count = await this.prisma.category.count({
         where: {
-          id: id.value
-        }
+          id: id.value,
+        },
       });
       return Result.ok(count > 0);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to check category existence: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to check category existence: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
 
-  async existsByName(name: string, type: TransactionType): Promise<Result<boolean>> {
+  async existsByName(
+    name: string,
+    type: TransactionType,
+  ): Promise<Result<boolean>> {
     try {
       const count = await this.prisma.category.count({
         where: {
           name,
-          type
-        }
+          type,
+        },
       });
       return Result.ok(count > 0);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to check category name existence: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to check category name existence: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -291,7 +310,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       if (filters?.searchTerm) {
         where.name = {
           contains: filters.searchTerm,
-          mode: 'insensitive'
+          mode: "insensitive",
         };
       }
 
@@ -299,7 +318,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(count);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to count categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to count categories: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -314,38 +333,43 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     return Result.ok(0);
   }
 
-  async getUsageStatistics(id: CategoryId): Promise<Result<{
-    transactionCount: number;
-    totalAmount: number;
-    lastUsed?: Date;
-  }>> {
+  async getUsageStatistics(id: CategoryId): Promise<
+    Result<{
+      transactionCount: number;
+      totalAmount: number;
+      lastUsed?: Date;
+    }>
+  > {
     try {
       const stats = await this.prisma.transaction.aggregate({
         where: {
-          categoryId: id.value
+          categoryId: id.value,
         },
         _count: true,
         _sum: {
-          amount: true
+          amount: true,
         },
         _max: {
-          date: true
-        }
+          date: true,
+        },
       });
 
       return Result.ok({
         transactionCount: stats._count,
         totalAmount: Number(stats._sum.amount || 0),
-        lastUsed: stats._max.date || undefined
+        lastUsed: stats._max.date || undefined,
       });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get usage statistics: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to get usage statistics: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
 
-  async findMatchingCategories(merchantName: string, type: TransactionType): Promise<Result<Category[]>> {
+  async findMatchingCategories(
+    merchantName: string,
+    type: TransactionType,
+  ): Promise<Result<Category[]>> {
     // Simple keyword matching for now
     return this.findWithFilters({ searchTerm: merchantName, type });
   }
@@ -356,7 +380,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to clear categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to clear categories: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -368,7 +392,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     }
 
     const categories = categoriesResult.getValue();
-    const snapshots = categories.map(cat => cat.toSnapshot());
+    const snapshots = categories.map((cat) => cat.toSnapshot());
 
     return Result.ok(snapshots);
   }
@@ -376,21 +400,21 @@ export class PrismaCategoryRepository implements ICategoryRepository {
   async import(snapshots: CategorySnapshot[]): Promise<Result<number>> {
     try {
       const result = await this.prisma.category.createMany({
-        data: snapshots.map(snap => ({
+        data: snapshots.map((snap) => ({
           id: snap.id,
           name: snap.name,
           color: snap.color,
           icon: snap.icon,
           type: snap.type,
           isActive: snap.isActive !== undefined ? snap.isActive : true,
-          createdAt: new Date(snap.createdAt)
+          createdAt: new Date(snap.createdAt),
         })),
-        skipDuplicates: true
+        skipDuplicates: true,
       });
       return Result.ok(result.count);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to import categories: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to import categories: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
