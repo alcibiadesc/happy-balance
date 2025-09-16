@@ -239,6 +239,14 @@
   async function toggleHideTransaction(transaction: Transaction) {
     const newHiddenState = !transaction.hidden;
     await apiTransactions.update(transaction.id, { hidden: newHiddenState });
+
+    // Provide visual feedback
+    if (newHiddenState && !showHiddenTransactions) {
+      // Transaction will disappear, show a brief message
+      setTimeout(() => {
+        // Optional: Add toast notification here if needed
+      }, 100);
+    }
   }
 
   async function deleteTransaction(id: string) {
@@ -264,13 +272,30 @@
   
   async function categorizeTransaction(transaction: Transaction, categoryId: string, applyToAll = false) {
     try {
+      const selectedCategory = getCategoryById(categoryId);
+
+      // Fix: Update transaction amount based on category type
+      let updates: Partial<Transaction> = { categoryId };
+
+      // If changing from expense to income or vice versa
+      if (selectedCategory) {
+        if (selectedCategory.type === 'income' && transaction.amount < 0) {
+          // Converting expense to income
+          updates.amount = Math.abs(transaction.amount);
+        } else if ((selectedCategory.type === 'essential' || selectedCategory.type === 'discretionary' || selectedCategory.type === 'investment') && transaction.amount > 0) {
+          // Converting income to expense
+          updates.amount = -Math.abs(transaction.amount);
+        }
+      }
+
       if (applyToAll) {
         await apiTransactions.applyCategoryToPattern(transaction, categoryId);
       } else {
-        await apiTransactions.update(transaction.id, { categoryId });
+        await apiTransactions.update(transaction.id, updates);
       }
-      // Force a reactive update by ensuring the store subscription triggers
-      console.log('✅ Transaction categorized successfully', { transactionId: transaction.id, categoryId });
+
+      // Reload transactions to ensure UI is in sync
+      await apiTransactions.load();
     } catch (error) {
       console.error('❌ Failed to categorize transaction:', error);
     }
@@ -753,7 +778,10 @@
                 <button
                   class="category-btn"
                   class:has-category={category}
-                  onclick={() => showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id}
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id;
+                  }}
                 >
                   {#if category}
                     <span class="category-icon-btn">{category.icon}</span>
@@ -765,29 +793,60 @@
                 </button>
 
                 {#if showCategoryDropdown === transaction.id}
-                  {@const filteredCategories = transaction.amount > 0
-                    ? $apiCategories.filter(c => c.type === 'income')
-                    : $apiCategories.filter(c => c.type === 'essential' || c.type === 'discretionary' || c.type === 'investment')
-                  }
-                  <div class="category-dropdown">
-                    {#if filteredCategories.length > 0}
-                      {#each filteredCategories as cat}
-                        <button
-                          class="category-option"
-                          onclick={() => {
-                            categorizeTransaction(transaction, cat.id);
-                            showCategoryDropdown = null;
-                          }}
-                        >
-                          <span class="category-icon">{cat.icon}</span>
-                          <span class="category-name">{cat.name}</span>
-                        </button>
-                      {/each}
-                    {:else}
-                      <div class="no-categories">
-                        <span>No hay categorías de {transaction.amount > 0 ? 'ingreso' : 'gasto'}</span>
+                  {@const incomeCategories = $apiCategories.filter(c => c.type === 'income')}
+                  {@const expenseCategories = $apiCategories.filter(c => c.type === 'essential' || c.type === 'discretionary' || c.type === 'investment')}
+                  <div class="category-dropdown-compact">
+                    {#if incomeCategories.length > 0}
+                      <div class="category-section">
+                        <div class="category-section-label">Ingresos</div>
+                        <div class="category-grid">
+                          {#each incomeCategories as cat}
+                            <button
+                              class="category-grid-item income-cat"
+                              onclick={(e) => {
+                                e.stopPropagation();
+                                categorizeTransaction(transaction, cat.id);
+                                showCategoryDropdown = null;
+                              }}
+                              title="{cat.name}"
+                            >
+                              <span class="category-emoji">{cat.icon}</span>
+                            </button>
+                          {/each}
+                        </div>
                       </div>
                     {/if}
+
+                    {#if expenseCategories.length > 0}
+                      <div class="category-section">
+                        <div class="category-section-label">Gastos</div>
+                        <div class="category-grid">
+                          {#each expenseCategories as cat}
+                            <button
+                              class="category-grid-item expense-cat"
+                              onclick={(e) => {
+                                e.stopPropagation();
+                                categorizeTransaction(transaction, cat.id);
+                                showCategoryDropdown = null;
+                              }}
+                              title="{cat.name}"
+                            >
+                              <span class="category-emoji">{cat.icon}</span>
+                            </button>
+                          {/each}
+                        </div>
+                      </div>
+                    {/if}
+
+                    <button
+                      class="category-close-btn"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        showCategoryDropdown = null;
+                      }}
+                    >
+                      Cerrar
+                    </button>
                   </div>
                 {/if}
               </div>
@@ -1758,6 +1817,18 @@
       font-size: 0.625rem;
       padding: 1px var(--space-xs);
     }
+
+    .category-dropdown-compact {
+      min-width: 200px;
+      max-width: 240px;
+      left: auto;
+      right: 0;
+    }
+
+    .category-grid-item {
+      width: 32px;
+      height: 32px;
+    }
   }
   
   .transactions-list {
@@ -1804,20 +1875,39 @@
   }
 
   .transaction-card.hidden {
-    opacity: 0.5;
-    background: var(--gray-50);
+    position: relative;
+    opacity: 0.6;
+    background: repeating-linear-gradient(
+      45deg,
+      var(--surface-elevated),
+      var(--surface-elevated) 10px,
+      var(--gray-50) 10px,
+      var(--gray-50) 20px
+    );
+  }
+
+  .transaction-card.hidden::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-lg);
+    pointer-events: none;
   }
 
   .transaction-card.hidden:hover {
     transform: none;
     border-color: var(--gray-300);
+    opacity: 0.7;
   }
 
   .transaction-card.hidden .transaction-description,
   .transaction-card.hidden .transaction-amount,
   .transaction-card.hidden .transaction-meta {
     color: var(--text-muted);
-    text-decoration: line-through;
   }
   
   .transaction-category {
@@ -1898,53 +1988,110 @@
     font-size: 0.875rem;
   }
 
-  .category-dropdown {
+  .category-dropdown-compact {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 0.25rem);
     left: 0;
-    right: 0;
     z-index: 1000;
     background: var(--surface-elevated);
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-md);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    max-height: 200px;
-    overflow-y: auto;
-    margin-top: 0.25rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    padding: var(--space-md);
+    min-width: 280px;
+    max-width: 320px;
   }
 
-  .category-option {
+  .category-section {
+    margin-bottom: var(--space-md);
+  }
+
+  .category-section:last-of-type {
+    margin-bottom: var(--space-sm);
+  }
+
+  .category-section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-xs);
+  }
+
+  .category-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .category-grid-item {
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
-    width: 100%;
-    padding: var(--space-sm);
-    border: none;
-    background: transparent;
-    text-align: left;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .category-option:hover {
+    justify-content: center;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
     background: var(--surface);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
   }
 
-  .category-icon {
-    font-size: 1rem;
+  .category-grid-item:hover {
+    transform: scale(1.1);
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  .category-name {
-    font-size: 0.875rem;
-    color: var(--text);
+  .category-grid-item.income-cat {
+    background: rgba(122, 186, 165, 0.05);
+    border-color: rgba(122, 186, 165, 0.3);
   }
 
-  .no-categories {
-    padding: var(--space-md);
-    text-align: center;
-    font-size: 0.8125rem;
+  .category-grid-item.income-cat:hover {
+    background: rgba(122, 186, 165, 0.15);
+    border-color: var(--acapulco);
+  }
+
+  .category-grid-item.expense-cat {
+    background: rgba(245, 121, 108, 0.05);
+    border-color: rgba(245, 121, 108, 0.3);
+  }
+
+  .category-grid-item.expense-cat:hover {
+    background: rgba(245, 121, 108, 0.15);
+    border-color: var(--froly);
+  }
+
+  .category-grid-item:active {
+    transform: scale(0.95);
+  }
+
+  .category-emoji {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  .category-close-btn {
+    width: 100%;
+    padding: var(--space-xs) var(--space-sm);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--gray-100);
     color: var(--text-muted);
-    font-style: italic;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .category-close-btn:hover {
+    background: var(--gray-200);
+    color: var(--text-secondary);
   }
   
   .transaction-actions {

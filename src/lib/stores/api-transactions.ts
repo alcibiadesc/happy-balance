@@ -81,16 +81,25 @@ function createApiTransactionStore() {
     // Update transaction
     async update(id: string, updates: Partial<Transaction>) {
       try {
+        // Prepare update payload
+        const payload: any = {
+          description: updates.description,
+          hidden: updates.hidden,
+          categoryId: updates.categoryId,
+        };
+
+        // If amount is being updated, handle the type change
+        if (updates.amount !== undefined) {
+          payload.amount = Math.abs(updates.amount);
+          payload.type = updates.amount < 0 ? "EXPENSE" : "INCOME";
+        }
+
         const response = await fetch(`${API_BASE}/transactions/${id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            description: updates.description,
-            hidden: updates.hidden,
-            categoryId: updates.categoryId,
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
