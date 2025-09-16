@@ -89,18 +89,19 @@
       }
     }
 
-    // Transaction type filter
-    if (transactionTypeFilter === 'income') {
-      filtered = filtered.filter(t => t.amount > 0);
-    } else if (transactionTypeFilter === 'expenses') {
-      filtered = filtered.filter(t => t.amount < 0);
-    }
-
-    // Category filter
+    // Apply filters: categories take precedence over transaction type
     if (selectedCategories.length > 0) {
+      // If specific categories are selected, only filter by categories
       filtered = filtered.filter(t =>
         t.categoryId && selectedCategories.includes(t.categoryId)
       );
+    } else {
+      // If no categories selected, apply transaction type filter
+      if (transactionTypeFilter === 'income') {
+        filtered = filtered.filter(t => t.amount > 0);
+      } else if (transactionTypeFilter === 'expenses') {
+        filtered = filtered.filter(t => t.amount < 0);
+      }
     }
 
     // Search filter
@@ -430,6 +431,17 @@
     <div class="toolbar-content">
       <!-- Date selector section -->
       <div class="date-selector-section">
+        <!-- All transactions toggle - always first -->
+        <button
+          class="all-toggle-btn"
+          class:active={showAllTransactions}
+          onclick={() => showAllTransactions = !showAllTransactions}
+          title={showAllTransactions ? 'Mostrar período seleccionado' : 'Mostrar todas las transacciones'}
+        >
+          <Layers size={14} />
+        </button>
+
+        <!-- Date controls - appear to the right when needed -->
         {#if !showAllTransactions}
           {#if dateRangeMode === 'month'}
             <button class="date-nav-btn" onclick={previousPeriod}>
@@ -470,15 +482,7 @@
           </button>
         {/if}
 
-        <button
-          class="all-toggle-btn"
-          class:active={showAllTransactions}
-          onclick={() => showAllTransactions = !showAllTransactions}
-          title={showAllTransactions ? 'Mostrar período seleccionado' : 'Mostrar todas las transacciones'}
-        >
-          <Layers size={14} />
-        </button>
-
+        <!-- Hidden transactions toggle - always last -->
         <button
           class="hidden-toggle-btn"
           class:active={showHiddenTransactions}
@@ -568,82 +572,131 @@
     {/if}
     
     {#if showFilters}
-      <div class="filters-minimal">
-        <!-- Type filters -->
-        <div class="type-filters">
-          <button
-            class="type-filter-btn"
-            class:active={transactionTypeFilter === 'income'}
-            onclick={() => transactionTypeFilter = transactionTypeFilter === 'income' ? 'all' : 'income'}
-          >
-            <TrendingUp size={14} />
-            <span>Todos los ingresos</span>
-          </button>
-          <button
-            class="type-filter-btn"
-            class:active={transactionTypeFilter === 'expenses'}
-            onclick={() => transactionTypeFilter = transactionTypeFilter === 'expenses' ? 'all' : 'expenses'}
-          >
-            <TrendingDown size={14} />
-            <span>Todos los gastos</span>
-          </button>
-        </div>
+      <div class="filters-bento">
+        <!-- Filter Grid - Bento Box Layout -->
+        <div class="filter-grid">
+          <!-- Quick Type Filters -->
+          <div class="bento-item quick-filters">
+            <button
+              class="filter-pill income"
+              class:active={transactionTypeFilter === 'income' && selectedCategories.length === 0}
+              class:disabled={selectedCategories.length > 0}
+              onclick={() => {
+                if (selectedCategories.length === 0) {
+                  transactionTypeFilter = transactionTypeFilter === 'income' ? 'all' : 'income'
+                }
+              }}
+            >
+              <TrendingUp size={12} />
+              <span>Ingresos</span>
+            </button>
 
-        <!-- Category filter dropdown -->
-        <div class="category-filter">
-          <button
-            class="category-dropdown-btn"
-            class:active={selectedCategories.length > 0}
-            onclick={() => showCategoryFilterDropdown = !showCategoryFilterDropdown}
-          >
-            <Tag size={14} />
-            <span>
-              {selectedCategories.length > 0
-                ? `${selectedCategories.length} categorías`
-                : 'Seleccionar categorías'}
-            </span>
-            <ChevronDown size={14} class="chevron {showCategoryFilterDropdown ? 'rotated' : ''}" />
-          </button>
+            <button
+              class="filter-pill expense"
+              class:active={transactionTypeFilter === 'expenses' && selectedCategories.length === 0}
+              class:disabled={selectedCategories.length > 0}
+              onclick={() => {
+                if (selectedCategories.length === 0) {
+                  transactionTypeFilter = transactionTypeFilter === 'expenses' ? 'all' : 'expenses'
+                }
+              }}
+            >
+              <TrendingDown size={12} />
+              <span>Gastos</span>
+            </button>
+          </div>
 
-          {#if showCategoryFilterDropdown}
-            <div class="category-filter-dropdown">
-              <div class="dropdown-header">
-                <span class="dropdown-title">Categorías</span>
-                {#if selectedCategories.length > 0}
-                  <button class="clear-btn" onclick={clearAllFilters}>
-                    Limpiar filtros
-                  </button>
-                {/if}
-              </div>
+          <!-- Category Selector -->
+          <div class="bento-item category-selector">
+            <button
+              class="category-pill"
+              class:active={selectedCategories.length > 0}
+              class:open={showCategoryFilterDropdown}
+              onclick={() => showCategoryFilterDropdown = !showCategoryFilterDropdown}
+            >
+              <Tag size={12} />
+              <span>
+                {selectedCategories.length > 0
+                  ? `${selectedCategories.length} categorías`
+                  : 'Categorías'}
+              </span>
+              <ChevronDown size={12} class="chevron {showCategoryFilterDropdown ? 'rotated' : ''}" />
+            </button>
 
-              <div class="category-options">
-                {#each $apiCategories as category}
-                  <button
-                    class="category-option"
-                    class:selected={selectedCategories.includes(category.id)}
-                    onclick={() => {
-                      if (selectedCategories.includes(category.id)) {
-                        selectedCategories = selectedCategories.filter(c => c !== category.id);
-                      } else {
-                        selectedCategories = [...selectedCategories, category.id];
-                      }
-                    }}
-                  >
-                    <div class="category-info">
-                      <span class="category-emoji">{category.icon}</span>
-                      <span class="category-name">{category.name}</span>
-                    </div>
-                    <div class="category-checkbox">
+            {#if showCategoryFilterDropdown}
+              <div class="category-dropdown-mini">
+                <div class="category-grid-compact">
+                  {#each $apiCategories as category}
+                    <button
+                      class="category-chip-mini"
+                      class:selected={selectedCategories.includes(category.id)}
+                      onclick={() => {
+                        if (selectedCategories.includes(category.id)) {
+                          selectedCategories = selectedCategories.filter(c => c !== category.id);
+                        } else {
+                          selectedCategories = [...selectedCategories, category.id];
+                        }
+                      }}
+                    >
+                      <span class="chip-emoji">{category.icon}</span>
+                      <span class="chip-name">{category.name}</span>
                       {#if selectedCategories.includes(category.id)}
-                        <Check size={12} />
+                        <div class="chip-check">
+                          <Check size={8} />
+                        </div>
                       {/if}
-                    </div>
-                  </button>
-                {/each}
+                    </button>
+                  {/each}
+                </div>
               </div>
+            {/if}
+          </div>
+
+          <!-- Clear Button (when filters active) -->
+          {#if transactionTypeFilter !== 'all' || selectedCategories.length > 0}
+            <div class="bento-item clear-section">
+              <button class="clear-pill" onclick={clearAllFilters}>
+                <X size={12} />
+                <span>Limpiar</span>
+              </button>
             </div>
           {/if}
         </div>
+
+        <!-- Active Tags (minimal display) -->
+        {#if transactionTypeFilter !== 'all' || selectedCategories.length > 0}
+          <div class="active-tags-mini">
+            {#if transactionTypeFilter === 'income'}
+              <span class="tag-mini income-tag">
+                <TrendingUp size={10} />
+                <span>Ingresos</span>
+              </span>
+            {/if}
+
+            {#if transactionTypeFilter === 'expenses'}
+              <span class="tag-mini expense-tag">
+                <TrendingDown size={10} />
+                <span>Gastos</span>
+              </span>
+            {/if}
+
+            {#each selectedCategories.slice(0, 3) as categoryId}
+              {@const category = $apiCategories.find(c => c.id === categoryId)}
+              {#if category}
+                <span class="tag-mini category-tag" style="--category-color: {category.color}">
+                  <span>{category.icon}</span>
+                  <span>{category.name}</span>
+                </span>
+              {/if}
+            {/each}
+
+            {#if selectedCategories.length > 3}
+              <span class="tag-mini more-tag">
+                +{selectedCategories.length - 3} más
+              </span>
+            {/if}
+          </div>
+        {/if}
       </div>
     {/if}
   </div>
@@ -826,6 +879,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-xs);
+    transition: all 0.3s ease;
   }
 
   .date-nav-btn {
@@ -928,7 +982,8 @@
     align-items: center;
     justify-content: center;
     transition: all 0.15s ease;
-    margin-left: var(--space-sm);
+    margin-right: var(--space-xs);
+    flex-shrink: 0;
   }
 
   .all-toggle-btn:hover {
@@ -960,6 +1015,7 @@
     justify-content: center;
     transition: all 0.15s ease;
     margin-left: var(--space-xs);
+    flex-shrink: 0;
   }
 
   .hidden-toggle-btn:hover {
@@ -1341,93 +1397,141 @@
     color: rgb(239, 68, 68);
   }
   
-  .filters-minimal {
-    padding: var(--space-md) var(--space-lg);
+  /* Minimal Bento Box Filters */
+  .filters-bento {
+    background: var(--surface-elevated);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-lg);
     max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    gap: var(--space-md);
-    align-items: flex-start;
-    flex-wrap: wrap;
+    margin: 0 auto var(--space-lg) auto;
   }
 
-  .type-filters {
+  /* Bento Grid Layout */
+  .filter-grid {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    gap: var(--space-sm);
+    align-items: center;
+    justify-content: start;
+  }
+
+  .bento-item {
+    background: var(--surface);
+    border: 1px solid var(--gray-100);
+    border-radius: var(--radius-sm);
+    padding: var(--space-xs);
+    transition: all 0.15s ease;
+  }
+
+  .bento-item:hover {
+    border-color: var(--gray-200);
+    background: var(--gray-50);
+  }
+
+  /* Quick Filters Pills */
+  .quick-filters {
     display: flex;
     gap: var(--space-xs);
   }
 
-  .type-filter-btn {
+  .filter-pill {
     display: flex;
     align-items: center;
-    gap: var(--space-xs);
-    padding: var(--space-sm) var(--space-md);
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    height: 1.75rem;
     border: 1px solid var(--gray-200);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     background: var(--surface);
-    color: var(--text-secondary);
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 500;
+    color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.15s ease;
     white-space: nowrap;
   }
 
-  .type-filter-btn:hover {
+  .filter-pill:hover {
     background: var(--gray-50);
     border-color: var(--gray-300);
     color: var(--text-primary);
   }
 
-  .type-filter-btn.active {
+  .filter-pill.income.active {
     background: var(--acapulco);
-    border-color: var(--acapulco);
     color: white;
+    border-color: var(--acapulco);
   }
 
-  .category-filter {
+  .filter-pill.expense.active {
+    background: var(--froly);
+    color: white;
+    border-color: var(--froly);
+  }
+
+  .filter-pill.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--gray-50);
+    border-color: var(--gray-100);
+    color: var(--text-muted);
+  }
+
+  .filter-pill.disabled:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-100);
+    color: var(--text-muted);
+  }
+
+  /* Category Selector */
+  .category-selector {
     position: relative;
-    flex: 1;
-    min-width: 200px;
   }
 
-  .category-dropdown-btn {
-    width: 100%;
+  .category-pill {
     display: flex;
     align-items: center;
-    gap: var(--space-xs);
-    padding: var(--space-sm) var(--space-md);
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    height: 1.75rem;
     border: 1px solid var(--gray-200);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     background: var(--surface);
-    color: var(--text-secondary);
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 500;
+    color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.15s ease;
+    width: 100%;
     justify-content: space-between;
+    min-width: 140px;
   }
 
-  .category-dropdown-btn:hover {
+  .category-pill:hover {
     background: var(--gray-50);
     border-color: var(--gray-300);
     color: var(--text-primary);
   }
 
-  .category-dropdown-btn.active {
-    background: var(--surface-elevated);
-    border-color: var(--acapulco);
+  .category-pill.active {
+    background: rgba(122, 186, 165, 0.1);
     color: var(--acapulco);
+    border-color: rgba(122, 186, 165, 0.3);
   }
 
   .chevron {
     transition: transform 0.2s ease;
+    opacity: 0.6;
   }
 
   .chevron.rotated {
     transform: rotate(180deg);
   }
 
-  .category-filter-dropdown {
+  /* Compact Category Dropdown */
+  .category-dropdown-mini {
     position: absolute;
     top: calc(100% + var(--space-xs));
     left: 0;
@@ -1437,134 +1541,222 @@
     border-radius: var(--radius-md);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     z-index: 50;
-    max-height: 300px;
+    max-height: 200px;
     overflow-y: auto;
+    min-width: 240px;
   }
 
-  .dropdown-header {
+  .category-grid-compact {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    padding: var(--space-xs);
+  }
+
+  .category-chip-mini {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: var(--space-md);
-    border-bottom: 1px solid var(--gray-100);
-  }
-
-  .dropdown-title {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .clear-btn {
+    gap: var(--space-sm);
     padding: var(--space-xs) var(--space-sm);
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--froly);
-    font-size: 0.75rem;
-    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    position: relative;
+    font-size: 0.8125rem;
   }
 
-  .clear-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
-  }
-
-  .category-options {
-    padding: var(--space-sm);
-  }
-
-  .category-option {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-sm);
-    border: none;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-bottom: var(--space-xs);
-  }
-
-  .category-option:hover {
+  .category-chip-mini:hover {
     background: var(--gray-50);
   }
 
-  .category-option.selected {
+  .category-chip-mini.selected {
     background: rgba(122, 186, 165, 0.1);
+    color: var(--acapulco);
   }
 
-  .category-info {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-  }
-
-  .category-emoji {
-    font-size: 1rem;
-    width: 20px;
+  .chip-emoji {
+    font-size: 0.875rem;
+    width: 16px;
     text-align: center;
   }
 
-  .category-name {
-    font-size: 0.875rem;
-    color: var(--text-primary);
+  .chip-name {
+    flex: 1;
+    text-align: left;
     font-weight: 500;
   }
 
-  .category-checkbox {
-    width: 16px;
-    height: 16px;
-    border-radius: var(--radius-xs);
-    border: 1px solid var(--gray-300);
+  .chip-check {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--acapulco);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    transition: all 0.2s ease;
+    font-size: 0.625rem;
   }
 
-  .category-option.selected .category-checkbox {
-    background: var(--acapulco);
-    border-color: var(--acapulco);
+  /* Clear Button */
+  .clear-section {
+    opacity: 0;
+    animation: slideInFade 0.3s ease forwards;
   }
 
+  @keyframes slideInFade {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .clear-pill {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-md);
+    background: rgba(239, 68, 68, 0.05);
+    color: var(--froly);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .clear-pill:hover {
+    background: rgba(239, 68, 68, 0.1);
+    transform: translateY(-1px);
+  }
+
+  /* Active Tags Mini */
+  .active-tags-mini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: var(--space-sm);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--gray-100);
+  }
+
+  .tag-mini {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 2px var(--space-xs);
+    border-radius: var(--radius-sm);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  .tag-mini.income-tag {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--acapulco);
+  }
+
+  .tag-mini.expense-tag {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--froly);
+  }
+
+  .tag-mini.category-tag {
+    background: color-mix(in srgb, var(--category-color) 10%, transparent);
+    color: var(--category-color);
+  }
+
+  .tag-mini.more-tag {
+    background: var(--gray-100);
+    color: var(--text-muted);
+  }
+
+  /* Responsive Bento Grid */
   @media (max-width: 768px) {
-    .filters-minimal {
-      flex-direction: column;
-      gap: var(--space-sm);
+    .filters-bento {
       padding: var(--space-md);
     }
 
-    .type-filters {
+    .filter-grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-xs);
+    }
+
+    .bento-item {
       width: 100%;
+    }
+
+    .quick-filters {
       justify-content: center;
     }
 
-    .type-filter-btn {
+    .filter-pill {
       flex: 1;
+      justify-content: center;
     }
 
-    .category-filter {
-      width: 100%;
+    .category-dropdown-mini {
       min-width: auto;
+      left: 0;
+      right: 0;
     }
   }
 
   @media (max-width: 480px) {
-    .type-filters {
+    .filter-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .quick-filters {
       flex-direction: column;
     }
 
-    .type-filter-btn {
-      text-align: center;
+    .filter-pill {
+      justify-content: center;
+      min-height: 32px;
     }
 
-    .category-filter-dropdown {
-      max-height: 250px;
+    .category-pill {
+      min-width: auto;
+      justify-content: center;
+    }
+
+    .category-dropdown-mini {
+      max-height: 150px;
+    }
+
+    .active-tags-mini {
+      justify-content: center;
+    }
+  }
+
+  /* Ultra-compact for very small screens */
+  @media (max-width: 360px) {
+    .filters-bento {
+      padding: var(--space-sm);
+    }
+
+    .bento-item {
+      padding: var(--space-xs);
+    }
+
+    .filter-pill,
+    .category-pill,
+    .clear-pill {
+      padding: var(--space-xs);
+      font-size: 0.75rem;
+    }
+
+    .tag-mini {
+      font-size: 0.625rem;
+      padding: 1px var(--space-xs);
     }
   }
   
