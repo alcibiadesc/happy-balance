@@ -29,6 +29,15 @@
     type: 'essential' as Category['type']
   });
 
+  // Click outside handler
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as Element;
+    if (!target.closest('.category-icon-picker')) {
+      showIconPickerNew = false;
+      showIconPickerEdit = null;
+    }
+  }
+
   // Available icons and colors
   const availableIcons = [
     '🏠', '🍽️', '🚗', '🎮', '💰', '📚', '🏥', '🛒',
@@ -188,6 +197,13 @@
   onMount(async () => {
     await apiCategories.load();
     await apiTransactions.load();
+
+    // Add click outside listener
+    document.addEventListener('click', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
   });
 </script>
 
@@ -645,7 +661,7 @@
     border-radius: var(--radius-md);
     padding: var(--space-xs);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    z-index: 100;
+    z-index: 1000;
   }
 
   .icon-option {
