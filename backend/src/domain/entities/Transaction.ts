@@ -145,6 +145,14 @@ export class Transaction {
     this._categoryId = undefined;
   }
 
+  setCategoryId(categoryId: string | undefined | null): void {
+    if (categoryId && categoryId !== '') {
+      this._categoryId = { value: categoryId } as CategoryId;
+    } else {
+      this._categoryId = undefined;
+    }
+  }
+
   updateDescription(newDescription: string): Result<void> {
     if (newDescription && newDescription.length > 200) {
       return Result.failWithMessage("Description cannot exceed 200 characters");

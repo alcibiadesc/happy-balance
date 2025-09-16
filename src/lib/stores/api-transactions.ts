@@ -98,8 +98,11 @@ function createApiTransactionStore() {
           throw new Error(error.error || "Failed to update transaction");
         }
 
+        const result = await response.json();
+        const updatedTransaction = result.data;
+
         update((transactions) =>
-          transactions.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+          transactions.map((t) => (t.id === id ? { ...t, ...updatedTransaction } : t)),
         );
       } catch (error) {
         console.error("Failed to update transaction:", error);

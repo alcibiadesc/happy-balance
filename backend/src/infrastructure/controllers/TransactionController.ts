@@ -22,7 +22,9 @@ const CreateTransactionSchema = z.object({
   categoryId: z.string().optional(),
 });
 
-const UpdateTransactionSchema = CreateTransactionSchema.partial().extend({
+const UpdateTransactionSchema = z.object({
+  description: z.string().max(200).optional(),
+  categoryId: z.string().nullable().optional(),
   hidden: z.boolean().optional(),
 });
 
@@ -310,8 +312,7 @@ export class TransactionController {
 
       // Update categoryId if provided
       if (data.categoryId !== undefined) {
-        // For now, we'll handle this directly in the repository
-        (existingTransaction as any).categoryId = data.categoryId;
+        existingTransaction.setCategoryId(data.categoryId);
       }
 
       // TODO: Add support for updating other fields if needed
