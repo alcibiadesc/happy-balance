@@ -778,12 +778,12 @@
     
     .period-selector {
       width: 100%;
-      justify-content: space-between;
+      justify-content: center;
     }
     
     .period-button {
-      flex: 1;
-      padding: 0.5rem 0.5rem;
+      flex: none;
+      padding: 0.5rem 0.75rem;
       font-size: 0.8125rem;
     }
     
