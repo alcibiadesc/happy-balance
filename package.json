@@ -29,10 +29,7 @@
     "lint": "prettier --check . && eslint .",
     "lint:fix": "prettier --write . && eslint . --fix && cd backend && pnpm lint:fix",
     "typecheck": "svelte-kit sync && tsc --noEmit && cd backend && pnpm typecheck",
-    "clean": "rm -rf node_modules dist build backend/node_modules backend/dist",
-    "install:all": "pnpm install && cd backend && pnpm install",
-    "worktree:setup": "pnpm install && cd backend && pnpm install",
-    "setup-worktree": "node scripts/setup-worktree.js"
+    "clean": "rm -rf node_modules dist build backend/node_modules backend/dist"
   },
   "dependencies": {
     "chart.js": "^4.5.0",

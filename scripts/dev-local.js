@@ -2,57 +2,24 @@
 
 /**
  * Local development script without Docker
- * Robust script for working with worktrees and regular repos
+ * Automatically handles worktree database setup and dependencies
  */
 
 import { spawn, execSync } from "child_process";
-import { existsSync, writeFileSync } from "fs";
+import { existsSync, writeFileSync, mkdirSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { setupWorktreeDatabase, getGitInfo, log } from "./worktree-db-utils.js";
+import { getAvailablePorts } from "./port-utils.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, "..");
 
-// Colors for console output
-const colors = {
-  reset: "\x1b[0m",
-  bright: "\x1b[1m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  blue: "\x1b[34m",
-  red: "\x1b[31m",
-  cyan: "\x1b[36m",
-  magenta: "\x1b[35m",
-};
-
-function log(message, color = "reset") {
-  console.log(colors[color] + message + colors.reset);
-}
-
 // Setup environment files if they don't exist
 function setupEnvironment() {
-  const backendEnvPath = resolve(rootDir, "backend", ".env");
+  // Setup worktree-specific database (this will handle backend .env)
+  const dbName = setupWorktreeDatabase(rootDir);
   const frontendEnvPath = resolve(rootDir, ".env.local");
-
-  // Create backend .env if it doesn't exist
-  if (!existsSync(backendEnvPath)) {
-    const backendEnv = `# Database
-DATABASE_URL="postgresql://postgres:password@localhost:5432/happy_balance_vk_83dc_feat_chart"
-
-# Server
-PORT=3003
-NODE_ENV=development
-
-# CORS
-CORS_ORIGIN="http://localhost:5176"
-
-# File upload
-MAX_FILE_SIZE=10485760  # 10MB in bytes
-UPLOAD_DIR="uploads"`;
-
-    writeFileSync(backendEnvPath, backendEnv);
-    log("✅ Created backend/.env", "green");
-  }
 
   // Create frontend .env.local if it doesn't exist
   if (!existsSync(frontendEnvPath)) {
@@ -65,13 +32,39 @@ VITE_PORT=5176`;
   }
 }
 
-// Check if dependencies are installed
-function checkDependencies() {
+// Check and install dependencies if needed
+function checkAndInstallDependencies() {
   const backendNodeModules = resolve(rootDir, "backend", "node_modules");
   const frontendNodeModules = resolve(rootDir, "node_modules");
+  let needsInstall = false;
+
+  // Check for pnpm
+  try {
+    execSync("pnpm --version", { stdio: "pipe" });
+  } catch (error) {
+    log("❌ pnpm is not installed. Please install it first:", "red");
+    log("   npm install -g pnpm", "yellow");
+    process.exit(1);
+  }
+
+  if (!existsSync(frontendNodeModules)) {
+    log("📦 Installing frontend dependencies...", "yellow");
+    needsInstall = true;
+    try {
+      execSync("pnpm install", {
+        cwd: rootDir,
+        stdio: "inherit",
+      });
+      log("✅ Frontend dependencies installed", "green");
+    } catch (error) {
+      log("❌ Failed to install frontend dependencies", "red");
+      throw error;
+    }
+  }
 
   if (!existsSync(backendNodeModules)) {
-    log("⚠️  Backend dependencies not found. Installing...", "yellow");
+    log("📦 Installing backend dependencies...", "yellow");
+    needsInstall = true;
     try {
       execSync("pnpm install", {
         cwd: resolve(rootDir, "backend"),
@@ -84,42 +77,43 @@ function checkDependencies() {
     }
   }
 
-  if (!existsSync(frontendNodeModules)) {
-    log("⚠️  Frontend dependencies not found. Installing...", "yellow");
-    try {
-      execSync("pnpm install", {
-        cwd: rootDir,
-        stdio: "inherit",
-      });
-      log("✅ Frontend dependencies installed", "green");
-    } catch (error) {
-      log("❌ Failed to install frontend dependencies", "red");
-      throw error;
-    }
-  }
+  return needsInstall;
 }
 
-// Check if database is configured
-function checkDatabase() {
-  const backendEnvPath = resolve(rootDir, "backend", ".env");
+// Setup and configure database
+function setupDatabase() {
+  const backendPath = resolve(rootDir, "backend");
 
-  if (existsSync(backendEnvPath)) {
+  try {
+    // Generate Prisma client
+    log("🔄 Generating Prisma client...", "cyan");
+    execSync("npx prisma generate", {
+      cwd: backendPath,
+      stdio: "pipe",
+    });
+    log("✅ Prisma client ready", "green");
+
+    // Try to push database schema if PostgreSQL is running
     try {
-      // Generate Prisma client if needed
-      log("🔄 Generating Prisma client...", "cyan");
-      execSync("npx prisma generate", {
-        cwd: resolve(rootDir, "backend"),
+      execSync("pg_isready", { stdio: "pipe" });
+
+      // Push schema to database
+      log("🔄 Pushing database schema...", "cyan");
+      execSync("npx prisma db push --skip-generate", {
+        cwd: backendPath,
         stdio: "pipe",
       });
-      log("✅ Prisma client ready", "green");
+      log("✅ Database schema synchronized", "green");
     } catch (error) {
-      log("⚠️  Prisma client generation warning (non-critical)", "yellow");
+      // PostgreSQL not running or schema push failed
     }
+  } catch (error) {
+    log("⚠️  Database setup warning (non-critical)", "yellow");
   }
 }
 
-// Start backend server
-function startBackend() {
+// Start backend server with specific port
+function startBackend(port) {
   const backendPath = resolve(rootDir, "backend");
   const mainTsPath = resolve(backendPath, "src", "main.ts");
 
@@ -137,25 +131,36 @@ function startBackend() {
     shell: true,
     env: {
       ...process.env,
+      PORT: port.toString(),
       FORCE_COLOR: "1",
     },
   });
 }
 
-// Start frontend server
-function startFrontend() {
+// Start frontend server with specific port and backend URL
+function startFrontend(frontendPort, backendPort) {
   // Use pnpm if available, otherwise npm
   const packageManager = existsSync(resolve(rootDir, "pnpm-lock.yaml")) ? "pnpm" : "npm";
 
-  return spawn(packageManager, ["exec", "vite", "--port", "5176", "--host"], {
+  return spawn(packageManager, ["exec", "vite", "--port", frontendPort.toString(), "--host"], {
     cwd: rootDir,
     stdio: "inherit",
     shell: true,
     env: {
       ...process.env,
+      VITE_API_URL: `http://localhost:${backendPort}/api`,
       FORCE_COLOR: "1",
     },
   });
+}
+
+// Create required directories
+function createRequiredDirs() {
+  const uploadDir = resolve(rootDir, "backend", "uploads");
+  if (!existsSync(uploadDir)) {
+    mkdirSync(uploadDir, { recursive: true });
+    log("📁 Created backend/uploads directory", "green");
+  }
 }
 
 // Main function
@@ -164,43 +169,65 @@ async function main() {
   log("🚀 LOCAL DEVELOPMENT MODE", "bright");
   log("═".repeat(50), "cyan");
 
-  // Check if we're in a git worktree
-  try {
-    const gitDir = execSync("git rev-parse --git-dir", { cwd: rootDir, encoding: "utf-8" }).trim();
-    if (gitDir.includes(".git/worktrees")) {
-      log("📍 Running in Git worktree", "cyan");
-    }
-  } catch (error) {
-    // Not in a git repo, that's okay
+  // Check if we're in a git worktree and show info
+  const gitInfo = getGitInfo(rootDir);
+  if (gitInfo.isWorktree) {
+    log("📍 Worktree: " + gitInfo.branch, "cyan");
+  } else if (gitInfo.branch) {
+    log("🌿 Branch: " + gitInfo.branch, "cyan");
   }
 
-  // Setup environment
+  // Setup environment (includes worktree database setup)
+  log("\n🔧 Setting up environment...", "yellow");
   setupEnvironment();
 
   // Check and install dependencies if needed
-  log("\n🔍 Checking dependencies...", "yellow");
-  checkDependencies();
+  const installed = checkAndInstallDependencies();
 
-  // Check database configuration
-  checkDatabase();
+  // Create required directories
+  createRequiredDirs();
+
+  // Setup database (generate client and push schema)
+  if (installed || !existsSync(resolve(rootDir, "backend", ".prisma"))) {
+    setupDatabase();
+  }
+
+  // Find available ports
+  log("\n🔍 Finding available ports...", "yellow");
+  const ports = await getAvailablePorts();
+  log("✅ Ports found - Backend: " + ports.backend + ", Frontend: " + ports.frontend, "green");
+
+  // Update backend .env with the dynamic port
+  const backendEnvPath = resolve(rootDir, "backend", ".env");
+  if (existsSync(backendEnvPath)) {
+    let envContent = readFileSync(backendEnvPath, "utf-8");
+    envContent = envContent.replace(/^PORT=.*$/m, `PORT=${ports.backend}`);
+    envContent = envContent.replace(/^CORS_ORIGIN=.*$/m, `CORS_ORIGIN="http://localhost:${ports.frontend}"`);
+    writeFileSync(backendEnvPath, envContent);
+  }
 
   log("\n📋 Starting servers...", "yellow");
 
-  // Start both servers
-  const backend = startBackend();
-  const frontend = startFrontend();
+  // Start both servers with dynamic ports
+  const backend = startBackend(ports.backend);
+  const frontend = startFrontend(ports.frontend, ports.backend);
 
   if (!backend) {
     log("⚠️  Backend server could not be started", "red");
     log("   Running frontend only...", "yellow");
   }
 
-  log("\n🌐 URLs:", "bright");
-  log("  Frontend: http://localhost:5176", "magenta");
+  // Show database info
+  const dbInfo = getGitInfo(rootDir);
+  const { getDatabaseName } = await import("./worktree-db-utils.js");
+  const dbName = getDatabaseName(dbInfo.branch);
+
+  log("\n🌐 Services:", "bright");
+  log("  Frontend: http://localhost:" + ports.frontend, "magenta");
   if (backend) {
-    log("  Backend:  http://localhost:3003/api", "blue");
+    log("  Backend:  http://localhost:" + ports.backend + "/api", "blue");
   }
-  log("  Database: PostgreSQL (local)", "yellow");
+  log("  Database: " + dbName, "yellow");
   log("\n📝 Press Ctrl+C to stop all servers\n", "cyan");
 
   // Handle exit
