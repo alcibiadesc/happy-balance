@@ -19,6 +19,7 @@
   let transactionsWithCategory = $state(0);
   let showIconPickerNew = $state(false);
   let showIconPickerEdit = $state<string | null>(null);
+  let pickerButtonElement = $state<HTMLElement | null>(null);
 
   // Form data for editing
   let editForm = $state({
@@ -32,11 +33,13 @@
   // Click outside handler
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as Element;
-    if (!target.closest('.category-icon-picker')) {
+    if (!target.closest('.category-icon-picker') && !target.closest('.emoji-picker-overlay')) {
       showIconPickerNew = false;
       showIconPickerEdit = null;
+      pickerButtonElement = null;
     }
   }
+
 
   // Available icons and colors
   const availableIcons = [
@@ -243,26 +246,13 @@
                 <button
                   class="icon-display"
                   style="background-color: {newCategory.color}20"
-                  onclick={() => showIconPickerNew = !showIconPickerNew}
+                  onclick={(e) => {
+                    pickerButtonElement = e.currentTarget;
+                    showIconPickerNew = !showIconPickerNew;
+                  }}
                 >
                   {newCategory.icon}
                 </button>
-                {#if showIconPickerNew}
-                  <div class="icon-options">
-                    {#each availableIcons as icon}
-                      <button
-                        class="icon-option"
-                        class:selected={newCategory.icon === icon}
-                        onclick={() => {
-                          newCategory.icon = icon;
-                          showIconPickerNew = false;
-                        }}
-                      >
-                        {icon}
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
               </div>
 
               <div class="category-details">
@@ -318,26 +308,13 @@
                   <button
                     class="icon-display"
                     style="background-color: {editForm.color}20"
-                    onclick={() => showIconPickerEdit = showIconPickerEdit === category.id ? null : category.id}
+                    onclick={(e) => {
+                      pickerButtonElement = e.currentTarget;
+                      showIconPickerEdit = showIconPickerEdit === category.id ? null : category.id;
+                    }}
                   >
                     {editForm.icon}
                   </button>
-                  {#if showIconPickerEdit === category.id}
-                    <div class="icon-options">
-                      {#each availableIcons as icon}
-                        <button
-                          class="icon-option"
-                          class:selected={editForm.icon === icon}
-                          onclick={() => {
-                            editForm.icon = icon;
-                            showIconPickerEdit = null;
-                          }}
-                        >
-                          {icon}
-                        </button>
-                      {/each}
-                    </div>
-                  {/if}
                 </div>
 
                 <div class="category-details">
@@ -427,6 +404,39 @@
     {/each}
   </main>
 </div>
+
+<!-- Global Emoji Picker -->
+{#if (showIconPickerNew || showIconPickerEdit) && pickerButtonElement}
+  {@const rect = pickerButtonElement.getBoundingClientRect()}
+  <div
+    class="emoji-picker-overlay"
+    style="
+      top: {rect.bottom + 8}px;
+      left: {rect.left}px;
+    "
+  >
+    <div class="icon-options-global">
+      {#each availableIcons as icon}
+        <button
+          class="icon-option"
+          class:selected={showIconPickerNew ? newCategory?.icon === icon : editForm.icon === icon}
+          onclick={() => {
+            if (showIconPickerNew && newCategory) {
+              newCategory.icon = icon;
+              showIconPickerNew = false;
+            } else if (showIconPickerEdit) {
+              editForm.icon = icon;
+              showIconPickerEdit = null;
+            }
+            pickerButtonElement = null;
+          }}
+        >
+          {icon}
+        </button>
+      {/each}
+    </div>
+  </div>
+{/if}
 
 <!-- Delete Category Modal with Recategorization -->
 {#if showDeleteModal && categoryToDelete}
@@ -649,10 +659,13 @@
     font-size: 1.25rem;
   }
 
-  .icon-options {
-    position: absolute;
-    top: calc(100% + var(--space-xs));
-    left: 0;
+  .emoji-picker-overlay {
+    position: fixed;
+    z-index: 999999;
+    pointer-events: none;
+  }
+
+  .icon-options-global {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 4px;
@@ -660,8 +673,21 @@
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-md);
     padding: var(--space-xs);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    z-index: 1000;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    min-width: 144px;
+    animation: slideDown 0.15s ease-out;
+    pointer-events: auto;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .icon-option {
