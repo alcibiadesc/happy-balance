@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import AddTransactionModal from '$lib/components/AddTransactionModal.svelte';
   import {
@@ -35,6 +35,26 @@
   let customStartDate = $state('');
   let customEndDate = $state('');
   let showDatePicker = $state(false);
+
+  // Click outside handler
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+
+    // Close category filter dropdown
+    if (showCategoryFilterDropdown && !target.closest('.category-selector')) {
+      showCategoryFilterDropdown = false;
+    }
+
+    // Close category dropdown for transactions
+    if (showCategoryDropdown && !target.closest('.category-selector')) {
+      showCategoryDropdown = null;
+    }
+
+    // Close date picker
+    if (showDatePicker && !target.closest('.date-selector-section')) {
+      showDatePicker = false;
+    }
+  }
 
   // Modal states
   let showDeleteSelectedModal = $state(false);
@@ -368,6 +388,11 @@
 
   onMount(async () => {
     await apiTransactions.load();
+    document.addEventListener('click', handleClickOutside);
+  });
+
+  onDestroy(() => {
+    document.removeEventListener('click', handleClickOutside);
   });
 </script>
 
@@ -462,6 +487,7 @@
           class:active={showAllTransactions}
           onclick={() => showAllTransactions = !showAllTransactions}
           title={showAllTransactions ? 'Mostrar período seleccionado' : 'Mostrar todas las transacciones'}
+          aria-label={showAllTransactions ? 'Mostrar período' : 'Mostrar todas'}
         >
           <Layers size={14} />
         </button>
@@ -523,13 +549,22 @@
       </div>
 
       <!-- Search bar -->
-      <div class="search-bar">
-        <Search size={14} />
+      <div class="search-bar" class:searching={searchQuery.length > 0}>
+        <Search size={14} class="search-icon" />
         <input
           type="text"
           placeholder={$t('transactions.search_placeholder')}
           bind:value={searchQuery}
         />
+        {#if searchQuery.length > 0}
+          <button
+            class="clear-search"
+            onclick={() => searchQuery = ''}
+            aria-label="Limpiar búsqueda"
+          >
+            <X size={12} />
+          </button>
+        {/if}
       </div>
 
       <!-- Action buttons -->
@@ -548,13 +583,31 @@
             {$t('transactions.cancel')}
           </button>
         {:else}
-          <button class="toolbar-btn" onclick={() => isSelectionMode = true}>
+          <button
+            class="toolbar-btn"
+            class:pulse={isSelectionMode === false && filteredTransactions().length > 10}
+            onclick={() => isSelectionMode = true}
+            aria-label="Seleccionar transacciones"
+          >
             {$t('transactions.select')}
           </button>
-          <button class="toolbar-btn" onclick={() => showFilters = !showFilters}>
+          <button
+            class="toolbar-btn"
+            class:active={showFilters}
+            class:has-filters={selectedCategories.length > 0 || transactionTypeFilter !== 'all'}
+            onclick={() => showFilters = !showFilters}
+            aria-label="Mostrar filtros"
+          >
             <Filter size={14} />
+            {#if selectedCategories.length > 0 || transactionTypeFilter !== 'all'}
+              <span class="filter-badge"></span>
+            {/if}
           </button>
-          <button class="toolbar-btn" onclick={downloadTransactionsCSV}>
+          <button
+            class="toolbar-btn"
+            onclick={downloadTransactionsCSV}
+            aria-label="Exportar transacciones"
+          >
             <Download size={14} />
           </button>
         {/if}
@@ -597,7 +650,7 @@
     {/if}
     
     {#if showFilters}
-      <div class="filters-bento">
+      <div class="filters-bento" class:visible={showFilters}>
         <!-- Filter Grid - Bento Box Layout -->
         <div class="filter-grid">
           <!-- Quick Type Filters -->
@@ -611,9 +664,13 @@
                   transactionTypeFilter = transactionTypeFilter === 'income' ? 'all' : 'income'
                 }
               }}
+              aria-pressed={transactionTypeFilter === 'income'}
             >
-              <TrendingUp size={12} />
+              <TrendingUp size={12} class="pill-icon" />
               <span>Ingresos</span>
+              {#if transactionTypeFilter === 'income' && selectedCategories.length === 0}
+                <span class="pill-indicator"></span>
+              {/if}
             </button>
 
             <button
@@ -625,9 +682,13 @@
                   transactionTypeFilter = transactionTypeFilter === 'expenses' ? 'all' : 'expenses'
                 }
               }}
+              aria-pressed={transactionTypeFilter === 'expenses'}
             >
-              <TrendingDown size={12} />
+              <TrendingDown size={12} class="pill-icon" />
               <span>Gastos</span>
+              {#if transactionTypeFilter === 'expenses' && selectedCategories.length === 0}
+                <span class="pill-indicator"></span>
+              {/if}
             </button>
           </div>
 
@@ -637,7 +698,10 @@
               class="category-pill"
               class:active={selectedCategories.length > 0}
               class:open={showCategoryFilterDropdown}
-              onclick={() => showCategoryFilterDropdown = !showCategoryFilterDropdown}
+              onclick={(e) => {
+                e.stopPropagation();
+                showCategoryFilterDropdown = !showCategoryFilterDropdown;
+              }}
             >
               <Tag size={12} />
               <span>
@@ -692,34 +756,46 @@
         {#if transactionTypeFilter !== 'all' || selectedCategories.length > 0}
           <div class="active-tags-mini">
             {#if transactionTypeFilter === 'income'}
-              <span class="tag-mini income-tag">
+              <button
+                class="tag-mini income-tag"
+                onclick={() => transactionTypeFilter = 'all'}
+                aria-label="Eliminar filtro de ingresos"
+              >
                 <TrendingUp size={10} />
                 <span>Ingresos</span>
-              </span>
+                <X size={10} class="tag-close" />
+              </button>
             {/if}
 
             {#if transactionTypeFilter === 'expenses'}
-              <span class="tag-mini expense-tag">
+              <button
+                class="tag-mini expense-tag"
+                onclick={() => transactionTypeFilter = 'all'}
+                aria-label="Eliminar filtro de gastos"
+              >
                 <TrendingDown size={10} />
                 <span>Gastos</span>
-              </span>
+                <X size={10} class="tag-close" />
+              </button>
             {/if}
 
-            {#each selectedCategories.slice(0, 3) as categoryId}
+            {#each selectedCategories as categoryId}
               {@const category = $apiCategories.find(c => c.id === categoryId)}
               {#if category}
-                <span class="tag-mini category-tag" style="--category-color: {category.color}">
-                  <span>{category.icon}</span>
+                <button
+                  class="tag-mini category-tag"
+                  style="--category-color: {category.color}"
+                  onclick={() => {
+                    selectedCategories = selectedCategories.filter(c => c !== categoryId);
+                  }}
+                  aria-label="Eliminar categoría {category.name}"
+                >
+                  <span class="tag-emoji">{category.icon}</span>
                   <span>{category.name}</span>
-                </span>
+                  <X size={10} class="tag-close" />
+                </button>
               {/if}
             {/each}
-
-            {#if selectedCategories.length > 3}
-              <span class="tag-mini more-tag">
-                +{selectedCategories.length - 3} más
-              </span>
-            {/if}
           </div>
         {/if}
       </div>
@@ -1046,7 +1122,7 @@
   }
 
   .all-toggle-btn:hover {
-    background: var(--gray-100);
+    background: var(--gray-50);
     border-color: var(--gray-300);
   }
 
@@ -1054,11 +1130,6 @@
     background: var(--acapulco);
     border-color: var(--acapulco);
     color: white;
-  }
-
-  .all-toggle-btn.active:hover {
-    background: var(--success-hover);
-    border-color: var(--success-hover);
   }
 
   .hidden-toggle-btn {
@@ -1086,11 +1157,6 @@
     background: var(--gray-600);
     border-color: var(--gray-600);
     color: white;
-  }
-
-  .hidden-toggle-btn.active:hover {
-    background: var(--gray-700);
-    border-color: var(--gray-700);
   }
 
   /* Month picker dropdown */
@@ -1361,28 +1427,40 @@
 
   @media (max-width: 640px) {
     .toolbar-content {
-      flex-direction: column;
-      align-items: stretch;
-      gap: var(--space-sm);
-    }
-
-    .date-selector-section,
-    .search-bar,
-    .toolbar-actions {
-      width: 100%;
-    }
-
-    .date-selector-section {
-      justify-content: center;
+      padding: var(--space-sm);
+      gap: var(--space-xs);
       flex-wrap: wrap;
     }
 
+    .date-selector-section {
+      display: flex;
+      gap: var(--space-xs);
+      flex-shrink: 0;
+    }
+
     .search-bar {
+      order: 3;
+      flex: 1 1 100%;
       max-width: none;
+      margin-top: var(--space-xs);
     }
 
     .toolbar-actions {
-      justify-content: center;
+      display: flex;
+      gap: var(--space-xs);
+      margin-left: auto;
+    }
+
+    .all-toggle-btn,
+    .hidden-toggle-btn,
+    .date-nav-btn {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .date-display {
+      font-size: 0.75rem;
+      padding: 0 var(--space-xs);
     }
   }
 
@@ -1404,11 +1482,25 @@
     flex: 1;
     max-width: 280px;
     transition: all 0.15s ease;
+    position: relative;
   }
 
   .search-bar:focus-within {
     border-color: var(--acapulco);
-    box-shadow: 0 0 0 3px rgba(122, 186, 165, 0.1);
+    box-shadow: 0 0 0 2px rgba(122, 186, 165, 0.1);
+  }
+
+  .search-bar.searching {
+    background: var(--surface);
+  }
+
+  .search-icon {
+    transition: color 0.15s ease;
+    color: var(--text-muted);
+  }
+
+  .search-bar:focus-within .search-icon {
+    color: var(--acapulco);
   }
 
   .search-bar input {
@@ -1422,6 +1514,39 @@
 
   .search-bar input::placeholder {
     color: var(--text-muted);
+    transition: opacity 0.2s ease;
+  }
+
+  .search-bar:focus-within input::placeholder {
+    opacity: 0.4;
+  }
+
+  .clear-search {
+    position: absolute;
+    right: var(--space-xs);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: none;
+    background: var(--gray-200);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeIn 0.15s ease forwards;
+    transition: all 0.15s ease;
+  }
+
+  .clear-search:hover {
+    background: var(--gray-300);
+  }
+
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+    }
   }
 
   .toolbar-actions {
@@ -1443,6 +1568,7 @@
     font-size: 0.8125rem;
     transition: all 0.15s ease;
     white-space: nowrap;
+    position: relative;
   }
 
   .toolbar-btn:hover {
@@ -1450,10 +1576,36 @@
     border-color: var(--gray-300);
   }
 
+  .toolbar-btn:active {
+    background: var(--gray-100);
+  }
+
+  .toolbar-btn.active {
+    background: var(--surface);
+    border-color: var(--acapulco);
+    color: var(--acapulco);
+  }
+
+  .toolbar-btn.has-filters {
+    border-color: var(--acapulco);
+    color: var(--acapulco);
+  }
+
+  .filter-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--acapulco);
+  }
+
   .toolbar-btn.danger:hover {
     background: rgba(239, 68, 68, 0.05);
     border-color: rgba(239, 68, 68, 0.3);
     color: rgb(239, 68, 68);
+    transform: translateY(-1px) scale(1.02);
   }
   
   /* Minimal Bento Box Filters */
@@ -1465,6 +1617,16 @@
     margin-bottom: var(--space-lg);
     max-width: 1200px;
     margin: 0 auto var(--space-lg) auto;
+    opacity: 0;
+    transform: translateY(-4px);
+    animation: slideDown 0.2s ease forwards;
+  }
+
+  @keyframes slideDown {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   /* Bento Grid Layout */
@@ -1486,7 +1648,6 @@
 
   .bento-item:hover {
     border-color: var(--gray-200);
-    background: var(--gray-50);
   }
 
   /* Quick Filters Pills */
@@ -1510,12 +1671,20 @@
     cursor: pointer;
     transition: all 0.15s ease;
     white-space: nowrap;
+    position: relative;
   }
 
   .filter-pill:hover {
     background: var(--gray-50);
     border-color: var(--gray-300);
-    color: var(--text-primary);
+  }
+
+  .filter-pill:active {
+    background: var(--gray-100);
+  }
+
+  .pill-indicator {
+    display: none;
   }
 
   .filter-pill.income.active {
@@ -1566,27 +1735,28 @@
     width: 100%;
     justify-content: space-between;
     min-width: 140px;
+    position: relative;
   }
 
   .category-pill:hover {
     background: var(--gray-50);
     border-color: var(--gray-300);
-    color: var(--text-primary);
   }
 
   .category-pill.active {
-    background: rgba(122, 186, 165, 0.1);
+    background: var(--surface);
     color: var(--acapulco);
-    border-color: rgba(122, 186, 165, 0.3);
+    border-color: var(--acapulco);
   }
 
   .chevron {
-    transition: transform 0.2s ease;
-    opacity: 0.6;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    opacity: 0.5;
   }
 
   .chevron.rotated {
     transform: rotate(180deg);
+    opacity: 0.8;
   }
 
   /* Compact Category Dropdown */
@@ -1599,7 +1769,7 @@
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-md);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    z-index: 50;
+    z-index: 100;
     max-height: 200px;
     overflow-y: auto;
     min-width: 240px;
@@ -1648,8 +1818,8 @@
   }
 
   .chip-check {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: var(--acapulco);
     color: white;
@@ -1657,6 +1827,7 @@
     align-items: center;
     justify-content: center;
     font-size: 0.625rem;
+    margin-left: auto;
   }
 
   /* Clear Button */
@@ -1710,31 +1881,54 @@
     display: flex;
     align-items: center;
     gap: var(--space-xs);
-    padding: 2px var(--space-xs);
+    padding: 0.25rem 0.5rem;
+    height: 1.5rem;
+    border: 1px solid var(--gray-200);
     border-radius: var(--radius-sm);
+    background: var(--surface);
     font-size: 0.6875rem;
     font-weight: 500;
-    line-height: 1.2;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+  }
+
+  .tag-mini:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+  }
+
+  .tag-emoji {
+    font-size: 0.75rem;
+  }
+
+  .tag-close {
+    margin-left: 0.25rem;
+    opacity: 0.4;
+    transition: opacity 0.15s ease;
+  }
+
+  .tag-mini:hover .tag-close {
+    opacity: 0.7;
   }
 
   .tag-mini.income-tag {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(122, 186, 165, 0.08);
     color: var(--acapulco);
+    border-color: rgba(122, 186, 165, 0.2);
   }
 
   .tag-mini.expense-tag {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(245, 121, 108, 0.08);
     color: var(--froly);
+    border-color: rgba(245, 121, 108, 0.2);
   }
 
   .tag-mini.category-tag {
-    background: color-mix(in srgb, var(--category-color) 10%, transparent);
-    color: var(--category-color);
-  }
-
-  .tag-mini.more-tag {
-    background: var(--gray-100);
-    color: var(--text-muted);
+    background: var(--surface);
+    border-color: var(--gray-200);
+    color: var(--text-primary);
   }
 
   /* Responsive Bento Grid */
@@ -1860,13 +2054,15 @@
     border: 1px solid rgba(2, 60, 70, 0.05);
     border-radius: var(--radius-lg);
     margin-bottom: var(--space-xs);
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     cursor: pointer;
+    position: relative;
   }
-  
+
   .transaction-card:hover {
     border-color: var(--acapulco);
     transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
   
   .transaction-card.selected {
@@ -1918,6 +2114,11 @@
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
+    transition: transform 0.2s ease;
+  }
+
+  .transaction-card:hover .transaction-category {
+    transform: scale(1.05);
   }
   
   .transaction-details {
@@ -1966,7 +2167,7 @@
     color: var(--acapulco);
     font-size: 0.75rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
   }
 
   .category-btn.has-category {
@@ -2111,7 +2312,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    opacity: 0;
+  }
+
+  .transaction-card:hover .action-btn {
+    opacity: 1;
   }
 
   .action-btn:hover {
@@ -2138,13 +2344,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     transition: all 0.2s ease;
     font-weight: 300;
   }
 
   .fab:hover {
+    background: var(--acapulco);
     border-color: var(--acapulco);
-    color: var(--acapulco);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.2);
   }
 </style>
