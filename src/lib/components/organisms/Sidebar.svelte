@@ -26,7 +26,7 @@
     top: 0;
     height: 100vh;
     width: 280px;
-    z-index: 30;
+    z-index: 45;
     display: none;
     background: var(--surface-elevated);
     border-right: 1px solid var(--border-color);
@@ -68,7 +68,7 @@
       var(--border-color) 80%,
       transparent 100%
     );
-    z-index: 1;
+    z-index: 2;
   }
 
   /* Smooth hover states */

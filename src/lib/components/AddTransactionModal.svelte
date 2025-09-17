@@ -256,7 +256,7 @@
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 50;
+    z-index: 100;
     background: rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
@@ -374,7 +374,7 @@
     left: 1rem;
     font-weight: 600;
     color: var(--text-secondary);
-    z-index: 1;
+    z-index: 5;
   }
 
   .amount-field {

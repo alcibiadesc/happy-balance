@@ -59,7 +59,7 @@
   .mobile-overlay {
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: 45;
     background: rgba(2, 60, 70, 0.4);
     backdrop-filter: blur(8px);
     animation: fadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);

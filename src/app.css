@@ -2,6 +2,85 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/* ==========================================================================
+   Z-INDEX HIERARCHY SYSTEM
+   ========================================================================== */
+
+/*
+ * VIBE KANBAN Z-INDEX LAYERING SYSTEM
+ *
+ * This systematic approach ensures consistent visual layering across the application.
+ * Each layer has a specific purpose and range to prevent conflicts.
+ *
+ * Usage Guidelines:
+ * - Always use these predefined ranges for new components
+ * - Never use arbitrary z-index values
+ * - Each layer builds logically upon the previous one
+ *
+ * LAYER STRUCTURE:
+ *
+ * 📋 BASE LAYER (1-9)
+ *    Purpose: Basic positioned elements, decorative elements
+ *    Range: z-index: 1-9
+ *    Examples: Transaction cards (1-2), Pseudo-elements, basic overlays
+ *
+ * 📋 CONTENT LAYER (10-19)
+ *    Purpose: Sticky content, table headers, toolbars
+ *    Range: z-index: 10-19
+ *    Examples: Sticky headers (10), Toolbars (15)
+ *
+ * 📋 POPOVER LAYER (20-39)
+ *    Purpose: Dropdowns, tooltips, small overlays
+ *    Range: z-index: 20-39
+ *    Examples: Date pickers (25), Emoji pickers (25), Category selectors (30), Category dropdowns (35)
+ *
+ * 📋 NAVIGATION LAYER (40-59)
+ *    Purpose: Fixed navigation elements
+ *    Range: z-index: 40-59
+ *    Examples: Mobile header (40), Desktop sidebar (45), Mobile sidebar (48-50)
+ *
+ * 📋 FLOATING LAYER (60-69)
+ *    Purpose: Floating action buttons, floating elements
+ *    Range: z-index: 60-69
+ *    Examples: FAB buttons (60), Floating notifications (65)
+ *
+ * 📋 MODAL LAYER (70-99)
+ *    Purpose: Modal dialogs, overlays that block interaction
+ *    Range: z-index: 70-99
+ *    Examples: Modal backdrops (70), Modal content (75), Modal overlays (80)
+ *
+ * 📋 CRITICAL LAYER (100+)
+ *    Purpose: Critical modals that must be above everything
+ *    Range: z-index: 100+
+ *    Examples: Add Transaction Modal (100)
+ *
+ * MAINTENANCE NOTES:
+ * - Never exceed z-index: 99 to prevent escalation (except critical modals at 100+)
+ * - Document any new z-index usage in components
+ * - Transaction cards with open dropdowns get elevated to z-index: 40
+ * - Review this hierarchy when adding new overlay types
+ * - Test across all supported devices when modifying values
+ */
+
+:root {
+  /* Z-Index Constants - Use these in components via var() */
+  --z-base: 1;
+  --z-base-hover: 2;
+  --z-content-sticky: 10;
+  --z-content-toolbar: 15;
+  --z-popover-dropdown: 25;
+  --z-popover-category-selector: 30;
+  --z-popover-category-dropdown: 35;
+  --z-nav-mobile-header: 40;
+  --z-nav-sidebar: 45;
+  --z-nav-mobile-sidebar: 50;
+  --z-floating-fab: 60;
+  --z-modal-backdrop: 70;
+  --z-modal-content: 75;
+  --z-critical: 90;
+  --z-critical-modal: 100;
+}
+
 /* Base styles */
 html {
   font-family:

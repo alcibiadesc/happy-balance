@@ -1050,6 +1050,7 @@
             class="transaction-card"
             class:selected={$apiSelectedTransactions.has(transaction.id)}
             class:hidden={transaction.hidden}
+            class:has-dropdown-open={showCategoryDropdown === transaction.id}
           >
             {#if isSelectionMode}
               <input 
@@ -1525,7 +1526,7 @@
     border-radius: var(--radius-md);
     padding: var(--space-md);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    z-index: 20;
+    z-index: 25;
     min-width: 240px;
   }
 
@@ -1760,7 +1761,7 @@
     background: transparent;
     position: sticky;
     top: 0;
-    z-index: 15;
+    z-index: 10;
     padding: 1rem 0;
   }
 
@@ -2213,7 +2214,7 @@
   /* Category Selector */
   .category-selector {
     position: relative;
-    z-index: 20;
+    z-index: 30;
   }
 
   .category-pill {
@@ -2268,7 +2269,7 @@
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-md);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    z-index: 100;
+    z-index: 35;
     max-height: 200px;
     overflow-y: auto;
     min-width: 240px;
@@ -2578,6 +2579,7 @@
     cursor: pointer;
     position: relative;
     min-height: 4.5rem;
+    z-index: 1;
   }
 
   .transaction-card:hover {
@@ -2586,6 +2588,12 @@
     transform: translateX(4px);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
                 0 2px 4px rgba(0, 0, 0, 0.03);
+    z-index: 2;
+  }
+
+  /* Keep elevated z-index when dropdown is open */
+  .transaction-card.has-dropdown-open {
+    z-index: 40;
   }
 
   .transaction-card:last-child {
@@ -2681,6 +2689,7 @@
   .category-selector {
     position: relative;
     margin-top: var(--space-xs);
+    z-index: 30;
   }
   
   .category-btn {
@@ -2720,7 +2729,7 @@
     position: absolute;
     top: calc(100% + 0.25rem);
     left: 0;
-    z-index: 1000;
+    z-index: 35;
     background: var(--surface-elevated);
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-md);
@@ -2769,7 +2778,7 @@
 
   .category-grid-item:hover {
     transform: scale(1.1);
-    z-index: 1;
+    z-index: 5;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
@@ -2887,6 +2896,7 @@
     position: fixed;
     bottom: 1.5rem;
     right: 1.5rem;
+    z-index: 60;
     width: 3rem;
     height: 3rem;
     border-radius: 1rem;
