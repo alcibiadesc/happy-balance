@@ -10,9 +10,9 @@ import {
   CategorySnapshot,
 } from "@domain/entities/Category";
 import {
-  TransactionType,
-  TransactionTypeHelper,
-} from "@domain/entities/TransactionType";
+  CategoryType,
+  CategoryTypeHelper,
+} from "@domain/entities/CategoryType";
 
 export class PrismaCategoryRepository implements ICategoryRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -23,12 +23,12 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.fail(categoryIdResult.getError());
     }
 
-    const transactionType = TransactionTypeHelper.fromString(
+    const categoryType = CategoryTypeHelper.fromString(
       prismaCategory.type,
     );
-    if (!transactionType) {
+    if (!categoryType) {
       return Result.failWithMessage(
-        `Invalid transaction type: ${prismaCategory.type}`,
+        `Invalid category type: ${prismaCategory.type}`,
       );
     }
 
@@ -37,7 +37,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       name: prismaCategory.name,
       color: prismaCategory.color || "#3B82F6",
       icon: prismaCategory.icon || "💰",
-      type: transactionType,
+      type: categoryType,
       isActive: prismaCategory.isActive,
       createdAt: prismaCategory.createdAt.toISOString(),
     });
@@ -203,7 +203,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     }
   }
 
-  async findByType(type: TransactionType): Promise<Result<Category[]>> {
+  async findByType(type: CategoryType): Promise<Result<Category[]>> {
     return this.findWithFilters({ type });
   }
 
@@ -278,7 +278,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async existsByName(
     name: string,
-    type: TransactionType,
+    type: CategoryType,
   ): Promise<Result<boolean>> {
     try {
       const count = await this.prisma.category.count({
@@ -323,7 +323,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     }
   }
 
-  async getDefaults(type: TransactionType): Promise<Result<Category[]>> {
+  async getDefaults(type: CategoryType): Promise<Result<Category[]>> {
     // For now, return empty array. Could be enhanced to return preset categories
     return Result.ok([]);
   }
@@ -368,7 +368,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async findMatchingCategories(
     merchantName: string,
-    type: TransactionType,
+    type: CategoryType,
   ): Promise<Result<Category[]>> {
     // Simple keyword matching for now
     return this.findWithFilters({ searchTerm: merchantName, type });

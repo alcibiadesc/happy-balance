@@ -1,9 +1,9 @@
 import { Result } from "../shared/Result";
 import { Category, CategoryId, CategorySnapshot } from "../entities/Category";
-import { TransactionType } from "../entities/TransactionType";
+import { CategoryType } from "../entities/CategoryType";
 
 export interface CategoryFilters {
-  type?: TransactionType;
+  type?: CategoryType;
   isActive?: boolean;
   searchTerm?: string;
 }
@@ -41,7 +41,7 @@ export interface ICategoryRepository {
   /**
    * Find categories by type
    */
-  findByType(type: TransactionType): Promise<Result<Category[]>>;
+  findByType(type: CategoryType): Promise<Result<Category[]>>;
 
   /**
    * Find active categories
@@ -76,7 +76,7 @@ export interface ICategoryRepository {
   /**
    * Check if category name exists for a given type
    */
-  existsByName(name: string, type: TransactionType): Promise<Result<boolean>>;
+  existsByName(name: string, type: CategoryType): Promise<Result<boolean>>;
 
   /**
    * Count total categories
@@ -86,7 +86,7 @@ export interface ICategoryRepository {
   /**
    * Get default categories for a transaction type
    */
-  getDefaults(type: TransactionType): Promise<Result<Category[]>>;
+  getDefaults(type: CategoryType): Promise<Result<Category[]>>;
 
   /**
    * Create default categories if none exist
@@ -109,7 +109,7 @@ export interface ICategoryRepository {
    */
   findMatchingCategories(
     merchantName: string,
-    type: TransactionType,
+    type: CategoryType,
   ): Promise<Result<Category[]>>;
 
   /**

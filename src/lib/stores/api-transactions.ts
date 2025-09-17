@@ -405,6 +405,18 @@ function createApiTransactionStore() {
   };
 }
 
+// Helper function to map API category to frontend format
+function mapApiToCategory(apiCategory: any): Category {
+  return {
+    id: apiCategory.id,
+    name: apiCategory.name,
+    type: apiCategory.type,
+    color: apiCategory.color || "#3B82F6",
+    icon: apiCategory.icon || "💰",
+    annualBudget: 0, // API doesn't have annualBudget yet, keeping for frontend compatibility
+  };
+}
+
 // Helper function to map API transaction to frontend format
 function mapApiToTransaction(apiTransaction: any): Transaction {
   return {
@@ -432,87 +444,128 @@ function mapApiToTransaction(apiTransaction: any): Transaction {
 
 // Category Store using Backend APIs
 function createApiCategoryStore() {
-  const { subscribe, set, update } = writable<Category[]>([
-    // Default categories - in the future we'll load from API
-    {
-      id: "1",
-      name: "Food & Groceries",
-      type: "essential",
-      color: "#f5796c",
-      icon: "🍽️",
-      annualBudget: 0,
-    },
-    {
-      id: "2",
-      name: "Transport",
-      type: "essential",
-      color: "#7abaa5",
-      icon: "🚇",
-      annualBudget: 0,
-    },
-    {
-      id: "3",
-      name: "Entertainment",
-      type: "discretionary",
-      color: "#fecd2c",
-      icon: "🎬",
-      annualBudget: 0,
-    },
-    {
-      id: "4",
-      name: "Utilities",
-      type: "essential",
-      color: "#023c46",
-      icon: "⚡",
-      annualBudget: 0,
-    },
-    {
-      id: "5",
-      name: "Income",
-      type: "income",
-      color: "#7abaa5",
-      icon: "💰",
-      annualBudget: 0,
-    },
-    {
-      id: "6",
-      name: "Investment",
-      type: "investment",
-      color: "#023c46",
-      icon: "📈",
-      annualBudget: 0,
-    },
-  ]);
+  const { subscribe, set, update } = writable<Category[]>([]);
 
   return {
     subscribe,
 
     async load() {
-      // For now, return default categories
-      // TODO: Load from API when backend is ready
-      return;
+      try {
+        const response = await fetch(`${API_BASE}/categories`);
+        if (!response.ok) {
+          throw new Error(`Failed to load categories: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success && result.data) {
+          // Map API response to frontend Category format
+          const categories = result.data.map(mapApiToCategory);
+          set(categories);
+        } else {
+          console.warn("No categories found, setting empty array");
+          set([]);
+        }
+      } catch (error) {
+        console.error("❌ Failed to load categories from API:", error);
+        set([]);
+      }
     },
 
     async add(category: Omit<Category, "id">) {
-      // TODO: Implement API call when categories API is ready
-      const newCategory = {
-        ...category,
-        id: crypto.randomUUID?.() || `cat-${Date.now()}`,
-      };
-      update((categories) => [...categories, newCategory]);
-      return newCategory;
+      try {
+        const response = await fetch(`${API_BASE}/categories`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: category.name,
+            type: category.type,
+            color: category.color || "#3B82F6",
+            icon: category.icon || "💰",
+            annualBudget: category.annualBudget || 0,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to create category");
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          const newCategory = mapApiToCategory(result.data);
+          update((categories) => [...categories, newCategory]);
+          return newCategory;
+        }
+      } catch (error) {
+        console.error("Failed to add category:", error);
+        throw error;
+      }
     },
 
     async update(id: string, updates: Partial<Category>) {
-      // TODO: Implement API call when categories API is ready
-      update((categories) =>
-        categories.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-      );
+      try {
+        const response = await fetch(`${API_BASE}/categories/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updates),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to update category");
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          const updatedCategory = mapApiToCategory(result.data);
+          update((categories) =>
+            categories.map((c) => (c.id === id ? updatedCategory : c)),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to update category:", error);
+        throw error;
+      }
     },
 
     async delete(id: string) {
-      // TODO: Implement API call when categories API is ready
-      update((categories) => categories.filter((c) => c.id !== id));
+      try {
+        const response = await fetch(`${API_BASE}/categories/${id}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to delete category");
+        }
+
+        update((categories) => categories.filter((c) => c.id !== id));
+      } catch (error) {
+        console.error("Failed to delete category:", error);
+        throw error;
+      }
+    },
+
+    async clear() {
+      try {
+        const response = await fetch(`${API_BASE}/categories`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to clear categories");
+        }
+
+        set([]);
+      } catch (error) {
+        console.error("Failed to clear categories:", error);
+        throw error;
+      }
     },
   };
 }

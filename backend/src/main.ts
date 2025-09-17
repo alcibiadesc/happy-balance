@@ -10,10 +10,12 @@ import { TransactionController } from "@infrastructure/controllers/TransactionCo
 import { ImportController } from "@infrastructure/controllers/ImportController";
 import { UserPreferencesController } from "@infrastructure/controllers/UserPreferencesController";
 import { SeedController } from "@infrastructure/controllers/SeedController";
+import { CategoryController } from "@infrastructure/controllers/CategoryController";
 import { createTransactionRoutes } from "@infrastructure/routes/transactionRoutes";
 import { createImportRoutes } from "@infrastructure/routes/importRoutes";
 import { createUserPreferencesRoutes } from "@infrastructure/routes/userPreferencesRoutes";
 import { createSeedRoutes } from "@infrastructure/routes/seedRoutes";
+import { createCategoryRoutes } from "@infrastructure/routes/categoryRoutes";
 import { errorHandler } from "@infrastructure/middleware/errorHandler";
 import {
   apiLimiter,
@@ -45,6 +47,7 @@ class App {
   private importController!: ImportController;
   private userPreferencesController!: UserPreferencesController;
   private seedController!: SeedController;
+  private categoryController!: CategoryController;
 
   constructor() {
     this.app = express();
@@ -144,6 +147,10 @@ class App {
       this.categoryRepository,
       this.userPreferencesRepository,
     );
+
+    this.categoryController = new CategoryController(
+      this.categoryRepository,
+    );
   }
 
   private initializeMiddleware() {
@@ -224,6 +231,7 @@ class App {
       createUserPreferencesRoutes(this.userPreferencesController),
     );
     this.app.use("/api/seed", createSeedRoutes(this.seedController));
+    this.app.use("/api/categories", createCategoryRoutes(this.categoryController));
 
     // 404 handler
     this.app.use("*", (req, res) => {

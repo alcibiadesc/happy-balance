@@ -5,6 +5,7 @@
   import { currentCurrency, currencies, setCurrency } from '$lib/stores/currency';
   import { theme, setTheme, effectiveTheme } from '$lib/stores/theme';
   import { userPreferences } from '$lib/stores/user-preferences';
+  import { apiCategories } from '$lib/stores/api-transactions';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
 
@@ -309,6 +310,9 @@
       setLanguage('en');
       setTheme('light');
 
+      // Reload categories from the API to reflect the reset
+      await apiCategories.load();
+
       // Show success feedback
       importStatus = 'Data has been successfully reset to defaults';
       importSuccess = true;
@@ -342,15 +346,28 @@
 
       // Also clear data from the database via API
       try {
-        const response = await fetch(`${API_BASE}/transactions`, {
+        // Clear transactions
+        const transactionsResponse = await fetch(`${API_BASE}/transactions`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
           }
         });
 
-        if (!response.ok) {
-          console.warn('Failed to delete data from database, but localStorage was cleared');
+        if (!transactionsResponse.ok) {
+          console.warn('Failed to delete transactions from database, but localStorage was cleared');
+        }
+
+        // Clear categories
+        const categoriesResponse = await fetch(`${API_BASE}/categories`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!categoriesResponse.ok) {
+          console.warn('Failed to delete categories from database, but localStorage was cleared');
         }
       } catch (apiError) {
         console.warn('API not available, but localStorage was cleared');

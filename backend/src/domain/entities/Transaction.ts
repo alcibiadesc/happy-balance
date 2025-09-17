@@ -5,6 +5,7 @@ import { TransactionDate } from "../value-objects/TransactionDate";
 import { Merchant } from "../value-objects/Merchant";
 import { Category, CategoryId } from "./Category";
 import { TransactionType } from "./TransactionType";
+import { CategoryType } from "./CategoryType";
 import { HashGenerationService } from "../services/HashGenerationService";
 
 /**
@@ -125,10 +126,10 @@ export class Transaction {
 
   // Business methods
   categorize(category: Category): Result<void> {
-    // Business rule: Category type must match transaction type
-    if (category.type !== this._type) {
+    // Business rule: Category type must be compatible with transaction type
+    if (!this.isCategoryTypeCompatible(category.type, this._type)) {
       return Result.failWithMessage(
-        `Category type ${category.type} does not match transaction type ${this._type}`,
+        `Category type ${category.type} is not compatible with transaction type ${this._type}`,
       );
     }
 
@@ -253,6 +254,24 @@ export class Transaction {
 
   equals(other: Transaction): boolean {
     return this._id.equals(other._id);
+  }
+
+  /**
+   * Check if a category type is compatible with a transaction type
+   */
+  private isCategoryTypeCompatible(categoryType: CategoryType, transactionType: TransactionType): boolean {
+    switch (transactionType) {
+      case TransactionType.INCOME:
+        return categoryType === CategoryType.INCOME;
+      case TransactionType.EXPENSE:
+        return categoryType === CategoryType.ESSENTIAL ||
+               categoryType === CategoryType.DISCRETIONARY ||
+               categoryType === CategoryType.DEBT_PAYMENT;
+      case TransactionType.INVESTMENT:
+        return categoryType === CategoryType.INVESTMENT;
+      default:
+        return false;
+    }
   }
 
   toSnapshot(): TransactionSnapshot {

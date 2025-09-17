@@ -1,5 +1,5 @@
 import { Result } from "../shared/Result";
-import { TransactionType, TransactionTypeHelper } from "./TransactionType";
+import { CategoryType, CategoryTypeHelper } from "./CategoryType";
 
 /**
  * Category ID value object
@@ -43,7 +43,7 @@ export class Category {
     private _name: string,
     private _color: string,
     private _icon: string,
-    private readonly _type: TransactionType,
+    private readonly _type: CategoryType,
     private _isActive: boolean = true,
     private readonly _createdAt: Date = new Date(),
   ) {}
@@ -52,7 +52,7 @@ export class Category {
     name: string,
     color: string,
     icon: string,
-    type: TransactionType,
+    type: CategoryType,
     id?: CategoryId,
   ): Result<Category> {
     // Validate name
@@ -107,7 +107,7 @@ export class Category {
     return this._icon;
   }
 
-  get type(): TransactionType {
+  get type(): CategoryType {
     return this._type;
   }
 
@@ -217,10 +217,10 @@ export class Category {
       return Result.fail(idResult.getError());
     }
 
-    const typeResult = TransactionTypeHelper.fromString(snapshot.type);
+    const typeResult = CategoryTypeHelper.fromString(snapshot.type);
     if (!typeResult) {
       return Result.failWithMessage(
-        `Invalid transaction type: ${snapshot.type}`,
+        `Invalid category type: ${snapshot.type}`,
       );
     }
 
@@ -243,7 +243,7 @@ export interface CategorySnapshot {
   name: string;
   color: string;
   icon: string;
-  type: TransactionType;
+  type: CategoryType;
   isActive: boolean;
   createdAt: string;
 }
