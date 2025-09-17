@@ -9,9 +9,11 @@ import { PrismaCategoryRepository } from "@infrastructure/repositories/PrismaCat
 import { TransactionController } from "@infrastructure/controllers/TransactionController";
 import { ImportController } from "@infrastructure/controllers/ImportController";
 import { UserPreferencesController } from "@infrastructure/controllers/UserPreferencesController";
+import { SeedController } from "@infrastructure/controllers/SeedController";
 import { createTransactionRoutes } from "@infrastructure/routes/transactionRoutes";
 import { createImportRoutes } from "@infrastructure/routes/importRoutes";
 import { createUserPreferencesRoutes } from "@infrastructure/routes/userPreferencesRoutes";
+import { createSeedRoutes } from "@infrastructure/routes/seedRoutes";
 import { errorHandler } from "@infrastructure/middleware/errorHandler";
 import {
   apiLimiter,
@@ -42,6 +44,7 @@ class App {
   private transactionController!: TransactionController;
   private importController!: ImportController;
   private userPreferencesController!: UserPreferencesController;
+  private seedController!: SeedController;
 
   constructor() {
     this.app = express();
@@ -65,7 +68,7 @@ class App {
     const transactionFactory = new TransactionFactory();
     const smartCategorizationService = new SmartCategorizationService(
       this.categoryPatternRepository,
-      this.transactionRepository as any
+      this.transactionRepository as any,
     );
 
     // Application services / Use cases
@@ -98,11 +101,15 @@ class App {
     const smartCategorizeUseCase = new SmartCategorizeTransactionUseCase(
       {
         getTransaction: async (id) => {
-          const result = await this.transactionRepository.findById({ value: id } as any);
+          const result = await this.transactionRepository.findById({
+            value: id,
+          } as any);
           return result.isSuccess() ? result.getValue() : null;
         },
         getCategory: async (id) => {
-          const result = await this.categoryRepository.findById({ value: id } as any);
+          const result = await this.categoryRepository.findById({
+            value: id,
+          } as any);
           return result.isSuccess() ? result.getValue() : null;
         },
         saveTransaction: async (t) => {
@@ -112,9 +119,9 @@ class App {
           for (const t of ts) {
             await this.transactionRepository.update(t);
           }
-        }
+        },
       },
-      smartCategorizationService
+      smartCategorizationService,
     );
 
     // Controllers
@@ -130,6 +137,11 @@ class App {
       importSelectedTransactionsUseCase,
     );
     this.userPreferencesController = new UserPreferencesController(
+      this.userPreferencesRepository,
+    );
+
+    this.seedController = new SeedController(
+      this.categoryRepository,
       this.userPreferencesRepository,
     );
   }
@@ -211,6 +223,7 @@ class App {
       "/api/preferences",
       createUserPreferencesRoutes(this.userPreferencesController),
     );
+    this.app.use("/api/seed", createSeedRoutes(this.seedController));
 
     // 404 handler
     this.app.use("*", (req, res) => {

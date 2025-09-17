@@ -246,6 +246,8 @@
     "import_data": "Import Data",
     "clear_data": "Clear Data",
     "clear_data_confirmation": "Are you sure you want to delete all data? This action cannot be undone.",
+    "reset_data": "Reset to Defaults",
+    "reset_data_confirmation": "This will restore all default categories and settings. Your transactions will be preserved but categories will be reset to defaults.",
     "export_success": "Data exported successfully",
     "import_success": "Successfully imported {count} transactions",
     "import_invalid_file": "Please select a valid JSON file",
@@ -274,6 +276,9 @@
     "are_you_sure": "Are you sure?",
     "delete_all_title": "Delete All Data",
     "delete_all_message": "⚠️ This will permanently delete ALL your transactions, categories, and settings from both the app and the database. This action cannot be undone!",
-    "delete_everything": "Delete Everything"
+    "delete_everything": "Delete Everything",
+    "reset_title": "Reset to Defaults",
+    "reset_message": "⚠️ This will restore default categories and settings. Your transactions will be preserved, but custom categories and settings will be lost. This action cannot be undone!",
+    "reset_everything": "Reset to Defaults"
   }
 }

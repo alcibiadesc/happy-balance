@@ -246,6 +246,8 @@
     "import_data": "Importar Datos",
     "clear_data": "Limpiar Datos",
     "clear_data_confirmation": "¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.",
+    "reset_data": "Restablecer a Defaults",
+    "reset_data_confirmation": "Esto restaurará todas las categorías y configuraciones por defecto. Tus transacciones se conservarán pero las categorías se restablecerán a las predeterminadas.",
     "export_success": "Datos exportados exitosamente",
     "import_success": "Se importaron exitosamente {count} transacciones",
     "import_invalid_file": "Por favor selecciona un archivo JSON válido",
@@ -274,6 +276,9 @@
     "are_you_sure": "¿Estás seguro?",
     "delete_all_title": "Eliminar Todos los Datos",
     "delete_all_message": "⚠️ Esto eliminará permanentemente TODAS tus transacciones, categorías y configuraciones tanto de la aplicación como de la base de datos. ¡Esta acción no se puede deshacer!",
-    "delete_everything": "Eliminar Todo"
+    "delete_everything": "Eliminar Todo",
+    "reset_title": "Restablecer a Defaults",
+    "reset_message": "⚠️ Esto restaurará las categorías y configuraciones por defecto. Tus transacciones se conservarán, pero las categorías personalizadas y configuraciones se perderán. ¡Esta acción no se puede deshacer!",
+    "reset_everything": "Restablecer a Defaults"
   }
 }

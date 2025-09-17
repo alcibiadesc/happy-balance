@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Download, Upload, Trash2, DollarSign, Palette, Globe, FileText, AlertCircle, CheckCircle } from 'lucide-svelte';
+  import { Download, Upload, Trash2, DollarSign, Palette, Globe, FileText, AlertCircle, CheckCircle, RotateCcw } from 'lucide-svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import { t, currentLanguage, setLanguage } from '$lib/stores/i18n';
   import { currentCurrency, currencies, setCurrency } from '$lib/stores/currency';
@@ -41,6 +41,7 @@
   // Modal state
   let showImportModal = false;
   let showDeleteAllModal = false;
+  let showResetModal = false;
   let pendingImportData: any = null;
   
   function handleExportData() {
@@ -250,6 +251,80 @@
   
   function handleDeleteAllData() {
     showDeleteAllModal = true;
+  }
+
+  function handleResetData() {
+    showResetModal = true;
+  }
+
+  async function confirmReset() {
+    try {
+      // Reset categories to defaults by calling the seed endpoint
+      try {
+        const response = await fetch(`${API_BASE}/seed`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          console.warn('Failed to reset data from database, falling back to localStorage reset');
+        }
+      } catch (apiError) {
+        console.warn('API not available, proceeding with localStorage reset');
+      }
+
+      // Reset localStorage categories and settings but preserve transactions
+      if (browser) {
+        // Remove categories to force reload from defaults
+        localStorage.removeItem('categories');
+
+        // Reset user preferences to defaults
+        localStorage.removeItem('user-preferences');
+
+        // Reset any cached settings but keep transactions and transaction hashes
+        const keysToKeep = [
+          'transactions',
+          'transaction-hashes',
+          'theme',
+          'expense-tracker-language',
+          'expense-tracker-currency'
+        ];
+        const allKeys = Object.keys(localStorage);
+        allKeys.forEach(key => {
+          if (!keysToKeep.includes(key)) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+
+      // Reset user preferences to defaults
+      await userPreferences.updateCurrency('EUR');
+      await userPreferences.updateLanguage('en');
+      await userPreferences.updateTheme('light');
+
+      // Update stores to reflect defaults
+      setCurrency('EUR');
+      setLanguage('en');
+      setTheme('light');
+
+      // Show success feedback
+      importStatus = 'Data has been successfully reset to defaults';
+      importSuccess = true;
+      setTimeout(() => {
+        importStatus = '';
+        importSuccess = false;
+      }, 3000);
+
+      // Optionally reload the page to reset the application state
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error('Error resetting data:', error);
+      importError = 'Failed to reset data to defaults';
+    }
   }
 
   async function confirmDeleteAll() {
@@ -477,7 +552,15 @@
             {/if}
           </label>
           
-          <button 
+          <button
+            class="action-button reset"
+            onclick={handleResetData}
+          >
+            <RotateCcw size={16} strokeWidth={2} />
+            {$t('settings.reset_data')}
+          </button>
+
+          <button
             class="action-button delete"
             onclick={handleDeleteAllData}
           >
@@ -500,6 +583,18 @@
   type="info"
   onConfirm={confirmImport}
   onCancel={cancelImport}
+/>
+
+<!-- Reset Data Confirmation Modal -->
+<ConfirmModal
+  bind:isOpen={showResetModal}
+  title={$t('modal.reset_title')}
+  message={$t('modal.reset_message')}
+  confirmText={$t('modal.reset_everything')}
+  cancelText={$t('common.cancel')}
+  type="warning"
+  onConfirm={confirmReset}
+  onCancel={() => {}}
 />
 
 <!-- Delete All Data Confirmation Modal -->
@@ -804,12 +899,25 @@
     cursor: not-allowed;
   }
   
+  .action-button.reset {
+    background: transparent;
+    border-color: #FDCB6E;
+    color: #FDCB6E;
+  }
+
+  .action-button.reset:hover {
+    background: #FDCB6E;
+    color: var(--text-inverse);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(253, 203, 110, 0.3);
+  }
+
   .action-button.delete {
     background: transparent;
     border-color: #f5796c;
     color: #f5796c;
   }
-  
+
   .action-button.delete:hover {
     background: #f5796c;
     color: var(--text-inverse);
