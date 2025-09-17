@@ -38,10 +38,16 @@
       : true
   ); // Toggle for showing all transactions
 
-  // Save preference to localStorage when it changes
+  // Save preferences to localStorage when they change
   $effect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('showAllTransactions', showAllTransactions.toString());
+    }
+  });
+
+  $effect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('showHiddenTransactions', showHiddenTransactions.toString());
     }
   });
   let dateRangeMode = $state<'month' | 'custom'>('month');
@@ -112,8 +118,12 @@
     selectedPeriod = '';
   }
   
-  // State for showing/hiding hidden transactions
-  let showHiddenTransactions = $state(false);
+  // State for showing/hiding hidden transactions - default to true on first visit
+  let showHiddenTransactions = $state(
+    typeof window !== 'undefined'
+      ? localStorage.getItem('showHiddenTransactions') === 'false' ? false : true
+      : true
+  );
 
   // Computed
   let filteredTransactions = $derived(() => {

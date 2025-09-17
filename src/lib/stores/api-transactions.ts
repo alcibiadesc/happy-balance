@@ -24,7 +24,9 @@ function createApiTransactionStore() {
     // Load transactions from API
     async load() {
       try {
-        const response = await fetch(`${API_BASE}/transactions`);
+        // Always load ALL transactions including hidden ones
+        // The frontend will handle filtering based on user preference
+        const response = await fetch(`${API_BASE}/transactions?includeHidden=true`);
         if (!response.ok) {
           throw new Error(`Failed to load transactions: ${response.status}`);
         }
