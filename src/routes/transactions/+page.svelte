@@ -289,14 +289,13 @@
 
   async function toggleHideTransaction(transaction: Transaction) {
     const newHiddenState = !transaction.hidden;
-    await apiTransactions.update(transaction.id, { hidden: newHiddenState });
 
-    // Provide visual feedback
-    if (newHiddenState && !showHiddenTransactions) {
-      // Transaction will disappear, show a brief message
-      setTimeout(() => {
-        // Optional: Add toast notification here if needed
-      }, 100);
+    try {
+      // Optimistic update happens immediately in the store
+      await apiTransactions.update(transaction.id, { hidden: newHiddenState });
+    } catch (error) {
+      console.error('Failed to toggle transaction visibility:', error);
+      // The store will handle rollback on error
     }
   }
 
@@ -1162,6 +1161,7 @@
               </button>
               <button
                 class="action-btn"
+                class:hidden={transaction.hidden}
                 title={transaction.hidden ? $t('transactions.show_transaction') : $t('transactions.hide_transaction')}
                 onclick={() => toggleHideTransaction(transaction)}
               >
@@ -2783,6 +2783,10 @@
   .action-btn:hover {
     background: var(--surface);
     color: var(--text);
+  }
+
+  .action-btn.hidden {
+    opacity: 0.5;
   }
 
   .delete-btn:hover {

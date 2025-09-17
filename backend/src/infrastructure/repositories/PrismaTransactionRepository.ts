@@ -261,21 +261,39 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     try {
       const snapshot = transaction.toSnapshot();
 
+      // Build update data object with only the fields that should be updated
+      const updateData: any = {
+        amount: snapshot.amount,
+        currency: snapshot.currency,
+        merchant: snapshot.merchant,
+        type: snapshot.type,
+        description: snapshot.description,
+        categoryId: snapshot.categoryId,
+        isSelected: snapshot.isSelected,
+        hash: snapshot.hash,
+        hidden: (transaction as any).hidden || false,
+        updatedAt: new Date(),
+      };
+
+      // IMPORTANT: Only update date if it has actually changed
+      // We need to preserve the original date to avoid timezone issues
+      const existingTransaction = await this.prisma.transaction.findUnique({
+        where: { id: snapshot.id },
+      });
+
+      if (existingTransaction) {
+        // Format existing date to compare
+        const existingDateStr = this.formatDateToString(existingTransaction.date);
+
+        // Only update date if it's different from the current one
+        if (existingDateStr !== snapshot.date) {
+          updateData.date = this.createDateFromDateString(snapshot.date);
+        }
+      }
+
       await this.prisma.transaction.update({
         where: { id: snapshot.id },
-        data: {
-          amount: snapshot.amount,
-          currency: snapshot.currency,
-          date: this.createDateFromDateString(snapshot.date),
-          merchant: snapshot.merchant,
-          type: snapshot.type,
-          description: snapshot.description,
-          categoryId: snapshot.categoryId,
-          isSelected: snapshot.isSelected,
-          hash: snapshot.hash,
-          hidden: (transaction as any).hidden || false,
-          updatedAt: new Date(),
-        },
+        data: updateData,
       });
 
       return Result.ok(undefined);

@@ -78,10 +78,33 @@ function createApiTransactionStore() {
       }
     },
 
-    // Update transaction
+    // Update transaction with optimistic updates
     async update(id: string, updates: Partial<Transaction>) {
+      // Store the original transaction for rollback
+      let originalTransaction: Transaction | undefined;
+
+      // Optimistic update - update UI immediately
+      update((transactions) => {
+        originalTransaction = transactions.find(t => t.id === id);
+        if (!originalTransaction) return transactions;
+
+        // Apply ONLY the provided updates, keeping all other fields intact
+        const updatedTransaction = { ...originalTransaction };
+
+        // Only update fields that are explicitly provided (not undefined)
+        Object.keys(updates).forEach(key => {
+          if (updates[key as keyof Transaction] !== undefined) {
+            (updatedTransaction as any)[key] = updates[key as keyof Transaction];
+          }
+        });
+
+        return transactions.map((t) =>
+          t.id === id ? updatedTransaction : t
+        );
+      });
+
       try {
-        // Prepare update payload
+        // Prepare update payload for backend
         const payload: any = {
           description: updates.description,
           hidden: updates.hidden,
@@ -110,11 +133,20 @@ function createApiTransactionStore() {
         const result = await response.json();
         const updatedTransaction = mapApiToTransaction(result.data);
 
+        // Update with the server response (in case server modified something)
         update((transactions) =>
           transactions.map((t) => (t.id === id ? updatedTransaction : t)),
         );
       } catch (error) {
         console.error("Failed to update transaction:", error);
+
+        // Rollback on error
+        if (originalTransaction) {
+          update((transactions) =>
+            transactions.map((t) => (t.id === id ? originalTransaction : t)),
+          );
+        }
+
         throw error;
       }
     },

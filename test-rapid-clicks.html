@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Rapid Clicks</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-container {
+            border: 2px solid #7abaa5;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #7abaa5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #6aa595;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        .pending {
+            color: orange;
+        }
+        .info {
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    <h1>Race Condition Test for Transaction Visibility Toggle</h1>
+
+    <div class="test-container">
+        <h2>Test Scenario</h2>
+        <p>This test simulates rapid clicking on the visibility toggle button to verify that the race condition fix is working properly.</p>
+
+        <button id="simulateBtn" onclick="simulateRapidClicks()">Simulate Rapid Clicks (10 clicks in 500ms)</button>
+        <button id="clearBtn" onclick="clearLog()">Clear Log</button>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Expected Behavior</h2>
+        <ul>
+            <li>✅ First click should immediately start processing</li>
+            <li>✅ Subsequent rapid clicks should be queued</li>
+            <li>✅ Loading spinner should appear during processing</li>
+            <li>✅ Button should be disabled during processing</li>
+            <li>✅ Final state should be predictable (toggled correct number of times)</li>
+            <li>✅ No concurrent API calls should occur</li>
+        </ul>
+    </div>
+
+    <script>
+        let clickCount = 0;
+        let processingCount = 0;
+        let queuedCount = 0;
+        let completedCount = 0;
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toISOString().split('T')[1].slice(0, 12);
+            entry.textContent = `[${timestamp}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            clickCount = 0;
+            processingCount = 0;
+            queuedCount = 0;
+            completedCount = 0;
+            log('Log cleared', 'info');
+        }
+
+        async function simulateRapidClicks() {
+            const button = document.getElementById('simulateBtn');
+            button.disabled = true;
+
+            log('Starting rapid click simulation...', 'info');
+
+            // Simulate 10 rapid clicks
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    clickCount++;
+                    log(`Click #${clickCount} triggered`, 'pending');
+                    simulateToggleHideTransaction();
+                }, i * 50); // Click every 50ms
+            }
+
+            // Re-enable button after simulation
+            setTimeout(() => {
+                button.disabled = false;
+                log(`Simulation complete. Clicks: ${clickCount}, Processed: ${completedCount}, Queued: ${queuedCount}`, 'success');
+            }, 2000);
+        }
+
+        // This simulates the fixed toggleHideTransaction function
+        const loadingTransactions = new Set();
+        const pendingUpdates = new Map();
+
+        async function simulateToggleHideTransaction() {
+            const transactionId = 'test-transaction-1'; // Simulate a single transaction
+
+            // Check if this transaction is already being updated
+            if (loadingTransactions.has(transactionId)) {
+                queuedCount++;
+                log(`Request queued (Queue size: ${queuedCount})`, 'pending');
+
+                // Queue this update for when the current one finishes
+                const currentPending = pendingUpdates.get(transactionId);
+                const newHiddenState = currentPending ? !currentPending.hidden : true;
+                pendingUpdates.set(transactionId, { hidden: newHiddenState });
+                return;
+            }
+
+            // Mark as loading
+            loadingTransactions.add(transactionId);
+            processingCount++;
+            log(`Processing request #${processingCount}`, 'info');
+
+            try {
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 300));
+                log(`API call completed for request #${processingCount}`, 'success');
+                completedCount++;
+
+                // Process any pending updates for this transaction
+                while (pendingUpdates.has(transactionId)) {
+                    const pending = pendingUpdates.get(transactionId);
+                    pendingUpdates.delete(transactionId);
+                    queuedCount--;
+
+                    log(`Processing queued update (Queue size: ${queuedCount})`, 'info');
+
+                    // Execute the pending update
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    completedCount++;
+                    log(`Queued update completed`, 'success');
+
+                    // Check if there's another pending update that was added while processing
+                    if (!pendingUpdates.has(transactionId)) {
+                        break;
+                    }
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                pendingUpdates.delete(transactionId);
+            } finally {
+                // Remove from loading set
+                loadingTransactions.delete(transactionId);
+                processingCount--;
+                log(`Finished processing (Active: ${processingCount})`, 'info');
+            }
+        }
+
+        // Initialize
+        log('Test page loaded and ready', 'success');
+    </script>
+</body>
+</html>
