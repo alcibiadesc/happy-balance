@@ -158,4 +158,24 @@ export interface ITransactionRepository {
    * Import transactions from snapshots
    */
   import(snapshots: TransactionSnapshot[]): Promise<Result<number>>;
+
+  /**
+   * Update tags for a transaction
+   */
+  updateTags(id: TransactionId, tags: string[]): Promise<Result<void>>;
+
+  /**
+   * Find transactions by pattern hash (for smart categorization)
+   */
+  findByPatternHash(patternHash: string): Promise<Result<Transaction[]>>;
+
+  /**
+   * Apply category to all transactions matching a pattern
+   */
+  applyCategoryToPattern(sourceTransaction: Transaction, categoryId: string): Promise<Result<number>>;
+
+  /**
+   * Find transactions that match patterns extracted from a source transaction
+   */
+  findMatchingPattern(sourceTransaction: Transaction): Promise<Result<Transaction[]>>;
 }

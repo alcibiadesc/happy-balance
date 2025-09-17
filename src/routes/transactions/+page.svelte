@@ -3,6 +3,8 @@
   import { browser } from '$app/environment';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import AddTransactionModal from '$lib/components/AddTransactionModal.svelte';
+  import SmartCategorizationModal from '$lib/components/SmartCategorizationModal.svelte';
+  import SmartTagModal from '$lib/components/SmartTagModal.svelte';
   import {
     ChevronDown, Search, Filter, Download, Plus, Calendar,
     TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,
@@ -47,6 +49,23 @@
   let customStartDate = $state('');
   let customEndDate = $state('');
   let showDatePicker = $state(false);
+
+  // Smart categorization modal state
+  let showSmartCategorization = $state(false);
+  let smartCategorizationTransaction = $state<Transaction | null>(null);
+  let smartCategorizationCategory = $state<Category | null>(null);
+  let smartMatchingTransactions = $state<Transaction[]>([]);
+  let smartSuggestions = $state<Array<{
+    categoryId: string;
+    confidence: number;
+    reason: string;
+    potentialMatches: number;
+  }>>([]);
+
+  // Smart tag modal state
+  let showSmartTag = $state(false);
+  let smartTagTransaction = $state<Transaction | null>(null);
+  let smartTagMatchingTransactions = $state<Transaction[]>([]);
 
   // Click outside handler
   function handleClickOutside(event: MouseEvent) {
@@ -332,7 +351,183 @@
       console.error('❌ Failed to categorize transaction:', error);
     }
   }
-  
+
+  async function initSmartCategorization(transaction: Transaction, categoryId: string) {
+    try {
+      const selectedCategory = getCategoryById(categoryId);
+      if (!selectedCategory) return;
+
+      // Set up the modal state
+      smartCategorizationTransaction = transaction;
+      smartCategorizationCategory = selectedCategory;
+
+      // Find potential matching transactions
+      smartMatchingTransactions = await findMatchingTransactions(transaction);
+
+      // Generate smart suggestions
+      smartSuggestions = generateSmartSuggestions(transaction, smartMatchingTransactions);
+
+      // Show the modal
+      showSmartCategorization = true;
+      showCategoryDropdown = null; // Close category dropdown
+
+    } catch (error) {
+      console.error('❌ Failed to initialize smart categorization:', error);
+      // Fall back to simple categorization
+      await categorizeTransaction(transaction, categoryId);
+    }
+  }
+
+  async function findMatchingTransactions(sourceTransaction: Transaction): Promise<Transaction[]> {
+    const allTransactions = $apiTransactions || [];
+    const matchingTransactions: Transaction[] = [];
+
+    // Extract patterns from merchant name and description
+    const merchantPattern = normalizeText(sourceTransaction.merchant);
+    const descriptionPattern = normalizeText(sourceTransaction.description || '');
+
+    for (const transaction of allTransactions) {
+      if (transaction.id === sourceTransaction.id) continue;
+
+      const merchantMatch = normalizeText(transaction.merchant);
+      const descriptionMatch = normalizeText(transaction.description || '');
+
+      // Check for matches
+      if (merchantPattern && merchantMatch.includes(merchantPattern)) {
+        matchingTransactions.push(transaction);
+      } else if (descriptionPattern && descriptionMatch.includes(descriptionPattern)) {
+        matchingTransactions.push(transaction);
+      } else if (merchantPattern && descriptionMatch.includes(merchantPattern)) {
+        matchingTransactions.push(transaction);
+      }
+    }
+
+    return matchingTransactions;
+  }
+
+  function generateSmartSuggestions(transaction: Transaction, matchingTransactions: Transaction[]) {
+    if (matchingTransactions.length === 0) return [];
+
+    // Calculate the primary pattern
+    const merchantPattern = normalizeText(transaction.merchant);
+    const reason = `Transacciones similares con "${merchantPattern || transaction.merchant}"`;
+
+    return [{
+      categoryId: smartCategorizationCategory?.id || '',
+      confidence: Math.min(0.8 + (matchingTransactions.length * 0.1), 1.0),
+      reason,
+      potentialMatches: matchingTransactions.length
+    }];
+  }
+
+  function normalizeText(text: string): string {
+    return text?.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() || '';
+  }
+
+  async function handleSmartCategorization(scope: 'single' | 'pattern' | 'all', applyToFuture: boolean) {
+    if (!smartCategorizationTransaction || !smartCategorizationCategory) return;
+
+    try {
+      const transaction = smartCategorizationTransaction;
+      const categoryId = smartCategorizationCategory.id;
+
+      if (scope === 'single') {
+        await categorizeTransaction(transaction, categoryId, false);
+      } else {
+        // Apply to pattern matches
+        await categorizeTransaction(transaction, categoryId, true);
+
+        // Apply to all matching transactions
+        for (const matchingTransaction of smartMatchingTransactions) {
+          await categorizeTransaction(matchingTransaction, categoryId, false);
+        }
+      }
+
+      if (applyToFuture && scope === 'pattern') {
+        // TODO: Create categorization rule for future transactions
+        console.log('Creating rule for future transactions with pattern:', transaction.merchant);
+      }
+
+      // Close modal and reset state
+      showSmartCategorization = false;
+      smartCategorizationTransaction = null;
+      smartCategorizationCategory = null;
+      smartMatchingTransactions = [];
+      smartSuggestions = [];
+
+    } catch (error) {
+      console.error('❌ Failed to apply smart categorization:', error);
+    }
+  }
+
+  function handleSmartCategorizationCancel() {
+    showSmartCategorization = false;
+    smartCategorizationTransaction = null;
+    smartCategorizationCategory = null;
+    smartMatchingTransactions = [];
+    smartSuggestions = [];
+  }
+
+  async function initSmartTag(transaction: Transaction) {
+    try {
+      // Set up the modal state
+      smartTagTransaction = transaction;
+
+      // Find potential matching transactions
+      smartTagMatchingTransactions = await findMatchingTransactions(transaction);
+
+      // Show the modal
+      showSmartTag = true;
+
+    } catch (error) {
+      console.error('❌ Failed to initialize smart tag:', error);
+    }
+  }
+
+  async function handleSmartTag(tag: string, scope: 'single' | 'pattern') {
+    if (!smartTagTransaction) return;
+
+    try {
+      const transaction = smartTagTransaction;
+      const currentTags = transaction.tags || [];
+
+      if (scope === 'single') {
+        // Apply tag to single transaction
+        const newTags = [...currentTags, tag].filter((t, i, arr) => arr.indexOf(t) === i);
+        await apiTransactions.update(transaction.id, { tags: newTags });
+      } else {
+        // Apply to all matching transactions
+        const allTransactions = [transaction, ...smartTagMatchingTransactions];
+
+        for (const t of allTransactions) {
+          const tCurrentTags = t.tags || [];
+          const tNewTags = [...tCurrentTags, tag].filter((tag, i, arr) => arr.indexOf(tag) === i);
+          await apiTransactions.update(t.id, { tags: tNewTags });
+        }
+      }
+
+      // Close modal and reset state
+      showSmartTag = false;
+      smartTagTransaction = null;
+      smartTagMatchingTransactions = [];
+
+      // Reload transactions to ensure UI is in sync
+      await apiTransactions.load();
+
+    } catch (error) {
+      console.error('❌ Failed to apply smart tag:', error);
+    }
+  }
+
+  function handleSmartTagCancel() {
+    showSmartTag = false;
+    smartTagTransaction = null;
+    smartTagMatchingTransactions = [];
+  }
+
   function formatAmount(amount: number): string {
     if (isNaN(amount)) return '€0.00';
     const abs = Math.abs(amount);
@@ -868,6 +1063,13 @@
                     <span>•</span>
                     <span>{transaction.time}</span>
                   </div>
+                  {#if transaction.tags && transaction.tags.length > 0}
+                    <div class="transaction-tags">
+                      {#each transaction.tags as tag}
+                        <span class="transaction-tag">{tag}</span>
+                      {/each}
+                    </div>
+                  {/if}
                 </div>
                 <div class="transaction-amount" class:income={transaction.amount > 0}>
                   {formatAmount(transaction.amount)}
@@ -905,8 +1107,7 @@
                               class="category-grid-item income-cat"
                               onclick={(e) => {
                                 e.stopPropagation();
-                                categorizeTransaction(transaction, cat.id);
-                                showCategoryDropdown = null;
+                                initSmartCategorization(transaction, cat.id);
                               }}
                               title="{cat.name}"
                             >
@@ -926,8 +1127,7 @@
                               class="category-grid-item expense-cat"
                               onclick={(e) => {
                                 e.stopPropagation();
-                                categorizeTransaction(transaction, cat.id);
-                                showCategoryDropdown = null;
+                                initSmartCategorization(transaction, cat.id);
                               }}
                               title="{cat.name}"
                             >
@@ -953,6 +1153,13 @@
             </div>
             
             <div class="transaction-actions">
+              <button
+                class="action-btn tag-btn"
+                title="Añadir etiqueta"
+                onclick={() => initSmartTag(transaction)}
+              >
+                <Tag size={14} />
+              </button>
               <button
                 class="action-btn"
                 title={transaction.hidden ? $t('transactions.show_transaction') : $t('transactions.hide_transaction')}
@@ -983,6 +1190,26 @@
     <Plus size={16} />
   </button>
 </div>
+
+<!-- Smart Categorization Modal -->
+<SmartCategorizationModal
+  isOpen={showSmartCategorization}
+  transaction={smartCategorizationTransaction}
+  selectedCategory={smartCategorizationCategory}
+  matchingTransactions={smartMatchingTransactions}
+  suggestions={smartSuggestions}
+  onConfirm={handleSmartCategorization}
+  onCancel={handleSmartCategorizationCancel}
+/>
+
+<!-- Smart Tag Modal -->
+<SmartTagModal
+  isOpen={showSmartTag}
+  transaction={smartTagTransaction}
+  matchingTransactions={smartTagMatchingTransactions}
+  onConfirm={handleSmartTag}
+  onCancel={handleSmartTagCancel}
+/>
 
 <!-- Delete Selected Modal -->
 <ConfirmModal
@@ -2561,6 +2788,28 @@
   .delete-btn:hover {
     background: rgba(239, 68, 68, 0.1);
     color: rgb(239, 68, 68);
+  }
+
+  .tag-btn:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: rgb(16, 185, 129);
+  }
+
+  .transaction-tags {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+  }
+
+  .transaction-tag {
+    padding: 0.125rem 0.375rem;
+    background: #e0e7ff;
+    color: #3730a3;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
   }
   
   .fab {
