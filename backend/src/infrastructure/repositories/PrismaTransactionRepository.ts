@@ -29,7 +29,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
         update: {
           amount: snapshot.amount,
           currency: snapshot.currency,
-          date: new Date(snapshot.date),
+          date: this.createDateFromDateString(snapshot.date),
           merchant: snapshot.merchant,
           type: snapshot.type,
           description: snapshot.description,
@@ -42,7 +42,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           id: snapshot.id,
           amount: snapshot.amount,
           currency: snapshot.currency,
-          date: new Date(snapshot.date),
+          date: this.createDateFromDateString(snapshot.date),
           merchant: snapshot.merchant,
           type: snapshot.type,
           description: snapshot.description,
@@ -76,7 +76,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 id: snapshot.id,
                 amount: snapshot.amount,
                 currency: snapshot.currency,
-                date: new Date(snapshot.date),
+                date: this.createDateFromDateString(snapshot.date),
                 merchant: snapshot.merchant,
                 type: snapshot.type,
                 description: snapshot.description,
@@ -258,7 +258,32 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   }
 
   async update(transaction: Transaction): Promise<Result<void>> {
-    return this.save(transaction);
+    try {
+      const snapshot = transaction.toSnapshot();
+
+      await this.prisma.transaction.update({
+        where: { id: snapshot.id },
+        data: {
+          amount: snapshot.amount,
+          currency: snapshot.currency,
+          date: this.createDateFromDateString(snapshot.date),
+          merchant: snapshot.merchant,
+          type: snapshot.type,
+          description: snapshot.description,
+          categoryId: snapshot.categoryId,
+          isSelected: snapshot.isSelected,
+          hash: snapshot.hash,
+          hidden: (transaction as any).hidden || false,
+          updatedAt: new Date(),
+        },
+      });
+
+      return Result.ok(undefined);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to update transaction: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
   }
 
   async delete(id: TransactionId): Promise<Result<void>> {
@@ -438,7 +463,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 id: snapshot.id,
                 amount: snapshot.amount,
                 currency: snapshot.currency,
-                date: new Date(snapshot.date),
+                date: this.createDateFromDateString(snapshot.date),
                 merchant: snapshot.merchant,
                 type: snapshot.type,
                 description: snapshot.description,
@@ -455,7 +480,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
               update: {
                 amount: snapshot.amount,
                 currency: snapshot.currency,
-                date: new Date(snapshot.date),
+                date: this.createDateFromDateString(snapshot.date),
                 merchant: snapshot.merchant,
                 type: snapshot.type,
                 description: snapshot.description,
@@ -467,7 +492,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 id: snapshot.id,
                 amount: snapshot.amount,
                 currency: snapshot.currency,
-                date: new Date(snapshot.date),
+                date: this.createDateFromDateString(snapshot.date),
                 merchant: snapshot.merchant,
                 type: snapshot.type,
                 description: snapshot.description,
@@ -559,6 +584,21 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   }
 
   // Private helper methods
+  private createDateFromDateString(dateString: string): Date {
+    // Parse YYYY-MM-DD format consistently
+    // to avoid timezone issues that can shift dates
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // month is 0-indexed in Date constructor
+  }
+
+  private formatDateToString(date: Date): string {
+    // Format date to YYYY-MM-DD without timezone conversion
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   private buildWhereClause(filters?: TransactionFilters) {
     if (!filters) return {};
 
@@ -614,7 +654,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       id: prismaTransaction.id,
       amount: Number(prismaTransaction.amount),
       currency: prismaTransaction.currency,
-      date: prismaTransaction.date.toISOString().split("T")[0],
+      date: this.formatDateToString(prismaTransaction.date),
       merchant: prismaTransaction.merchant,
       type: prismaTransaction.type as TransactionType,
       description: prismaTransaction.description,
@@ -625,8 +665,8 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     };
 
     const result = Transaction.fromSnapshot(snapshot);
-    if (result.isSuccess() && (prismaTransaction as any).hidden !== undefined) {
-      (result.getValue() as any).hidden = (prismaTransaction as any).hidden;
+    if (result.isSuccess()) {
+      (result.getValue() as any).hidden = prismaTransaction.hidden;
     }
     return result;
   }

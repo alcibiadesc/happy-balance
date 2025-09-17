@@ -40,12 +40,12 @@ const TransactionFiltersSchema = z.object({
   type: z.enum(["INCOME", "EXPENSE", "INVESTMENT"]).optional(),
   categoryId: z.string().optional(),
   merchantName: z.string().optional(),
-  minAmount: z.number().optional(),
-  maxAmount: z.number().optional(),
+  minAmount: z.coerce.number().optional(),
+  maxAmount: z.coerce.number().optional(),
   currency: z.string().min(3).max(3).optional(),
-  includeHidden: z.boolean().optional().default(false),
-  page: z.number().min(1).default(1),
-  limit: z.number().min(1).max(100).default(20),
+  includeHidden: z.coerce.boolean().optional().default(false),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
 });
 
 const DashboardQuerySchema = z.object({
@@ -62,7 +62,7 @@ const DashboardQuerySchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   currency: z.string().min(3).max(3).optional().default("EUR"),
-  includeInvestments: z.boolean().optional().default(true),
+  includeInvestments: z.coerce.boolean().optional().default(true),
 });
 
 export class TransactionController {
@@ -120,9 +120,15 @@ export class TransactionController {
         return res.status(500).json({ error: saveResult.getError() });
       }
 
+      // Include hidden field in the response (new transactions are not hidden)
+      const responseData = {
+        ...transaction.toSnapshot(),
+        hidden: false,
+      };
+
       res.status(201).json({
         success: true,
-        data: transaction.toSnapshot(),
+        data: responseData,
       });
     } catch (error) {
       res.status(500).json({
@@ -211,7 +217,10 @@ export class TransactionController {
       res.json({
         success: true,
         data: {
-          transactions: transactions.map((t) => t.toSnapshot()),
+          transactions: transactions.map((t) => ({
+            ...t.toSnapshot(),
+            hidden: (t as any).hidden || false,
+          })),
           pagination: {
             page,
             limit,
@@ -249,9 +258,15 @@ export class TransactionController {
         return res.status(404).json({ error: "Transaction not found" });
       }
 
+      // Include hidden field in the response
+      const responseData = {
+        ...transaction.toSnapshot(),
+        hidden: (transaction as any).hidden || false,
+      };
+
       res.json({
         success: true,
-        data: transaction.toSnapshot(),
+        data: responseData,
       });
     } catch (error) {
       res.status(500).json({
@@ -324,9 +339,15 @@ export class TransactionController {
         return res.status(500).json({ error: saveResult.getError() });
       }
 
+      // Include hidden field in the response
+      const responseData = {
+        ...existingTransaction.toSnapshot(),
+        hidden: (existingTransaction as any).hidden || false,
+      };
+
       res.json({
         success: true,
-        data: existingTransaction.toSnapshot(),
+        data: responseData,
       });
     } catch (error) {
       res.status(500).json({
