@@ -30,7 +30,18 @@
   let editingTransaction = $state<Transaction | null>(null);
   let showAddModal = $state(false);
   let showCategoryDropdown = $state<string | null>(null); // Transaction ID showing category dropdown
-  let showAllTransactions = $state(true); // Toggle for showing all transactions
+  let showAllTransactions = $state(
+    typeof window !== 'undefined'
+      ? localStorage.getItem('showAllTransactions') !== 'false'
+      : true
+  ); // Toggle for showing all transactions
+
+  // Save preference to localStorage when it changes
+  $effect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('showAllTransactions', showAllTransactions.toString());
+    }
+  });
   let dateRangeMode = $state<'month' | 'custom'>('month');
   let customStartDate = $state('');
   let customEndDate = $state('');
@@ -480,7 +491,7 @@
   <div class="toolbar">
     <div class="toolbar-content">
       <!-- Date selector section -->
-      <div class="date-selector-section">
+      <div class="date-selector-section" class:show-all={showAllTransactions}>
         <!-- All transactions toggle - always first -->
         <button
           class="all-toggle-btn"
@@ -999,15 +1010,14 @@
   }
   
   .transactions-header {
-    background: linear-gradient(180deg, rgba(255, 247, 237, 0.3) 0%, transparent 100%);
-    padding: 2rem 0;
-    margin-bottom: 1.5rem;
+    background: var(--surface-elevated);
+    border-bottom: 1px solid var(--gray-200);
+    padding: var(--space-2xl) var(--space-lg);
   }
 
   .header-content {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 1.5rem;
   }
   
   /* Date selector styles */
@@ -1026,6 +1036,19 @@
   .date-selector-section:hover {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
                 0 2px 4px rgba(0, 0, 0, 0.03);
+  }
+
+  /* When showing all transactions, integrate the hidden button better */
+  .date-selector-section.show-all {
+    gap: 0.25rem;
+  }
+
+  .date-selector-section.show-all .all-toggle-btn {
+    margin-right: 0;
+  }
+
+  .date-selector-section.show-all .hidden-toggle-btn {
+    margin-left: 0.25rem;
   }
 
   .date-nav-btn {
@@ -1263,34 +1286,16 @@
   }
   
   .period-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    max-width: 320px;
     margin: 0 auto;
-  }
-
-  @media (min-width: 768px) {
-    .period-stats {
-      grid-template-columns: repeat(3, 1fr);
-    }
   }
 
   /* Balance Display - Featured */
   .balance-display {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-                0 1px 2px rgba(0, 0, 0, 0.03);
     text-align: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .balance-display:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05),
-                0 4px 6px rgba(0, 0, 0, 0.03);
   }
 
   .balance-label {
@@ -1317,18 +1322,9 @@
 
   /* Stats Overview - Clean rows */
   .stats-overview {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-                0 1px 2px rgba(0, 0, 0, 0.03);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .stats-overview:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05),
-                0 4px 6px rgba(0, 0, 0, 0.03);
+    border-top: 1px solid var(--gray-200);
+    border-bottom: 1px solid var(--gray-200);
+    padding: var(--space-lg) 0;
   }
 
   .stat-row {
@@ -1360,18 +1356,7 @@
 
   /* Expense Breakdown - Minimal */
   .expense-breakdown {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-                0 1px 2px rgba(0, 0, 0, 0.03);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .expense-breakdown:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05),
-                0 4px 6px rgba(0, 0, 0, 0.03);
+    padding-top: var(--space-md);
   }
 
   .breakdown-header {
@@ -1526,6 +1511,10 @@
       gap: 0.375rem;
     }
 
+    .date-selector-section.show-all {
+      gap: 0.25rem;
+    }
+
     .toolbar-actions {
       padding: 0.375rem;
       gap: 0.375rem;
@@ -1580,16 +1569,28 @@
     }
 
     .transactions-header {
-      padding: 1.5rem 0;
+      padding: var(--space-xl) var(--space-md);
     }
 
     .header-content {
-      padding: 0 1rem;
+      padding: 0;
     }
 
     .period-stats {
-      grid-template-columns: 1fr;
-      gap: 1rem;
+      gap: var(--space-lg);
+      max-width: 100%;
+    }
+
+    .balance-display {
+      padding-bottom: var(--space-md);
+    }
+
+    .stats-overview {
+      padding: var(--space-md) 0;
+    }
+
+    .expense-breakdown {
+      padding-top: var(--space-sm);
     }
 
     .transactions-list {
