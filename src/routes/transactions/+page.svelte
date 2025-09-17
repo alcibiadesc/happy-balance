@@ -35,7 +35,7 @@
   let showCategoryDropdown = $state<string | null>(null); // Transaction ID showing category dropdown
   let showAllTransactions = $state(
     typeof window !== 'undefined'
-      ? localStorage.getItem('showAllTransactions') !== 'false'
+      ? localStorage.getItem('showAllTransactions') === 'true' || localStorage.getItem('showAllTransactions') === null
       : true
   ); // Toggle for showing all transactions
 
@@ -710,46 +710,59 @@
           <Layers size={14} />
         </button>
 
-        <!-- Date controls - appear to the right when needed -->
-        {#if !showAllTransactions}
-          {#if dateRangeMode === 'month'}
-            <button class="date-nav-btn" onclick={previousPeriod}>
-              <ChevronLeft size={14} />
-            </button>
-            <button class="date-display" onclick={() => showDatePicker = !showDatePicker}>
-              <CalendarDays size={14} />
-              <span>{selectedPeriod ? new Date(selectedPeriod + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 'Seleccionar mes'}</span>
-              <ChevronDown size={14} />
-            </button>
-            <button class="date-nav-btn" onclick={nextPeriod}>
-              <ChevronRight size={14} />
-            </button>
-          {:else}
-            <div class="custom-date-range">
-              <input
-                type="date"
-                class="date-input"
-                bind:value={customStartDate}
-                placeholder="Desde"
-              />
-              <span class="date-separator">-</span>
-              <input
-                type="date"
-                class="date-input"
-                bind:value={customEndDate}
-                placeholder="Hasta"
-              />
-            </div>
-          {/if}
-
+        <!-- Date controls - always shown but disabled when showing all transactions -->
+        {#if dateRangeMode === 'month'}
           <button
-            class="date-mode-btn"
-            onclick={() => dateRangeMode = dateRangeMode === 'month' ? 'custom' : 'month'}
-            title={dateRangeMode === 'month' ? 'Cambiar a rango personalizado' : 'Cambiar a selección de mes'}
+            class="date-nav-btn"
+            class:disabled={showAllTransactions}
+            onclick={showAllTransactions ? null : previousPeriod}
           >
-            <CalendarRange size={14} />
+            <ChevronLeft size={14} />
           </button>
+          <button
+            class="date-display"
+            class:disabled={showAllTransactions}
+            onclick={showAllTransactions ? null : () => showDatePicker = !showDatePicker}
+          >
+            <CalendarDays size={14} />
+            <span>{showAllTransactions ? '----' : (selectedPeriod ? new Date(selectedPeriod + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 'Seleccionar mes')}</span>
+            <ChevronDown size={14} />
+          </button>
+          <button
+            class="date-nav-btn"
+            class:disabled={showAllTransactions}
+            onclick={showAllTransactions ? null : nextPeriod}
+          >
+            <ChevronRight size={14} />
+          </button>
+        {:else}
+          <div class="custom-date-range" class:disabled={showAllTransactions}>
+            <input
+              type="date"
+              class="date-input"
+              bind:value={customStartDate}
+              placeholder="Desde"
+              disabled={showAllTransactions}
+            />
+            <span class="date-separator">-</span>
+            <input
+              type="date"
+              class="date-input"
+              bind:value={customEndDate}
+              placeholder="Hasta"
+              disabled={showAllTransactions}
+            />
+          </div>
         {/if}
+
+        <button
+          class="date-mode-btn"
+          class:disabled={showAllTransactions}
+          onclick={showAllTransactions ? null : () => dateRangeMode = dateRangeMode === 'month' ? 'custom' : 'month'}
+          title={showAllTransactions ? 'Deshabilitado al mostrar todas las transacciones' : (dateRangeMode === 'month' ? 'Cambiar a rango personalizado' : 'Cambiar a selección de mes')}
+        >
+          <CalendarRange size={14} />
+        </button>
 
         <!-- Hidden transactions toggle - always last -->
         <button
@@ -832,7 +845,7 @@
       </div>
     </div>
 
-    {#if showDatePicker && dateRangeMode === 'month'}
+    {#if showDatePicker && dateRangeMode === 'month' && !showAllTransactions}
       <div class="month-picker-dropdown">
         <div class="month-picker-header">
           <button class="year-nav-btn" onclick={() => {
@@ -1314,6 +1327,19 @@
     transform: scale(0.98);
   }
 
+  .date-nav-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #f8f9fa;
+    color: #9ca3af;
+  }
+
+  .date-nav-btn.disabled:hover {
+    background: #f8f9fa;
+    transform: none;
+    color: #9ca3af;
+  }
+
   .date-display {
     display: flex;
     align-items: center;
@@ -1336,6 +1362,19 @@
     transform: translateY(-1px);
   }
 
+  .date-display.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #f8f9fa;
+    color: #9ca3af;
+  }
+
+  .date-display.disabled:hover {
+    background: #f8f9fa;
+    transform: none;
+    color: #9ca3af;
+  }
+
   .custom-date-range {
     display: flex;
     align-items: center;
@@ -1356,6 +1395,21 @@
 
   .date-input:focus {
     border-color: var(--acapulco);
+  }
+
+  .date-input:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #f8f9fa;
+    color: #9ca3af;
+  }
+
+  .custom-date-range.disabled {
+    opacity: 0.4;
+  }
+
+  .custom-date-range.disabled .date-separator {
+    color: #9ca3af;
   }
 
   .date-separator {
@@ -1386,6 +1440,19 @@
 
   .date-mode-btn:active {
     transform: scale(0.98);
+  }
+
+  .date-mode-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #f8f9fa;
+    color: #9ca3af;
+  }
+
+  .date-mode-btn.disabled:hover {
+    background: #f8f9fa;
+    transform: none;
+    color: #9ca3af;
   }
 
   .all-toggle-btn {
