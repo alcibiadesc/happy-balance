@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Check, X, Zap, Target, Users, Plus, InfoIcon } from 'lucide-svelte';
+  import { X } from 'lucide-svelte';
   import type { Transaction, Category } from '$lib/types/transaction';
 
   // Props
@@ -21,7 +21,6 @@
   let applyToFuture = false;
 
   $: hasMatches = matchingTransactions.length > 0;
-  $: primarySuggestion = suggestions[0];
 
   function handleConfirm() {
     onConfirm(selectedScope, applyToFuture);
@@ -34,197 +33,111 @@
     }).format(Math.abs(amount));
   }
 
-  function formatPattern(transaction: Transaction): string {
-    // Extract key pattern elements for display
-    const merchantName = transaction.merchant || '';
-    const description = transaction.description || '';
+  function getPatternName(transaction: Transaction): string {
+    return transaction.merchant || transaction.description || 'Esta transacción';
+  }
 
-    // Return the most recognizable part
-    if (merchantName.length > description.length) {
-      return merchantName;
-    }
-    return description || merchantName;
+  function getTotalAmount(): string {
+    const total = matchingTransactions.reduce((sum, t) => sum + Math.abs(t.amount), Math.abs(transaction?.amount || 0));
+    return formatAmount(total);
   }
 </script>
 
 {#if isOpen && transaction && selectedCategory}
-  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="smart-categorization-title">
-    <div class="modal-content smart-categorization-modal">
-      <!-- Header -->
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="categorization-title">
+    <div class="modal-content">
+      <!-- Header minimalista -->
       <div class="modal-header">
-        <div class="modal-title-section">
-          <Zap size={20} class="text-blue-500" />
-          <h2 id="smart-categorization-title" class="modal-title">
-            Categorización Inteligente
-          </h2>
-        </div>
-        <button
-          class="modal-close-btn"
-          onclick={onCancel}
-          aria-label="Cerrar modal"
-        >
-          <X size={18} />
+        <h2 id="categorization-title" class="modal-title">Aplicar categoría</h2>
+        <button class="close-btn" onclick={onCancel} aria-label="Cerrar">
+          <X size={16} />
         </button>
       </div>
 
-      <!-- Transaction Context -->
-      <div class="transaction-context">
-        <div class="context-header">
-          <h3>Transacción seleccionada</h3>
-        </div>
-        <div class="context-details">
-          <div class="transaction-info">
-            <span class="merchant-name">{transaction.merchant}</span>
-            <span class="amount">{formatAmount(transaction.amount)}</span>
+      <!-- Información condensada -->
+      <div class="category-info">
+        <div class="transaction-pattern">
+          <span class="pattern-text">{getPatternName(transaction)}</span>
+          <span class="arrow">→</span>
+          <div class="category-chip">
+            <span class="category-emoji">{selectedCategory.icon}</span>
+            <span class="category-label">{selectedCategory.name}</span>
           </div>
-          {#if transaction.description}
-            <div class="description">{transaction.description}</div>
-          {/if}
         </div>
       </div>
 
-      <!-- Category Selection -->
-      <div class="category-selection">
-        <div class="selected-category">
-          <span class="category-icon">{selectedCategory.icon}</span>
-          <span class="category-name">{selectedCategory.name}</span>
-          <span class="category-type-badge category-type-{selectedCategory.type}">
-            {selectedCategory.type}
-          </span>
-        </div>
-      </div>
-
-      <!-- Smart Suggestions -->
-      {#if primarySuggestion && primarySuggestion.potentialMatches > 0}
-        <div class="smart-suggestion">
-          <div class="suggestion-header">
-            <InfoIcon size={16} class="text-blue-500" />
-            <span>Patrón detectado</span>
+      <!-- Opciones de aplicación -->
+      <div class="scope-options">
+        <!-- Opción: Solo esta transacción -->
+        <label class="scope-option" class:selected={selectedScope === 'single'}>
+          <input
+            type="radio"
+            bind:group={selectedScope}
+            value="single"
+            name="scope"
+          />
+          <div class="scope-content">
+            <span class="scope-title">Solo esta transacción</span>
+            <span class="scope-detail">1 transacción</span>
           </div>
-          <div class="suggestion-content">
-            <p class="suggestion-text">
-              Encontramos <strong>{primarySuggestion.potentialMatches}</strong>
-              transacciones similares que podrían beneficiarse de esta categoría.
-            </p>
-            <p class="suggestion-reason">
-              {primarySuggestion.reason}
-            </p>
-          </div>
-        </div>
-      {/if}
+        </label>
 
-      <!-- Scope Selection -->
-      <div class="scope-selection">
-        <h3 class="scope-title">Aplicar categoría a:</h3>
-
-        <div class="scope-options">
-          <!-- Single Transaction -->
-          <label class="scope-option" class:selected={selectedScope === 'single'}>
+        <!-- Opción: Transacciones similares -->
+        {#if hasMatches}
+          <label class="scope-option" class:selected={selectedScope === 'pattern'}>
             <input
               type="radio"
               bind:group={selectedScope}
-              value="single"
-              name="categorization-scope"
+              value="pattern"
+              name="scope"
             />
-            <div class="scope-option-content">
-              <div class="scope-option-header">
-                <Target size={16} />
-                <span class="scope-option-title">Solo esta transacción</span>
-              </div>
-              <p class="scope-option-description">
-                Categorizar únicamente la transacción seleccionada
-              </p>
-              <div class="scope-stats">
-                <span class="stat">1 transacción</span>
-              </div>
+            <div class="scope-content">
+              <span class="scope-title">Todas las similares</span>
+              <span class="scope-detail">
+                {matchingTransactions.length + 1} transacciones • {getTotalAmount()}
+              </span>
             </div>
           </label>
 
-          <!-- Pattern Matching -->
-          {#if hasMatches}
-            <label class="scope-option" class:selected={selectedScope === 'pattern'}>
-              <input
-                type="radio"
-                bind:group={selectedScope}
-                value="pattern"
-                name="categorization-scope"
-              />
-              <div class="scope-option-content">
-                <div class="scope-option-header">
-                  <Users size={16} />
-                  <span class="scope-option-title">Transacciones similares</span>
-                </div>
-                <p class="scope-option-description">
-                  Categorizar todas las transacciones que coincidan con:
-                  <strong>"{formatPattern(transaction)}"</strong>
-                </p>
-                <div class="scope-stats">
-                  <span class="stat">{matchingTransactions.length + 1} transacciones</span>
-                  <span class="stat-detail">
-                    {formatAmount(matchingTransactions.reduce((sum, t) => sum + Math.abs(t.amount), Math.abs(transaction.amount)))} total
-                  </span>
-                </div>
-              </div>
-            </label>
-
-            <!-- Future Transactions Option -->
-            {#if selectedScope === 'pattern'}
-              <div class="future-option">
-                <label class="checkbox-option">
-                  <input type="checkbox" bind:checked={applyToFuture} />
-                  <div class="checkbox-content">
-                    <div class="checkbox-header">
-                      <Plus size={14} />
-                      <span>Aplicar a futuras transacciones</span>
-                    </div>
-                    <p class="checkbox-description">
-                      Crear una regla para categorizar automáticamente futuras transacciones similares
-                    </p>
-                  </div>
-                </label>
-              </div>
-            {/if}
+          <!-- Opción para futuras transacciones -->
+          {#if selectedScope === 'pattern'}
+            <div class="future-option">
+              <label class="future-checkbox">
+                <input type="checkbox" bind:checked={applyToFuture} />
+                <span>Aplicar también a futuras transacciones</span>
+              </label>
+            </div>
           {/if}
-        </div>
+        {/if}
       </div>
 
-      <!-- Matching Transactions Preview -->
-      {#if selectedScope === 'pattern' && hasMatches}
-        <div class="matching-preview">
-          <h4 class="preview-title">
-            Transacciones que se categorizarán ({matchingTransactions.length})
-          </h4>
-          <div class="preview-list">
-            {#each matchingTransactions.slice(0, 3) as match}
-              <div class="preview-transaction">
+      <!-- Preview compacto de transacciones -->
+      {#if selectedScope === 'pattern' && hasMatches && matchingTransactions.length > 0}
+        <div class="preview-section">
+          <div class="preview-summary">
+            Se aplicará a {matchingTransactions.length} transacciones más:
+          </div>
+          <div class="preview-items">
+            {#each matchingTransactions.slice(0, 2) as match}
+              <div class="preview-item">
                 <span class="preview-merchant">{match.merchant}</span>
                 <span class="preview-amount">{formatAmount(match.amount)}</span>
-                <span class="preview-date">{new Date(match.date).toLocaleDateString('es-ES')}</span>
               </div>
             {/each}
-            {#if matchingTransactions.length > 3}
-              <div class="preview-more">
-                +{matchingTransactions.length - 3} más...
-              </div>
+            {#if matchingTransactions.length > 2}
+              <div class="preview-more">+{matchingTransactions.length - 2} más...</div>
             {/if}
           </div>
         </div>
       {/if}
 
-      <!-- Actions -->
+      <!-- Botones de acción -->
       <div class="modal-actions">
-        <button
-          class="btn-secondary"
-          onclick={onCancel}
-        >
+        <button class="btn-cancel" onclick={onCancel}>
           Cancelar
         </button>
-        <button
-          class="btn-primary"
-          onclick={handleConfirm}
-        >
-          <Check size={16} />
-          {selectedScope === 'single' ? 'Categorizar' : `Categorizar ${selectedScope === 'pattern' ? matchingTransactions.length + 1 : 'todas'}`}
+        <button class="btn-confirm" onclick={handleConfirm}>
+          {selectedScope === 'single' ? 'Aplicar' : `Aplicar a ${matchingTransactions.length + 1}`}
         </button>
       </div>
     </div>
@@ -238,176 +151,103 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 1rem;
+    padding: var(--space-md);
   }
 
-  .smart-categorization-modal {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    max-width: 500px;
+  .modal-content {
+    background: var(--surface-elevated);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    max-width: 350px;
     width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
   }
 
   .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.5rem 1.5rem 1rem;
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  .modal-title-section {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--gray-100);
   }
 
   .modal-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #111827;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
     margin: 0;
   }
 
-  .modal-close-btn {
-    padding: 0.5rem;
+  .close-btn {
+    padding: var(--space-xs);
     border: none;
     background: none;
-    color: #6b7280;
+    color: var(--text-muted);
     cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
   }
 
-  .modal-close-btn:hover {
-    background: #f3f4f6;
-    color: #374151;
+  .close-btn:hover {
+    background: var(--gray-100);
+    color: var(--text-secondary);
   }
 
-  .transaction-context {
-    padding: 1rem 1.5rem;
-    background: #f9fafb;
-    border-bottom: 1px solid #f3f4f6;
+  .category-info {
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--gray-100);
   }
 
-  .context-header h3 {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #6b7280;
-    margin: 0 0 0.5rem 0;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-  }
-
-  .transaction-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.25rem;
-  }
-
-  .merchant-name {
-    font-weight: 500;
-    color: #111827;
-  }
-
-  .amount {
-    font-weight: 600;
-    color: #059669;
-  }
-
-  .description {
-    font-size: 0.875rem;
-    color: #6b7280;
-  }
-
-  .category-selection {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  .selected-category {
+  .transaction-pattern {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: #f0f9ff;
-    border: 1px solid #bae6fd;
-    border-radius: 8px;
+    gap: var(--space-xs);
   }
 
-  .category-icon {
-    font-size: 1.25rem;
+  .pattern-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .category-name {
-    font-weight: 500;
-    color: #111827;
-    flex: 1;
+  .arrow {
+    color: var(--text-muted);
+    font-size: 0.875rem;
   }
 
-  .category-type-badge {
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+  .category-chip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 4px var(--space-xs);
+    background: rgba(122, 186, 165, 0.1);
+    border: 1px solid rgba(122, 186, 165, 0.2);
+    border-radius: var(--radius-sm);
+  }
+
+  .category-emoji {
+    font-size: 0.875rem;
+  }
+
+  .category-label {
     font-size: 0.75rem;
     font-weight: 500;
-    text-transform: capitalize;
-  }
-
-  .category-type-income { background: #dcfce7; color: #166534; }
-  .category-type-essential { background: #fef3c7; color: #92400e; }
-  .category-type-discretionary { background: #fce7f3; color: #be185d; }
-  .category-type-investment { background: #e0e7ff; color: #3730a3; }
-
-  .smart-suggestion {
-    padding: 1rem 1.5rem;
-    background: #eff6ff;
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  .suggestion-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
-    color: #1d4ed8;
-    margin-bottom: 0.5rem;
-  }
-
-  .suggestion-text {
-    margin: 0 0 0.25rem 0;
-    color: #374151;
-  }
-
-  .suggestion-reason {
-    margin: 0;
-    font-size: 0.875rem;
-    color: #6b7280;
-  }
-
-  .scope-selection {
-    padding: 1.5rem;
-  }
-
-  .scope-title {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #111827;
-    margin: 0 0 1rem 0;
+    color: var(--acapulco);
   }
 
   .scope-options {
+    padding: var(--space-md);
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--space-xs);
   }
 
   .scope-option {
@@ -419,209 +259,166 @@
     display: none;
   }
 
-  .scope-option-content {
-    padding: 1rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    transition: all 0.2s;
-  }
-
-  .scope-option:hover .scope-option-content {
-    border-color: #d1d5db;
-  }
-
-  .scope-option.selected .scope-option-content {
-    border-color: #3b82f6;
-    background: #f8fafc;
-  }
-
-  .scope-option-header {
+  .scope-content {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    padding: var(--space-sm);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
   }
 
-  .scope-option-title {
-    font-weight: 500;
-    color: #111827;
+  .scope-option:hover .scope-content {
+    border-color: var(--gray-300);
+    background: var(--gray-50);
   }
 
-  .scope-option-description {
-    margin: 0 0 0.75rem 0;
+  .scope-option.selected .scope-content {
+    border-color: var(--acapulco);
+    background: rgba(122, 186, 165, 0.05);
+  }
+
+  .scope-title {
     font-size: 0.875rem;
-    color: #6b7280;
-    line-height: 1.4;
-  }
-
-  .scope-stats {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.875rem;
-  }
-
-  .stat {
     font-weight: 500;
-    color: #059669;
+    color: var(--text-primary);
   }
 
-  .stat-detail {
-    color: #6b7280;
+  .scope-detail {
+    font-size: 0.75rem;
+    color: var(--text-muted);
   }
 
   .future-option {
-    margin-left: 2rem;
-    margin-top: 0.5rem;
+    margin-top: var(--space-xs);
+    margin-left: var(--space-sm);
   }
 
-  .checkbox-option {
-    display: block;
+  .future-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
     cursor: pointer;
   }
 
-  .checkbox-option input[type="checkbox"] {
-    margin-right: 0.5rem;
-  }
-
-  .checkbox-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .checkbox-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
-    color: #111827;
-  }
-
-  .checkbox-description {
+  .future-checkbox input[type="checkbox"] {
     margin: 0;
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-left: 1.5rem;
   }
 
-  .matching-preview {
-    padding: 1rem 1.5rem;
-    background: #f9fafb;
-    border-top: 1px solid #f3f4f6;
+  .preview-section {
+    padding: var(--space-md);
+    background: var(--surface-muted);
+    border-top: 1px solid var(--gray-100);
   }
 
-  .preview-title {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    margin: 0 0 0.75rem 0;
+  .preview-summary {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-xs);
   }
 
-  .preview-list {
+  .preview-items {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 2px;
   }
 
-  .preview-transaction {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 0.75rem;
+  .preview-item {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0.75rem;
-    background: white;
-    border-radius: 6px;
-    font-size: 0.875rem;
+    padding: 2px var(--space-xs);
+    background: var(--surface-elevated);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
   }
 
   .preview-merchant {
-    font-weight: 500;
-    color: #111827;
-    truncate: true;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 150px;
   }
 
   .preview-amount {
+    color: var(--acapulco);
     font-weight: 500;
-    color: #059669;
-  }
-
-  .preview-date {
-    color: #6b7280;
   }
 
   .preview-more {
-    padding: 0.5rem 0.75rem;
+    padding: 2px var(--space-xs);
     text-align: center;
-    font-size: 0.875rem;
-    color: #6b7280;
+    font-size: 0.75rem;
+    color: var(--text-muted);
     font-style: italic;
   }
 
   .modal-actions {
     display: flex;
-    gap: 0.75rem;
-    justify-content: flex-end;
-    padding: 1.5rem;
-    border-top: 1px solid #f3f4f6;
+    gap: var(--space-xs);
+    padding: var(--space-md);
+    border-top: 1px solid var(--gray-100);
   }
 
-  .btn-secondary {
-    padding: 0.5rem 1rem;
-    border: 1px solid #d1d5db;
-    background: white;
-    color: #374151;
-    border-radius: 6px;
+  .btn-cancel {
+    flex: 1;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--gray-200);
+    background: var(--surface-elevated);
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
   }
 
-  .btn-secondary:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
+  .btn-cancel:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
   }
 
-  .btn-primary {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 6px;
+  .btn-confirm {
+    flex: 2;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--acapulco);
+    background: var(--acapulco);
+    color: var(--surface-elevated);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
   }
 
-  .btn-primary:hover {
-    background: #2563eb;
+  .btn-confirm:hover {
+    background: var(--success-hover);
+    border-color: var(--success-hover);
   }
 
-  @media (max-width: 640px) {
-    .smart-categorization-modal {
-      margin: 0.5rem;
+  /* Responsive */
+  @media (max-width: 480px) {
+    .modal-content {
       max-width: none;
+      margin: var(--space-sm);
     }
 
-    .modal-header {
-      padding: 1rem;
-    }
-
-    .scope-selection {
-      padding: 1rem;
-    }
-
-    .modal-actions {
+    .transaction-pattern {
       flex-direction: column;
-      gap: 0.5rem;
+      align-items: flex-start;
+      gap: var(--space-xs);
     }
 
-    .btn-secondary,
-    .btn-primary {
-      width: 100%;
-      justify-content: center;
+    .arrow {
+      transform: rotate(90deg);
+    }
+
+    .pattern-text {
+      max-width: none;
     }
   }
 </style>

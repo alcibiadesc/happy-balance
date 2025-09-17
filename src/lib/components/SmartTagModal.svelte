@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Plus, Tag, X, Users, Target } from 'lucide-svelte';
+  import { X } from 'lucide-svelte';
   import type { Transaction } from '$lib/types/transaction';
 
   // Props
@@ -35,163 +35,122 @@
       currency: 'EUR'
     }).format(Math.abs(amount));
   }
+
+  function getPatternName(transaction: Transaction): string {
+    return transaction.merchant || transaction.description || 'Esta transacción';
+  }
+
+  function getTotalAmount(): string {
+    const total = matchingTransactions.reduce((sum, t) => sum + Math.abs(t.amount), Math.abs(transaction?.amount || 0));
+    return formatAmount(total);
+  }
 </script>
 
 {#if isOpen && transaction}
-  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="smart-tag-title">
-    <div class="modal-content smart-tag-modal">
-      <!-- Header -->
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tag-title">
+    <div class="modal-content">
+      <!-- Header minimalista -->
       <div class="modal-header">
-        <div class="modal-title-section">
-          <Tag size={20} class="text-green-500" />
-          <h2 id="smart-tag-title" class="modal-title">
-            Añadir Etiqueta
-          </h2>
-        </div>
-        <button
-          class="modal-close-btn"
-          onclick={onCancel}
-          aria-label="Cerrar modal"
-        >
-          <X size={18} />
+        <h2 id="tag-title" class="modal-title">Añadir etiqueta</h2>
+        <button class="close-btn" onclick={onCancel} aria-label="Cerrar">
+          <X size={16} />
         </button>
       </div>
 
-      <!-- Transaction Context -->
-      <div class="transaction-context">
-        <div class="context-header">
-          <h3>Transacción seleccionada</h3>
+      <!-- Información de la transacción -->
+      <div class="transaction-info">
+        <div class="transaction-summary">
+          <span class="merchant">{getPatternName(transaction)}</span>
+          <span class="amount">{formatAmount(transaction.amount)}</span>
         </div>
-        <div class="context-details">
-          <div class="transaction-info">
-            <span class="merchant-name">{transaction.merchant}</span>
-            <span class="amount">{formatAmount(transaction.amount)}</span>
+        {#if transaction.tags && transaction.tags.length > 0}
+          <div class="existing-tags">
+            <span class="tags-label">Etiquetas:</span>
+            {#each transaction.tags as tag}
+              <span class="tag-chip">{tag}</span>
+            {/each}
           </div>
-          {#if transaction.description}
-            <div class="description">{transaction.description}</div>
-          {/if}
-          {#if transaction.tags && transaction.tags.length > 0}
-            <div class="existing-tags">
-              <span class="tags-label">Etiquetas actuales:</span>
-              {#each transaction.tags as tag}
-                <span class="tag-chip">{tag}</span>
-              {/each}
-            </div>
-          {/if}
-        </div>
+        {/if}
       </div>
 
-      <!-- Tag Input -->
+      <!-- Input para nueva etiqueta -->
       <div class="tag-input-section">
-        <label for="new-tag" class="tag-input-label">
-          Nueva etiqueta
-        </label>
         <input
-          id="new-tag"
           type="text"
           bind:value={newTag}
           onkeydown={handleKeydown}
-          placeholder="Escribe una etiqueta..."
+          placeholder="Nueva etiqueta..."
           class="tag-input"
           autocomplete="off"
         />
       </div>
 
-      <!-- Scope Selection -->
-      <div class="scope-selection">
-        <h3 class="scope-title">Aplicar etiqueta a:</h3>
+      <!-- Opciones de aplicación -->
+      <div class="scope-options">
+        <!-- Opción: Solo esta transacción -->
+        <label class="scope-option" class:selected={selectedScope === 'single'}>
+          <input
+            type="radio"
+            bind:group={selectedScope}
+            value="single"
+            name="tag-scope"
+          />
+          <div class="scope-content">
+            <span class="scope-title">Solo esta transacción</span>
+            <span class="scope-detail">1 transacción</span>
+          </div>
+        </label>
 
-        <div class="scope-options">
-          <!-- Single Transaction -->
-          <label class="scope-option" class:selected={selectedScope === 'single'}>
+        <!-- Opción: Transacciones similares -->
+        {#if hasMatches}
+          <label class="scope-option" class:selected={selectedScope === 'pattern'}>
             <input
               type="radio"
               bind:group={selectedScope}
-              value="single"
+              value="pattern"
               name="tag-scope"
             />
-            <div class="scope-option-content">
-              <div class="scope-option-header">
-                <Target size={16} />
-                <span class="scope-option-title">Solo esta transacción</span>
-              </div>
-              <p class="scope-option-description">
-                Añadir etiqueta únicamente a la transacción seleccionada
-              </p>
-              <div class="scope-stats">
-                <span class="stat">1 transacción</span>
-              </div>
+            <div class="scope-content">
+              <span class="scope-title">Todas las similares</span>
+              <span class="scope-detail">
+                {matchingTransactions.length + 1} transacciones • {getTotalAmount()}
+              </span>
             </div>
           </label>
-
-          <!-- Pattern Matching -->
-          {#if hasMatches}
-            <label class="scope-option" class:selected={selectedScope === 'pattern'}>
-              <input
-                type="radio"
-                bind:group={selectedScope}
-                value="pattern"
-                name="tag-scope"
-              />
-              <div class="scope-option-content">
-                <div class="scope-option-header">
-                  <Users size={16} />
-                  <span class="scope-option-title">Transacciones similares</span>
-                </div>
-                <p class="scope-option-description">
-                  Añadir etiqueta a todas las transacciones que coincidan con:
-                  <strong>"{transaction.merchant}"</strong>
-                </p>
-                <div class="scope-stats">
-                  <span class="stat">{matchingTransactions.length + 1} transacciones</span>
-                  <span class="stat-detail">
-                    {formatAmount(matchingTransactions.reduce((sum, t) => sum + Math.abs(t.amount), Math.abs(transaction.amount)))} total
-                  </span>
-                </div>
-              </div>
-            </label>
-          {/if}
-        </div>
+        {/if}
       </div>
 
-      <!-- Matching Transactions Preview -->
-      {#if selectedScope === 'pattern' && hasMatches}
-        <div class="matching-preview">
-          <h4 class="preview-title">
-            Transacciones que se etiquetarán ({matchingTransactions.length})
-          </h4>
-          <div class="preview-list">
-            {#each matchingTransactions.slice(0, 3) as match}
-              <div class="preview-transaction">
+      <!-- Preview compacto -->
+      {#if selectedScope === 'pattern' && hasMatches && matchingTransactions.length > 0}
+        <div class="preview-section">
+          <div class="preview-summary">
+            Se añadirá a {matchingTransactions.length} transacciones más:
+          </div>
+          <div class="preview-items">
+            {#each matchingTransactions.slice(0, 2) as match}
+              <div class="preview-item">
                 <span class="preview-merchant">{match.merchant}</span>
                 <span class="preview-amount">{formatAmount(match.amount)}</span>
-                <span class="preview-date">{new Date(match.date).toLocaleDateString('es-ES')}</span>
               </div>
             {/each}
-            {#if matchingTransactions.length > 3}
-              <div class="preview-more">
-                +{matchingTransactions.length - 3} más...
-              </div>
+            {#if matchingTransactions.length > 2}
+              <div class="preview-more">+{matchingTransactions.length - 2} más...</div>
             {/if}
           </div>
         </div>
       {/if}
 
-      <!-- Actions -->
+      <!-- Botones de acción -->
       <div class="modal-actions">
-        <button
-          class="btn-secondary"
-          onclick={onCancel}
-        >
+        <button class="btn-cancel" onclick={onCancel}>
           Cancelar
         </button>
         <button
-          class="btn-primary"
+          class="btn-confirm"
           onclick={handleConfirm}
           disabled={!newTag.trim()}
         >
-          <Plus size={16} />
-          {selectedScope === 'single' ? 'Añadir etiqueta' : `Etiquetar ${matchingTransactions.length + 1} transacciones`}
+          {selectedScope === 'single' ? 'Añadir' : `Añadir a ${matchingTransactions.length + 1}`}
         </button>
       </div>
     </div>
@@ -205,7 +164,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -213,157 +172,115 @@
     padding: 1rem;
   }
 
-  .smart-tag-modal {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    max-width: 500px;
+  .modal-content {
+    background: var(--surface-elevated);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    max-width: 350px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
   }
 
+
   .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.5rem 1.5rem 1rem;
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  .modal-title-section {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    padding: 1rem 1rem 0.5rem;
   }
 
   .modal-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #111827;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
     margin: 0;
   }
 
-  .modal-close-btn {
-    padding: 0.5rem;
+  .close-btn {
+    padding: 0.25rem;
     border: none;
     background: none;
-    color: #6b7280;
+    color: var(--text-muted);
     cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s;
+    border-radius: 4px;
+    transition: background-color 0.2s;
   }
 
-  .modal-close-btn:hover {
-    background: #f3f4f6;
-    color: #374151;
-  }
-
-  .transaction-context {
-    padding: 1rem 1.5rem;
-    background: #f9fafb;
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  .context-header h3 {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #6b7280;
-    margin: 0 0 0.5rem 0;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
+  .close-btn:hover {
+    background: var(--surface-muted);
   }
 
   .transaction-info {
+    padding: 0.5rem 1rem;
+  }
+
+  .transaction-summary {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
   }
 
-  .merchant-name {
+  .merchant {
     font-weight: 500;
-    color: #111827;
+    color: var(--text-primary);
+    font-size: 0.875rem;
   }
 
   .amount {
-    font-weight: 600;
-    color: #059669;
-  }
-
-  .description {
+    font-weight: 500;
+    color: var(--acapulco);
     font-size: 0.875rem;
-    color: #6b7280;
-    margin-bottom: 0.5rem;
   }
 
   .existing-tags {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     flex-wrap: wrap;
   }
 
   .tags-label {
     font-size: 0.75rem;
-    color: #6b7280;
-    font-weight: 500;
+    color: var(--text-muted);
+    margin-right: 0.25rem;
   }
 
   .tag-chip {
-    padding: 0.25rem 0.5rem;
-    background: #e0e7ff;
-    color: #3730a3;
+    padding: 0.125rem 0.375rem;
+    background: var(--acapulco-light);
+    color: var(--acapulco);
     border-radius: 4px;
     font-size: 0.75rem;
     font-weight: 500;
   }
 
   .tag-input-section {
-    padding: 1.5rem;
-  }
-
-  .tag-input-label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 0.5rem;
+    padding: 0 1rem;
   }
 
   .tag-input {
     width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 1rem;
-    color: #111827;
-    background: white;
-    transition: all 0.2s;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    background: var(--surface);
+    transition: border-color 0.2s;
   }
 
   .tag-input:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .scope-selection {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid #f3f4f6;
-  }
-
-  .scope-title {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #111827;
-    margin: 0 0 1rem 0;
+    border-color: var(--acapulco);
   }
 
   .scope-options {
+    padding: 0.5rem 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .scope-option {
@@ -375,183 +292,132 @@
     display: none;
   }
 
-  .scope-option-content {
-    padding: 1rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
+  .scope-content {
+    padding: 0.75rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
     transition: all 0.2s;
+    position: relative;
   }
 
-  .scope-option:hover .scope-option-content {
-    border-color: #d1d5db;
+  .scope-option:hover .scope-content {
+    border-color: var(--gray-300);
   }
 
-  .scope-option.selected .scope-option-content {
-    border-color: #10b981;
-    background: #f0fdf4;
+  .scope-option.selected .scope-content {
+    border-color: var(--acapulco);
+    background: var(--acapulco-light);
   }
 
-  .scope-option-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .scope-option.selected .scope-content::before {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 6px;
+    height: 6px;
+    background: var(--acapulco);
+    border-radius: 50%;
+  }
+
+  .scope-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .scope-detail {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .preview-section {
+    padding: 0.5rem 1rem;
+    background: var(--surface-muted);
+    margin: 0 1rem;
+    border-radius: 6px;
+  }
+
+  .preview-summary {
+    font-size: 0.75rem;
+    color: var(--text-muted);
     margin-bottom: 0.5rem;
   }
 
-  .scope-option-title {
-    font-weight: 500;
-    color: #111827;
-  }
-
-  .scope-option-description {
-    margin: 0 0 0.75rem 0;
-    font-size: 0.875rem;
-    color: #6b7280;
-    line-height: 1.4;
-  }
-
-  .scope-stats {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.875rem;
-  }
-
-  .stat {
-    font-weight: 500;
-    color: #059669;
-  }
-
-  .stat-detail {
-    color: #6b7280;
-  }
-
-  .matching-preview {
-    padding: 1rem 1.5rem;
-    background: #f9fafb;
-    border-top: 1px solid #f3f4f6;
-  }
-
-  .preview-title {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    margin: 0 0 0.75rem 0;
-  }
-
-  .preview-list {
+  .preview-items {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.25rem;
   }
 
-  .preview-transaction {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 0.75rem;
+  .preview-item {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0.75rem;
-    background: white;
-    border-radius: 6px;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
   }
 
   .preview-merchant {
+    color: var(--text-secondary);
     font-weight: 500;
-    color: #111827;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .preview-amount {
+    color: var(--acapulco);
     font-weight: 500;
-    color: #059669;
-  }
-
-  .preview-date {
-    color: #6b7280;
   }
 
   .preview-more {
-    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
     text-align: center;
-    font-size: 0.875rem;
-    color: #6b7280;
-    font-style: italic;
+    margin-top: 0.25rem;
   }
 
   .modal-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
     justify-content: flex-end;
-    padding: 1.5rem;
-    border-top: 1px solid #f3f4f6;
+    padding: 1rem;
   }
 
-  .btn-secondary {
-    padding: 0.5rem 1rem;
-    border: 1px solid #d1d5db;
-    background: white;
-    color: #374151;
+  .btn-cancel {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--gray-200);
+    background: var(--surface);
+    color: var(--text-secondary);
     border-radius: 6px;
-    font-weight: 500;
+    font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s;
   }
 
-  .btn-secondary:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
+  .btn-cancel:hover {
+    border-color: var(--gray-300);
+    background: var(--surface-muted);
   }
 
-  .btn-primary {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: #10b981;
+  .btn-confirm {
+    padding: 0.375rem 0.75rem;
+    background: var(--acapulco);
     color: white;
     border: none;
     border-radius: 6px;
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s;
   }
 
-  .btn-primary:hover:not(:disabled) {
-    background: #059669;
+  .btn-confirm:hover:not(:disabled) {
+    background: var(--acapulco-dark);
   }
 
-  .btn-primary:disabled {
-    background: #d1d5db;
-    color: #9ca3af;
+  .btn-confirm:disabled {
+    background: var(--gray-300);
+    color: var(--text-muted);
     cursor: not-allowed;
   }
 
-  @media (max-width: 640px) {
-    .smart-tag-modal {
-      margin: 0.5rem;
-      max-width: none;
-    }
-
-    .modal-header {
-      padding: 1rem;
-    }
-
-    .tag-input-section,
-    .scope-selection {
-      padding: 1rem;
-    }
-
-    .modal-actions {
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .btn-secondary,
-    .btn-primary {
-      width: 100%;
-      justify-content: center;
-    }
-  }
 </style>
