@@ -35,18 +35,19 @@ model Transaction {
 }
 
 model Category {
-  id           String        @id @db.VarChar(36)
-  name         String        @db.VarChar(100)
-  type         String        @db.VarChar(20)
-  color        String        @default("#3B82F6") @db.VarChar(7)
-  icon         String        @default("💰") @db.VarChar(10)
-  isActive     Boolean       @default(true)
-  parentId     String?       @db.VarChar(36)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  parent       Category?     @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children     Category[]    @relation("CategoryHierarchy")
+  id           String            @id @db.VarChar(36)
+  name         String            @db.VarChar(100)
+  type         String            @db.VarChar(20)
+  color        String            @default("#3B82F6") @db.VarChar(7)
+  icon         String            @default("💰") @db.VarChar(10)
+  isActive     Boolean           @default(true)
+  parentId     String?           @db.VarChar(36)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  parent       Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Category[]        @relation("CategoryHierarchy")
   transactions Transaction[]
+  patterns     CategoryPattern[]
 
   @@unique([name, type])
   @@index([type])
@@ -97,4 +98,24 @@ model UserPreferences {
   updatedAt DateTime @updatedAt
 
   @@map("user_preferences")
+}
+
+model CategoryPattern {
+  id               String   @id @db.VarChar(36)
+  categoryId       String   @db.VarChar(36)
+  pattern          String   @db.VarChar(200)
+  patternType      String   @db.VarChar(20) // 'merchant', 'description', 'combined'
+  isActive         Boolean  @default(true)
+  applyToFuture    Boolean  @default(true) // Apply to future transactions
+  priority         Int      @default(0) // Higher priority patterns are applied first
+  matchCount       Int      @default(0) // Number of transactions matched
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([patternType])
+  @@index([isActive])
+  @@index([priority])
+  @@map("category_patterns")
 }

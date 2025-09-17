@@ -11,6 +11,7 @@ import { ITransactionRepository } from "@domain/repositories/ITransactionReposit
 import { GetDashboardDataUseCase } from "@application/use-cases/GetDashboardDataUseCase";
 import { DashboardQuery } from "@application/queries/DashboardQuery";
 import { TransactionListQuery } from "@application/queries/TransactionListQuery";
+import { SmartCategorizeTransactionUseCase } from "@application/use-cases/SmartCategorizeTransactionUseCase";
 
 const CreateTransactionSchema = z.object({
   amount: z.number().positive(),
@@ -65,10 +66,18 @@ const DashboardQuerySchema = z.object({
   includeInvestments: z.coerce.boolean().optional().default(true),
 });
 
+const SmartCategorizeSchema = z.object({
+  categoryId: z.string(),
+  applyToAll: z.boolean().default(false),
+  applyToFuture: z.boolean().default(true),
+  createPattern: z.boolean().default(true)
+});
+
 export class TransactionController {
   constructor(
     private readonly transactionRepository: ITransactionRepository,
     private readonly getDashboardDataUseCase: GetDashboardDataUseCase,
+    private readonly smartCategorizeUseCase?: SmartCategorizeTransactionUseCase,
   ) {}
 
   async createTransaction(req: Request, res: Response) {
@@ -495,6 +504,54 @@ export class TransactionController {
       res.status(500).json({
         error: "Failed to delete all transactions",
         message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  async smartCategorizeTransaction(req: Request, res: Response) {
+    try {
+      if (!this.smartCategorizeUseCase) {
+        return res.status(501).json({
+          error: 'Smart categorization is not configured'
+        });
+      }
+
+      const { id } = req.params;
+      const validationResult = SmartCategorizeSchema.safeParse(req.body);
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: 'Validation error',
+          details: validationResult.error.errors
+        });
+      }
+
+      const data = validationResult.data;
+      const result = await this.smartCategorizeUseCase.execute({
+        transactionId: id,
+        categoryId: data.categoryId,
+        applyToAll: data.applyToAll,
+        applyToFuture: data.applyToFuture,
+        createPattern: data.createPattern
+      });
+
+      if (!result.success) {
+        return res.status(400).json({
+          error: result.message || 'Failed to categorize transaction'
+        });
+      }
+
+      res.json({
+        success: true,
+        categorizedCount: result.categorizedCount,
+        patternCreated: result.patternCreated,
+        affectedTransactionIds: result.affectedTransactionIds,
+        message: result.message
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }

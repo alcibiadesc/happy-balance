@@ -25,16 +25,20 @@ import { GetDashboardDataUseCase } from "@application/use-cases/GetDashboardData
 import { ImportTransactionsUseCase } from "@application/use-cases/ImportTransactionsUseCase";
 import { CheckDuplicateHashesUseCase } from "@application/use-cases/CheckDuplicateHashesUseCase";
 import { ImportSelectedTransactionsUseCase } from "@application/use-cases/ImportSelectedTransactionsUseCase";
+import { SmartCategorizeTransactionUseCase } from "@application/use-cases/SmartCategorizeTransactionUseCase";
 import { DuplicateDetectionService } from "@domain/services/DuplicateDetectionService";
 import { CategorizationService } from "@domain/services/CategorizationService";
 import { FinancialCalculationService } from "@domain/services/FinancialCalculationService";
+import { SmartCategorizationService } from "@domain/services/SmartCategorizationService";
 import { TransactionFactory } from "./domain/factories/TransactionFactory";
+import { CategoryPatternRepository } from "@infrastructure/repositories/CategoryPatternRepository";
 
 class App {
   private app: express.Application;
   private transactionRepository: PrismaTransactionRepository;
   private categoryRepository: PrismaCategoryRepository;
   private userPreferencesRepository: PrismaUserPreferencesRepository;
+  private categoryPatternRepository: CategoryPatternRepository;
   private transactionController!: TransactionController;
   private importController!: ImportController;
   private userPreferencesController!: UserPreferencesController;
@@ -46,6 +50,7 @@ class App {
     this.userPreferencesRepository = new PrismaUserPreferencesRepository(
       prisma,
     );
+    this.categoryPatternRepository = new CategoryPatternRepository(prisma);
     this.initializeServices();
     this.initializeMiddleware();
     this.initializeRoutes();
@@ -58,6 +63,10 @@ class App {
     const categorizationService = new CategorizationService();
     const financialCalculationService = new FinancialCalculationService();
     const transactionFactory = new TransactionFactory();
+    const smartCategorizationService = new SmartCategorizationService(
+      this.categoryPatternRepository,
+      this.transactionRepository as any
+    );
 
     // Application services / Use cases
     const getDashboardDataUseCase = new GetDashboardDataUseCase(
@@ -85,10 +94,34 @@ class App {
         transactionFactory,
       );
 
+    // Smart categorization use case
+    const smartCategorizeUseCase = new SmartCategorizeTransactionUseCase(
+      {
+        getTransaction: async (id) => {
+          const result = await this.transactionRepository.findById({ value: id } as any);
+          return result.isSuccess() ? result.getValue() : null;
+        },
+        getCategory: async (id) => {
+          const result = await this.categoryRepository.findById({ value: id } as any);
+          return result.isSuccess() ? result.getValue() : null;
+        },
+        saveTransaction: async (t) => {
+          await this.transactionRepository.update(t);
+        },
+        saveTransactions: async (ts) => {
+          for (const t of ts) {
+            await this.transactionRepository.update(t);
+          }
+        }
+      },
+      smartCategorizationService
+    );
+
     // Controllers
     this.transactionController = new TransactionController(
       this.transactionRepository,
       getDashboardDataUseCase,
+      smartCategorizeUseCase,
     );
 
     this.importController = new ImportController(

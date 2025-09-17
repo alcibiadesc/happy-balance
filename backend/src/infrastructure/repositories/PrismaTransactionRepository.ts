@@ -670,4 +670,89 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     }
     return result;
   }
+
+  async findByMerchant(merchant: string): Promise<Transaction[]> {
+    try {
+      const prismaTransactions = await this.prisma.transaction.findMany({
+        where: {
+          merchant: {
+            contains: merchant,
+            mode: 'insensitive'
+          }
+        },
+        orderBy: { date: 'desc' }
+      });
+
+      const transactions: Transaction[] = [];
+      for (const pt of prismaTransactions) {
+        const result = this.mapFromPrisma(pt);
+        if (result.isSuccess()) {
+          transactions.push(result.getValue());
+        }
+      }
+
+      return transactions;
+    } catch (error) {
+      console.error('Error finding transactions by merchant:', error);
+      return [];
+    }
+  }
+
+  async findByPattern(pattern: string): Promise<Transaction[]> {
+    try {
+      const prismaTransactions = await this.prisma.transaction.findMany({
+        where: {
+          OR: [
+            {
+              merchant: {
+                contains: pattern,
+                mode: 'insensitive'
+              }
+            },
+            {
+              description: {
+                contains: pattern,
+                mode: 'insensitive'
+              }
+            }
+          ]
+        },
+        orderBy: { date: 'desc' }
+      });
+
+      const transactions: Transaction[] = [];
+      for (const pt of prismaTransactions) {
+        const result = this.mapFromPrisma(pt);
+        if (result.isSuccess()) {
+          transactions.push(result.getValue());
+        }
+      }
+
+      return transactions;
+    } catch (error) {
+      console.error('Error finding transactions by pattern:', error);
+      return [];
+    }
+  }
+
+  async updateMany(transactions: Transaction[]): Promise<void> {
+    try {
+      const updates = transactions.map(t => {
+        const snapshot = t.toSnapshot();
+        return this.prisma.transaction.update({
+          where: { id: snapshot.id },
+          data: {
+            categoryId: snapshot.categoryId,
+            description: snapshot.description,
+            isSelected: snapshot.isSelected
+          }
+        });
+      });
+
+      await this.prisma.$transaction(updates);
+    } catch (error) {
+      console.error('Error updating multiple transactions:', error);
+      throw error;
+    }
+  }
 }

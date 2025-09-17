@@ -152,16 +152,48 @@ function createApiTransactionStore() {
       }
     },
 
-    // Apply category to pattern (for now, just update the single transaction)
-    async applyCategoryToPattern(transaction: Transaction, categoryId: string) {
+    // Smart categorization with pattern matching
+    async smartCategorize(transactionId: string, categoryId: string, options: {
+      applyToAll?: boolean;
+      applyToFuture?: boolean;
+      createPattern?: boolean;
+    } = {}) {
       try {
-        // For now, just update the single transaction
-        // TODO: Implement pattern matching API endpoint
-        await this.update(transaction.id, { categoryId });
+        const response = await fetch(`${API_BASE}/transactions/${transactionId}/categorize`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            categoryId,
+            applyToAll: options.applyToAll || false,
+            applyToFuture: options.applyToFuture ?? true,
+            createPattern: options.createPattern ?? true
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to categorize transaction');
+        }
+
+        const result = await response.json();
+
+        // Reload transactions to reflect changes
+        if (result.success && result.categorizedCount > 0) {
+          await this.load();
+        }
+
+        return result;
       } catch (error) {
-        console.error("Failed to apply category to pattern:", error);
+        console.error('Failed to smart categorize:', error);
         throw error;
       }
+    },
+
+    // Apply category to pattern (backwards compatibility)
+    async applyCategoryToPattern(transaction: Transaction, categoryId: string) {
+      return this.smartCategorize(transaction.id, categoryId, { applyToAll: true });
     },
 
     // Import from file
