@@ -8,6 +8,9 @@
   // Import types from the parser
   import type { ParsedTransaction } from "$lib/utils/csv-parser";
 
+  // Constants
+  const PREVIEW_SETTING_KEY = "import-preview-enabled";
+
   // State management
   let step = 1; // 1: upload, 2: preview, 3: complete
   let selectedFile: File | null = null;
@@ -17,7 +20,34 @@
   let previewEnabled = true;
   let showDuplicates = true;
   let showAllTransactions = false;
+  let mounted = false;
 
+  // Load preview preference from localStorage
+  function loadPreviewPreference(): boolean {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem(PREVIEW_SETTING_KEY);
+      return saved !== null ? JSON.parse(saved) : true; // Default to true
+    }
+    return true;
+  }
+
+  // Save preview preference to localStorage
+  function savePreviewPreference(enabled: boolean): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(PREVIEW_SETTING_KEY, JSON.stringify(enabled));
+    }
+  }
+
+  // Initialize preview preference on mount
+  onMount(() => {
+    previewEnabled = loadPreviewPreference();
+    mounted = true;
+  });
+
+  // React to previewEnabled changes and save to localStorage (only after mount)
+  $: if (mounted && typeof localStorage !== 'undefined') {
+    savePreviewPreference(previewEnabled);
+  }
 
   // Parse CSV and check for duplicates using new DDD endpoints
   async function getCSVPreview(file: File): Promise<ParsedTransaction[]> {
