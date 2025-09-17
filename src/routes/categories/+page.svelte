@@ -169,6 +169,7 @@
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
       if ((showIconPickerNew || showIconPickerEdit) && pickerButtonElement) {
+        // Recalculate position since scroll is locked
         pickerPosition = calculatePickerPosition(pickerButtonElement);
       }
     }, 100);
@@ -184,10 +185,24 @@
     }, 50); // Small delay to ensure DOM is ready
   }
 
-  // Auto-focus when modal opens
+  // Body scroll lock and focus management
   $effect(() => {
     if ((showIconPickerNew || showIconPickerEdit) && pickerButtonElement) {
+      // Lock body scroll
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+
       focusFirstOption();
+
+      return () => {
+        // Restore scroll
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
     }
   });
 
@@ -875,10 +890,11 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
     z-index: 74;
     animation: fadeIn 0.2s ease-out;
+    cursor: pointer;
   }
 
   /* Main picker container */
