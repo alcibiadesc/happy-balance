@@ -100,10 +100,13 @@
             // For bar data
             const essentialRatio = result.data.expenseDistribution?.essentialPercentage
               ? result.data.expenseDistribution.essentialPercentage / 100
-              : 0.67;
+              : 0.5;
             const discretionaryRatio = result.data.expenseDistribution?.discretionaryPercentage
               ? result.data.expenseDistribution.discretionaryPercentage / 100
               : 0.33;
+            const debtPaymentRatio = result.data.expenseDistribution?.debtPaymentPercentage
+              ? result.data.expenseDistribution.debtPaymentPercentage / 100
+              : 0.17;
 
             // Use the same approach for bar data
             if (nonEmptyTrends && nonEmptyTrends.length > 0) {
@@ -112,6 +115,7 @@
                 income: trend.income?._amount || 0,
                 essentialExpenses: Math.abs(trend.expenses?._amount || 0) * essentialRatio,
                 discretionaryExpenses: Math.abs(trend.expenses?._amount || 0) * discretionaryRatio,
+                debtPayments: Math.abs(trend.debtPayments?._amount || 0),
                 investments: Math.abs(trend.investments?._amount || 0)
               }));
             } else {
@@ -122,6 +126,7 @@
                 income: result.data.summary?.totalIncome?._amount || 0,
                 essentialExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * essentialRatio,
                 discretionaryExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * discretionaryRatio,
+                debtPayments: Math.abs(result.data.summary?.totalDebtPayments?._amount || 0),
                 investments: Math.abs(result.data.summary?.totalInvestments?._amount || 0)
               }];
             }
@@ -138,16 +143,20 @@
 
             const essentialRatio = result.data.expenseDistribution?.essentialPercentage
               ? result.data.expenseDistribution.essentialPercentage / 100
-              : 0.67;
+              : 0.5;
             const discretionaryRatio = result.data.expenseDistribution?.discretionaryPercentage
               ? result.data.expenseDistribution.discretionaryPercentage / 100
               : 0.33;
+            const debtPaymentRatio = result.data.expenseDistribution?.debtPaymentPercentage
+              ? result.data.expenseDistribution.debtPaymentPercentage / 100
+              : 0.17;
 
             realData.monthlyBarData = [{
               month: currentPeriodLabel,
               income: result.data.summary?.totalIncome?._amount || 0,
               essentialExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * essentialRatio,
               discretionaryExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * discretionaryRatio,
+              debtPayments: Math.abs(result.data.summary?.totalDebtPayments?._amount || 0),
               investments: Math.abs(result.data.summary?.totalInvestments?._amount || 0)
             }];
           }
@@ -201,12 +210,12 @@
         { month: 'Jun', income: 3000, expenses: 1800, balance: 1200 }
       ],
       monthlyBarData: [
-        { month: 'Ene', income: 2800, essentialExpenses: 1070, discretionaryExpenses: 530, investments: 400 },
-        { month: 'Feb', income: 2900, essentialExpenses: 1170, discretionaryExpenses: 580, investments: 420 },
-        { month: 'Mar', income: 3000, essentialExpenses: 1100, discretionaryExpenses: 550, investments: 450 },
-        { month: 'Abr', income: 3100, essentialExpenses: 1270, discretionaryExpenses: 630, investments: 480 },
-        { month: 'May', income: 2950, essentialExpenses: 1140, discretionaryExpenses: 560, investments: 460 },
-        { month: 'Jun', income: 3000, essentialExpenses: 1200, discretionaryExpenses: 600, investments: 500 }
+        { month: 'Ene', income: 2800, essentialExpenses: 1070, discretionaryExpenses: 530, debtPayments: 200, investments: 400 },
+        { month: 'Feb', income: 2900, essentialExpenses: 1170, discretionaryExpenses: 580, debtPayments: 220, investments: 420 },
+        { month: 'Mar', income: 3000, essentialExpenses: 1100, discretionaryExpenses: 550, debtPayments: 250, investments: 450 },
+        { month: 'Abr', income: 3100, essentialExpenses: 1270, discretionaryExpenses: 630, debtPayments: 180, investments: 480 },
+        { month: 'May', income: 2950, essentialExpenses: 1140, discretionaryExpenses: 560, debtPayments: 210, investments: 460 },
+        { month: 'Jun', income: 3000, essentialExpenses: 1200, discretionaryExpenses: 600, debtPayments: 200, investments: 500 }
       ],
       categories: categoryBreakdown
     };
@@ -385,9 +394,14 @@
         
         <!-- Expenses Card with Breakdown -->
         <ExpensesCard
-          totalExpenses={Math.abs(dashboardData?.summary?.totalExpenses?._amount || currentStats.expenses)}
-          essentialExpenses={Math.abs(dashboardData?.expenseDistribution?.essential?._amount || currentStats.expenses * 0.67)}
+          totalExpenses={Math.abs(
+            (dashboardData?.summary?.totalExpenses?._amount || 0) +
+            (dashboardData?.summary?.totalDebtPayments?._amount || 0) ||
+            currentStats.expenses
+          )}
+          essentialExpenses={Math.abs(dashboardData?.expenseDistribution?.essential?._amount || currentStats.expenses * 0.5)}
           discretionaryExpenses={Math.abs(dashboardData?.expenseDistribution?.discretionary?._amount || currentStats.expenses * 0.33)}
+          debtPayments={Math.abs(dashboardData?.expenseDistribution?.debtPayments?._amount || currentStats.expenses * 0.17)}
           trend={trends.expenses}
           formatCurrency={formatCurrencyAmount}
           {formatTrend}

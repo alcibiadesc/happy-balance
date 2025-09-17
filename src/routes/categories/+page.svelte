@@ -12,7 +12,7 @@
   // States
   let editingCategory = $state<string | null>(null);
   let newCategory = $state<Partial<Category> | null>(null);
-  let selectedType = $state<'income' | 'essential' | 'discretionary' | 'investment' | null>(null);
+  let selectedType = $state<'income' | 'essential' | 'discretionary' | 'investment' | 'debt_payment' | null>(null);
   let showDeleteModal = $state(false);
   let categoryToDelete = $state<Category | null>(null);
   let recategorizeTarget = $state<string>('none');
@@ -62,12 +62,13 @@
     '#9CA3AF', // gray
   ];
 
-  const categoryTypes = [
-    { value: 'income', label: 'Ingreso', icon: TrendingUp },
-    { value: 'investment', label: 'Inversión', icon: TrendingDown },
-    { value: 'essential', label: 'Gasto Esencial', icon: Wallet },
-    { value: 'discretionary', label: 'Gasto Discrecional', icon: Coins }
-  ];
+  let categoryTypes = $derived([
+    { value: 'income', label: $t('categories.types.income'), icon: TrendingUp },
+    { value: 'investment', label: $t('categories.types.investment'), icon: TrendingDown },
+    { value: 'essential', label: $t('categories.types.essential'), icon: Wallet },
+    { value: 'discretionary', label: $t('categories.types.discretionary'), icon: Coins },
+    { value: 'debt_payment', label: $t('categories.types.debt_payment'), icon: AlertCircle }
+  ]);
 
   // Computed categories by type
   let categoriesByType = $derived(() => {
@@ -75,7 +76,8 @@
       income: [] as Category[],
       essential: [] as Category[],
       discretionary: [] as Category[],
-      investment: [] as Category[]
+      investment: [] as Category[],
+      debt_payment: [] as Category[]
     };
 
     $apiCategories.forEach(cat => {

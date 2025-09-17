@@ -10,15 +10,15 @@ async function seedMortgageCategory() {
     const debtCategory = await prisma.category.upsert({
       where: {
         name_type: {
-          name: 'Debt Payments',
-          type: 'EXPENSE'
+          name: 'Pago de Deudas',
+          type: 'debt_payment'
         }
       },
       update: {},
       create: {
         id: 'cat-debt-payments',
-        name: 'Debt Payments',
-        type: 'EXPENSE',
+        name: 'Pago de Deudas',
+        type: 'debt_payment',
         color: '#ef4444',
         icon: '💳',
         isActive: true
@@ -31,15 +31,15 @@ async function seedMortgageCategory() {
     const mortgageCategory = await prisma.category.upsert({
       where: {
         name_type: {
-          name: 'Mortgage',
-          type: 'EXPENSE'
+          name: 'Hipoteca',
+          type: 'debt_payment'
         }
       },
       update: {},
       create: {
         id: 'cat-mortgage',
-        name: 'Mortgage',
-        type: 'EXPENSE',
+        name: 'Hipoteca',
+        type: 'debt_payment',
         color: '#dc2626',
         icon: '🏠',
         isActive: true,
@@ -83,15 +83,15 @@ async function seedMortgageCategory() {
     const creditCardCategory = await prisma.category.upsert({
       where: {
         name_type: {
-          name: 'Credit Card',
-          type: 'EXPENSE'
+          name: 'Tarjeta de Crédito',
+          type: 'debt_payment'
         }
       },
       update: {},
       create: {
         id: 'cat-credit-card',
-        name: 'Credit Card',
-        type: 'EXPENSE',
+        name: 'Tarjeta de Crédito',
+        type: 'debt_payment',
         color: '#f59e0b',
         icon: '💳',
         isActive: true,
@@ -104,15 +104,15 @@ async function seedMortgageCategory() {
     const personalLoanCategory = await prisma.category.upsert({
       where: {
         name_type: {
-          name: 'Personal Loan',
-          type: 'EXPENSE'
+          name: 'Préstamo Personal',
+          type: 'debt_payment'
         }
       },
       update: {},
       create: {
         id: 'cat-personal-loan',
-        name: 'Personal Loan',
-        type: 'EXPENSE',
+        name: 'Préstamo Personal',
+        type: 'debt_payment',
         color: '#f97316',
         icon: '💰',
         isActive: true,

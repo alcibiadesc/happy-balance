@@ -20,7 +20,7 @@ export interface Transaction {
 export interface Category {
   id: string;
   name: string;
-  type: "income" | "essential" | "discretionary" | "investment";
+  type: "income" | "essential" | "discretionary" | "investment" | "debt_payment";
   color: string;
   icon: string;
   parentId?: string; // For subcategories

@@ -19,8 +19,10 @@ export interface DashboardData {
   expenseDistribution: {
     essential: Money;
     discretionary: Money;
+    debtPayments: Money;
     essentialPercentage: number;
     discretionaryPercentage: number;
+    debtPaymentPercentage: number;
   };
 }
 
@@ -91,12 +93,16 @@ export class GetDashboardDataUseCase {
       const categoryMap = new Map(
         categories.map((cat) => [cat.id.value, cat.name]),
       );
+      const categoryObjectMap = new Map(
+        categories.map((cat) => [cat.id.value, cat]),
+      );
 
       // Calculate financial summary
       const summaryResult = this.financialCalculationService.calculateSummary(
         transactions,
         period,
         query.currency,
+        categoryObjectMap,
       );
 
       if (summaryResult.isFailure()) {
@@ -141,6 +147,7 @@ export class GetDashboardDataUseCase {
           essentialCategories,
           period,
           query.currency,
+          categoryObjectMap,
         );
 
       if (distributionResult.isFailure()) {
@@ -155,6 +162,7 @@ export class GetDashboardDataUseCase {
         transactions,
         trendPeriods,
         query.currency,
+        categoryObjectMap,
       );
 
       if (trendsResult.isFailure()) {

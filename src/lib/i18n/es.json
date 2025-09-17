@@ -45,6 +45,7 @@
       "balance": "Balance",
       "essential_expenses": "Gastos esenciales",
       "discretionary_expenses": "Gastos discrecionales",
+      "debt_payments": "Pago de Deudas",
       "saved_percentage": "{percentage}% ahorrado"
     },
     "charts": {
@@ -221,7 +222,14 @@
     "icon": "Icono",
     "type": "Tipo",
     "no_categories": "No hay categorías",
-    "delete_confirmation": "¿Estás seguro de que quieres eliminar esta categoría?"
+    "delete_confirmation": "¿Estás seguro de que quieres eliminar esta categoría?",
+    "types": {
+      "income": "Ingreso",
+      "investment": "Inversión",
+      "essential": "Gasto Esencial",
+      "discretionary": "Gasto Discrecional",
+      "debt_payment": "Pago de Deudas"
+    }
   },
   "settings": {
     "title": "Configuración",

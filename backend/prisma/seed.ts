@@ -9,74 +9,74 @@ async function main() {
     {
       id: "1",
       name: "Food & Dining",
-      type: "EXPENSE",
+      type: "essential",
       color: "#FF6B6B",
       icon: "🍽️",
     },
     {
       id: "2",
       name: "Transportation",
-      type: "EXPENSE",
+      type: "essential",
       color: "#4ECDC4",
       icon: "🚗",
     },
     {
       id: "3",
       name: "Shopping",
-      type: "EXPENSE",
+      type: "discretionary",
       color: "#45B7D1",
       icon: "🛍️",
     },
     {
       id: "4",
       name: "Entertainment",
-      type: "EXPENSE",
+      type: "discretionary",
       color: "#F7931E",
       icon: "🎬",
     },
     {
       id: "5",
       name: "Bills & Utilities",
-      type: "EXPENSE",
+      type: "essential",
       color: "#FF9F43",
       icon: "💡",
     },
     {
       id: "6",
       name: "Healthcare",
-      type: "EXPENSE",
+      type: "essential",
       color: "#26DE81",
       icon: "🏥",
     },
     {
       id: "7",
       name: "Education",
-      type: "EXPENSE",
+      type: "discretionary",
       color: "#A55EEA",
       icon: "📚",
     },
-    { id: "8", name: "Travel", type: "EXPENSE", color: "#FD79A8", icon: "✈️" },
+    { id: "8", name: "Travel", type: "discretionary", color: "#FD79A8", icon: "✈️" },
 
     // Income categories
     { id: "9", name: "Salary", type: "INCOME", color: "#00B894", icon: "💼" },
     {
       id: "10",
       name: "Freelance",
-      type: "INCOME",
+      type: "income",
       color: "#0984E3",
       icon: "💻",
     },
     {
       id: "11",
       name: "Investment Returns",
-      type: "INCOME",
+      type: "income",
       color: "#6C5CE7",
       icon: "📈",
     },
     {
       id: "12",
       name: "Other Income",
-      type: "INCOME",
+      type: "income",
       color: "#A29BFE",
       icon: "💰",
     },
@@ -85,30 +85,67 @@ async function main() {
     {
       id: "13",
       name: "Stocks",
-      type: "INVESTMENT",
+      type: "investment",
       color: "#00B894",
       icon: "📊",
     },
     {
       id: "14",
       name: "Bonds",
-      type: "INVESTMENT",
+      type: "investment",
       color: "#0984E3",
       icon: "🏦",
     },
     {
       id: "15",
       name: "Crypto",
-      type: "INVESTMENT",
+      type: "investment",
       color: "#FDCB6E",
       icon: "₿",
     },
     {
       id: "16",
       name: "Real Estate",
-      type: "INVESTMENT",
+      type: "investment",
       color: "#E17055",
       icon: "🏠",
+    },
+
+    // Debt Payment categories
+    {
+      id: "17",
+      name: "Mortgage",
+      type: "debt_payment",
+      color: "#DC2626",
+      icon: "🏠",
+    },
+    {
+      id: "18",
+      name: "Credit Card",
+      type: "debt_payment",
+      color: "#A855F7",
+      icon: "💳",
+    },
+    {
+      id: "19",
+      name: "Personal Loan",
+      type: "debt_payment",
+      color: "#F59E0B",
+      icon: "💰",
+    },
+    {
+      id: "20",
+      name: "Student Loan",
+      type: "debt_payment",
+      color: "#EF4444",
+      icon: "🎓",
+    },
+    {
+      id: "21",
+      name: "Car Loan",
+      type: "debt_payment",
+      color: "#7C3AED",
+      icon: "🚗",
     },
   ];
 
@@ -199,7 +236,7 @@ async function main() {
         currency: "EUR",
         date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
         merchant: "Company Inc.",
-        type: "INCOME",
+        type: "income",
         description: "Monthly salary",
         categoryId: "9", // Salary
         hash: "sample-hash-3",
@@ -225,6 +262,28 @@ async function main() {
         description: "Monthly electricity bill",
         categoryId: "5", // Bills & Utilities
         hash: "sample-hash-5",
+      },
+      {
+        id: "sample-6",
+        amount: -1200.0,
+        currency: "EUR",
+        date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+        merchant: "Bank Mortgage",
+        type: "EXPENSE",
+        description: "Monthly mortgage payment",
+        categoryId: "17", // Mortgage
+        hash: "sample-hash-6",
+      },
+      {
+        id: "sample-7",
+        amount: -250.0,
+        currency: "EUR",
+        date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000), // 12 days ago
+        merchant: "Credit Card Company",
+        type: "EXPENSE",
+        description: "Credit card payment",
+        categoryId: "18", // Credit Card
+        hash: "sample-hash-7",
       },
     ];
 

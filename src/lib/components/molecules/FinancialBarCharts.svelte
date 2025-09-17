@@ -10,6 +10,7 @@
     income: number;
     essentialExpenses: number;
     discretionaryExpenses: number;
+    debtPayments: number;
     investments: number;
   }
   
@@ -29,11 +30,13 @@
       en: {
         essential_expenses: 'Essential Expenses',
         discretionary_expenses: 'Discretionary Expenses',
+        debt_payments: 'Debt Payments',
         investments: 'Investments'
       },
       es: {
         essential_expenses: 'Gastos Esenciales',
         discretionary_expenses: 'Gastos Discrecionales',
+        debt_payments: 'Pago de Deudas',
         investments: 'Inversiones'
       }
     };
@@ -157,6 +160,15 @@
             borderSkipped: false,
           },
           {
+            label: labels.debt_payments,
+            data: data.map(d => d.debtPayments),
+            backgroundColor: 'rgba(168, 85, 247, 0.8)',
+            borderColor: '#a855f7',
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false,
+          },
+          {
             label: labels.investments,
             data: data.map(d => d.investments),
             backgroundColor: colors.investments.background,
@@ -182,7 +194,8 @@
         chart.data.labels = data.map(d => d.month);
         chart.data.datasets[0].data = data.map(d => d.essentialExpenses);
         chart.data.datasets[1].data = data.map(d => d.discretionaryExpenses);
-        chart.data.datasets[2].data = data.map(d => d.investments);
+        chart.data.datasets[2].data = data.map(d => d.debtPayments);
+        chart.data.datasets[3].data = data.map(d => d.investments);
         chart.update();
       }
     }
@@ -203,7 +216,8 @@
       const labels = getLabels($currentLanguage);
       chart.data.datasets[0].label = labels.essential_expenses;
       chart.data.datasets[1].label = labels.discretionary_expenses;
-      chart.data.datasets[2].label = labels.investments;
+      chart.data.datasets[2].label = labels.debt_payments;
+      chart.data.datasets[3].label = labels.investments;
       chart.update();
     }
   });

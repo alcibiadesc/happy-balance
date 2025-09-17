@@ -6,20 +6,22 @@
     totalExpenses: number;
     essentialExpenses: number;
     discretionaryExpenses: number;
+    debtPayments: number;
     trend: number;
     formatCurrency: (amount: number) => string;
     formatTrend: (value: number) => string;
     getTrendColor: (value: number, type: string) => string;
   }
   
-  let { 
-    totalExpenses, 
-    essentialExpenses, 
-    discretionaryExpenses, 
-    trend, 
-    formatCurrency, 
-    formatTrend, 
-    getTrendColor 
+  let {
+    totalExpenses,
+    essentialExpenses,
+    discretionaryExpenses,
+    debtPayments,
+    trend,
+    formatCurrency,
+    formatTrend,
+    getTrendColor
   }: Props = $props();
   
   let expanded = $state(false);
@@ -77,6 +79,16 @@
         </div>
         <div class="breakdown-percentage">
           {Math.round((discretionaryExpenses / totalExpenses) * 100)}%
+        </div>
+      </div>
+
+      <div class="breakdown-item">
+        <div class="breakdown-info">
+          <span class="breakdown-label">{$t('dashboard.metrics.debt_payments')}</span>
+          <span class="breakdown-amount">{formatCurrency(debtPayments)}</span>
+        </div>
+        <div class="breakdown-percentage">
+          {Math.round((debtPayments / totalExpenses) * 100)}%
         </div>
       </div>
     </div>

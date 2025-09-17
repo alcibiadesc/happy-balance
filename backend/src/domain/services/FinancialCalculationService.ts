@@ -8,6 +8,7 @@ export interface FinancialSummary {
   totalIncome: Money;
   totalExpenses: Money;
   totalInvestments: Money;
+  totalDebtPayments: Money;
   balance: Money;
   savingsRate: number; // Percentage (0-100)
   period: DatePeriod;
@@ -31,6 +32,7 @@ export interface TrendData {
   income: Money;
   expenses: Money;
   investments: Money;
+  debtPayments: Money;
   balance: Money;
 }
 
@@ -46,6 +48,7 @@ export class FinancialCalculationService {
     transactions: Transaction[],
     period: DatePeriod,
     currency: string,
+    categories?: Map<string, any>, // categoryId -> category object
   ): Result<FinancialSummary> {
     const filteredTransactions = transactions.filter(
       (t) =>
@@ -63,6 +66,7 @@ export class FinancialCalculationService {
     let totalIncome = zero;
     let totalExpenses = zero;
     let totalInvestments = zero;
+    let totalDebtPayments = zero;
 
     for (const transaction of filteredTransactions) {
       switch (transaction.type) {
@@ -74,10 +78,21 @@ export class FinancialCalculationService {
           break;
 
         case TransactionType.EXPENSE:
-          const expenseResult = totalExpenses.add(transaction.amount);
-          if (expenseResult.isFailure())
-            return Result.fail(expenseResult.getError());
-          totalExpenses = expenseResult.getValue();
+          // Check if this expense is a debt payment
+          const isDebtPayment = categories && transaction.categoryId &&
+            categories.get(transaction.categoryId.value)?.type === 'debt_payment';
+
+          if (isDebtPayment) {
+            const debtResult = totalDebtPayments.add(transaction.amount);
+            if (debtResult.isFailure())
+              return Result.fail(debtResult.getError());
+            totalDebtPayments = debtResult.getValue();
+          } else {
+            const expenseResult = totalExpenses.add(transaction.amount);
+            if (expenseResult.isFailure())
+              return Result.fail(expenseResult.getError());
+            totalExpenses = expenseResult.getValue();
+          }
           break;
 
         case TransactionType.INVESTMENT:
@@ -89,11 +104,14 @@ export class FinancialCalculationService {
       }
     }
 
-    // Calculate balance (income - expenses - investments)
+    // Calculate balance (income - expenses - investments - debt payments)
     const balanceStep1 = totalIncome.subtract(totalExpenses);
     if (balanceStep1.isFailure()) return Result.fail(balanceStep1.getError());
 
-    const balance = balanceStep1.getValue().subtract(totalInvestments);
+    const balanceStep2 = balanceStep1.getValue().subtract(totalInvestments);
+    if (balanceStep2.isFailure()) return Result.fail(balanceStep2.getError());
+
+    const balance = balanceStep2.getValue().subtract(totalDebtPayments);
     if (balance.isFailure()) return Result.fail(balance.getError());
 
     // Calculate savings rate
@@ -101,12 +119,14 @@ export class FinancialCalculationService {
       totalIncome,
       totalExpenses,
       totalInvestments,
+      totalDebtPayments,
     );
 
     return Result.ok({
       totalIncome,
       totalExpenses,
       totalInvestments,
+      totalDebtPayments,
       balance: balance.getValue(),
       savingsRate,
       period,
@@ -202,6 +222,7 @@ export class FinancialCalculationService {
     transactions: Transaction[],
     periods: DatePeriod[],
     currency: string,
+    categories?: Map<string, any>,
   ): Result<TrendData[]> {
     const trends: TrendData[] = [];
 
@@ -210,6 +231,7 @@ export class FinancialCalculationService {
         transactions,
         period,
         currency,
+        categories,
       );
       if (summaryResult.isFailure()) {
         return Result.fail(summaryResult.getError());
@@ -221,6 +243,7 @@ export class FinancialCalculationService {
         income: summary.totalIncome,
         expenses: summary.totalExpenses,
         investments: summary.totalInvestments,
+        debtPayments: summary.totalDebtPayments,
         balance: summary.balance,
       });
     }
@@ -258,11 +281,14 @@ export class FinancialCalculationService {
     essentialCategoryIds: Set<string>,
     period: DatePeriod,
     currency: string,
+    categories?: Map<string, any>,
   ): Result<{
     essential: Money;
     discretionary: Money;
+    debtPayments: Money;
     essentialPercentage: number;
     discretionaryPercentage: number;
+    debtPaymentPercentage: number;
   }> {
     const expenses = transactions.filter(
       (t) =>
@@ -276,24 +302,37 @@ export class FinancialCalculationService {
 
     let essentialTotal = zero.getValue();
     let discretionaryTotal = zero.getValue();
+    let debtPaymentTotal = zero.getValue();
 
     for (const transaction of expenses) {
-      const isEssential =
-        transaction.categoryId &&
-        essentialCategoryIds.has(transaction.categoryId.value);
+      const isDebtPayment = categories && transaction.categoryId &&
+        categories.get(transaction.categoryId.value)?.type === 'debt_payment';
 
-      if (isEssential) {
-        const result = essentialTotal.add(transaction.amount);
+      if (isDebtPayment) {
+        const result = debtPaymentTotal.add(transaction.amount);
         if (result.isFailure()) return Result.fail(result.getError());
-        essentialTotal = result.getValue();
+        debtPaymentTotal = result.getValue();
       } else {
-        const result = discretionaryTotal.add(transaction.amount);
-        if (result.isFailure()) return Result.fail(result.getError());
-        discretionaryTotal = result.getValue();
+        const isEssential =
+          transaction.categoryId &&
+          essentialCategoryIds.has(transaction.categoryId.value);
+
+        if (isEssential) {
+          const result = essentialTotal.add(transaction.amount);
+          if (result.isFailure()) return Result.fail(result.getError());
+          essentialTotal = result.getValue();
+        } else {
+          const result = discretionaryTotal.add(transaction.amount);
+          if (result.isFailure()) return Result.fail(result.getError());
+          discretionaryTotal = result.getValue();
+        }
       }
     }
 
-    const totalExpenses = essentialTotal.add(discretionaryTotal);
+    const totalExpensesStep1 = essentialTotal.add(discretionaryTotal);
+    if (totalExpensesStep1.isFailure()) return Result.fail(totalExpensesStep1.getError());
+
+    const totalExpenses = totalExpensesStep1.getValue().add(debtPaymentTotal);
     if (totalExpenses.isFailure()) return Result.fail(totalExpenses.getError());
 
     const total = totalExpenses.getValue();
@@ -301,12 +340,16 @@ export class FinancialCalculationService {
       total.amount > 0 ? (essentialTotal.amount / total.amount) * 100 : 0;
     const discretionaryPercentage =
       total.amount > 0 ? (discretionaryTotal.amount / total.amount) * 100 : 0;
+    const debtPaymentPercentage =
+      total.amount > 0 ? (debtPaymentTotal.amount / total.amount) * 100 : 0;
 
     return Result.ok({
       essential: essentialTotal,
       discretionary: discretionaryTotal,
+      debtPayments: debtPaymentTotal,
       essentialPercentage: Math.round(essentialPercentage * 100) / 100,
       discretionaryPercentage: Math.round(discretionaryPercentage * 100) / 100,
+      debtPaymentPercentage: Math.round(debtPaymentPercentage * 100) / 100,
     });
   }
 
@@ -387,13 +430,14 @@ export class FinancialCalculationService {
     income: Money,
     expenses: Money,
     investments: Money,
+    debtPayments: Money,
   ): number {
     if (income.amount <= 0) {
       return 0;
     }
 
     const totalSaved = investments.amount;
-    const totalSpent = expenses.amount;
+    const totalSpent = expenses.amount + debtPayments.amount;
     const netSavings = Math.max(0, income.amount - totalSpent);
     const totalSavings = totalSaved + netSavings;
 
