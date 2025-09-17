@@ -4,6 +4,7 @@
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import AddTransactionModal from '$lib/components/AddTransactionModal.svelte';
   import SmartCategorizationModal from '$lib/components/SmartCategorizationModal.svelte';
+  import CategorySelectionModal from '$lib/components/CategorySelectionModal.svelte';
   import {
     ChevronDown, Search, Filter, Download, Plus, Calendar,
     TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,
@@ -29,6 +30,7 @@
   let showCategoryFilterDropdown = $state(false);
   let isSelectionMode = $state(false);
   let showCategoryModal = $state(false);
+  let categoryModalTransaction = $state<Transaction | null>(null);
   let editingTransaction = $state<Transaction | null>(null);
   let showAddModal = $state(false);
   let showCategoryDropdown = $state<string | null>(null); // Transaction ID showing category dropdown
@@ -325,6 +327,28 @@
     }
   }
   
+  function openCategoryModal(transaction: Transaction) {
+    categoryModalTransaction = transaction;
+    showCategoryModal = true;
+  }
+
+  function closeCategoryModal() {
+    showCategoryModal = false;
+    categoryModalTransaction = null;
+  }
+
+  async function handleCategorySelection(categoryId: string) {
+    if (!categoryModalTransaction) return;
+
+    try {
+      await initSmartCategorization(categoryModalTransaction, categoryId);
+      closeCategoryModal();
+    } catch (error) {
+      console.error('❌ Failed to categorize transaction:', error);
+      closeCategoryModal();
+    }
+  }
+
   async function categorizeTransaction(transaction: Transaction, categoryId: string, applyToAll = false) {
     try {
       const selectedCategory = getCategoryById(categoryId);
@@ -1031,7 +1055,7 @@
                   title={category ? `Categoría: ${category.name}` : 'Asignar categoría'}
                   onclick={(e) => {
                     e.stopPropagation();
-                    showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id;
+                    openCategoryModal(transaction);
                   }}
                 >
                   {#if category}
@@ -1134,6 +1158,15 @@
     <Plus size={16} />
   </button>
 </div>
+
+<!-- Category Selection Modal -->
+<CategorySelectionModal
+  isOpen={showCategoryModal}
+  transaction={categoryModalTransaction}
+  categories={$apiCategories}
+  onSelect={handleCategorySelection}
+  onCancel={closeCategoryModal}
+/>
 
 <!-- Smart Categorization Modal -->
 <SmartCategorizationModal
