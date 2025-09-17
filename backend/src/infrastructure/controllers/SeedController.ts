@@ -15,8 +15,14 @@ export class SeedController {
     this.userPreferencesRepository = userPreferencesRepository;
   }
 
-  async resetToDefaults(req: Request, res: Response): Promise<void> {
-    try {
+  /**
+   * Internal method to perform the seeding without HTTP dependencies
+   */
+  async performReset(): Promise<{
+    categories: number;
+    settings: number;
+    userPreferences: number;
+  }> {
       // Default categories structure from seed.ts
       const defaultCategories = [
         // Essential categories
@@ -243,14 +249,20 @@ export class SeedController {
         },
       });
 
+      return {
+        categories: defaultCategories.length,
+        settings: defaultSettings.length,
+        userPreferences: 1,
+      };
+  }
+
+  async resetToDefaults(req: Request, res: Response): Promise<void> {
+    try {
+      const result = await this.performReset();
       res.json({
         success: true,
         message: "Data has been successfully reset to defaults",
-        resetItems: {
-          categories: defaultCategories.length,
-          settings: defaultSettings.length,
-          userPreferences: 1,
-        },
+        resetItems: result,
       });
     } catch (error) {
       console.error("Error resetting data to defaults:", error);

@@ -34,6 +34,7 @@ import { DuplicateDetectionService } from "@domain/services/DuplicateDetectionSe
 import { CategorizationService } from "@domain/services/CategorizationService";
 import { FinancialCalculationService } from "@domain/services/FinancialCalculationService";
 import { SmartCategorizationService } from "@domain/services/SmartCategorizationService";
+import { InitialSetupService } from "@domain/services/InitialSetupService";
 import { TransactionFactory } from "./domain/factories/TransactionFactory";
 import { CategoryPatternRepository } from "@infrastructure/repositories/CategoryPatternRepository";
 
@@ -48,6 +49,7 @@ class App {
   private userPreferencesController!: UserPreferencesController;
   private seedController!: SeedController;
   private categoryController!: CategoryController;
+  private initialSetupService!: InitialSetupService;
 
   constructor() {
     this.app = express();
@@ -149,6 +151,13 @@ class App {
     );
 
     this.categoryController = new CategoryController(this.categoryRepository);
+
+    // Initialize setup service
+    this.initialSetupService = new InitialSetupService(
+      this.categoryRepository,
+      this.transactionRepository,
+      this.seedController,
+    );
   }
 
   private initializeMiddleware() {
@@ -253,6 +262,13 @@ class App {
     try {
       // Test database connection
       await prisma.$connect();
+
+      // Perform initial setup if database is empty
+      const setupResult = await this.initialSetupService.performInitialSetupIfNeeded();
+      if (setupResult.isFailure()) {
+        console.error("❌ Initial setup failed:", setupResult.getError());
+        process.exit(1);
+      }
 
       // Start server with automatic port detection
       const server = this.app.listen(preferredPort, () => {
