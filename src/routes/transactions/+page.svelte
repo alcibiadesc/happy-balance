@@ -4,7 +4,6 @@
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import AddTransactionModal from '$lib/components/AddTransactionModal.svelte';
   import SmartCategorizationModal from '$lib/components/SmartCategorizationModal.svelte';
-  import SmartTagModal from '$lib/components/SmartTagModal.svelte';
   import {
     ChevronDown, Search, Filter, Download, Plus, Calendar,
     TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,
@@ -62,10 +61,6 @@
     potentialMatches: number;
   }>>([]);
 
-  // Smart tag modal state
-  let showSmartTag = $state(false);
-  let smartTagTransaction = $state<Transaction | null>(null);
-  let smartTagMatchingTransactions = $state<Transaction[]>([]);
 
   // Click outside handler
   function handleClickOutside(event: MouseEvent) {
@@ -470,62 +465,6 @@
     smartSuggestions = [];
   }
 
-  async function initSmartTag(transaction: Transaction) {
-    try {
-      // Set up the modal state
-      smartTagTransaction = transaction;
-
-      // Find potential matching transactions
-      smartTagMatchingTransactions = await findMatchingTransactions(transaction);
-
-      // Show the modal
-      showSmartTag = true;
-
-    } catch (error) {
-      console.error('❌ Failed to initialize smart tag:', error);
-    }
-  }
-
-  async function handleSmartTag(tag: string, scope: 'single' | 'pattern') {
-    if (!smartTagTransaction) return;
-
-    try {
-      const transaction = smartTagTransaction;
-      const currentTags = transaction.tags || [];
-
-      if (scope === 'single') {
-        // Apply tag to single transaction
-        const newTags = [...currentTags, tag].filter((t, i, arr) => arr.indexOf(t) === i);
-        await apiTransactions.update(transaction.id, { tags: newTags });
-      } else {
-        // Apply to all matching transactions
-        const allTransactions = [transaction, ...smartTagMatchingTransactions];
-
-        for (const t of allTransactions) {
-          const tCurrentTags = t.tags || [];
-          const tNewTags = [...tCurrentTags, tag].filter((tag, i, arr) => arr.indexOf(tag) === i);
-          await apiTransactions.update(t.id, { tags: tNewTags });
-        }
-      }
-
-      // Close modal and reset state
-      showSmartTag = false;
-      smartTagTransaction = null;
-      smartTagMatchingTransactions = [];
-
-      // Reload transactions to ensure UI is in sync
-      await apiTransactions.load();
-
-    } catch (error) {
-      console.error('❌ Failed to apply smart tag:', error);
-    }
-  }
-
-  function handleSmartTagCancel() {
-    showSmartTag = false;
-    smartTagTransaction = null;
-    smartTagMatchingTransactions = [];
-  }
 
   function formatAmount(amount: number): string {
     if (isNaN(amount)) return '€0.00';
@@ -1059,14 +998,7 @@
                 onchange={() => toggleSelection(transaction.id)}
               />
             {/if}
-            
-            <div 
-              class="transaction-category"
-              style="background-color: {category?.color || '#e0e0e0'}20"
-            >
-              <span>{category?.icon || '📄'}</span>
-            </div>
-            
+
             <div class="transaction-details">
               <div class="transaction-main">
                 <div>
@@ -1076,13 +1008,6 @@
                     <span>•</span>
                     <span>{transaction.time}</span>
                   </div>
-                  {#if transaction.tags && transaction.tags.length > 0}
-                    <div class="transaction-tags">
-                      {#each transaction.tags as tag}
-                        <span class="transaction-tag">{tag}</span>
-                      {/each}
-                    </div>
-                  {/if}
                 </div>
                 <div class="transaction-amount" class:income={transaction.amount > 0}>
                   {formatAmount(transaction.amount)}
@@ -1093,6 +1018,7 @@
                 <button
                   class="category-btn"
                   class:has-category={category}
+                  title={category ? `Categoría: ${category.name}` : 'Asignar categoría'}
                   onclick={(e) => {
                     e.stopPropagation();
                     showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id;
@@ -1108,12 +1034,13 @@
                 </button>
 
                 {#if showCategoryDropdown === transaction.id}
+                  {@const isIncomeTransaction = transaction.amount > 0}
                   {@const incomeCategories = $apiCategories.filter(c => c.type === 'income')}
                   {@const expenseCategories = $apiCategories.filter(c => c.type === 'essential' || c.type === 'discretionary' || c.type === 'investment')}
                   <div class="category-dropdown-compact">
-                    {#if incomeCategories.length > 0}
+                    {#if isIncomeTransaction && incomeCategories.length > 0}
                       <div class="category-section">
-                        <div class="category-section-label">Ingresos</div>
+                        <div class="category-section-label">Categorías de Ingresos</div>
                         <div class="category-grid">
                           {#each incomeCategories as cat}
                             <button
@@ -1131,9 +1058,9 @@
                       </div>
                     {/if}
 
-                    {#if expenseCategories.length > 0}
+                    {#if !isIncomeTransaction && expenseCategories.length > 0}
                       <div class="category-section">
-                        <div class="category-section-label">Gastos</div>
+                        <div class="category-section-label">Categorías de Gastos</div>
                         <div class="category-grid">
                           {#each expenseCategories as cat}
                             <button
@@ -1166,13 +1093,6 @@
             </div>
             
             <div class="transaction-actions">
-              <button
-                class="action-btn tag-btn"
-                title="Añadir etiqueta"
-                onclick={() => initSmartTag(transaction)}
-              >
-                <Tag size={14} />
-              </button>
               <button
                 class="action-btn"
                 class:hidden={transaction.hidden}
@@ -1216,14 +1136,6 @@
   onCancel={handleSmartCategorizationCancel}
 />
 
-<!-- Smart Tag Modal -->
-<SmartTagModal
-  isOpen={showSmartTag}
-  transaction={smartTagTransaction}
-  matchingTransactions={smartTagMatchingTransactions}
-  onConfirm={handleSmartTag}
-  onCancel={handleSmartTagCancel}
-/>
 
 <!-- Delete Selected Modal -->
 <ConfirmModal
@@ -2640,22 +2552,6 @@
   .transaction-card.hidden .transaction-meta {
     color: var(--text-muted);
   }
-  
-  .transaction-category {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    transition: transform 0.2s ease;
-  }
-
-  .transaction-card:hover .transaction-category {
-    transform: scale(1.05);
-  }
-  
   .transaction-details {
     flex: 1;
   }
@@ -2727,79 +2623,96 @@
 
   .category-dropdown-compact {
     position: absolute;
-    top: calc(100% + 0.25rem);
+    top: calc(100% + 0.5rem);
     left: 0;
     z-index: 35;
     background: var(--surface-elevated);
     border: 1px solid var(--gray-200);
-    border-radius: var(--radius-md);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    padding: var(--space-md);
-    min-width: 280px;
-    max-width: 320px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 3px 10px rgba(0, 0, 0, 0.05);
+    padding: var(--space-lg);
+    min-width: 300px;
+    max-width: 360px;
+    animation: dropdownOpen 0.2s ease-out;
+  }
+
+  @keyframes dropdownOpen {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .category-section {
-    margin-bottom: var(--space-md);
+    margin-bottom: var(--space-lg);
   }
 
   .category-section:last-of-type {
-    margin-bottom: var(--space-sm);
+    margin-bottom: var(--space-md);
   }
 
   .category-section-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: var(--space-xs);
+    letter-spacing: 0.08em;
+    margin-bottom: var(--space-sm);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--gray-100);
   }
 
   .category-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-xs);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+    gap: var(--space-sm);
+    padding: var(--space-xs) 0;
   }
 
   .category-grid-item {
-    width: 36px;
-    height: 36px;
+    aspect-ratio: 1;
+    min-height: 42px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-sm);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-md);
     background: var(--surface);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
   }
 
   .category-grid-item:hover {
-    transform: scale(1.1);
-    z-index: 5;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px) scale(1.08);
+    z-index: 2;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   .category-grid-item.income-cat {
-    background: rgba(122, 186, 165, 0.05);
-    border-color: rgba(122, 186, 165, 0.3);
+    background: linear-gradient(135deg, rgba(122, 186, 165, 0.08), rgba(122, 186, 165, 0.03));
+    border-color: rgba(122, 186, 165, 0.4);
   }
 
   .category-grid-item.income-cat:hover {
-    background: rgba(122, 186, 165, 0.15);
+    background: linear-gradient(135deg, rgba(122, 186, 165, 0.2), rgba(122, 186, 165, 0.1));
     border-color: var(--acapulco);
+    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.3);
   }
 
   .category-grid-item.expense-cat {
-    background: rgba(245, 121, 108, 0.05);
-    border-color: rgba(245, 121, 108, 0.3);
+    background: linear-gradient(135deg, rgba(245, 121, 108, 0.08), rgba(245, 121, 108, 0.03));
+    border-color: rgba(245, 121, 108, 0.4);
   }
 
   .category-grid-item.expense-cat:hover {
-    background: rgba(245, 121, 108, 0.15);
+    background: linear-gradient(135deg, rgba(245, 121, 108, 0.2), rgba(245, 121, 108, 0.1));
     border-color: var(--froly);
+    box-shadow: 0 4px 12px rgba(245, 121, 108, 0.3);
   }
 
   .category-grid-item:active {
@@ -2807,21 +2720,23 @@
   }
 
   .category-emoji {
-    font-size: 1.1rem;
+    font-size: 1.25rem;
     line-height: 1;
+    filter: saturate(1.1);
   }
 
   .category-close-btn {
     width: 100%;
-    padding: var(--space-xs) var(--space-sm);
-    border: none;
-    border-radius: var(--radius-sm);
-    background: var(--gray-100);
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    font-weight: 500;
+    padding: var(--space-sm) var(--space-md);
+    margin-top: var(--space-xs);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -2870,27 +2785,7 @@
     color: rgb(239, 68, 68);
   }
 
-  .tag-btn:hover {
-    background: rgba(16, 185, 129, 0.1);
-    color: rgb(16, 185, 129);
-  }
 
-  .transaction-tags {
-    display: flex;
-    gap: 0.25rem;
-    flex-wrap: wrap;
-    margin-top: 0.25rem;
-  }
-
-  .transaction-tag {
-    padding: 0.125rem 0.375rem;
-    background: #e0e7ff;
-    color: #3730a3;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    line-height: 1;
-  }
   
   .fab {
     position: fixed;
