@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { browser } from '$app/environment';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import AddTransactionModal from '$lib/components/AddTransactionModal.svelte';
   import {
@@ -398,12 +399,24 @@
   }
 
   onMount(async () => {
-    await apiTransactions.load();
-    document.addEventListener('click', handleClickOutside);
+    // Only try to load data on the client side
+    if (browser) {
+      try {
+        await apiTransactions.load();
+      } catch (error) {
+        console.warn('Failed to load transactions on mount:', error);
+        // Continue without failing the page
+      }
+    }
+    if (browser) {
+      document.addEventListener('click', handleClickOutside);
+    }
   });
 
   onDestroy(() => {
-    document.removeEventListener('click', handleClickOutside);
+    if (browser) {
+      document.removeEventListener('click', handleClickOutside);
+    }
   });
 </script>
 
