@@ -20,6 +20,13 @@
   let showIconPickerNew = $state(false);
   let showIconPickerEdit = $state<string | null>(null);
   let pickerButtonElement = $state<HTMLElement | null>(null);
+  let pickerPosition = $state({
+    top: 0,
+    left: 0,
+    maxHeight: 'none',
+    position: 'bottom',
+    width: 160
+  });
 
   // Form data for editing
   let editForm = $state({
@@ -30,15 +37,159 @@
     type: 'essential' as Category['type']
   });
 
-  // Click outside handler
-  function handleClickOutside(event: MouseEvent) {
-    const target = event.target as Element;
-    if (!target.closest('.category-icon-picker') && !target.closest('.emoji-picker-overlay')) {
-      showIconPickerNew = false;
-      showIconPickerEdit = null;
+  // Advanced positioning system with proper viewport detection
+  function calculatePickerPosition(buttonElement: HTMLElement) {
+    const rect = buttonElement.getBoundingClientRect();
+
+    // Picker dimensions
+    const pickerWidth = 160;
+    const pickerEstimatedHeight = 260; // Height including header + content
+    const spacing = 8;
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    // Calculate available space
+    const spaceAbove = rect.top;
+    const spaceBelow = viewportHeight - rect.bottom;
+
+    let top, left, maxHeight, position;
+
+    // Choose position based on available space - prioritize above if below is insufficient
+    if (spaceBelow >= pickerEstimatedHeight) {
+      // Enough space below
+      position = 'bottom';
+      top = rect.bottom + spacing;
+      maxHeight = Math.min(280, spaceBelow - spacing * 2);
+    } else if (spaceAbove >= pickerEstimatedHeight) {
+      // Not enough space below, but enough above
+      position = 'top';
+      maxHeight = Math.min(280, spaceAbove - spacing * 2);
+      top = rect.top - maxHeight - spacing - 50; // 50px for header
+    } else {
+      // Not enough space either direction - use the larger space
+      if (spaceAbove > spaceBelow) {
+        position = 'top';
+        maxHeight = Math.max(150, spaceAbove - spacing * 2);
+        top = spacing;
+      } else {
+        position = 'bottom';
+        top = rect.bottom + spacing;
+        maxHeight = Math.max(150, spaceBelow - spacing * 2);
+      }
+    }
+
+    // Horizontal positioning
+    left = Math.max(spacing, Math.min(rect.left, viewportWidth - pickerWidth - spacing));
+
+    return {
+      top,
+      left,
+      maxHeight: `${maxHeight}px`,
+      position,
+      width: pickerWidth
+    };
+  }
+
+
+
+  // Enhanced keyboard navigation and accessibility
+  function handleKeydown(event: KeyboardEvent) {
+    // Close modal with Escape
+    if (event.key === 'Escape' && (showIconPickerNew || showIconPickerEdit)) {
+      closeEmojiPicker();
+      event.preventDefault();
+      return;
+    }
+
+    // Handle arrow key navigation within the picker
+    if ((showIconPickerNew || showIconPickerEdit) && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+      handleArrowNavigation(event);
+      event.preventDefault();
+    }
+  }
+
+  // Unified close function
+  function closeEmojiPicker() {
+    showIconPickerNew = false;
+    showIconPickerEdit = null;
+
+    // Return focus to the button that opened the picker
+    if (pickerButtonElement) {
+      pickerButtonElement.focus();
       pickerButtonElement = null;
     }
   }
+
+  // Arrow key navigation in the emoji grid
+  function handleArrowNavigation(event: KeyboardEvent) {
+    const focusedElement = document.activeElement as HTMLElement;
+    if (!focusedElement?.classList.contains('icon-option')) return;
+
+    const options = Array.from(document.querySelectorAll('.icon-option')) as HTMLElement[];
+    const currentIndex = options.indexOf(focusedElement);
+    const columns = 4;
+    let nextIndex = currentIndex;
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
+        break;
+      case 'ArrowRight':
+        nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
+        break;
+      case 'ArrowUp':
+        nextIndex = currentIndex >= columns ? currentIndex - columns : options.length - columns + (currentIndex % columns);
+        if (nextIndex >= options.length) nextIndex = currentIndex;
+        break;
+      case 'ArrowDown':
+        nextIndex = currentIndex + columns < options.length ? currentIndex + columns : currentIndex % columns;
+        break;
+    }
+
+    if (nextIndex !== currentIndex && options[nextIndex]) {
+      options[nextIndex].focus();
+    }
+  }
+
+  // Enhanced click outside handler
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as Element;
+
+    // Don't close if clicking within the picker or on trigger buttons
+    if (!target.closest('.emoji-picker-overlay') &&
+        !target.closest('.emoji-picker-backdrop') &&
+        !target.closest('.category-icon-picker')) {
+      closeEmojiPicker();
+    }
+  }
+
+  // Debounced resize handler for better performance
+  let resizeTimeout: number;
+  function handleWindowResize() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      if ((showIconPickerNew || showIconPickerEdit) && pickerButtonElement) {
+        pickerPosition = calculatePickerPosition(pickerButtonElement);
+      }
+    }, 100);
+  }
+
+  // Focus management for modal
+  function focusFirstOption() {
+    setTimeout(() => {
+      const firstOption = document.querySelector('.icon-option') as HTMLElement;
+      if (firstOption) {
+        firstOption.focus();
+      }
+    }, 50); // Small delay to ensure DOM is ready
+  }
+
+  // Auto-focus when modal opens
+  $effect(() => {
+    if ((showIconPickerNew || showIconPickerEdit) && pickerButtonElement) {
+      focusFirstOption();
+    }
+  });
 
 
   // Available icons and colors
@@ -203,11 +354,17 @@
     await apiCategories.load();
     await apiTransactions.load();
 
-    // Add click outside listener
+    // Add event listeners
     document.addEventListener('click', handleClickOutside);
+    document.addEventListener('keydown', handleKeydown);
+    window.addEventListener('resize', handleWindowResize);
+    window.addEventListener('scroll', handleWindowResize);
 
     return () => {
       document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleKeydown);
+      window.removeEventListener('resize', handleWindowResize);
+      window.removeEventListener('scroll', handleWindowResize);
     };
   });
 </script>
@@ -248,8 +405,14 @@
                 <button
                   class="icon-display"
                   style="background-color: {newCategory.color}20"
+                  aria-label="Seleccionar icono para nueva categoría"
+                  aria-expanded={showIconPickerNew}
+                  aria-haspopup="listbox"
                   onclick={(e) => {
                     pickerButtonElement = e.currentTarget;
+                    if (!showIconPickerNew) {
+                      pickerPosition = calculatePickerPosition(e.currentTarget);
+                    }
                     showIconPickerNew = !showIconPickerNew;
                   }}
                 >
@@ -310,8 +473,14 @@
                   <button
                     class="icon-display"
                     style="background-color: {editForm.color}20"
+                    aria-label="Seleccionar icono para {category.name}"
+                    aria-expanded={showIconPickerEdit === category.id}
+                    aria-haspopup="listbox"
                     onclick={(e) => {
                       pickerButtonElement = e.currentTarget;
+                      if (showIconPickerEdit !== category.id) {
+                        pickerPosition = calculatePickerPosition(e.currentTarget);
+                      }
                       showIconPickerEdit = showIconPickerEdit === category.id ? null : category.id;
                     }}
                   >
@@ -407,30 +576,58 @@
   </main>
 </div>
 
-<!-- Global Emoji Picker -->
+<!-- Advanced Emoji Picker Modal -->
 {#if (showIconPickerNew || showIconPickerEdit) && pickerButtonElement}
-  {@const rect = pickerButtonElement.getBoundingClientRect()}
+  <!-- Modal backdrop for better UX -->
+  <div class="emoji-picker-backdrop" onclick={closeEmojiPicker}></div>
+
+  <!-- Positioned picker container -->
   <div
     class="emoji-picker-overlay"
+    class:position-top={pickerPosition.position === 'top'}
+    class:position-center={pickerPosition.position === 'center'}
     style="
-      top: {rect.bottom + 8}px;
-      left: {rect.left}px;
+      top: {pickerPosition.top}px;
+      left: {pickerPosition.left}px;
+      width: {pickerPosition.width}px;
     "
+    role="dialog"
+    aria-modal="true"
+    aria-label="Selector de iconos"
   >
-    <div class="icon-options-global">
+    <!-- Picker header for better UX -->
+    <div class="emoji-picker-header">
+      <span class="emoji-picker-title">Seleccionar icono</span>
+      <button
+        class="emoji-picker-close"
+        onclick={closeEmojiPicker}
+        aria-label="Cerrar selector"
+      >
+        <X size={14} />
+      </button>
+    </div>
+
+    <!-- Scrollable content area -->
+    <div
+      class="emoji-picker-content"
+      style="max-height: {pickerPosition.maxHeight};"
+      role="listbox"
+      aria-label="Lista de iconos disponibles"
+    >
       {#each availableIcons as icon}
         <button
           class="icon-option"
           class:selected={showIconPickerNew ? newCategory?.icon === icon : editForm.icon === icon}
+          role="option"
+          aria-selected={showIconPickerNew ? newCategory?.icon === icon : editForm.icon === icon}
+          aria-label="Icono {icon}"
           onclick={() => {
             if (showIconPickerNew && newCategory) {
               newCategory.icon = icon;
-              showIconPickerNew = false;
             } else if (showIconPickerEdit) {
               editForm.icon = icon;
-              showIconPickerEdit = null;
             }
-            pickerButtonElement = null;
+            closeEmojiPicker();
           }}
         >
           {icon}
@@ -661,58 +858,217 @@
     font-size: 1.25rem;
   }
 
+  /* Z-Index Hierarchy (Updated to match main branch):
+   * - Content overlays: 20-30
+   * - Navigation: 40-50
+   * - Modals and overlays: 70-80
+   * - System alerts: 100+
+   *
+   * Emoji picker (75) appears above modal backdrop (70)
+   * while respecting the established hierarchy
+   */
+
+  /* Modal backdrop for better UX */
+  .emoji-picker-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(2px);
+    z-index: 74;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  /* Main picker container */
   .emoji-picker-overlay {
     position: fixed;
-    z-index: 25;
-    pointer-events: none;
-  }
-
-  .icon-options-global {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
+    z-index: 75;
     background: var(--surface-elevated);
     border: 1px solid var(--gray-200);
-    border-radius: var(--radius-md);
-    padding: var(--space-xs);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-    min-width: 144px;
-    animation: slideDown 0.15s ease-out;
-    pointer-events: auto;
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04),
+      0 0 0 1px rgba(0, 0, 0, 0.05);
+    animation: modalSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: var(--transform-origin, center bottom);
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
-  @keyframes slideDown {
+  /* Animation variants based on position */
+  .emoji-picker-overlay.position-top {
+    --transform-origin: center bottom;
+    animation: modalSlideInFromTop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .emoji-picker-overlay.position-center {
+    --transform-origin: center center;
+    animation: modalSlideInCenter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Picker header */
+  .emoji-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .emoji-picker-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .emoji-picker-close {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+
+  .emoji-picker-close:hover {
+    background: var(--gray-200);
+    color: var(--text-primary);
+  }
+
+  /* Scrollable content area */
+  .emoji-picker-content {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: var(--space-md);
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-300) transparent;
+    flex: 1;
+    min-height: 0; /* Important for flex child scrolling */
+  }
+
+  .emoji-picker-content::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .emoji-picker-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .emoji-picker-content::-webkit-scrollbar-thumb {
+    background-color: var(--gray-300);
+    border-radius: 3px;
+  }
+
+  .emoji-picker-content::-webkit-scrollbar-thumb:hover {
+    background-color: var(--gray-400);
+  }
+
+  /* Modal animations for different positions */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes modalSlideIn {
     from {
       opacity: 0;
-      transform: translateY(-8px);
+      transform: scale(0.95) translateY(8px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: scale(1) translateY(0);
     }
   }
 
+  @keyframes modalSlideInFromTop {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes modalSlideInCenter {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Enhanced icon option styles */
   .icon-option {
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    background: transparent;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    background: var(--surface);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
-    transition: all 0.15s ease;
+    font-size: 1.125rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   .icon-option:hover {
-    background: var(--gray-100);
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .icon-option:focus {
+    outline: none;
+    border-color: var(--acapulco);
+    box-shadow:
+      0 0 0 3px rgba(122, 186, 165, 0.2),
+      0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   .icon-option.selected {
     background: var(--acapulco);
     border-color: var(--acapulco);
+    color: white;
+    transform: scale(1.05);
+    box-shadow:
+      0 0 0 3px rgba(122, 186, 165, 0.3),
+      0 8px 20px rgba(122, 186, 165, 0.4);
+  }
+
+  .icon-option.selected:hover {
+    background: #6ba085;
+    border-color: #6ba085;
+    transform: scale(1.05) translateY(-1px);
+  }
+
+  .icon-option:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
   }
 
   .category-info {
