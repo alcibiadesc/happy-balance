@@ -1,7 +1,11 @@
-import { PrismaClient } from '@prisma/client';
-import { CategoryPattern, CategoryPatternSnapshot, PatternType } from '../../domain/entities/CategoryPattern';
-import { ICategoryPatternRepository } from '../../domain/services/SmartCategorizationService';
-import { Result } from '../../domain/shared/Result';
+import { PrismaClient } from "@prisma/client";
+import {
+  CategoryPattern,
+  CategoryPatternSnapshot,
+  PatternType,
+} from "../../domain/entities/CategoryPattern";
+import { ICategoryPatternRepository } from "../../domain/services/SmartCategorizationService";
+import { Result } from "../../domain/shared/Result";
 
 export class CategoryPatternRepository implements ICategoryPatternRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -11,17 +15,16 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
       const patterns = await this.prisma.categoryPattern.findMany({
         where: {
           categoryId,
-          isActive: true
+          isActive: true,
         },
-        orderBy: [
-          { priority: 'desc' },
-          { createdAt: 'desc' }
-        ]
+        orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
       });
 
-      return patterns.map(p => this.toDomain(p)).filter(p => p !== null) as CategoryPattern[];
+      return patterns
+        .map((p) => this.toDomain(p))
+        .filter((p) => p !== null) as CategoryPattern[];
     } catch (error) {
-      console.error('Error finding patterns by category:', error);
+      console.error("Error finding patterns by category:", error);
       return [];
     }
   }
@@ -30,17 +33,16 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
     try {
       const patterns = await this.prisma.categoryPattern.findMany({
         where: {
-          isActive: true
+          isActive: true,
         },
-        orderBy: [
-          { priority: 'desc' },
-          { matchCount: 'desc' }
-        ]
+        orderBy: [{ priority: "desc" }, { matchCount: "desc" }],
       });
 
-      return patterns.map(p => this.toDomain(p)).filter(p => p !== null) as CategoryPattern[];
+      return patterns
+        .map((p) => this.toDomain(p))
+        .filter((p) => p !== null) as CategoryPattern[];
     } catch (error) {
-      console.error('Error finding active patterns:', error);
+      console.error("Error finding active patterns:", error);
       return [];
     }
   }
@@ -59,7 +61,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
           isActive: snapshot.isActive,
           applyToFuture: snapshot.applyToFuture,
           priority: snapshot.priority,
-          matchCount: snapshot.matchCount
+          matchCount: snapshot.matchCount,
         },
         update: {
           pattern: snapshot.pattern,
@@ -67,11 +69,11 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
           isActive: snapshot.isActive,
           applyToFuture: snapshot.applyToFuture,
           priority: snapshot.priority,
-          matchCount: snapshot.matchCount
-        }
+          matchCount: snapshot.matchCount,
+        },
       });
     } catch (error) {
-      console.error('Error saving category pattern:', error);
+      console.error("Error saving category pattern:", error);
       throw error;
     }
   }
@@ -79,7 +81,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
   async findById(id: string): Promise<CategoryPattern | null> {
     try {
       const pattern = await this.prisma.categoryPattern.findUnique({
-        where: { id }
+        where: { id },
       });
 
       if (!pattern) {
@@ -88,7 +90,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
 
       return this.toDomain(pattern);
     } catch (error) {
-      console.error('Error finding pattern by id:', error);
+      console.error("Error finding pattern by id:", error);
       return null;
     }
   }
@@ -96,10 +98,10 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
   async delete(id: string): Promise<void> {
     try {
       await this.prisma.categoryPattern.delete({
-        where: { id }
+        where: { id },
       });
     } catch (error) {
-      console.error('Error deleting category pattern:', error);
+      console.error("Error deleting category pattern:", error);
       throw error;
     }
   }
@@ -115,7 +117,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         applyToFuture: raw.applyToFuture,
         priority: raw.priority,
         matchCount: raw.matchCount,
-        createdAt: raw.createdAt.toISOString()
+        createdAt: raw.createdAt.toISOString(),
       };
 
       const result = CategoryPattern.fromSnapshot(snapshot);
@@ -123,10 +125,10 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         return result.getValue();
       }
 
-      console.error('Failed to convert pattern to domain:', result.getError());
+      console.error("Failed to convert pattern to domain:", result.getError());
       return null;
     } catch (error) {
-      console.error('Error converting pattern to domain:', error);
+      console.error("Error converting pattern to domain:", error);
       return null;
     }
   }

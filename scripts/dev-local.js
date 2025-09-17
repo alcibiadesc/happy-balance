@@ -123,7 +123,9 @@ function startBackend(port) {
   }
 
   // Use pnpm if available, otherwise npm
-  const packageManager = existsSync(resolve(backendPath, "pnpm-lock.yaml")) ? "pnpm" : "npm";
+  const packageManager = existsSync(resolve(backendPath, "pnpm-lock.yaml"))
+    ? "pnpm"
+    : "npm";
 
   return spawn(packageManager, ["run", "dev"], {
     cwd: backendPath,
@@ -140,18 +142,24 @@ function startBackend(port) {
 // Start frontend server with specific port and backend URL
 function startFrontend(frontendPort, backendPort) {
   // Use pnpm if available, otherwise npm
-  const packageManager = existsSync(resolve(rootDir, "pnpm-lock.yaml")) ? "pnpm" : "npm";
+  const packageManager = existsSync(resolve(rootDir, "pnpm-lock.yaml"))
+    ? "pnpm"
+    : "npm";
 
-  return spawn(packageManager, ["exec", "vite", "--port", frontendPort.toString(), "--host"], {
-    cwd: rootDir,
-    stdio: "inherit",
-    shell: true,
-    env: {
-      ...process.env,
-      VITE_API_URL: `http://localhost:${backendPort}/api`,
-      FORCE_COLOR: "1",
+  return spawn(
+    packageManager,
+    ["exec", "vite", "--port", frontendPort.toString(), "--host"],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+      shell: true,
+      env: {
+        ...process.env,
+        VITE_API_URL: `http://localhost:${backendPort}/api`,
+        FORCE_COLOR: "1",
+      },
     },
-  });
+  );
 }
 
 // Create required directories
@@ -195,14 +203,23 @@ async function main() {
   // Find available ports
   log("\n🔍 Finding available ports...", "yellow");
   const ports = await getAvailablePorts();
-  log("✅ Ports found - Backend: " + ports.backend + ", Frontend: " + ports.frontend, "green");
+  log(
+    "✅ Ports found - Backend: " +
+      ports.backend +
+      ", Frontend: " +
+      ports.frontend,
+    "green",
+  );
 
   // Update backend .env with the dynamic port
   const backendEnvPath = resolve(rootDir, "backend", ".env");
   if (existsSync(backendEnvPath)) {
     let envContent = readFileSync(backendEnvPath, "utf-8");
     envContent = envContent.replace(/^PORT=.*$/m, `PORT=${ports.backend}`);
-    envContent = envContent.replace(/^CORS_ORIGIN=.*$/m, `CORS_ORIGIN="http://localhost:${ports.frontend}"`);
+    envContent = envContent.replace(
+      /^CORS_ORIGIN=.*$/m,
+      `CORS_ORIGIN="http://localhost:${ports.frontend}"`,
+    );
     writeFileSync(backendEnvPath, envContent);
   }
 

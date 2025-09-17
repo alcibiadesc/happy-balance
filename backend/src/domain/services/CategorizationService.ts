@@ -35,7 +35,9 @@ export class CategorizationService {
     availableCategories: Category[],
   ): Result<CategorizationResult> {
     const eligibleCategories = availableCategories.filter(
-      (category) => category.isActive && this.isCategoryCompatible(category.type, transaction.type),
+      (category) =>
+        category.isActive &&
+        this.isCategoryCompatible(category.type, transaction.type),
     );
 
     if (eligibleCategories.length === 0) {
@@ -128,7 +130,10 @@ export class CategorizationService {
           (cat) => cat.id.value === rule.categoryId && cat.isActive,
         );
 
-        if (category && this.isCategoryCompatible(category.type, transaction.type)) {
+        if (
+          category &&
+          this.isCategoryCompatible(category.type, transaction.type)
+        ) {
           return Result.ok({
             transaction,
             suggestedCategory: category,
@@ -372,14 +377,19 @@ export class CategorizationService {
   /**
    * Check if a category type is compatible with a transaction type
    */
-  private isCategoryCompatible(categoryType: CategoryType, transactionType: TransactionType): boolean {
+  private isCategoryCompatible(
+    categoryType: CategoryType,
+    transactionType: TransactionType,
+  ): boolean {
     switch (transactionType) {
       case TransactionType.INCOME:
         return categoryType === CategoryType.INCOME;
       case TransactionType.EXPENSE:
-        return categoryType === CategoryType.ESSENTIAL ||
-               categoryType === CategoryType.DISCRETIONARY ||
-               categoryType === CategoryType.DEBT_PAYMENT;
+        return (
+          categoryType === CategoryType.ESSENTIAL ||
+          categoryType === CategoryType.DISCRETIONARY ||
+          categoryType === CategoryType.DEBT_PAYMENT
+        );
       case TransactionType.INVESTMENT:
         return categoryType === CategoryType.INVESTMENT;
       default:

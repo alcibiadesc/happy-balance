@@ -1,64 +1,64 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function seedMortgageCategory() {
   try {
-    console.log('Creating mortgage/debt payment categories...');
+    console.log("Creating mortgage/debt payment categories...");
 
     // Create main debt category
     const debtCategory = await prisma.category.upsert({
       where: {
         name_type: {
-          name: 'Pago de Deudas',
-          type: 'debt_payment'
-        }
+          name: "Pago de Deudas",
+          type: "debt_payment",
+        },
       },
       update: {},
       create: {
-        id: 'cat-debt-payments',
-        name: 'Pago de Deudas',
-        type: 'debt_payment',
-        color: '#ef4444',
-        icon: '💳',
-        isActive: true
-      }
+        id: "cat-debt-payments",
+        name: "Pago de Deudas",
+        type: "debt_payment",
+        color: "#ef4444",
+        icon: "💳",
+        isActive: true,
+      },
     });
 
-    console.log('Created debt payments category:', debtCategory);
+    console.log("Created debt payments category:", debtCategory);
 
     // Create mortgage subcategory
     const mortgageCategory = await prisma.category.upsert({
       where: {
         name_type: {
-          name: 'Hipoteca',
-          type: 'debt_payment'
-        }
+          name: "Hipoteca",
+          type: "debt_payment",
+        },
       },
       update: {},
       create: {
-        id: 'cat-mortgage',
-        name: 'Hipoteca',
-        type: 'debt_payment',
-        color: '#dc2626',
-        icon: '🏠',
+        id: "cat-mortgage",
+        name: "Hipoteca",
+        type: "debt_payment",
+        color: "#dc2626",
+        icon: "🏠",
         isActive: true,
-        parentId: debtCategory.id
-      }
+        parentId: debtCategory.id,
+      },
     });
 
-    console.log('Created mortgage category:', mortgageCategory);
+    console.log("Created mortgage category:", mortgageCategory);
 
     // Create smart patterns for common mortgage providers
     const mortgagePatterns = [
-      { pattern: 'santander hipoteca', priority: 10 },
-      { pattern: 'bbva hipoteca', priority: 10 },
-      { pattern: 'caixabank hipoteca', priority: 10 },
-      { pattern: 'sabadell hipoteca', priority: 10 },
-      { pattern: 'ing hipoteca', priority: 10 },
-      { pattern: 'mortgage', priority: 9 },
-      { pattern: 'hipoteca', priority: 9 },
-      { pattern: 'home loan', priority: 8 }
+      { pattern: "santander hipoteca", priority: 10 },
+      { pattern: "bbva hipoteca", priority: 10 },
+      { pattern: "caixabank hipoteca", priority: 10 },
+      { pattern: "sabadell hipoteca", priority: 10 },
+      { pattern: "ing hipoteca", priority: 10 },
+      { pattern: "mortgage", priority: 9 },
+      { pattern: "hipoteca", priority: 9 },
+      { pattern: "home loan", priority: 8 },
     ];
 
     for (const patternData of mortgagePatterns) {
@@ -66,7 +66,7 @@ async function seedMortgageCategory() {
         INSERT INTO category_patterns (
           id, category_id, pattern, pattern_type, is_active, apply_to_future, priority, match_count
         ) VALUES (
-          ${`pat-mortgage-${patternData.pattern.replace(/\s+/g, '-')}`},
+          ${`pat-mortgage-${patternData.pattern.replace(/\s+/g, "-")}`},
           ${mortgageCategory.id},
           ${patternData.pattern},
           'merchant',
@@ -76,55 +76,57 @@ async function seedMortgageCategory() {
           0
         ) ON CONFLICT (id) DO NOTHING`;
 
-      console.log(`Created pattern: "${patternData.pattern}" for mortgage category`);
+      console.log(
+        `Created pattern: "${patternData.pattern}" for mortgage category`,
+      );
     }
 
     // Create other debt categories
     const creditCardCategory = await prisma.category.upsert({
       where: {
         name_type: {
-          name: 'Tarjeta de Crédito',
-          type: 'debt_payment'
-        }
+          name: "Tarjeta de Crédito",
+          type: "debt_payment",
+        },
       },
       update: {},
       create: {
-        id: 'cat-credit-card',
-        name: 'Tarjeta de Crédito',
-        type: 'debt_payment',
-        color: '#f59e0b',
-        icon: '💳',
+        id: "cat-credit-card",
+        name: "Tarjeta de Crédito",
+        type: "debt_payment",
+        color: "#f59e0b",
+        icon: "💳",
         isActive: true,
-        parentId: debtCategory.id
-      }
+        parentId: debtCategory.id,
+      },
     });
 
-    console.log('Created credit card category:', creditCardCategory);
+    console.log("Created credit card category:", creditCardCategory);
 
     const personalLoanCategory = await prisma.category.upsert({
       where: {
         name_type: {
-          name: 'Préstamo Personal',
-          type: 'debt_payment'
-        }
+          name: "Préstamo Personal",
+          type: "debt_payment",
+        },
       },
       update: {},
       create: {
-        id: 'cat-personal-loan',
-        name: 'Préstamo Personal',
-        type: 'debt_payment',
-        color: '#f97316',
-        icon: '💰',
+        id: "cat-personal-loan",
+        name: "Préstamo Personal",
+        type: "debt_payment",
+        color: "#f97316",
+        icon: "💰",
         isActive: true,
-        parentId: debtCategory.id
-      }
+        parentId: debtCategory.id,
+      },
     });
 
-    console.log('Created personal loan category:', personalLoanCategory);
+    console.log("Created personal loan category:", personalLoanCategory);
 
-    console.log('✅ Successfully seeded mortgage and debt payment categories');
+    console.log("✅ Successfully seeded mortgage and debt payment categories");
   } catch (error) {
-    console.error('Error seeding categories:', error);
+    console.error("Error seeding categories:", error);
   } finally {
     await prisma.$disconnect();
   }

@@ -142,10 +142,14 @@
     step = 3;
 
     try {
+      // If preview was disabled, we need to parse and process transactions first
+      if (transactions.length === 0) {
+        transactions = await getCSVPreview(selectedFile);
+      }
+
       // Get only selected transactions that are NOT duplicates
       const selectedTransactions = transactions.filter(tx => tx.selected && !tx.isDuplicate);
       const duplicatesSkipped = transactions.filter(tx => tx.isDuplicate).length;
-
 
       if (selectedTransactions.length === 0) {
         throw new Error('No transactions selected for import');
@@ -153,7 +157,6 @@
 
       // Use new DDD endpoint to import selected transactions
       const result = await apiTransactions.importSelectedTransactions(selectedTransactions);
-
 
       // Store duplicate count for success message
       window.lastImportDuplicates = duplicatesSkipped;

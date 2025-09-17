@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { CategoryController } from "@infrastructure/controllers/CategoryController";
 
-export function createCategoryRoutes(categoryController: CategoryController): Router {
+export function createCategoryRoutes(
+  categoryController: CategoryController,
+): Router {
   const router = Router();
 
   // GET /api/categories - Get all categories with optional filters
@@ -17,13 +19,19 @@ export function createCategoryRoutes(categoryController: CategoryController): Ro
   router.put("/:id", (req, res) => categoryController.updateCategory(req, res));
 
   // DELETE /api/categories/:id - Delete category (soft delete)
-  router.delete("/:id", (req, res) => categoryController.deleteCategory(req, res));
+  router.delete("/:id", (req, res) =>
+    categoryController.deleteCategory(req, res),
+  );
 
   // GET /api/categories/:id/stats - Get category usage statistics
-  router.get("/:id/stats", (req, res) => categoryController.getCategoryUsageStats(req, res));
+  router.get("/:id/stats", (req, res) =>
+    categoryController.getCategoryUsageStats(req, res),
+  );
 
   // DELETE /api/categories - Clear all categories (for reset functionality)
-  router.delete("/", (req, res) => categoryController.clearAllCategories(req, res));
+  router.delete("/", (req, res) =>
+    categoryController.clearAllCategories(req, res),
+  );
 
   return router;
 }

@@ -219,9 +219,7 @@ export class Category {
 
     const typeResult = CategoryTypeHelper.fromString(snapshot.type);
     if (!typeResult) {
-      return Result.failWithMessage(
-        `Invalid category type: ${snapshot.type}`,
-      );
+      return Result.failWithMessage(`Invalid category type: ${snapshot.type}`);
     }
 
     const category = new Category(

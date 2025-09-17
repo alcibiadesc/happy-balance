@@ -118,8 +118,8 @@ export class TransactionDate {
   toDateString(): string {
     // Use local date formatting to avoid timezone issues
     const year = this._date.getFullYear();
-    const month = String(this._date.getMonth() + 1).padStart(2, '0');
-    const day = String(this._date.getDate()).padStart(2, '0');
+    const month = String(this._date.getMonth() + 1).padStart(2, "0");
+    const day = String(this._date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 

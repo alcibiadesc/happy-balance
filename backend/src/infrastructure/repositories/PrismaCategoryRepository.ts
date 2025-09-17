@@ -23,9 +23,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.fail(categoryIdResult.getError());
     }
 
-    const categoryType = CategoryTypeHelper.fromString(
-      prismaCategory.type,
-    );
+    const categoryType = CategoryTypeHelper.fromString(prismaCategory.type);
     if (!categoryType) {
       return Result.failWithMessage(
         `Invalid category type: ${prismaCategory.type}`,

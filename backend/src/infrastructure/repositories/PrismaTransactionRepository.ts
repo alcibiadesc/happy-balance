@@ -283,7 +283,9 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       if (existingTransaction) {
         // Format existing date to compare
-        const existingDateStr = this.formatDateToString(existingTransaction.date);
+        const existingDateStr = this.formatDateToString(
+          existingTransaction.date,
+        );
 
         // Only update date if it's different from the current one
         if (existingDateStr !== snapshot.date) {
@@ -605,15 +607,15 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   private createDateFromDateString(dateString: string): Date {
     // Parse YYYY-MM-DD format consistently
     // to avoid timezone issues that can shift dates
-    const [year, month, day] = dateString.split('-').map(Number);
+    const [year, month, day] = dateString.split("-").map(Number);
     return new Date(year, month - 1, day); // month is 0-indexed in Date constructor
   }
 
   private formatDateToString(date: Date): string {
     // Format date to YYYY-MM-DD without timezone conversion
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 
@@ -695,10 +697,10 @@ export class PrismaTransactionRepository implements ITransactionRepository {
         where: {
           merchant: {
             contains: merchant,
-            mode: 'insensitive'
-          }
+            mode: "insensitive",
+          },
         },
-        orderBy: { date: 'desc' }
+        orderBy: { date: "desc" },
       });
 
       const transactions: Transaction[] = [];
@@ -711,7 +713,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       return transactions;
     } catch (error) {
-      console.error('Error finding transactions by merchant:', error);
+      console.error("Error finding transactions by merchant:", error);
       return [];
     }
   }
@@ -724,18 +726,18 @@ export class PrismaTransactionRepository implements ITransactionRepository {
             {
               merchant: {
                 contains: pattern,
-                mode: 'insensitive'
-              }
+                mode: "insensitive",
+              },
             },
             {
               description: {
                 contains: pattern,
-                mode: 'insensitive'
-              }
-            }
-          ]
+                mode: "insensitive",
+              },
+            },
+          ],
         },
-        orderBy: { date: 'desc' }
+        orderBy: { date: "desc" },
       });
 
       const transactions: Transaction[] = [];
@@ -748,28 +750,28 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       return transactions;
     } catch (error) {
-      console.error('Error finding transactions by pattern:', error);
+      console.error("Error finding transactions by pattern:", error);
       return [];
     }
   }
 
   async updateMany(transactions: Transaction[]): Promise<void> {
     try {
-      const updates = transactions.map(t => {
+      const updates = transactions.map((t) => {
         const snapshot = t.toSnapshot();
         return this.prisma.transaction.update({
           where: { id: snapshot.id },
           data: {
             categoryId: snapshot.categoryId,
             description: snapshot.description,
-            isSelected: snapshot.isSelected
-          }
+            isSelected: snapshot.isSelected,
+          },
         });
       });
 
       await this.prisma.$transaction(updates);
     } catch (error) {
-      console.error('Error updating multiple transactions:', error);
+      console.error("Error updating multiple transactions:", error);
       throw error;
     }
   }

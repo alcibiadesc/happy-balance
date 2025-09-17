@@ -172,10 +172,15 @@ export interface ITransactionRepository {
   /**
    * Apply category to all transactions matching a pattern
    */
-  applyCategoryToPattern(sourceTransaction: Transaction, categoryId: string): Promise<Result<number>>;
+  applyCategoryToPattern(
+    sourceTransaction: Transaction,
+    categoryId: string,
+  ): Promise<Result<number>>;
 
   /**
    * Find transactions that match patterns extracted from a source transaction
    */
-  findMatchingPattern(sourceTransaction: Transaction): Promise<Result<Transaction[]>>;
+  findMatchingPattern(
+    sourceTransaction: Transaction,
+  ): Promise<Result<Transaction[]>>;
 }

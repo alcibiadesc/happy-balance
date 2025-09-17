@@ -2,7 +2,7 @@
  * Port utilities for finding available ports
  */
 
-import net from 'net';
+import net from "net";
 
 /**
  * Check if a port is available
@@ -13,11 +13,11 @@ export function isPortAvailable(port) {
   return new Promise((resolve) => {
     const server = net.createServer();
 
-    server.once('error', () => {
+    server.once("error", () => {
       resolve(false);
     });
 
-    server.once('listening', () => {
+    server.once("listening", () => {
       server.close();
       resolve(true);
     });
@@ -39,7 +39,9 @@ export async function findAvailablePort(basePort, maxAttempts = 10) {
       return port;
     }
   }
-  throw new Error(`No available port found in range ${basePort}-${basePort + maxAttempts}`);
+  throw new Error(
+    `No available port found in range ${basePort}-${basePort + maxAttempts}`,
+  );
 }
 
 /**
@@ -53,6 +55,6 @@ export async function getAvailablePorts() {
 
   return {
     backend: backendPort,
-    frontend: frontendPort
+    frontend: frontendPort,
   };
 }

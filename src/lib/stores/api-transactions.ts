@@ -26,7 +26,9 @@ function createApiTransactionStore() {
       try {
         // Always load ALL transactions including hidden ones
         // The frontend will handle filtering based on user preference
-        const response = await fetch(`${API_BASE}/transactions?includeHidden=true`);
+        const response = await fetch(
+          `${API_BASE}/transactions?includeHidden=true`,
+        );
         if (!response.ok) {
           throw new Error(`Failed to load transactions: ${response.status}`);
         }
@@ -87,22 +89,21 @@ function createApiTransactionStore() {
 
       // Optimistic update - update UI immediately
       update((transactions) => {
-        originalTransaction = transactions.find(t => t.id === id);
+        originalTransaction = transactions.find((t) => t.id === id);
         if (!originalTransaction) return transactions;
 
         // Apply ONLY the provided updates, keeping all other fields intact
         const updatedTransaction = { ...originalTransaction };
 
         // Only update fields that are explicitly provided (not undefined)
-        Object.keys(updates).forEach(key => {
+        Object.keys(updates).forEach((key) => {
           if (updates[key as keyof Transaction] !== undefined) {
-            (updatedTransaction as any)[key] = updates[key as keyof Transaction];
+            (updatedTransaction as any)[key] =
+              updates[key as keyof Transaction];
           }
         });
 
-        return transactions.map((t) =>
-          t.id === id ? updatedTransaction : t
-        );
+        return transactions.map((t) => (t.id === id ? updatedTransaction : t));
       });
 
       try {
@@ -187,28 +188,35 @@ function createApiTransactionStore() {
     },
 
     // Smart categorization with pattern matching
-    async smartCategorize(transactionId: string, categoryId: string, options: {
-      applyToAll?: boolean;
-      applyToFuture?: boolean;
-      createPattern?: boolean;
-    } = {}) {
+    async smartCategorize(
+      transactionId: string,
+      categoryId: string,
+      options: {
+        applyToAll?: boolean;
+        applyToFuture?: boolean;
+        createPattern?: boolean;
+      } = {},
+    ) {
       try {
-        const response = await fetch(`${API_BASE}/transactions/${transactionId}/categorize`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
+        const response = await fetch(
+          `${API_BASE}/transactions/${transactionId}/categorize`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              categoryId,
+              applyToAll: options.applyToAll || false,
+              applyToFuture: options.applyToFuture ?? true,
+              createPattern: options.createPattern ?? true,
+            }),
           },
-          body: JSON.stringify({
-            categoryId,
-            applyToAll: options.applyToAll || false,
-            applyToFuture: options.applyToFuture ?? true,
-            createPattern: options.createPattern ?? true
-          })
-        });
+        );
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Failed to categorize transaction');
+          throw new Error(error.error || "Failed to categorize transaction");
         }
 
         const result = await response.json();
@@ -220,14 +228,16 @@ function createApiTransactionStore() {
 
         return result;
       } catch (error) {
-        console.error('Failed to smart categorize:', error);
+        console.error("Failed to smart categorize:", error);
         throw error;
       }
     },
 
     // Apply category to pattern (backwards compatibility)
     async applyCategoryToPattern(transaction: Transaction, categoryId: string) {
-      return this.smartCategorize(transaction.id, categoryId, { applyToAll: true });
+      return this.smartCategorize(transaction.id, categoryId, {
+        applyToAll: true,
+      });
     },
 
     // Import from file

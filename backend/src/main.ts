@@ -148,9 +148,7 @@ class App {
       this.userPreferencesRepository,
     );
 
-    this.categoryController = new CategoryController(
-      this.categoryRepository,
-    );
+    this.categoryController = new CategoryController(this.categoryRepository);
   }
 
   private initializeMiddleware() {
@@ -231,7 +229,10 @@ class App {
       createUserPreferencesRoutes(this.userPreferencesController),
     );
     this.app.use("/api/seed", createSeedRoutes(this.seedController));
-    this.app.use("/api/categories", createCategoryRoutes(this.categoryController));
+    this.app.use(
+      "/api/categories",
+      createCategoryRoutes(this.categoryController),
+    );
 
     // 404 handler
     this.app.use("*", (req, res) => {

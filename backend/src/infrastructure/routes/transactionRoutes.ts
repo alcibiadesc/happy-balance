@@ -31,7 +31,9 @@ export const createTransactionRoutes = (
   // Smart categorization route
   router.post(
     "/:id/categorize",
-    transactionController.smartCategorizeTransaction.bind(transactionController),
+    transactionController.smartCategorizeTransaction.bind(
+      transactionController,
+    ),
   );
 
   router.get(

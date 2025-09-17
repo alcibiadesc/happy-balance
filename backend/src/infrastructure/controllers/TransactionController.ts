@@ -70,7 +70,7 @@ const SmartCategorizeSchema = z.object({
   categoryId: z.string(),
   applyToAll: z.boolean().default(false),
   applyToFuture: z.boolean().default(true),
-  createPattern: z.boolean().default(true)
+  createPattern: z.boolean().default(true),
 });
 
 export class TransactionController {
@@ -512,7 +512,7 @@ export class TransactionController {
     try {
       if (!this.smartCategorizeUseCase) {
         return res.status(501).json({
-          error: 'Smart categorization is not configured'
+          error: "Smart categorization is not configured",
         });
       }
 
@@ -521,8 +521,8 @@ export class TransactionController {
 
       if (!validationResult.success) {
         return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors
+          error: "Validation error",
+          details: validationResult.error.errors,
         });
       }
 
@@ -532,12 +532,12 @@ export class TransactionController {
         categoryId: data.categoryId,
         applyToAll: data.applyToAll,
         applyToFuture: data.applyToFuture,
-        createPattern: data.createPattern
+        createPattern: data.createPattern,
       });
 
       if (!result.success) {
         return res.status(400).json({
-          error: result.message || 'Failed to categorize transaction'
+          error: result.message || "Failed to categorize transaction",
         });
       }
 
@@ -546,12 +546,12 @@ export class TransactionController {
         categorizedCount: result.categorizedCount,
         patternCreated: result.patternCreated,
         affectedTransactionIds: result.affectedTransactionIds,
-        message: result.message
+        message: result.message,
       });
     } catch (error) {
       res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }

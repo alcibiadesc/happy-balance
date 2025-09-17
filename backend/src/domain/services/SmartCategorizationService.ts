@@ -1,7 +1,7 @@
-import { Transaction } from '../entities/Transaction';
-import { Category } from '../entities/Category';
-import { CategoryPattern, PatternType } from '../entities/CategoryPattern';
-import { Result } from '../shared/Result';
+import { Transaction } from "../entities/Transaction";
+import { Category } from "../entities/Category";
+import { CategoryPattern, PatternType } from "../entities/CategoryPattern";
+import { Result } from "../shared/Result";
 
 export interface ICategoryPatternRepository {
   findByCategory(categoryId: string): Promise<CategoryPattern[]>;
@@ -33,7 +33,7 @@ export interface CategorizationOptions {
 export class SmartCategorizationService {
   constructor(
     private readonly patternRepository: ICategoryPatternRepository,
-    private readonly transactionRepository: ITransactionRepository
+    private readonly transactionRepository: ITransactionRepository,
   ) {}
 
   /**
@@ -66,7 +66,7 @@ export class SmartCategorizationService {
     return {
       merchant: cleanedMerchant,
       descriptionPattern,
-      suggestedPatternType
+      suggestedPatternType,
     };
   }
 
@@ -76,12 +76,12 @@ export class SmartCategorizationService {
   async categorizeTransaction(
     transaction: Transaction,
     category: Category,
-    options: CategorizationOptions
+    options: CategorizationOptions,
   ): Promise<Result<CategorizationResult>> {
     const results: CategorizationResult = {
       categorizedCount: 0,
       patternCreated: false,
-      affectedTransactionIds: []
+      affectedTransactionIds: [],
     };
 
     // Categorize the current transaction
@@ -103,7 +103,7 @@ export class SmartCategorizationService {
           category.id,
           pattern.merchant,
           pattern.suggestedPatternType,
-          options.applyToFuture
+          options.applyToFuture,
         );
 
         if (patternResult.isSuccess()) {
@@ -116,7 +116,7 @@ export class SmartCategorizationService {
         // Find and categorize all matching transactions
         const matchingTransactions = await this.findMatchingTransactions(
           transaction,
-          pattern
+          pattern,
         );
 
         for (const matchingTx of matchingTransactions) {
@@ -142,7 +142,7 @@ export class SmartCategorizationService {
    * Apply existing patterns to uncategorized transactions
    */
   async applyPatternsToTransactions(
-    transactions: Transaction[]
+    transactions: Transaction[],
   ): Promise<ApplyPatternsResult> {
     const activePatterns = await this.patternRepository.findActivePatterns();
 
@@ -151,7 +151,7 @@ export class SmartCategorizationService {
 
     const results: ApplyPatternsResult = {
       categorizedCount: 0,
-      patternsApplied: new Map()
+      patternsApplied: new Map(),
     };
 
     for (const transaction of transactions) {
@@ -161,14 +161,17 @@ export class SmartCategorizationService {
       }
 
       for (const pattern of activePatterns) {
-        if (pattern.matches(transaction.merchant.name, transaction.description)) {
+        if (
+          pattern.matches(transaction.merchant.name, transaction.description)
+        ) {
           // Apply the pattern's category
           transaction.setCategoryId(pattern.categoryId.value);
           pattern.incrementMatchCount();
           await this.patternRepository.save(pattern);
 
           results.categorizedCount++;
-          const appliedCount = results.patternsApplied.get(pattern.id.value) || 0;
+          const appliedCount =
+            results.patternsApplied.get(pattern.id.value) || 0;
           results.patternsApplied.set(pattern.id.value, appliedCount + 1);
 
           break; // Apply only the highest priority matching pattern
@@ -184,25 +187,28 @@ export class SmartCategorizationService {
    */
   private async findMatchingTransactions(
     transaction: Transaction,
-    pattern: PatternExtraction
+    pattern: PatternExtraction,
   ): Promise<Transaction[]> {
     const matchingTransactions: Transaction[] = [];
 
     if (pattern.merchant) {
       const merchantMatches = await this.transactionRepository.findByMerchant(
-        pattern.merchant
+        pattern.merchant,
       );
       matchingTransactions.push(...merchantMatches);
     }
 
-    if (pattern.descriptionPattern && pattern.suggestedPatternType !== PatternType.MERCHANT) {
+    if (
+      pattern.descriptionPattern &&
+      pattern.suggestedPatternType !== PatternType.MERCHANT
+    ) {
       const descriptionMatches = await this.transactionRepository.findByPattern(
-        pattern.descriptionPattern
+        pattern.descriptionPattern,
       );
 
       // Add only unique transactions
       for (const tx of descriptionMatches) {
-        if (!matchingTransactions.some(existing => existing.equals(tx))) {
+        if (!matchingTransactions.some((existing) => existing.equals(tx))) {
           matchingTransactions.push(tx);
         }
       }
@@ -218,8 +224,8 @@ export class SmartCategorizationService {
     // Remove common suffixes and clean up
     const cleaned = merchant
       .toLowerCase()
-      .replace(/\s+(inc|llc|ltd|corp|co|company)\.?$/i, '')
-      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+(inc|llc|ltd|corp|co|company)\.?$/i, "")
+      .replace(/[^a-z0-9\s]/g, "")
       .trim();
 
     // Extract the main merchant name (first meaningful part)
@@ -235,16 +241,23 @@ export class SmartCategorizationService {
    * Extract meaningful words from description for pattern matching
    */
   private extractMeaningfulWords(description: string): string[] {
-    const stopWords = ['the', 'and', 'for', 'with', 'from', 'to', 'at', 'in', 'on'];
+    const stopWords = [
+      "the",
+      "and",
+      "for",
+      "with",
+      "from",
+      "to",
+      "at",
+      "in",
+      "on",
+    ];
 
     const words = description
       .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/[^a-z0-9\s]/g, "")
       .split(/\s+/)
-      .filter(word =>
-        word.length >= 3 &&
-        !stopWords.includes(word)
-      );
+      .filter((word) => word.length >= 3 && !stopWords.includes(word));
 
     return words;
   }

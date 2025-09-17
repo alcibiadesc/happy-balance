@@ -2,8 +2,14 @@ import { Transaction } from "../../domain/entities/Transaction";
 import { Category, CategoryId } from "../../domain/entities/Category";
 import { ITransactionRepository } from "../../domain/repositories/ITransactionRepository";
 import { ICategoryRepository } from "../../domain/repositories/ICategoryRepository";
-import { SmartCategorizationService, SmartCategorizationSuggestion } from "../../domain/services/SmartCategorizationService";
-import { CategorizeTransactionCommand, TagTransactionCommand } from "../commands/CategorizeTransactionCommand";
+import {
+  SmartCategorizationService,
+  SmartCategorizationSuggestion,
+} from "../../domain/services/SmartCategorizationService";
+import {
+  CategorizeTransactionCommand,
+  TagTransactionCommand,
+} from "../commands/CategorizeTransactionCommand";
 import { TransactionId } from "../../domain/value-objects/TransactionId";
 import { Result } from "../../domain/shared/Result";
 
@@ -31,17 +37,19 @@ export class SmartCategorizeTransactionUseCase {
   constructor(
     private readonly transactionRepository: ITransactionRepository,
     private readonly categoryRepository: ICategoryRepository,
-    private readonly smartService: SmartCategorizationService
+    private readonly smartService: SmartCategorizationService,
   ) {}
 
   /**
    * Categorize transaction with smart pattern matching
    */
-  async execute(command: CategorizeTransactionCommand): Promise<Result<SmartCategorizationResult>> {
+  async execute(
+    command: CategorizeTransactionCommand,
+  ): Promise<Result<SmartCategorizationResult>> {
     // Validate command
     const validation = command.isValid();
     if (!validation.valid) {
-      return Result.failWithMessage(validation.errors.join(', '));
+      return Result.failWithMessage(validation.errors.join(", "));
     }
 
     try {
@@ -51,7 +59,9 @@ export class SmartCategorizeTransactionUseCase {
         return Result.fail(transactionIdResult.getError());
       }
 
-      const transactionResult = await this.transactionRepository.findById(transactionIdResult.getValue());
+      const transactionResult = await this.transactionRepository.findById(
+        transactionIdResult.getValue(),
+      );
       if (transactionResult.isFailure()) {
         return Result.fail(transactionResult.getError());
       }
@@ -67,7 +77,9 @@ export class SmartCategorizeTransactionUseCase {
         return Result.fail(categoryIdResult.getError());
       }
 
-      const categoryResult = await this.categoryRepository.findById(categoryIdResult.getValue());
+      const categoryResult = await this.categoryRepository.findById(
+        categoryIdResult.getValue(),
+      );
       if (categoryResult.isFailure()) {
         return Result.fail(categoryResult.getError());
       }
@@ -89,8 +101,9 @@ export class SmartCategorizeTransactionUseCase {
       let createdRule = undefined;
 
       // Handle pattern-based categorization
-      if (command.scope === 'pattern' || command.scope === 'all') {
-        const allTransactionsResult = await this.transactionRepository.findAll();
+      if (command.scope === "pattern" || command.scope === "all") {
+        const allTransactionsResult =
+          await this.transactionRepository.findAll();
         if (allTransactionsResult.isFailure()) {
           return Result.fail(allTransactionsResult.getError());
         }
@@ -101,7 +114,7 @@ export class SmartCategorizeTransactionUseCase {
         const matchingTransactions = this.smartService.findMatchingTransactions(
           patterns,
           allTransactions,
-          transaction.id.value
+          transaction.id.value,
         );
 
         // Apply category to matching transactions
@@ -122,7 +135,7 @@ export class SmartCategorizeTransactionUseCase {
           createdRule = {
             id: `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             pattern: primaryPattern.pattern,
-            categoryId: command.categoryId
+            categoryId: command.categoryId,
           };
 
           // Store rule in a rules repository or configuration
@@ -131,7 +144,8 @@ export class SmartCategorizeTransactionUseCase {
       }
 
       // Get suggestions for future use
-      const allTransactionsForSuggestions = await this.transactionRepository.findAll();
+      const allTransactionsForSuggestions =
+        await this.transactionRepository.findAll();
       if (allTransactionsForSuggestions.isFailure()) {
         // If we can't get suggestions, continue with empty array
         const suggestions: SmartCategorizationSuggestion[] = [];
@@ -139,35 +153,43 @@ export class SmartCategorizeTransactionUseCase {
           transaction,
           appliedToCount,
           suggestions,
-          createdRule
+          createdRule,
         });
       }
 
-      const suggestions = this.smartService.suggestCategorizationScope(transaction, allTransactionsForSuggestions.getValue());
+      const suggestions = this.smartService.suggestCategorizationScope(
+        transaction,
+        allTransactionsForSuggestions.getValue(),
+      );
 
       return Result.ok({
         transaction,
         appliedToCount,
         suggestions,
-        createdRule
+        createdRule,
       });
-
     } catch (error) {
-      return Result.failWithMessage(`Failed to categorize transaction: ${error}`);
+      return Result.failWithMessage(
+        `Failed to categorize transaction: ${error}`,
+      );
     }
   }
 
   /**
    * Get categorization suggestions for a transaction
    */
-  async getSuggestions(transactionId: string): Promise<Result<SmartCategorizationSuggestion[]>> {
+  async getSuggestions(
+    transactionId: string,
+  ): Promise<Result<SmartCategorizationSuggestion[]>> {
     try {
       const transactionIdObj = TransactionId.create(transactionId);
       if (transactionIdObj.isFailure()) {
         return Result.fail(transactionIdObj.getError());
       }
 
-      const transactionResult = await this.transactionRepository.findById(transactionIdObj.getValue());
+      const transactionResult = await this.transactionRepository.findById(
+        transactionIdObj.getValue(),
+      );
       if (transactionResult.isFailure()) {
         return Result.fail(transactionResult.getError());
       }
@@ -182,10 +204,12 @@ export class SmartCategorizeTransactionUseCase {
         return Result.fail(allTransactionsResult.getError());
       }
 
-      const suggestions = this.smartService.suggestCategorizationScope(transaction, allTransactionsResult.getValue());
+      const suggestions = this.smartService.suggestCategorizationScope(
+        transaction,
+        allTransactionsResult.getValue(),
+      );
 
       return Result.ok(suggestions);
-
     } catch (error) {
       return Result.failWithMessage(`Failed to get suggestions: ${error}`);
     }
@@ -198,17 +222,19 @@ export class SmartCategorizeTransactionUseCase {
 export class SmartTagTransactionUseCase {
   constructor(
     private readonly transactionRepository: ITransactionRepository,
-    private readonly smartService: SmartCategorizationService
+    private readonly smartService: SmartCategorizationService,
   ) {}
 
   /**
    * Apply tags with smart pattern matching
    */
-  async execute(command: TagTransactionCommand): Promise<Result<TagApplicationResult>> {
+  async execute(
+    command: TagTransactionCommand,
+  ): Promise<Result<TagApplicationResult>> {
     // Validate command
     const validation = command.isValid();
     if (!validation.valid) {
-      return Result.failWithMessage(validation.errors.join(', '));
+      return Result.failWithMessage(validation.errors.join(", "));
     }
 
     try {
@@ -218,7 +244,9 @@ export class SmartTagTransactionUseCase {
         return Result.fail(transactionIdResult.getError());
       }
 
-      const transactionResult = await this.transactionRepository.findById(transactionIdResult.getValue());
+      const transactionResult = await this.transactionRepository.findById(
+        transactionIdResult.getValue(),
+      );
       if (transactionResult.isFailure()) {
         return Result.fail(transactionResult.getError());
       }
@@ -231,7 +259,10 @@ export class SmartTagTransactionUseCase {
       // Add tag to the main transaction
       const currentTags: string[] = []; // Note: Need to add tags support to Transaction entity
       if (!currentTags.includes(command.tag)) {
-        const updateResult = await this.transactionRepository.updateTags(transaction.id, [...currentTags, command.tag]);
+        const updateResult = await this.transactionRepository.updateTags(
+          transaction.id,
+          [...currentTags, command.tag],
+        );
         if (updateResult.isFailure()) {
           return Result.fail(updateResult.getError());
         }
@@ -240,8 +271,9 @@ export class SmartTagTransactionUseCase {
       const affectedTransactionIds = [transaction.id.value];
 
       // Handle pattern-based tagging
-      if (command.scope === 'pattern' || command.scope === 'all') {
-        const allTransactionsResult = await this.transactionRepository.findAll();
+      if (command.scope === "pattern" || command.scope === "all") {
+        const allTransactionsResult =
+          await this.transactionRepository.findAll();
         if (allTransactionsResult.isFailure()) {
           return Result.fail(allTransactionsResult.getError());
         }
@@ -252,7 +284,7 @@ export class SmartTagTransactionUseCase {
         const matchingTransactions = this.smartService.findMatchingTransactions(
           patterns,
           allTransactions,
-          transaction.id.value
+          transaction.id.value,
         );
 
         // Apply tag to matching transactions
@@ -261,7 +293,7 @@ export class SmartTagTransactionUseCase {
           if (!currentTags.includes(command.tag)) {
             await this.transactionRepository.updateTags(
               matchingTransaction.id,
-              [...currentTags, command.tag]
+              [...currentTags, command.tag],
             );
             affectedTransactionIds.push(matchingTransaction.id.value);
           }
@@ -271,9 +303,8 @@ export class SmartTagTransactionUseCase {
       return Result.ok({
         transaction,
         appliedToCount: affectedTransactionIds.length,
-        affectedTransactionIds
+        affectedTransactionIds,
       });
-
     } catch (error) {
       return Result.failWithMessage(`Failed to apply tags: ${error}`);
     }

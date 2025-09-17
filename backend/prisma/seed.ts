@@ -55,7 +55,13 @@ async function main() {
       color: "#A55EEA",
       icon: "📚",
     },
-    { id: "8", name: "Travel", type: "discretionary", color: "#FD79A8", icon: "✈️" },
+    {
+      id: "8",
+      name: "Travel",
+      type: "discretionary",
+      color: "#FD79A8",
+      icon: "✈️",
+    },
 
     // Income categories
     { id: "9", name: "Salary", type: "INCOME", color: "#00B894", icon: "💼" },

@@ -147,7 +147,7 @@ export class Transaction {
   }
 
   setCategoryId(categoryId: string | undefined | null): void {
-    if (categoryId && categoryId !== '') {
+    if (categoryId && categoryId !== "") {
       this._categoryId = { value: categoryId } as CategoryId;
     } else {
       this._categoryId = undefined;
@@ -259,14 +259,19 @@ export class Transaction {
   /**
    * Check if a category type is compatible with a transaction type
    */
-  private isCategoryTypeCompatible(categoryType: CategoryType, transactionType: TransactionType): boolean {
+  private isCategoryTypeCompatible(
+    categoryType: CategoryType,
+    transactionType: TransactionType,
+  ): boolean {
     switch (transactionType) {
       case TransactionType.INCOME:
         return categoryType === CategoryType.INCOME;
       case TransactionType.EXPENSE:
-        return categoryType === CategoryType.ESSENTIAL ||
-               categoryType === CategoryType.DISCRETIONARY ||
-               categoryType === CategoryType.DEBT_PAYMENT;
+        return (
+          categoryType === CategoryType.ESSENTIAL ||
+          categoryType === CategoryType.DISCRETIONARY ||
+          categoryType === CategoryType.DEBT_PAYMENT
+        );
       case TransactionType.INVESTMENT:
         return categoryType === CategoryType.INVESTMENT;
       default:

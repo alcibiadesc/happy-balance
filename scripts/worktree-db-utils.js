@@ -57,12 +57,12 @@ export function getGitInfo(rootDir) {
   try {
     const gitDir = execSync("git rev-parse --git-dir", {
       cwd: rootDir,
-      encoding: "utf-8"
+      encoding: "utf-8",
     }).trim();
 
     const branch = execSync("git branch --show-current", {
       cwd: rootDir,
-      encoding: "utf-8"
+      encoding: "utf-8",
     }).trim();
 
     const isWorktree = gitDir.includes(".git/worktrees");
@@ -95,7 +95,7 @@ export function databaseExists(dbName) {
   try {
     const result = execSync(
       `psql -U postgres -lqt | cut -d \\| -f 1 | grep -qw ${dbName}`,
-      { shell: true, stdio: "pipe" }
+      { shell: true, stdio: "pipe" },
     );
     return true;
   } catch (error) {
@@ -119,10 +119,10 @@ export function createDatabase(dbName) {
     log(`  Creating database '${dbName}'...`, "yellow");
 
     // Create the database
-    execSync(
-      `psql -U postgres -c "CREATE DATABASE \\"${dbName}\\""`,
-      { stdio: "pipe", shell: true }
-    );
+    execSync(`psql -U postgres -c "CREATE DATABASE \\"${dbName}\\""`, {
+      stdio: "pipe",
+      shell: true,
+    });
 
     log(`  ✅ Database '${dbName}' created successfully`, "green");
     return true;
@@ -149,7 +149,7 @@ export function updateDatabaseUrl(envPath, dbName) {
     if (databaseUrlRegex.test(envContent)) {
       envContent = envContent.replace(
         databaseUrlRegex,
-        `DATABASE_URL="${newUrl}"`
+        `DATABASE_URL="${newUrl}"`,
       );
     } else {
       // Add DATABASE_URL if it doesn't exist
@@ -167,7 +167,10 @@ export function updateDatabaseUrl(envPath, dbName) {
     // Ensure CORS_ORIGIN is correct
     const corsRegex = /^CORS_ORIGIN=.*$/m;
     if (corsRegex.test(envContent)) {
-      envContent = envContent.replace(corsRegex, 'CORS_ORIGIN="http://localhost:5176"');
+      envContent = envContent.replace(
+        corsRegex,
+        'CORS_ORIGIN="http://localhost:5176"',
+      );
     } else {
       envContent += '\nCORS_ORIGIN="http://localhost:5176"';
     }

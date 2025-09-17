@@ -13,7 +13,9 @@ export enum CategoryType {
 export class CategoryTypeHelper {
   static fromString(value: string): CategoryType | null {
     const normalized = value.toLowerCase();
-    return Object.values(CategoryType).find((type) => type === normalized) || null;
+    return (
+      Object.values(CategoryType).find((type) => type === normalized) || null
+    );
   }
 
   static toString(type: CategoryType): string {

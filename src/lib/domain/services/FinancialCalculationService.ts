@@ -79,8 +79,11 @@ export class FinancialCalculationService {
 
         case TransactionType.EXPENSE:
           // Check if this expense is a debt payment
-          const isDebtPayment = categories && transaction.categoryId &&
-            categories.get(transaction.categoryId.value)?.type === 'debt_payment';
+          const isDebtPayment =
+            categories &&
+            transaction.categoryId &&
+            categories.get(transaction.categoryId.value)?.type ===
+              "debt_payment";
 
           if (isDebtPayment) {
             const debtResult = totalDebtPayments.add(transaction.amount);
@@ -305,8 +308,10 @@ export class FinancialCalculationService {
     let debtPaymentTotal = zero.getValue();
 
     for (const transaction of expenses) {
-      const isDebtPayment = categories && transaction.categoryId &&
-        categories.get(transaction.categoryId.value)?.type === 'debt_payment';
+      const isDebtPayment =
+        categories &&
+        transaction.categoryId &&
+        categories.get(transaction.categoryId.value)?.type === "debt_payment";
 
       if (isDebtPayment) {
         const result = debtPaymentTotal.add(transaction.amount);
@@ -330,7 +335,8 @@ export class FinancialCalculationService {
     }
 
     const totalExpensesStep1 = essentialTotal.add(discretionaryTotal);
-    if (totalExpensesStep1.isFailure()) return Result.fail(totalExpensesStep1.getError());
+    if (totalExpensesStep1.isFailure())
+      return Result.fail(totalExpensesStep1.getError());
 
     const totalExpenses = totalExpensesStep1.getValue().add(debtPaymentTotal);
     if (totalExpenses.isFailure()) return Result.fail(totalExpenses.getError());
