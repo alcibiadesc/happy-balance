@@ -70,34 +70,16 @@
           // Transform trends data for charts
 
           if (result.data.trends && result.data.trends.length > 0) {
-            // Filter out empty trends (all zeros)
-            const nonEmptyTrends = result.data.trends.filter((trend: any) =>
-              (trend.income?._amount || 0) > 0 ||
-              (trend.expenses?._amount || 0) > 0 ||
-              (trend.investments?._amount || 0) > 0
-            );
-
-            // If we have non-empty trends, use them
-            if (nonEmptyTrends.length > 0) {
-              realData.monthlyTrend = nonEmptyTrends.map((trend: any) => ({
-                month: trend.period,
-                income: trend.income?._amount || 0,
-                expenses: Math.abs(trend.expenses?._amount || 0),
-                balance: trend.balance?._amount || 0
-              }));
-            } else {
-              // If all trends are empty, use summary data as a single point
-              const currentPeriodLabel = result.data.summary?.period?.label || 'Current';
-              realData.monthlyTrend = [{
-                month: currentPeriodLabel,
-                income: result.data.summary?.totalIncome?._amount || 0,
-                expenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0),
-                balance: result.data.summary?.balance?._amount || 0
-              }];
-            }
+            // Use all trends data, including zeros - this shows proper historical progression
+            realData.monthlyTrend = result.data.trends.map((trend: any) => ({
+              month: trend.period,
+              income: trend.income?._amount || 0,
+              expenses: trend.expenses?._amount || 0,
+              balance: trend.balance?._amount || 0
+            }));
 
 
-            // For bar data
+            // For bar data - use all trends data consistently
             const essentialRatio = result.data.expenseDistribution?.essentialPercentage
               ? result.data.expenseDistribution.essentialPercentage / 100
               : 0.5;
@@ -108,28 +90,14 @@
               ? result.data.expenseDistribution.debtPaymentPercentage / 100
               : 0.17;
 
-            // Use the same approach for bar data
-            if (nonEmptyTrends && nonEmptyTrends.length > 0) {
-              realData.monthlyBarData = nonEmptyTrends.map((trend: any) => ({
-                month: trend.period,
-                income: trend.income?._amount || 0,
-                essentialExpenses: Math.abs(trend.expenses?._amount || 0) * essentialRatio,
-                discretionaryExpenses: Math.abs(trend.expenses?._amount || 0) * discretionaryRatio,
-                debtPayments: Math.abs(trend.debtPayments?._amount || 0),
-                investments: Math.abs(trend.investments?._amount || 0)
-              }));
-            } else {
-              // Use summary data
-              const currentPeriodLabel = result.data.summary?.period?.label || 'Current';
-              realData.monthlyBarData = [{
-                month: currentPeriodLabel,
-                income: result.data.summary?.totalIncome?._amount || 0,
-                essentialExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * essentialRatio,
-                discretionaryExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * discretionaryRatio,
-                debtPayments: Math.abs(result.data.summary?.totalDebtPayments?._amount || 0),
-                investments: Math.abs(result.data.summary?.totalInvestments?._amount || 0)
-              }];
-            }
+            realData.monthlyBarData = result.data.trends.map((trend: any) => ({
+              month: trend.period,
+              income: trend.income?._amount || 0,
+              essentialExpenses: (trend.expenses?._amount || 0) * essentialRatio,
+              discretionaryExpenses: (trend.expenses?._amount || 0) * discretionaryRatio,
+              debtPayments: trend.debtPayments?._amount || 0,
+              investments: trend.investments?._amount || 0
+            }));
 
           } else {
             // Use summary data as fallback
@@ -137,7 +105,7 @@
             realData.monthlyTrend = [{
               month: currentPeriodLabel,
               income: result.data.summary?.totalIncome?._amount || 0,
-              expenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0),
+              expenses: result.data.summary?.totalExpenses?._amount || 0,
               balance: result.data.summary?.balance?._amount || 0
             }];
 
@@ -154,10 +122,10 @@
             realData.monthlyBarData = [{
               month: currentPeriodLabel,
               income: result.data.summary?.totalIncome?._amount || 0,
-              essentialExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * essentialRatio,
-              discretionaryExpenses: Math.abs(result.data.summary?.totalExpenses?._amount || 0) * discretionaryRatio,
-              debtPayments: Math.abs(result.data.summary?.totalDebtPayments?._amount || 0),
-              investments: Math.abs(result.data.summary?.totalInvestments?._amount || 0)
+              essentialExpenses: (result.data.summary?.totalExpenses?._amount || 0) * essentialRatio,
+              discretionaryExpenses: (result.data.summary?.totalExpenses?._amount || 0) * discretionaryRatio,
+              debtPayments: result.data.summary?.totalDebtPayments?._amount || 0,
+              investments: result.data.summary?.totalInvestments?._amount || 0
             }];
           }
 
@@ -170,55 +138,28 @@
               percentage: cat.percentage || ((cat.amount?._amount || 0) / totalExpenses * 100).toFixed(1)
             }));
           } else {
-            // Use mock categories if none from DB
-            realData.categories = generatePeriodData([], period).categories;
+            // No categories from DB - use empty array
+            realData.categories = [];
           }
         }
       } else {
-        // Fallback to mock data if API fails
-        generateMockData(period);
+        // Clear data if API fails
+        clearData();
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      // Fallback to mock data
-      generateMockData(period);
+      // Clear data on error
+      clearData();
     } finally {
       loading = false;
     }
   }
 
-  // Generate mock data as fallback
-  function generateMockData(period: string) {
-    const mockData = generatePeriodData([], period);
-    realData.monthlyTrend = mockData.monthlyTrend;
-    realData.monthlyBarData = mockData.monthlyBarData;
-    realData.categories = mockData.categories;
-  }
-  
-  // Generate period-based data from transactions
-  function generatePeriodData(allTransactions: any[], period: string) {
-    // Calculate category breakdown from actual categories and transactions
-    const categoryBreakdown = calculateCategoryBreakdown();
-
-    return {
-      monthlyTrend: [
-        { month: 'Ene', income: 2800, expenses: 1600, balance: 1200 },
-        { month: 'Feb', income: 2900, expenses: 1750, balance: 1150 },
-        { month: 'Mar', income: 3000, expenses: 1650, balance: 1350 },
-        { month: 'Abr', income: 3100, expenses: 1900, balance: 1200 },
-        { month: 'May', income: 2950, expenses: 1700, balance: 1250 },
-        { month: 'Jun', income: 3000, expenses: 1800, balance: 1200 }
-      ],
-      monthlyBarData: [
-        { month: 'Ene', income: 2800, essentialExpenses: 1070, discretionaryExpenses: 530, debtPayments: 200, investments: 400 },
-        { month: 'Feb', income: 2900, essentialExpenses: 1170, discretionaryExpenses: 580, debtPayments: 220, investments: 420 },
-        { month: 'Mar', income: 3000, essentialExpenses: 1100, discretionaryExpenses: 550, debtPayments: 250, investments: 450 },
-        { month: 'Abr', income: 3100, essentialExpenses: 1270, discretionaryExpenses: 630, debtPayments: 180, investments: 480 },
-        { month: 'May', income: 2950, essentialExpenses: 1140, discretionaryExpenses: 560, debtPayments: 210, investments: 460 },
-        { month: 'Jun', income: 3000, essentialExpenses: 1200, discretionaryExpenses: 600, debtPayments: 200, investments: 500 }
-      ],
-      categories: categoryBreakdown
-    };
+  // Clear all data
+  function clearData() {
+    realData.monthlyTrend = [];
+    realData.monthlyBarData = [];
+    realData.categories = [];
   }
 
   // Calculate category breakdown from actual data
@@ -263,18 +204,7 @@
       }))
       .sort((a, b) => b.amount - a.amount); // Sort by amount descending
 
-    // If no categories with data, return default categories
-    if (categoryBreakdown.length === 0) {
-      return categories.slice(0, 6).map(cat => ({
-        name: cat.name,
-        icon: cat.icon,
-        amount: Math.random() * 500 + 100, // Mock amount
-        percentage: 16.67,
-        type: cat.type,
-        color: cat.color
-      }));
-    }
-
+    // Return real data only, no mock data
     return categoryBreakdown;
   }
   
