@@ -20,8 +20,8 @@ export class CreateTransactionCommand {
   isValid(): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
-    if (!Number.isFinite(this.amount) || this.amount <= 0) {
-      errors.push("Amount must be a positive finite number");
+    if (!Number.isFinite(this.amount) || this.amount < 0) {
+      errors.push("Amount must be a non-negative finite number");
     }
 
     if (!this.currency || this.currency.length !== 3) {

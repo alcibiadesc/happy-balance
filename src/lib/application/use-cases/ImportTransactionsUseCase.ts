@@ -276,9 +276,9 @@ export class ImportTransactionsUseCase {
       const amountStr = values[mapping.amount] || "0";
       const description = this.cleanString(values[mapping.description] || "");
 
-      if (!dateStr || !merchantName) {
+      if (!dateStr) {
         return Result.failWithMessage(
-          "Missing required fields (date or merchant)",
+          "Missing required field: date",
         );
       }
 

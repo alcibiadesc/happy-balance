@@ -307,9 +307,9 @@ export class ImportTransactionsUseCase {
       const description = this.cleanString(values[mapping.description] || "");
       const typeStr = this.cleanString(values[mapping.type] || "");
 
-      if (!dateStr || !merchantName) {
+      if (!dateStr) {
         return Result.failWithMessage(
-          "Missing required fields (date or merchant)",
+          "Missing required field: date",
         );
       }
 

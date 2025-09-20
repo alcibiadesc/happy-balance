@@ -35,24 +35,24 @@ export class Transaction {
     description: string,
     id?: TransactionId,
   ): Result<Transaction> {
-    // Business rule: Income transactions should have positive amounts
-    if (type === TransactionType.INCOME && amount.amount <= 0) {
+    // Business rule: Income transactions should have non-negative amounts
+    if (type === TransactionType.INCOME && amount.amount < 0) {
       return Result.failWithMessage(
-        "Income transactions must have positive amounts",
+        "Income transactions cannot have negative amounts",
       );
     }
 
-    // Business rule: Expense transactions should have positive amounts
-    if (type === TransactionType.EXPENSE && amount.amount <= 0) {
+    // Business rule: Expense transactions should have non-negative amounts
+    if (type === TransactionType.EXPENSE && amount.amount < 0) {
       return Result.failWithMessage(
-        "Expense transactions must have positive amounts",
+        "Expense transactions cannot have negative amounts",
       );
     }
 
-    // Business rule: Investment transactions should have positive amounts
-    if (type === TransactionType.INVESTMENT && amount.amount <= 0) {
+    // Business rule: Investment transactions should have non-negative amounts
+    if (type === TransactionType.INVESTMENT && amount.amount < 0) {
       return Result.failWithMessage(
-        "Investment transactions must have positive amounts",
+        "Investment transactions cannot have negative amounts",
       );
     }
 
