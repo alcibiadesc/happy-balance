@@ -18,9 +18,11 @@
   let loading = false;
   let error = "";
   let previewEnabled = true;
-  let showDuplicates = true;
   let showAllTransactions = false;
   let mounted = false;
+
+  // View modes: 'all' | 'duplicates' | 'new'
+  let viewMode: 'all' | 'duplicates' | 'new' = 'all';
 
   // Load preview preference from localStorage
   function loadPreviewPreference(): boolean {
@@ -212,14 +214,12 @@
   }
 
   function toggleAllTransactions() {
-    const visibleTransactions = showDuplicates
-      ? transactions
-      : transactions.filter((tx) => !tx.isDuplicate);
-    const allSelected = visibleTransactions.every((tx) => tx.selected);
+    const currentVisible = visibleTransactions;
+    const allSelected = currentVisible.every((tx) => tx.selected);
 
     transactions = transactions.map((tx) => {
-      // Toggle all visible transactions (including duplicates if shown)
-      const isVisible = showDuplicates || !tx.isDuplicate;
+      // Toggle only visible transactions based on current view mode
+      const isVisible = currentVisible.some(v => v.id === tx.id);
       if (isVisible) {
         return { ...tx, selected: !allSelected };
       }
@@ -243,9 +243,18 @@
   $: selectedCount = transactions.filter(tx => tx.selected).length;
   $: duplicateCount = transactions.filter((tx) => tx.isDuplicate).length;
   $: selectedDuplicatesCount = transactions.filter((tx) => tx.isDuplicate && tx.selected).length;
-  $: visibleTransactions = showDuplicates
-    ? transactions
-    : transactions.filter((tx) => !tx.isDuplicate);
+  $: newTransactionsCount = transactions.filter((tx) => !tx.isDuplicate).length;
+  $: visibleTransactions = (() => {
+    switch (viewMode) {
+      case 'duplicates':
+        return transactions.filter((tx) => tx.isDuplicate);
+      case 'new':
+        return transactions.filter((tx) => !tx.isDuplicate);
+      case 'all':
+      default:
+        return transactions;
+    }
+  })();
   $: displayedTransactions = showAllTransactions
     ? visibleTransactions
     : visibleTransactions.slice(0, 10);
@@ -505,20 +514,54 @@
             </div>
           </div>
 
-          <!-- Controls con toggles personalizados -->
-          <div class="preview-controls">
-            <div class="control-group">
-              <label class="control-item">
-                <input
-                  type="checkbox"
-                  bind:checked={showDuplicates}
-                  class="toggle toggle-acapulco toggle-sm"
-                />
-                <span class="control-text"
-                  >{$t("import.preview.controls.show_duplicates")}</span
-                >
-              </label>
+          <!-- View Mode Filters -->
+          <div class="view-filters">
+            <div class="filter-group">
+              <button
+                class="filter-btn {viewMode === 'all' ? 'active' : ''}"
+                on:click={() => viewMode = 'all'}
+              >
+                <span class="filter-icon">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                  </svg>
+                </span>
+                <span class="filter-text">Todas</span>
+                <span class="filter-count">{transactions.length}</span>
+              </button>
 
+              <button
+                class="filter-btn {viewMode === 'duplicates' ? 'active' : ''}"
+                on:click={() => viewMode = 'duplicates'}
+                disabled={duplicateCount === 0}
+              >
+                <span class="filter-icon warning">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+                <span class="filter-text">Duplicados</span>
+                <span class="filter-count">{duplicateCount}</span>
+                {#if selectedDuplicatesCount > 0}
+                  <span class="filter-badge">{selectedDuplicatesCount}</span>
+                {/if}
+              </button>
+
+              <button
+                class="filter-btn {viewMode === 'new' ? 'active' : ''}"
+                on:click={() => viewMode = 'new'}
+              >
+                <span class="filter-icon success">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                </span>
+                <span class="filter-text">Nuevas</span>
+                <span class="filter-count">{newTransactionsCount}</span>
+              </button>
+            </div>
+
+            <div class="control-actions">
               {#if visibleTransactions.length > 10}
                 <label class="control-item">
                   <input
@@ -526,23 +569,59 @@
                     bind:checked={showAllTransactions}
                     class="toggle toggle-acapulco toggle-sm"
                   />
-                  <span class="control-text"
-                    >{$t("import.preview.controls.show_all")}</span
-                  >
+                  <span class="control-text">
+                    {$t("import.preview.controls.show_all")}
+                  </span>
                 </label>
               {/if}
+
+              <button class="select-all-btn" on:click={toggleAllTransactions}>
+                {visibleTransactions.every((tx) => tx.selected)
+                  ? $t("import.preview.controls.deselect_all")
+                  : $t("import.preview.controls.select_all")}
+              </button>
             </div>
-            <button class="select-all-btn" on:click={toggleAllTransactions}>
-              {visibleTransactions
-                .filter((tx) => !tx.isDuplicate)
-                .every((tx) => tx.selected)
-                ? $t("import.preview.controls.deselect_all")
-                : $t("import.preview.controls.select_all")}
-            </button>
           </div>
 
           <!-- Transactions Table Mejorada -->
           <div class="table-container">
+            {#if visibleTransactions.length === 0}
+              <div class="empty-state">
+                <div class="empty-icon">
+                  {#if viewMode === 'duplicates'}
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  {:else if viewMode === 'new'}
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  {:else}
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                  {/if}
+                </div>
+                <h3 class="empty-title">
+                  {#if viewMode === 'duplicates'}
+                    No hay transacciones duplicadas
+                  {:else if viewMode === 'new'}
+                    No hay transacciones nuevas
+                  {:else}
+                    No hay transacciones
+                  {/if}
+                </h3>
+                <p class="empty-subtitle">
+                  {#if viewMode === 'duplicates'}
+                    ¡Excelente! No se detectaron duplicados en tu archivo
+                  {:else if viewMode === 'new'}
+                    Todas las transacciones ya existen en la base de datos
+                  {:else}
+                    El archivo no contiene transacciones válidas
+                  {/if}
+                </p>
+              </div>
+            {:else}
             <div class="table-wrapper">
               <table class="transactions-table">
                 <thead>
@@ -682,6 +761,7 @@
                 </tbody>
               </table>
             </div>
+            {/if}
 
             {#if !showAllTransactions && visibleTransactions.length > 10}
               <div class="pagination-info">
@@ -1302,6 +1382,112 @@
     gap: 1rem;
   }
 
+  /* New View Filters */
+  .view-filters {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border: 1px solid var(--border);
+  }
+
+  .filter-group {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--surface-muted);
+    border-radius: 0.625rem;
+    padding: 0.25rem;
+  }
+
+  .filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .filter-btn:hover:not(:disabled) {
+    background: rgba(122, 186, 165, 0.1);
+    color: var(--text-primary);
+  }
+
+  .filter-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .filter-btn.active {
+    background: var(--surface);
+    color: var(--acapulco);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .filter-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .filter-icon.warning {
+    color: #fecd2c;
+  }
+
+  .filter-icon.success {
+    color: #8dc351;
+  }
+
+  .filter-text {
+    font-weight: 500;
+  }
+
+  .filter-count {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.375rem;
+    background: rgba(122, 186, 165, 0.1);
+    border-radius: 0.25rem;
+    font-weight: 600;
+  }
+
+  .filter-btn.active .filter-count {
+    background: rgba(122, 186, 165, 0.2);
+  }
+
+  .filter-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 0.625rem;
+    padding: 0.125rem 0.25rem;
+    background: #8dc351;
+    color: white;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    min-width: 16px;
+    text-align: center;
+  }
+
+  .control-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
   .control-group {
     display: flex;
     gap: 1.5rem;
@@ -1538,6 +1724,35 @@
   .amount-currency {
     font-size: 0.6875rem;
     opacity: 0.8;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+
+  .empty-icon {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+  }
+
+  .empty-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    max-width: 400px;
   }
 
   /* Status badges */
