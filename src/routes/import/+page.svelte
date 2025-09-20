@@ -24,6 +24,10 @@
   // View modes: 'all' | 'duplicates' | 'new'
   let viewMode: 'all' | 'duplicates' | 'new' = 'all';
 
+  // Search functionality
+  let searchQuery = '';
+  let searchTimeout: number;
+
   // Load preview preference from localStorage
   function loadPreviewPreference(): boolean {
     if (typeof localStorage !== 'undefined') {
@@ -240,20 +244,61 @@
     goto("/");
   }
 
+  // Search functionality
+  function handleSearch(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const value = target.value;
+
+    // Debounce search
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      searchQuery = value.toLowerCase();
+    }, 300);
+  }
+
+  function matchesSearch(transaction: any): boolean {
+    if (!searchQuery) return true;
+
+    const searchFields = [
+      transaction.partner,
+      transaction.description,
+      transaction.date,
+      transaction.amount?.toString(),
+      transaction.hash
+    ];
+
+    return searchFields.some(field =>
+      field?.toString().toLowerCase().includes(searchQuery)
+    );
+  }
+
   $: selectedCount = transactions.filter(tx => tx.selected).length;
   $: duplicateCount = transactions.filter((tx) => tx.isDuplicate).length;
   $: selectedDuplicatesCount = transactions.filter((tx) => tx.isDuplicate && tx.selected).length;
   $: newTransactionsCount = transactions.filter((tx) => !tx.isDuplicate).length;
   $: visibleTransactions = (() => {
+    let filtered = transactions;
+
+    // Apply view mode filter
     switch (viewMode) {
       case 'duplicates':
-        return transactions.filter((tx) => tx.isDuplicate);
+        filtered = filtered.filter((tx) => tx.isDuplicate);
+        break;
       case 'new':
-        return transactions.filter((tx) => !tx.isDuplicate);
+        filtered = filtered.filter((tx) => !tx.isDuplicate);
+        break;
       case 'all':
       default:
-        return transactions;
+        // Show all transactions
+        break;
     }
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(matchesSearch);
+    }
+
+    return filtered;
   })();
   $: displayedTransactions = showAllTransactions
     ? visibleTransactions
@@ -514,50 +559,47 @@
             </div>
           </div>
 
+          <!-- Search Bar -->
+          <div class="search-container">
+            <div class="search-wrapper">
+              <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Buscar transacciones..."
+                class="search-input"
+                on:input={handleSearch}
+              />
+            </div>
+          </div>
+
           <!-- View Mode Filters -->
           <div class="view-filters">
-            <div class="filter-group">
+            <div class="filter-tabs">
               <button
-                class="filter-btn {viewMode === 'all' ? 'active' : ''}"
+                class="filter-tab {viewMode === 'all' ? 'active' : ''}"
                 on:click={() => viewMode = 'all'}
               >
-                <span class="filter-icon">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                  </svg>
-                </span>
-                <span class="filter-text">Todas</span>
-                <span class="filter-count">{transactions.length}</span>
+                Todas ({transactions.length})
               </button>
 
               <button
-                class="filter-btn {viewMode === 'duplicates' ? 'active' : ''}"
+                class="filter-tab {viewMode === 'new' ? 'active' : ''}"
+                on:click={() => viewMode = 'new'}
+              >
+                Nuevas ({newTransactionsCount})
+              </button>
+
+              <button
+                class="filter-tab {viewMode === 'duplicates' ? 'active' : ''}"
                 on:click={() => viewMode = 'duplicates'}
                 disabled={duplicateCount === 0}
               >
-                <span class="filter-icon warning">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </span>
-                <span class="filter-text">Duplicados</span>
-                <span class="filter-count">{duplicateCount}</span>
+                Duplicados ({duplicateCount})
                 {#if selectedDuplicatesCount > 0}
-                  <span class="filter-badge">{selectedDuplicatesCount}</span>
+                  <span class="selected-badge">{selectedDuplicatesCount}</span>
                 {/if}
-              </button>
-
-              <button
-                class="filter-btn {viewMode === 'new' ? 'active' : ''}"
-                on:click={() => viewMode = 'new'}
-              >
-                <span class="filter-icon success">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                  </svg>
-                </span>
-                <span class="filter-text">Nuevas</span>
-                <span class="filter-count">{newTransactionsCount}</span>
               </button>
             </div>
 
@@ -827,60 +869,30 @@
       <!-- Footer -->
       {#if !loading}
         <div class="import-footer">
-          <div class="footer-left">
+          <div class="footer-actions">
             {#if step === 2}
-              <button class="back-btn" on:click={goBack}>
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
+              <button class="btn-secondary" on:click={goBack}>
                 {$t("common.back")}
+              </button>
+              <button
+                class="btn-primary {selectedCount === 0 ? 'disabled' : ''}"
+                disabled={selectedCount === 0}
+                on:click={importTransactions}
+              >
+                {importButtonText}
               </button>
             {:else if step === 3 && !loading}
               <button
-                class="back-btn"
+                class="btn-secondary"
                 on:click={() => {
                   selectedFile = null;
                   transactions = [];
                   step = 1;
                 }}
               >
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
                 {$t("import.complete.import_another")}
               </button>
-            {/if}
-          </div>
-
-          <div class="footer-right">
-            {#if step === 2}
-              <button
-                class="import-btn {selectedCount === 0 ? 'disabled' : ''}"
-                disabled={selectedCount === 0}
-                on:click={importTransactions}
-              >
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 12l2 2 4-4"
-                  />
-                </svg>
-                {importButtonText}
-              </button>
-            {:else if step === 3 && !loading}
-              <button class="done-btn" on:click={handleClose}>
+              <button class="btn-primary" on:click={handleClose}>
                 {$t("common.done")}
               </button>
             {/if}
@@ -2248,6 +2260,179 @@
 
     .transactions-table {
       min-width: 350px;
+    }
+  }
+
+  /* New Search Container */
+  .search-container {
+    margin-bottom: 1rem;
+  }
+
+  .search-wrapper {
+    position: relative;
+    max-width: 400px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.75rem 0.75rem 0.75rem 2.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--acapulco);
+    box-shadow: 0 0 0 2px rgba(122, 186, 165, 0.1);
+  }
+
+  .search-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* New Minimalist Filter Tabs */
+  .filter-tabs {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--surface-muted);
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+  }
+
+  .filter-tab {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 0.375rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    white-space: nowrap;
+  }
+
+  .filter-tab:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: rgba(122, 186, 165, 0.1);
+  }
+
+  .filter-tab.active {
+    color: var(--acapulco);
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .filter-tab:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .selected-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.125rem 0.375rem;
+    background: var(--acapulco);
+    color: var(--text-inverse);
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* New Minimalist Footer */
+  .import-footer {
+    background: var(--surface-muted);
+    border-top: 1px solid var(--border-color);
+    padding: 1rem;
+    border-radius: 0 0 1rem 1rem;
+  }
+
+  .footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  /* New Minimalist Button Styles */
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+  }
+
+  .btn-primary {
+    background: var(--acapulco);
+    color: var(--text-inverse);
+    border-color: var(--acapulco);
+  }
+
+  .btn-primary:hover:not(.disabled) {
+    background: rgba(122, 186, 165, 0.9);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    border-color: var(--border-color);
+  }
+
+  .btn-secondary:hover {
+    background: var(--surface-muted);
+    border-color: var(--acapulco);
+  }
+
+  /* Mobile adjustments for new elements */
+  @media (max-width: 768px) {
+    .search-wrapper {
+      max-width: 100%;
+    }
+
+    .filter-tabs {
+      flex-wrap: wrap;
+      gap: 0.125rem;
+    }
+
+    .filter-tab {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    .footer-actions {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      width: 100%;
+      text-align: center;
     }
   }
 </style>
