@@ -63,15 +63,31 @@
     closeModal();
   }
 
-  // Filter categories based on transaction amount
+  // Group categories by type
   $: isIncomeTransaction = transaction ? transaction.amount > 0 : false;
-  $: filteredCategories = categories.filter(category => {
+  $: groupedCategories = (() => {
     if (isIncomeTransaction) {
-      return category.type === 'income';
+      return {
+        income: categories.filter(cat => cat.type === 'income' || cat.type === 'INCOME')
+      };
     } else {
-      return ['essential', 'discretionary', 'investment', 'debt_payment'].includes(category.type);
+      return {
+        essential: categories.filter(cat => cat.type === 'essential'),
+        discretionary: categories.filter(cat => cat.type === 'discretionary'),
+        investment: categories.filter(cat => cat.type === 'investment'),
+        debt_payment: categories.filter(cat => cat.type === 'debt_payment')
+      };
     }
-  });
+  })();
+
+  // Type display names
+  const typeDisplayNames = {
+    essential: 'Gastos Esenciales',
+    discretionary: 'Gastos Discrecionales',
+    investment: 'Inversiones',
+    debt_payment: 'Pago de Deudas',
+    income: 'Ingresos'
+  };
 
   onDestroy(() => {
     restoreBodyScroll();
@@ -90,59 +106,64 @@
     aria-labelledby="category-selection-title"
   >
     <div class="modal-content">
-      <!-- Header -->
+      <!-- Header with minimal design -->
       <div class="modal-header">
-        <h2 id="category-selection-title" class="modal-title">
-          Seleccionar categoría
-        </h2>
-        <button class="close-btn" on:click={closeModal} aria-label="Cerrar">
-          <X size={16} />
-        </button>
-      </div>
-
-      <!-- Transaction info -->
-      <div class="transaction-info">
-        <div class="transaction-details">
-          <div class="transaction-merchant">{transaction.merchant}</div>
-          <div class="transaction-description">{transaction.description}</div>
-          <div class="transaction-amount" class:income={transaction.amount > 0}>
-            {new Intl.NumberFormat('es-ES', {
-              style: 'currency',
-              currency: 'EUR'
-            }).format(Math.abs(transaction.amount))}
+        <div class="header-content">
+          <h2 id="category-selection-title" class="modal-title">Categorizar transacción</h2>
+          <div class="transaction-preview">
+            <span class="merchant">{transaction.merchant}</span>
+            <span class="amount" class:income={transaction.amount > 0}>
+              {new Intl.NumberFormat('es-ES', {
+                style: 'currency',
+                currency: 'EUR'
+              }).format(Math.abs(transaction.amount))}
+            </span>
           </div>
         </div>
-      </div>
-
-      <!-- Category selection -->
-      <div class="category-section">
-        <div class="section-header">
-          <h3 class="section-title">
-            {isIncomeTransaction ? 'Categorías de Ingresos' : 'Categorías de Gastos'}
-          </h3>
-        </div>
-
-        <div class="category-grid">
-          {#each filteredCategories as category}
-            <button
-              class="category-option"
-              class:income-cat={category.type === 'income'}
-              class:expense-cat={category.type !== 'income'}
-              on:click={() => selectCategory(category.id)}
-              title={category.name}
-            >
-              <span class="category-emoji">{category.icon}</span>
-              <span class="category-name">{category.name}</span>
-            </button>
-          {/each}
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="modal-actions">
-        <button class="btn-cancel" on:click={closeModal}>
-          Cancelar
+        <button class="close-btn" on:click={closeModal} aria-label="Cerrar">
+          <X size={20} />
         </button>
+      </div>
+
+      <!-- Category sections -->
+      <div class="category-content">
+        {#if isIncomeTransaction}
+          {#if groupedCategories.income?.length > 0}
+            <div class="category-group">
+              <h3 class="group-title">{typeDisplayNames.income}</h3>
+              <div class="category-grid">
+                {#each groupedCategories.income as category}
+                  <button
+                    class="category-option income-type"
+                    on:click={() => selectCategory(category.id)}
+                  >
+                    <span class="category-icon">{category.icon}</span>
+                    <span class="category-name">{category.name}</span>
+                  </button>
+                {/each}
+              </div>
+            </div>
+          {/if}
+        {:else}
+          {#each Object.entries(groupedCategories) as [type, categoryList]}
+            {#if categoryList.length > 0}
+              <div class="category-group">
+                <h3 class="group-title">{typeDisplayNames[type]}</h3>
+                <div class="category-grid">
+                  {#each categoryList as category}
+                    <button
+                      class="category-option {type}-type"
+                      on:click={() => selectCategory(category.id)}
+                    >
+                      <span class="category-icon">{category.icon}</span>
+                      <span class="category-name">{category.name}</span>
+                    </button>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          {/each}
+        {/if}
       </div>
     </div>
   </div>
@@ -155,31 +176,30 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
     padding: 1rem;
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(4px);
   }
 
   .modal-content {
-    background: var(--surface-elevated);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    max-width: 400px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
     width: 100%;
-    max-height: 80vh;
-    overflow-y: auto;
-    animation: modalSlideIn 0.2s ease-out;
+    max-height: 85vh;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   @keyframes modalSlideIn {
     from {
       opacity: 0;
-      transform: translateY(-20px) scale(0.95);
+      transform: translateY(-30px) scale(0.9);
     }
     to {
       opacity: 1;
@@ -189,179 +209,188 @@
 
   .modal-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--gray-200);
+    padding: 24px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .header-content {
+    flex: 1;
   }
 
   .modal-title {
-    font-size: 1rem;
+    font-size: 18px;
     font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+  }
+
+  .transaction-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .merchant {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .amount {
+    font-size: 16px;
+    font-weight: 600;
+    color: #dc2626;
+  }
+
+  .amount.income {
+    color: #059669;
   }
 
   .close-btn {
-    padding: 0.5rem;
+    padding: 8px;
     border: none;
     background: none;
-    color: var(--text-muted);
+    color: #64748b;
     cursor: pointer;
-    border-radius: var(--radius-sm);
+    border-radius: 8px;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-left: 16px;
   }
 
   .close-btn:hover {
-    background: var(--gray-100);
-    color: var(--text-secondary);
+    background: #f1f5f9;
+    color: #374151;
   }
 
-  .transaction-info {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--gray-100);
-    background: var(--gray-50);
+  .category-content {
+    padding: 8px 24px 24px;
+    max-height: calc(85vh - 140px);
+    overflow-y: auto;
   }
 
-  .transaction-details {
-    text-align: center;
+  .category-group {
+    margin-bottom: 24px;
   }
 
-  .transaction-merchant {
-    font-size: 1rem;
+  .category-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .group-title {
+    font-size: 12px;
     font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.25rem;
-  }
-
-  .transaction-description {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.75rem;
-  }
-
-  .transaction-amount {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--froly);
-  }
-
-  .transaction-amount.income {
-    color: var(--acapulco);
-  }
-
-  .category-section {
-    padding: 1.5rem;
-  }
-
-  .section-header {
-    margin-bottom: 1rem;
-  }
-
-  .section-title {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-secondary);
+    color: #64748b;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin: 0;
+    letter-spacing: 0.5px;
+    margin: 0 0 12px 0;
+    padding-left: 2px;
   }
 
   .category-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
   }
 
   .category-option {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    padding: 1rem 0.75rem;
-    border: 2px solid var(--gray-200);
-    border-radius: var(--radius-lg);
-    background: var(--surface);
+    gap: 8px;
+    padding: 16px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    background: white;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    min-height: 80px;
+    min-height: 88px;
+    position: relative;
   }
 
   .category-option:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
   }
 
   .category-option:active {
     transform: scale(0.98);
   }
 
-  .category-option.income-cat {
-    background: linear-gradient(135deg, rgba(122, 186, 165, 0.08), rgba(122, 186, 165, 0.03));
-    border-color: rgba(122, 186, 165, 0.3);
+  /* Type-specific styling */
+  .essential-type {
+    border-color: #fbbf24;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.03), rgba(251, 191, 36, 0.01));
   }
 
-  .category-option.income-cat:hover {
-    background: linear-gradient(135deg, rgba(122, 186, 165, 0.15), rgba(122, 186, 165, 0.08));
-    border-color: var(--acapulco);
-    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.2);
+  .essential-type:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 8px 25px rgba(251, 191, 36, 0.15);
   }
 
-  .category-option.expense-cat {
-    background: linear-gradient(135deg, rgba(245, 121, 108, 0.08), rgba(245, 121, 108, 0.03));
-    border-color: rgba(245, 121, 108, 0.3);
+  .discretionary-type {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.03), rgba(59, 130, 246, 0.01));
   }
 
-  .category-option.expense-cat:hover {
-    background: linear-gradient(135deg, rgba(245, 121, 108, 0.15), rgba(245, 121, 108, 0.08));
-    border-color: var(--froly);
-    box-shadow: 0 4px 12px rgba(245, 121, 108, 0.2);
+  .discretionary-type:hover {
+    border-color: #2563eb;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
   }
 
-  .category-emoji {
-    font-size: 1.5rem;
+  .investment-type {
+    border-color: #10b981;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.03), rgba(16, 185, 129, 0.01));
+  }
+
+  .investment-type:hover {
+    border-color: #059669;
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+  }
+
+  .debt_payment-type {
+    border-color: #ef4444;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.03), rgba(239, 68, 68, 0.01));
+  }
+
+  .debt_payment-type:hover {
+    border-color: #dc2626;
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.15);
+  }
+
+  .income-type {
+    border-color: #059669;
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.03), rgba(5, 150, 105, 0.01));
+  }
+
+  .income-type:hover {
+    border-color: #047857;
+    box-shadow: 0 8px 25px rgba(5, 150, 105, 0.15);
+  }
+
+  .category-icon {
+    font-size: 28px;
     line-height: 1;
   }
 
   .category-name {
-    font-size: 0.8125rem;
+    font-size: 12px;
     font-weight: 500;
-    color: var(--text-primary);
+    color: #374151;
     text-align: center;
-    line-height: 1.2;
-  }
-
-  .modal-actions {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--gray-100);
-    display: flex;
-    justify-content: center;
-  }
-
-  .btn-cancel {
-    padding: 0.75rem 1.5rem;
-    border: 1px solid var(--gray-200);
-    background: var(--surface);
-    color: var(--text-secondary);
-    border-radius: var(--radius-md);
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .btn-cancel:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-300);
+    line-height: 1.3;
   }
 
   /* Responsive design */
   @media (max-width: 480px) {
     .modal-overlay {
-      padding: 0.5rem;
+      padding: 16px;
     }
 
     .modal-content {
@@ -369,36 +398,58 @@
       width: 100%;
     }
 
+    .modal-header {
+      padding: 20px;
+    }
+
+    .category-content {
+      padding: 8px 20px 20px;
+    }
+
     .category-grid {
       grid-template-columns: repeat(2, 1fr);
-      gap: 0.5rem;
+      gap: 6px;
     }
 
     .category-option {
-      padding: 0.75rem 0.5rem;
-      min-height: 70px;
+      padding: 12px 8px;
+      min-height: 76px;
     }
 
-    .category-emoji {
-      font-size: 1.25rem;
+    .category-icon {
+      font-size: 24px;
     }
 
     .category-name {
-      font-size: 0.75rem;
+      font-size: 11px;
     }
   }
 
   @media (max-width: 360px) {
-    .transaction-info {
-      padding: 1rem;
+    .modal-header {
+      padding: 16px;
     }
 
-    .category-section {
-      padding: 1rem;
+    .category-content {
+      padding: 8px 16px 16px;
     }
+  }
 
-    .modal-actions {
-      padding: 1rem;
-    }
+  /* Scrollbar styling */
+  .category-content::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .category-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .category-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  .category-content::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
   }
 </style>

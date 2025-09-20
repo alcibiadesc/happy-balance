@@ -341,6 +341,7 @@
     if (!categoryModalTransaction) return;
 
     try {
+      // Check for matching transactions and initialize smart categorization
       await initSmartCategorization(categoryModalTransaction, categoryId);
       closeCategoryModal();
     } catch (error) {
@@ -389,13 +390,20 @@
       smartCategorizationTransaction = transaction;
       smartCategorizationCategory = selectedCategory;
 
-      // Find potential matching transactions
+      // Find potential matching transactions (should already be passed, but ensure consistency)
       smartMatchingTransactions = await findMatchingTransactions(transaction);
+
+      // Only proceed if there are matching transactions
+      if (smartMatchingTransactions.length === 0) {
+        // Apply directly for single transaction
+        await categorizeTransaction(transaction, categoryId);
+        return;
+      }
 
       // Generate smart suggestions
       smartSuggestions = generateSmartSuggestions(transaction, smartMatchingTransactions);
 
-      // Show the modal
+      // Show the modal only when there are matches
       showSmartCategorization = true;
       showCategoryDropdown = null; // Close category dropdown
 
@@ -1080,9 +1088,10 @@
                           {#each incomeCategories as cat}
                             <button
                               class="category-grid-item income-cat"
-                              onclick={(e) => {
+                              onclick={async (e) => {
                                 e.stopPropagation();
-                                initSmartCategorization(transaction, cat.id);
+                                showCategoryDropdown = null;
+                                await initSmartCategorization(transaction, cat.id);
                               }}
                               title="{cat.name}"
                             >
@@ -1100,9 +1109,10 @@
                           {#each expenseCategories as cat}
                             <button
                               class="category-grid-item expense-cat"
-                              onclick={(e) => {
+                              onclick={async (e) => {
                                 e.stopPropagation();
-                                initSmartCategorization(transaction, cat.id);
+                                showCategoryDropdown = null;
+                                await initSmartCategorization(transaction, cat.id);
                               }}
                               title="{cat.name}"
                             >
