@@ -5,8 +5,8 @@ import { Money } from "../../domain/value-objects/Money";
 import { TransactionDate } from "../../domain/value-objects/TransactionDate";
 import { Merchant } from "../../domain/value-objects/Merchant";
 import { TransactionType } from "../../domain/entities/TransactionType";
-import { ITransactionRepository } from "../../domain/repositories/ITransactionRepository";
-import { ICategoryRepository } from "../../domain/repositories/ICategoryRepository";
+import type { ITransactionRepository } from "../../domain/repositories/ITransactionRepository";
+import type { ICategoryRepository } from "../../domain/repositories/ICategoryRepository";
 import { DuplicateDetectionService } from "../../domain/services/DuplicateDetectionService";
 import { CategorizationService } from "../../domain/services/CategorizationService";
 import { ImportTransactionsCommand } from "../commands/ImportTransactionsCommand";
@@ -113,10 +113,12 @@ export class ImportTransactionsUseCase {
               suggestionResult.getValue().suggestedCategory
             ) {
               const { suggestedCategory } = suggestionResult.getValue();
-              const categorizeResult =
-                transaction.categorize(suggestedCategory);
-              if (categorizeResult.isSuccess()) {
-                categorized++;
+              if (suggestedCategory) {
+                const categorizeResult =
+                  transaction.categorize(suggestedCategory);
+                if (categorizeResult.isSuccess()) {
+                  categorized++;
+                }
               }
             }
           }

@@ -51,14 +51,14 @@ export class Result<T, E = Error> {
 
   map<U>(fn: (value: T) => U): Result<U, E> {
     if (this._isSuccess && this._value !== undefined) {
-      return Result.ok(fn(this._value));
+      return new Result<U, E>(true, fn(this._value), undefined);
     }
-    return Result.fail(this._error!);
+    return new Result<U, E>(false, undefined, this._error!);
   }
 
   mapError<F>(fn: (error: E) => F): Result<T, F> {
     if (this._isSuccess) {
-      return Result.ok(this._value!);
+      return new Result<T, F>(true, this._value!, undefined);
     }
     return Result.fail(fn(this._error!));
   }

@@ -38,7 +38,7 @@ function createTransactionStore() {
       const newTransaction = {
         ...transaction,
         id: crypto.randomUUID?.() || `tx-${Date.now()}-${Math.random()}`,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date(),
       };
 
       try {

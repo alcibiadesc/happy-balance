@@ -1,18 +1,18 @@
 import { Result } from "../../domain/shared/Result";
 import {
   Transaction,
-  TransactionSnapshot,
+  type TransactionSnapshot,
 } from "../../domain/entities/Transaction";
 import { TransactionId } from "../../domain/value-objects/TransactionId";
 import { TransactionDate } from "../../domain/value-objects/TransactionDate";
 import { TransactionType } from "../../domain/entities/TransactionType";
 import {
-  ITransactionRepository,
-  TransactionFilters,
-  PaginationOptions,
-  TransactionQueryResult,
+  type ITransactionRepository,
+  type TransactionFilters,
+  type PaginationOptions,
+  type TransactionQueryResult,
 } from "../../domain/repositories/ITransactionRepository";
-import { IStorageAdapter } from "../adapters/StorageAdapter";
+import type { IStorageAdapter } from "../adapters/StorageAdapter";
 
 /**
  * LocalStorage implementation of Transaction Repository
@@ -519,6 +519,134 @@ export class LocalStorageTransactionRepository
     } catch (error) {
       return Result.failWithMessage(
         `Failed to import: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
+
+  async updateTags(id: TransactionId, tags: string[]): Promise<Result<void>> {
+    try {
+      const transactionsResult = await this.loadTransactions();
+      if (transactionsResult.isFailure()) {
+        return Result.fail(transactionsResult.getError());
+      }
+
+      const transactions = transactionsResult.getValue();
+      const transactionIndex = transactions.findIndex(t => t.id === id.value);
+
+      if (transactionIndex === -1) {
+        return Result.failWithMessage("Transaction not found");
+      }
+
+      // Update tags
+      transactions[transactionIndex] = {
+        ...transactions[transactionIndex],
+        tags,
+      };
+
+      const saveResult = await this.saveTransactions(transactions);
+      if (saveResult.isFailure()) {
+        return Result.fail(saveResult.getError());
+      }
+
+      await this.updateIndex(transactions);
+      return Result.ok(undefined);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to update tags: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
+
+  async findByPatternHash(patternHash: string): Promise<Result<Transaction[]>> {
+    try {
+      const allResult = await this.findAll();
+      if (allResult.isFailure()) {
+        return Result.fail(allResult.getError());
+      }
+
+      const transactions = allResult.getValue();
+      // Simple pattern matching based on merchant and description similarity
+      const matches = transactions.filter(t => {
+        const transactionPattern = `${t.merchant.name}-${t.description || ''}`.toLowerCase();
+        return transactionPattern.includes(patternHash.toLowerCase()) ||
+               patternHash.toLowerCase().includes(transactionPattern);
+      });
+
+      return Result.ok(matches);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to find by pattern: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
+
+  async applyCategoryToPattern(
+    sourceTransaction: Transaction,
+    categoryId: string,
+  ): Promise<Result<number>> {
+    try {
+      const matchingResult = await this.findMatchingPattern(sourceTransaction);
+      if (matchingResult.isFailure()) {
+        return Result.fail(matchingResult.getError());
+      }
+
+      const matchingTransactions = matchingResult.getValue();
+      let updatedCount = 0;
+
+      for (const transaction of matchingTransactions) {
+        // Update the category for each matching transaction
+        const updatedTransaction = Transaction.fromSnapshot({
+          ...transaction.toSnapshot(),
+          categoryId,
+        });
+
+        if (updatedTransaction.isSuccess()) {
+          const updateResult = await this.update(updatedTransaction.getValue());
+          if (updateResult.isSuccess()) {
+            updatedCount++;
+          }
+        }
+      }
+
+      return Result.ok(updatedCount);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to apply category pattern: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
+
+  async findMatchingPattern(
+    sourceTransaction: Transaction,
+  ): Promise<Result<Transaction[]>> {
+    try {
+      const allResult = await this.findAll();
+      if (allResult.isFailure()) {
+        return Result.fail(allResult.getError());
+      }
+
+      const transactions = allResult.getValue();
+      const sourceMerchant = sourceTransaction.merchant.name.toLowerCase();
+      const sourceAmount = sourceTransaction.amount.amount;
+
+      // Find transactions with similar merchant names and similar amounts
+      const matches = transactions.filter(t => {
+        if (t.id.equals(sourceTransaction.id)) {
+          return false; // Don't match self
+        }
+
+        const merchantMatch = t.merchant.name.toLowerCase().includes(sourceMerchant) ||
+                            sourceMerchant.includes(t.merchant.name.toLowerCase());
+
+        const amountMatch = Math.abs(t.amount.amount - sourceAmount) < 0.01; // Similar amounts
+
+        return merchantMatch || amountMatch;
+      });
+
+      return Result.ok(matches);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to find matching pattern: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }

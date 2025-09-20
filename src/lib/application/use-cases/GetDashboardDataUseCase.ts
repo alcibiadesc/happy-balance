@@ -1,13 +1,13 @@
 import { Result } from "../../domain/shared/Result";
 import { Money } from "../../domain/value-objects/Money";
 import { TransactionDate } from "../../domain/value-objects/TransactionDate";
-import { ITransactionRepository } from "../../domain/repositories/ITransactionRepository";
-import { ICategoryRepository } from "../../domain/repositories/ICategoryRepository";
+import type { ITransactionRepository } from "../../domain/repositories/ITransactionRepository";
+import type { ICategoryRepository } from "../../domain/repositories/ICategoryRepository";
 import {
   FinancialCalculationService,
-  FinancialSummary,
-  CategoryBreakdown,
-  TrendData,
+  type FinancialSummary,
+  type CategoryBreakdown,
+  type TrendData,
 } from "../../domain/services/FinancialCalculationService";
 import { DashboardQuery } from "../queries/DashboardQuery";
 

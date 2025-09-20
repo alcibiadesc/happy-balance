@@ -1,10 +1,10 @@
 import { Transaction } from "../../domain/entities/Transaction";
 import { Category, CategoryId } from "../../domain/entities/Category";
-import { ITransactionRepository } from "../../domain/repositories/ITransactionRepository";
-import { ICategoryRepository } from "../../domain/repositories/ICategoryRepository";
+import type { ITransactionRepository } from "../../domain/repositories/ITransactionRepository";
+import type { ICategoryRepository } from "../../domain/repositories/ICategoryRepository";
 import {
   SmartCategorizationService,
-  SmartCategorizationSuggestion,
+  type SmartCategorizationSuggestion,
 } from "../../domain/services/SmartCategorizationService";
 import {
   CategorizeTransactionCommand,

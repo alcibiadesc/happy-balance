@@ -9,11 +9,20 @@ function createApiTransactionStore() {
   const fakeTransaction: Transaction = {
     id: "fake-1",
     amount: -50,
-    currency: "EUR",
     date: "2025-01-15",
     merchant: "Test Store",
     description: "Test transaction",
-    createdAt: "2025-01-15T00:00:00Z",
+    createdAt: new Date("2025-01-15T00:00:00Z"),
+    time: "12:00:00",
+    categoryId: undefined,
+    category: undefined,
+    status: "completed" as const,
+    tags: [],
+    patternHash: undefined,
+    hash: undefined,
+    updatedAt: new Date("2025-01-15T00:00:00Z"),
+    hidden: false,
+    notes: undefined,
   };
 
   const { subscribe, set, update } = writable<Transaction[]>([]);
@@ -36,7 +45,7 @@ function createApiTransactionStore() {
         const result = await response.json();
         if (result.success && result.data.transactions) {
           const transactions =
-            result.data.transactions.map(mapApiToTransaction);
+            result.data.transactions.map(mapApiToTransaction).filter((t: Transaction | undefined): t is Transaction => t !== undefined);
           set(transactions);
         } else {
           set([]);
@@ -57,7 +66,7 @@ function createApiTransactionStore() {
           },
           body: JSON.stringify({
             amount: Math.abs(transaction.amount),
-            currency: transaction.currency,
+            currency: "EUR", // Default currency
             date: transaction.date.split("T")[0], // Format as YYYY-MM-DD
             merchant: transaction.merchant,
             type: transaction.amount < 0 ? "EXPENSE" : "INCOME",
@@ -138,7 +147,7 @@ function createApiTransactionStore() {
 
         // Update with the server response (in case server modified something)
         update((transactions) =>
-          transactions.map((t) => (t.id === id ? updatedTransaction : t)),
+          transactions.map((t) => (t.id === id ? updatedTransaction : t)).filter((t: Transaction | undefined): t is Transaction => t !== undefined),
         );
       } catch (error) {
         console.error("Failed to update transaction:", error);
@@ -146,7 +155,7 @@ function createApiTransactionStore() {
         // Rollback on error
         if (originalTransaction) {
           update((transactions) =>
-            transactions.map((t) => (t.id === id ? originalTransaction : t)),
+            transactions.map((t) => (t.id === id ? originalTransaction : t)).filter((t: Transaction | undefined): t is Transaction => t !== undefined),
           );
         }
 
@@ -241,7 +250,12 @@ function createApiTransactionStore() {
     },
 
     // Import from file
-    async importFile(file: File, options = {}) {
+    async importFile(file: File, options: {
+      currency?: string;
+      duplicateDetectionEnabled?: boolean;
+      skipDuplicates?: boolean;
+      autoCategorizationEnabled?: boolean;
+    } = {}) {
       try {
         const formData = new FormData();
         formData.append("file", file);

@@ -1,5 +1,5 @@
 import { Result } from "../shared/Result";
-import { Transaction, TransactionSnapshot } from "../entities/Transaction";
+import { Transaction, type TransactionSnapshot } from "../entities/Transaction";
 import { TransactionId } from "../value-objects/TransactionId";
 import { TransactionDate } from "../value-objects/TransactionDate";
 import { TransactionType } from "../entities/TransactionType";

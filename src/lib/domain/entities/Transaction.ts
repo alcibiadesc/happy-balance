@@ -300,4 +300,5 @@ export interface TransactionSnapshot {
   categoryId?: string;
   isSelected?: boolean;
   createdAt: string;
+  tags?: string[];
 }

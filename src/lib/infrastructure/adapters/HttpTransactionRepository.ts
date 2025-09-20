@@ -1,16 +1,16 @@
 import { Result } from "../../domain/shared/Result";
 import {
   Transaction,
-  TransactionSnapshot,
+  type TransactionSnapshot,
 } from "../../domain/entities/Transaction";
 import { TransactionId } from "../../domain/value-objects/TransactionId";
 import { TransactionDate } from "../../domain/value-objects/TransactionDate";
 import { TransactionType } from "../../domain/entities/TransactionType";
 import {
-  ITransactionRepository,
-  TransactionFilters,
-  PaginationOptions,
-  TransactionQueryResult,
+  type ITransactionRepository,
+  type TransactionFilters,
+  type PaginationOptions,
+  type TransactionQueryResult,
 } from "../../domain/repositories/ITransactionRepository";
 
 /**
@@ -504,6 +504,148 @@ export class HttpTransactionRepository implements ITransactionRepository {
     } catch (error) {
       return Result.failWithMessage(
         `Failed to import: ${error instanceof Error ? error.message : "Network error"}`,
+      );
+    }
+  }
+
+  async updateTags(id: TransactionId, tags: string[]): Promise<Result<void>> {
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/transactions/${id.value}/tags`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ tags }),
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        return Result.failWithMessage(
+          error.error || "Failed to update tags",
+        );
+      }
+
+      return Result.ok(undefined);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to update tags: ${error instanceof Error ? error.message : "Network error"}`,
+      );
+    }
+  }
+
+  async findByPatternHash(patternHash: string): Promise<Result<Transaction[]>> {
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/transactions/pattern/${encodeURIComponent(patternHash)}`,
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        return Result.failWithMessage(
+          error.error || "Failed to find transactions by pattern",
+        );
+      }
+
+      const result = await response.json();
+      const transactions: Transaction[] = [];
+
+      for (const snapshot of result.data) {
+        const transactionResult = Transaction.fromSnapshot(snapshot);
+        if (transactionResult.isSuccess()) {
+          transactions.push(transactionResult.getValue());
+        }
+      }
+
+      return Result.ok(transactions);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to find by pattern: ${error instanceof Error ? error.message : "Network error"}`,
+      );
+    }
+  }
+
+  async applyCategoryToPattern(
+    sourceTransaction: Transaction,
+    categoryId: string,
+  ): Promise<Result<number>> {
+    try {
+      const snapshot = sourceTransaction.toSnapshot();
+
+      const response = await fetch(
+        `${this.baseUrl}/transactions/apply-category-pattern`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sourceTransactionId: snapshot.id,
+            categoryId,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        return Result.failWithMessage(
+          error.error || "Failed to apply category to pattern",
+        );
+      }
+
+      const result = await response.json();
+      return Result.ok(result.data.updatedCount || 0);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to apply category pattern: ${error instanceof Error ? error.message : "Network error"}`,
+      );
+    }
+  }
+
+  async findMatchingPattern(
+    sourceTransaction: Transaction,
+  ): Promise<Result<Transaction[]>> {
+    try {
+      const snapshot = sourceTransaction.toSnapshot();
+
+      const response = await fetch(
+        `${this.baseUrl}/transactions/matching-pattern`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            merchant: snapshot.merchant,
+            amount: snapshot.amount,
+            description: snapshot.description,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        return Result.failWithMessage(
+          error.error || "Failed to find matching pattern",
+        );
+      }
+
+      const result = await response.json();
+      const transactions: Transaction[] = [];
+
+      for (const transactionSnapshot of result.data) {
+        const transactionResult = Transaction.fromSnapshot(transactionSnapshot);
+        if (transactionResult.isSuccess()) {
+          transactions.push(transactionResult.getValue());
+        }
+      }
+
+      return Result.ok(transactions);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to find matching pattern: ${error instanceof Error ? error.message : "Network error"}`,
       );
     }
   }
