@@ -228,19 +228,19 @@ function parseDate(dateStr: string): Date | null {
     const match = dateStr.match(format);
     if (match) {
       if (format === formats[0]) {
-        // YYYY-MM-DD
-        return new Date(
-          parseInt(match[1]),
-          parseInt(match[2]) - 1,
-          parseInt(match[3]),
-        );
+        // YYYY-MM-DD - Use UTC to avoid timezone issues
+        const year = parseInt(match[1]);
+        const month = parseInt(match[2]) - 1; // JavaScript months are 0-indexed
+        const day = parseInt(match[3]);
+        // Create date in UTC and then convert to local
+        return new Date(Date.UTC(year, month, day, 0, 0, 0));
       } else {
         // DD/MM/YYYY or DD-MM-YYYY
-        return new Date(
-          parseInt(match[3]),
-          parseInt(match[2]) - 1,
-          parseInt(match[1]),
-        );
+        const day = parseInt(match[1]);
+        const month = parseInt(match[2]) - 1; // JavaScript months are 0-indexed
+        const year = parseInt(match[3]);
+        // Create date in UTC and then convert to local
+        return new Date(Date.UTC(year, month, day, 0, 0, 0));
       }
     }
   }

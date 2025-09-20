@@ -67,7 +67,8 @@ export class TransactionDate {
           [, day, month, year] = match.map(Number);
         }
 
-        const date = new Date(year, month - 1, day);
+        // Use UTC to avoid timezone issues
+        const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
         return TransactionDate.create(date);
       }
     }
