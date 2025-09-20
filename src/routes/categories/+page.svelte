@@ -331,6 +331,10 @@
     const transactions = $apiTransactions;
     transactionsWithCategory = transactions.filter(t => t.categoryId === category.id).length;
     recategorizeTarget = 'none';
+
+    // Close any open emoji pickers before showing delete modal
+    closeEmojiPicker();
+
     showDeleteModal = true;
   }
 
@@ -1270,7 +1274,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 70;
+    z-index: 80;
     animation: fadeIn 0.2s ease-out;
   }
 
@@ -1291,6 +1295,9 @@
     max-height: 80vh;
     overflow-y: auto;
     animation: slideUp 0.3s ease-out;
+    position: relative;
+    z-index: 81;
+    box-shadow: var(--shadow-lg);
   }
 
   @keyframes slideUp {
@@ -1310,12 +1317,16 @@
     align-items: center;
     padding: var(--space-lg);
     border-bottom: 1px solid var(--gray-200);
+    background: var(--surface-elevated);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 
   .modal-title {
     font-size: 1.125rem;
     font-weight: 500;
     color: var(--text-primary);
+    margin: 0;
+    line-height: 1.4;
   }
 
   .close-button {
@@ -1342,6 +1353,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-lg);
+    color: var(--text-primary);
+    background: transparent;
   }
 
   .modal-footer {
@@ -1387,6 +1400,8 @@
   .delete-warning {
     font-size: 0.875rem;
     color: var(--text-primary);
+    line-height: 1.5;
+    margin-bottom: 1rem;
   }
 
   .delete-warning strong {
@@ -1420,6 +1435,7 @@
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-primary);
+    margin-bottom: 0.5rem;
   }
 
   .recategorize-options {
@@ -1457,6 +1473,8 @@
 
   .category-icon-small {
     font-size: 1rem;
+    display: inline-block;
+    line-height: 1;
   }
 
   .no-transactions {
