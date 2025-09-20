@@ -63,7 +63,8 @@ export class CategoryController {
           ? CategoryTypeHelper.fromString(parsedFilters.type)
           : undefined,
         // Default to active categories only unless explicitly set
-        isActive: parsedFilters.isActive !== undefined ? parsedFilters.isActive : true,
+        isActive:
+          parsedFilters.isActive !== undefined ? parsedFilters.isActive : true,
       };
 
       const result = await this.categoryRepository.findWithFilters(filters);

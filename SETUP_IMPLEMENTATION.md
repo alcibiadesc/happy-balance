@@ -1,11 +1,13 @@
 # Initial Setup Implementation
 
 ## Overview
+
 Implemented automatic initial setup for the vibe-kanban application that runs when the database is empty. The system will automatically seed default categories, settings, and user preferences on first startup.
 
 ## Implementation
 
 ### 1. InitialSetupService (Domain Layer)
+
 Location: `backend/src/domain/services/InitialSetupService.ts`
 
 - **Purpose**: Detects empty database and triggers initial setup
@@ -15,6 +17,7 @@ Location: `backend/src/domain/services/InitialSetupService.ts`
   - `seedDefaults()`: Delegates to SeedController for actual seeding
 
 ### 2. Enhanced SeedController (Infrastructure Layer)
+
 Location: `backend/src/infrastructure/controllers/SeedController.ts`
 
 - **Enhancement**: Added `performReset()` method for programmatic access
@@ -25,6 +28,7 @@ Location: `backend/src/infrastructure/controllers/SeedController.ts`
   - Default user preferences (EUR currency, English, light theme)
 
 ### 3. Application Integration
+
 Location: `backend/src/main.ts`
 
 - **Integration Point**: Application startup, after database connection
@@ -52,6 +56,7 @@ npm run dev
 ```
 
 You'll see:
+
 ```
 🚀 Database is empty, performing initial setup...
 ✅ Initial setup completed successfully
@@ -61,6 +66,7 @@ You'll see:
 ## Testing
 
 The implementation has been validated for:
+
 - TypeScript compilation
 - Proper dependency injection
 - Error handling paths

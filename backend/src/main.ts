@@ -264,7 +264,8 @@ class App {
       await prisma.$connect();
 
       // Perform initial setup if database is empty
-      const setupResult = await this.initialSetupService.performInitialSetupIfNeeded();
+      const setupResult =
+        await this.initialSetupService.performInitialSetupIfNeeded();
       if (setupResult.isFailure()) {
         console.error("❌ Initial setup failed:", setupResult.getError());
         process.exit(1);

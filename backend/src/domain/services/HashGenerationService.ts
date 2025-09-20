@@ -28,7 +28,9 @@ export class HashGenerationService {
 
     // Build hash data string with optional unique suffix
     const baseData = `${normalizedDate}_${normalizedMerchant}_${absoluteAmount}_${params.currency}`;
-    const hashData = params.uniqueSuffix ? `${baseData}_${params.uniqueSuffix}` : baseData;
+    const hashData = params.uniqueSuffix
+      ? `${baseData}_${params.uniqueSuffix}`
+      : baseData;
 
     // Generate hash using simple hash function
     return this.computeHash(hashData);
@@ -58,7 +60,10 @@ export class HashGenerationService {
         const count = hashCount.get(hash) || 0;
         if (count > 0) {
           // Re-generate hash with unique suffix to avoid collision
-          hash = this.generateTransactionHash({ ...tx, uniqueSuffix: `idx_${index}` });
+          hash = this.generateTransactionHash({
+            ...tx,
+            uniqueSuffix: `idx_${index}`,
+          });
         }
         hashCount.set(hash, count + 1);
 
