@@ -15,6 +15,7 @@ export class HashGenerationService {
     merchant: string; // Raw merchant name
     amount: number; // Absolute amount
     currency: string; // Currency code
+    uniqueSuffix?: string; // Optional unique suffix for collision resolution
   }): string {
     // Normalize merchant name consistently
     const normalizedMerchant = this.normalizeMerchant(params.merchant);
@@ -25,8 +26,9 @@ export class HashGenerationService {
     // Use absolute amount for consistency
     const absoluteAmount = Math.abs(params.amount);
 
-    // Build hash data string
-    const hashData = `${normalizedDate}_${normalizedMerchant}_${absoluteAmount}_${params.currency}`;
+    // Build hash data string with optional unique suffix
+    const baseData = `${normalizedDate}_${normalizedMerchant}_${absoluteAmount}_${params.currency}`;
+    const hashData = params.uniqueSuffix ? `${baseData}_${params.uniqueSuffix}` : baseData;
 
     // Generate hash using simple hash function
     return this.computeHash(hashData);
@@ -41,13 +43,25 @@ export class HashGenerationService {
       merchant: string;
       amount: number;
       currency: string;
+      uniqueSuffix?: string;
     }>,
   ): Result<Map<number, string>> {
     try {
       const hashes = new Map<number, string>();
+      const hashCount = new Map<string, number>();
 
       transactions.forEach((tx, index) => {
-        const hash = this.generateTransactionHash(tx);
+        // Generate base hash
+        let hash = this.generateTransactionHash(tx);
+
+        // Check for collisions and add index suffix if needed
+        const count = hashCount.get(hash) || 0;
+        if (count > 0) {
+          // Re-generate hash with unique suffix to avoid collision
+          hash = this.generateTransactionHash({ ...tx, uniqueSuffix: `idx_${index}` });
+        }
+        hashCount.set(hash, count + 1);
+
         hashes.set(index, hash);
       });
 

@@ -100,8 +100,9 @@
       return {
         ...tx,
         isDuplicate: duplicateInfo?.isDuplicate || tx.isDuplicate, // Keep local duplicates too
-        selected: !(duplicateInfo?.isDuplicate || tx.isDuplicate), // Don't select any duplicates
-        duplicateReason: duplicateInfo?.isDuplicate ? $t("import.duplicate_reasons.database") : tx.duplicateReason
+        selected: !(duplicateInfo?.isDuplicate || tx.isDuplicate), // Don't select any duplicates by default
+        duplicateReason: duplicateInfo?.isDuplicate ? $t("import.duplicate_reasons.database") : tx.duplicateReason,
+        isSuspectedDuplicate: duplicateInfo?.isDuplicate // Mark as suspected duplicate for UI
       };
     });
 
@@ -177,9 +178,10 @@
         transactions = await getCSVPreview(selectedFile);
       }
 
-      // Get only selected transactions that are NOT duplicates
-      const selectedTransactions = transactions.filter(tx => tx.selected && !tx.isDuplicate);
-      const duplicatesSkipped = transactions.filter(tx => tx.isDuplicate).length;
+      // Get selected transactions (including duplicates if user selected them)
+      const selectedTransactions = transactions.filter(tx => tx.selected);
+      const duplicatesSkipped = transactions.filter(tx => tx.isDuplicate && !tx.selected).length;
+      const duplicatesImported = transactions.filter(tx => tx.isDuplicate && tx.selected).length;
 
       if (selectedTransactions.length === 0) {
         throw new Error('No transactions selected for import');
@@ -188,8 +190,9 @@
       // Use new DDD endpoint to import selected transactions
       const result = await apiTransactions.importSelectedTransactions(selectedTransactions);
 
-      // Store duplicate count for success message
+      // Store duplicate counts for success message
       window.lastImportDuplicates = duplicatesSkipped;
+      window.lastImportDuplicatesForced = duplicatesImported;
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -212,12 +215,12 @@
     const visibleTransactions = showDuplicates
       ? transactions
       : transactions.filter((tx) => !tx.isDuplicate);
-    const allSelected = visibleTransactions
-      .filter((tx) => !tx.isDuplicate)
-      .every((tx) => tx.selected);
+    const allSelected = visibleTransactions.every((tx) => tx.selected);
 
     transactions = transactions.map((tx) => {
-      if (!tx.isDuplicate && (showDuplicates || !tx.isDuplicate)) {
+      // Toggle all visible transactions (including duplicates if shown)
+      const isVisible = showDuplicates || !tx.isDuplicate;
+      if (isVisible) {
         return { ...tx, selected: !allSelected };
       }
       return tx;
@@ -237,10 +240,9 @@
     goto("/");
   }
 
-  $: selectedCount = transactions.filter(
-    (tx) => tx.selected && !tx.isDuplicate,
-  ).length;
+  $: selectedCount = transactions.filter(tx => tx.selected).length;
   $: duplicateCount = transactions.filter((tx) => tx.isDuplicate).length;
+  $: selectedDuplicatesCount = transactions.filter((tx) => tx.isDuplicate && tx.selected).length;
   $: visibleTransactions = showDuplicates
     ? transactions
     : transactions.filter((tx) => !tx.isDuplicate);
@@ -489,7 +491,10 @@
                 {$t("import.preview.stats.duplicates")}
               </div>
               {#if duplicateCount > 0}
-                <div class="stat-hint">Ya existen en base de datos</div>
+                <div class="stat-hint">Posibles duplicados detectados</div>
+              {/if}
+              {#if selectedDuplicatesCount > 0}
+                <div class="stat-hint accent">{selectedDuplicatesCount} seleccionados para importar</div>
               {/if}
             </div>
             <div class="stat-card error">
@@ -588,7 +593,6 @@
                             class="checkbox-acapulco"
                             id="tx-{transaction.id}"
                             checked={transaction.selected}
-                            disabled={transaction.isDuplicate}
                             on:change={() => toggleTransaction(transaction.id)}
                           />
                           <label
@@ -643,11 +647,11 @@
                       </td>
                       <td class="col-status">
                         {#if transaction.isDuplicate}
-                          <div class="status-badge duplicate">
+                          <div class="status-badge {transaction.selected ? 'duplicate-selected' : 'duplicate'}">
                             <span class="status-dot"></span>
-                            <span class="status-text"
-                              >{$t("import.preview.status.duplicate")}</span
-                            >
+                            <span class="status-text">
+                              {transaction.selected ? 'Duplicado (se importará)' : $t("import.preview.status.duplicate")}
+                            </span>
                           </div>
                           {#if transaction.duplicateReason}
                             <div
@@ -728,6 +732,11 @@
               {#if window.lastImportDuplicates > 0}
                 <p class="complete-info">
                   ⚠️ {window.lastImportDuplicates} transacciones duplicadas fueron omitidas
+                </p>
+              {/if}
+              {#if window.lastImportDuplicatesForced > 0}
+                <p class="complete-info">
+                  ✅ {window.lastImportDuplicatesForced} posibles duplicados fueron importados por petición del usuario
                 </p>
               {/if}
             </div>
@@ -1260,6 +1269,11 @@
     letter-spacing: normal;
   }
 
+  .stat-hint.accent {
+    color: #8dc351;
+    font-weight: 500;
+  }
+
   .stat-card.warning.pulse {
     animation: pulse-warning 2s ease-in-out;
   }
@@ -1560,6 +1574,17 @@
 
   .status-badge.duplicate .status-dot {
     background: #fecd2c;
+  }
+
+  .status-badge.duplicate-selected {
+    background: rgba(141, 195, 81, 0.2);
+    color: #8dc351;
+    border: 1px solid rgba(141, 195, 81, 0.3);
+  }
+
+  .status-badge.duplicate-selected .status-dot {
+    background: #8dc351;
+    animation: pulse 2s infinite;
   }
 
   .status-badge.skipped {
