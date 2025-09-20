@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Plus, X, Calendar, DollarSign, Building, FileText } from 'lucide-svelte';
+  import { goto } from '$app/navigation';
   import type { Transaction, Category } from '$lib/types/transaction';
   import { t } from '$lib/stores/i18n';
 
@@ -110,6 +111,11 @@
   function toggleType() {
     type = type === 'expense' ? 'income' : 'expense';
   }
+
+  function navigateToCategories() {
+    closeModal();
+    goto('/categories');
+  }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -209,9 +215,9 @@
         </div>
 
         <!-- Category -->
-        {#if categories.length > 0}
-          <div class="field-group">
-            <label class="field-label" for="category">{$t('transactions.category')}</label>
+        <div class="field-group">
+          <label class="field-label" for="category">{$t('transactions.category')}</label>
+          {#if categories.length > 0}
             <div class="category-grid">
               {#each categories.filter(c => (type === 'income' && c.type === 'income') || (type === 'expense' && ['essential', 'discretionary', 'investment', 'debt_payment'].includes(c.type))) as category}
                 <button
@@ -226,8 +232,25 @@
                 </button>
               {/each}
             </div>
-          </div>
-        {/if}
+          {:else}
+            <div class="empty-categories">
+              <div class="empty-categories-content">
+                <span class="empty-categories-icon">🏷️</span>
+                <p class="empty-categories-text">
+                  No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar mejor tus gastos e ingresos.
+                </p>
+                <button
+                  type="button"
+                  class="create-categories-btn"
+                  on:click={navigateToCategories}
+                >
+                  <Plus size={16} />
+                  Crear categorías
+                </button>
+              </div>
+            </div>
+          {/if}
+        </div>
 
         <!-- Submit buttons -->
         <div class="form-actions">
@@ -469,6 +492,56 @@
     font-size: 0.75rem;
     font-weight: 500;
     text-align: center;
+  }
+
+  .empty-categories {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    text-align: center;
+    background: var(--gray-50);
+  }
+
+  .empty-categories-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .empty-categories-icon {
+    font-size: 2rem;
+    opacity: 0.7;
+  }
+
+  .empty-categories-text {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+    max-width: 280px;
+  }
+
+  .create-categories-btn {
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--acapulco);
+    border-radius: var(--radius-md);
+    background: var(--acapulco);
+    color: white;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .create-categories-btn:hover {
+    background: #6ba085;
+    border-color: #6ba085;
+    transform: translateY(-1px);
   }
 
   .form-actions {

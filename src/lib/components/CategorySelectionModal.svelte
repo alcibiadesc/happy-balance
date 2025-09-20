@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { X } from 'lucide-svelte';
+  import { X, Plus } from 'lucide-svelte';
   import { onMount, onDestroy } from 'svelte';
+  import { goto } from '$app/navigation';
   import type { Transaction, Category } from '$lib/types/transaction';
 
   // Props
@@ -89,6 +90,11 @@
     income: 'Ingresos'
   };
 
+  function navigateToCategories() {
+    closeModal();
+    goto('/categories');
+  }
+
   onDestroy(() => {
     restoreBodyScroll();
   });
@@ -127,7 +133,23 @@
 
       <!-- Category sections -->
       <div class="category-content">
-        {#if isIncomeTransaction}
+        {#if categories.length === 0}
+          <div class="empty-categories">
+            <div class="empty-categories-content">
+              <span class="empty-categories-icon">🏷️</span>
+              <p class="empty-categories-text">
+                No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar mejor tus gastos e ingresos.
+              </p>
+              <button
+                class="create-categories-btn"
+                on:click={navigateToCategories}
+              >
+                <Plus size={16} />
+                Crear categorías
+              </button>
+            </div>
+          </div>
+        {:else if isIncomeTransaction}
           {#if groupedCategories.income?.length > 0}
             <div class="category-group">
               <h3 class="group-title">{typeDisplayNames.income}</h3>
@@ -385,6 +407,57 @@
     color: #374151;
     text-align: center;
     line-height: 1.3;
+  }
+
+  .empty-categories {
+    padding: 2rem 1.5rem;
+    text-align: center;
+    background: #f8fafc;
+    border-radius: 12px;
+    margin: 0 8px;
+  }
+
+  .empty-categories-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .empty-categories-icon {
+    font-size: 2.5rem;
+    opacity: 0.7;
+  }
+
+  .empty-categories-text {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+    max-width: 300px;
+  }
+
+  .create-categories-btn {
+    padding: 12px 20px;
+    border: 2px solid #059669;
+    border-radius: 12px;
+    background: #059669;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .create-categories-btn:hover {
+    background: #047857;
+    border-color: #047857;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(5, 150, 105, 0.25);
   }
 
   /* Responsive design */
