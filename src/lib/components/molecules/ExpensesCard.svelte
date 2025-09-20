@@ -8,17 +8,19 @@
     discretionaryExpenses: number;
     debtPayments: number;
     trend: number;
+    loading?: boolean;
     formatCurrency: (amount: number) => string;
     formatTrend: (value: number) => string;
     getTrendColor: (value: number, type: string) => string;
   }
-  
+
   let {
     totalExpenses,
     essentialExpenses,
     discretionaryExpenses,
     debtPayments,
     trend,
+    loading = false,
     formatCurrency,
     formatTrend,
     getTrendColor
@@ -51,13 +53,21 @@
   </div>
   
   <div class="metric-body">
-    <div class="metric-value">{formatCurrency(totalExpenses)}</div>
-    <div 
-      class="metric-trend"
-      style="color: {getTrendColor(trend, 'expenses')}"
-    >
-      {formatTrend(trend)}
+    <div class="metric-value">
+      {#if loading}
+        <div class="metric-skeleton"></div>
+      {:else}
+        {formatCurrency(totalExpenses)}
+      {/if}
     </div>
+    {#if !loading}
+      <div
+        class="metric-trend"
+        style="color: {getTrendColor(trend, 'expenses')}"
+      >
+        {formatTrend(trend)}
+      </div>
+    {/if}
   </div>
   
   {#if expanded}
@@ -217,5 +227,18 @@
     background: var(--surface-muted);
     border-radius: 12px;
   }
-  
+
+  .metric-skeleton {
+    width: 80%;
+    height: 1.5rem;
+    background: linear-gradient(90deg, var(--surface-muted) 25%, var(--surface-elevated) 50%, var(--surface-muted) 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    animation: skeleton-loading 1.5s infinite;
+  }
+
+  @keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
 </style>

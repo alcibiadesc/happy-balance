@@ -17,9 +17,11 @@
   interface Props {
     data: MonthlyData[];
     height?: number;
+    period?: string;
+    loading?: boolean;
   }
-  
-  let { data, height = 300 }: Props = $props();
+
+  let { data, height = 300, period = 'month', loading = false }: Props = $props();
   
   let canvas: HTMLCanvasElement;
   let chart: Chart | null = null;
@@ -45,14 +47,100 @@
   }
   
 
+  function getBarConfig(period: string) {
+    const baseBarConfig = {
+      borderRadius: 4,
+      borderSkipped: false,
+      borderWidth: 1,
+    };
+
+    // Adjust bar spacing and size based on period
+    switch (period) {
+      case 'week':
+        return {
+          ...baseBarConfig,
+          barThickness: 20,
+          maxBarThickness: 25,
+        };
+      case 'month':
+        return {
+          ...baseBarConfig,
+          barThickness: 18,
+          maxBarThickness: 22,
+        };
+      case 'quarter':
+        return {
+          ...baseBarConfig,
+          barThickness: 25,
+          maxBarThickness: 30,
+        };
+      case 'year':
+        return {
+          ...baseBarConfig,
+          barThickness: 30,
+          maxBarThickness: 35,
+        };
+      default:
+        return baseBarConfig;
+    }
+  }
+
+  function getXAxisConfig(period: string) {
+    const baseConfig = {
+      grid: {
+        display: false,
+        drawBorder: false
+      },
+      ticks: {
+        font: { size: 11 },
+        color: getComputedStyle(document.documentElement)
+          .getPropertyValue('--text-muted').trim()
+      }
+    };
+
+    switch (period) {
+      case 'week':
+        return {
+          ...baseConfig,
+          ticks: {
+            ...baseConfig.ticks,
+            maxTicksLimit: 7,
+            callback: function(value: any) {
+              const label = this.getLabelForValue(value);
+              return label.length > 8 ? label.substring(0, 8) + '...' : label;
+            }
+          }
+        };
+      case 'month':
+        return {
+          ...baseConfig,
+          ticks: {
+            ...baseConfig.ticks,
+            maxTicksLimit: 6
+          }
+        };
+      case 'quarter':
+      case 'year':
+        return {
+          ...baseConfig,
+          ticks: {
+            ...baseConfig.ticks,
+            maxTicksLimit: 4
+          }
+        };
+      default:
+        return baseConfig;
+    }
+  }
+
   function initChart() {
     if (!canvas) return;
-    
+
     // Destroy existing chart if any
     if (chart) {
       chart.destroy();
     }
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
@@ -102,17 +190,7 @@
         }
       },
       scales: {
-        x: {
-          grid: {
-            display: false,
-            drawBorder: false
-          },
-          ticks: {
-            font: { size: 11 },
-            color: getComputedStyle(document.documentElement)
-              .getPropertyValue('--text-muted').trim()
-          }
-        },
+        x: getXAxisConfig(period),
         y: {
           grid: {
             display: true,
@@ -135,7 +213,8 @@
     // Single Chart: Expense Breakdown + Investments (Grouped bars - not stacked)
     const labels = getLabels($currentLanguage);
     const colors = getChartThemeColors();
-    
+    const barConfig = getBarConfig(period);
+
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -146,36 +225,28 @@
             data: data.map(d => d.essentialExpenses),
             backgroundColor: 'rgba(245, 121, 108, 0.8)',
             borderColor: '#f5796c',
-            borderWidth: 1,
-            borderRadius: 4,
-            borderSkipped: false,
+            ...barConfig,
           },
           {
             label: labels.discretionary_expenses,
             data: data.map(d => d.discretionaryExpenses),
             backgroundColor: 'rgba(254, 205, 44, 0.8)',
             borderColor: '#fecd2c',
-            borderWidth: 1,
-            borderRadius: 4,
-            borderSkipped: false,
+            ...barConfig,
           },
           {
             label: labels.debt_payments,
             data: data.map(d => d.debtPayments),
             backgroundColor: 'rgba(168, 85, 247, 0.8)',
             borderColor: '#a855f7',
-            borderWidth: 1,
-            borderRadius: 4,
-            borderSkipped: false,
+            ...barConfig,
           },
           {
             label: labels.investments,
             data: data.map(d => d.investments),
             backgroundColor: colors.investments.background,
             borderColor: colors.investments.border,
-            borderWidth: 1,
-            borderRadius: 4,
-            borderSkipped: false,
+            ...barConfig,
           }
         ]
       },
@@ -183,7 +254,7 @@
     });
   }
   
-  // Update chart when data changes
+  // Update chart when data or period changes
   $effect(() => {
     if (data && data.length > 0) {
       if (!chart && canvas) {
@@ -196,7 +267,14 @@
         chart.data.datasets[1].data = data.map(d => d.discretionaryExpenses);
         chart.data.datasets[2].data = data.map(d => d.debtPayments);
         chart.data.datasets[3].data = data.map(d => d.investments);
-        chart.update();
+
+        // Update configurations based on period
+        const barConfig = getBarConfig(period);
+        chart.data.datasets.forEach(dataset => {
+          Object.assign(dataset, barConfig);
+        });
+        chart.options.scales.x = getXAxisConfig(period);
+        chart.update('none');
       }
     }
   });
@@ -247,8 +325,14 @@
 <div class="chart-card">
   <h3 class="chart-title">{$t('dashboard.charts.detailed_breakdown')}</h3>
   <p class="chart-subtitle">{$t('dashboard.charts.detailed_breakdown_subtitle')}</p>
-  <div class="chart-wrapper" style="height: {height}px">
-    <canvas bind:this={canvas}></canvas>
+  <div class="chart-wrapper" style="height: {height}px" class:loading>
+    {#if loading}
+      <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span class="loading-text">Updating chart...</span>
+      </div>
+    {/if}
+    <canvas bind:this={canvas} class:chart-loading={loading}></canvas>
   </div>
 </div>
 
@@ -280,14 +364,61 @@
   .chart-wrapper {
     position: relative;
     width: 100%;
+    overflow: hidden;
+    border-radius: 8px;
   }
-  
+
+  .chart-wrapper.loading canvas {
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+  }
+
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    backdrop-filter: blur(2px);
+  }
+
+  .loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 0.5rem;
+  }
+
+  .loading-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
   canvas {
     width: 100% !important;
     height: 100% !important;
+    transition: opacity 0.3s ease;
   }
-  
-  
+
+  .chart-loading {
+    opacity: 0.6;
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .chart-card {

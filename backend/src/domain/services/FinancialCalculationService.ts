@@ -1,5 +1,6 @@
 import { Transaction } from "../entities/Transaction";
 import { Money } from "../value-objects/Money";
+import { SignedMoney } from "../value-objects/SignedMoney";
 import { TransactionDate } from "../value-objects/TransactionDate";
 import { TransactionType } from "../entities/TransactionType";
 import { Result } from "../shared/Result";
@@ -9,7 +10,7 @@ export interface FinancialSummary {
   totalExpenses: Money;
   totalInvestments: Money;
   totalDebtPayments: Money;
-  balance: Money;
+  balance: SignedMoney;
   savingsRate: number; // Percentage (0-100)
   period: DatePeriod;
 }
@@ -33,7 +34,7 @@ export interface TrendData {
   expenses: Money;
   investments: Money;
   debtPayments: Money;
-  balance: Money;
+  balance: SignedMoney;
 }
 
 /**
@@ -108,7 +109,10 @@ export class FinancialCalculationService {
     }
 
     // Calculate balance (income - expenses - investments - debt payments)
-    const balanceStep1 = totalIncome.subtract(totalExpenses);
+    // Use SignedMoney to allow negative balances
+    console.log('About to calculate balance with SignedMoney...');
+    const signedIncome = SignedMoney.fromMoney(totalIncome);
+    const balanceStep1 = signedIncome.subtract(totalExpenses);
     if (balanceStep1.isFailure()) return Result.fail(balanceStep1.getError());
 
     const balanceStep2 = balanceStep1.getValue().subtract(totalInvestments);

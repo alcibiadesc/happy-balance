@@ -23,6 +23,7 @@
   ]);
 
   let selectedPeriod = $state('month');
+  let periodOffset = $state(0);
   let customStartDate = $state('');
   let customEndDate = $state('');
   let showDateRangePicker = $state(false);
@@ -34,23 +35,53 @@
     categories: [] as any[]
   });
   
-  // Get current stats from store
-  let currentStats = $derived($apiTransactionStats);
-  
-  // Calculate trends (simplified for now - can be enhanced later)
-  let trends = $derived({
-    income: 7.1, // Mock data - will be calculated from historical data
-    expenses: 9.1,
-    investments: 25.0
+  // Calculate filtered metrics from dashboard data
+  let filteredMetrics = $derived(() => {
+    if (!dashboardData?.summary) {
+      return {
+        income: 0,
+        expenses: 0,
+        investments: 0,
+        balance: 0,
+        spendingRate: 0,
+        savingsRate: 0
+      };
+    }
+
+    console.log('Processing filteredMetrics with dashboardData.summary:', dashboardData.summary);
+
+    const income = Math.abs(dashboardData.summary.totalIncome?._amount || 0);
+    const expenses = Math.abs(dashboardData.summary.totalExpenses?._amount || 0) + Math.abs(dashboardData.summary.totalDebtPayments?._amount || 0);
+    const investments = Math.abs(dashboardData.summary.totalInvestments?._amount || 0);
+    const balance = dashboardData.summary.balance?._amount || 0;
+    const spendingRate = dashboardData.spendingRate || 0;
+    const savingsRate = spendingRate ? (100 - spendingRate) : 0;
+
+    console.log('Calculated metrics:', { income, expenses, investments, balance, spendingRate, savingsRate });
+
+    return {
+      income,
+      expenses,
+      investments,
+      balance,
+      spendingRate,
+      savingsRate
+    };
+  });
+
+  // Calculate trends from historical data
+  let trends = $derived(realData.monthlyTrend.length >= 2 ? {
+    income: calculateTrendPercentage(realData.monthlyTrend, 'income'),
+    expenses: calculateTrendPercentage(realData.monthlyTrend, 'expenses'),
+    investments: calculateTrendPercentage(realData.monthlyTrend, 'balance')
+  } : {
+    income: 0,
+    expenses: 0,
+    investments: 0
   });
   
-  // Calculate savings rate
-  let savingsRate = $derived(
-    currentStats.income > 0 ? ((currentStats.balance) / currentStats.income * 100) : 0
-  );
-  
   // Load data based on period from API
-  async function loadData(period: string, startDate?: string, endDate?: string) {
+  async function loadData(period: string, offset: number = 0, startDate?: string, endDate?: string) {
     loading = true;
     try {
       let url = `${API_BASE}/transactions/dashboard?currency=${$currentCurrency}`;
@@ -58,14 +89,17 @@
       if (period === 'custom' && startDate && endDate) {
         url += `&startDate=${startDate}&endDate=${endDate}`;
       } else if (period !== 'custom') {
-        url += `&period=${period}`;
+        url += `&period=${period}&periodOffset=${offset}`;
       }
 
+      console.log('Fetching dashboard data from:', url);
       const response = await fetch(url);
       if (response.ok) {
         const result = await response.json();
+        console.log('Dashboard API response:', result);
         if (result.success && result.data) {
           dashboardData = result.data;
+          console.log('Dashboard data set:', dashboardData);
 
           // Transform trends data for charts
 
@@ -162,60 +196,31 @@
     realData.categories = [];
   }
 
-  // Calculate category breakdown from actual data
-  function calculateCategoryBreakdown() {
-    const transactions = $apiTransactions;
-    const categories = $apiCategories;
-
-    // Group transactions by category
-    const categoryTotals = new Map();
-    let totalAmount = 0;
-
-    // Initialize all categories with 0
-    categories.forEach(cat => {
-      categoryTotals.set(cat.id, {
-        name: cat.name,
-        icon: cat.icon,
-        amount: 0,
-        type: cat.type,
-        color: cat.color
-      });
-    });
-
-    // Calculate totals per category
-    transactions.forEach(transaction => {
-      if (transaction.categoryId && categoryTotals.has(transaction.categoryId)) {
-        const amount = Math.abs(transaction.amount);
-        categoryTotals.get(transaction.categoryId).amount += amount;
-        totalAmount += amount;
-      }
-    });
-
-    // Convert to array and calculate percentages
-    const categoryBreakdown = Array.from(categoryTotals.values())
-      .filter(cat => cat.amount > 0) // Only show categories with transactions
-      .map(cat => ({
-        name: cat.name,
-        icon: cat.icon,
-        amount: cat.amount,
-        percentage: totalAmount > 0 ? (cat.amount / totalAmount * 100).toFixed(1) : 0,
-        type: cat.type,
-        color: cat.color
-      }))
-      .sort((a, b) => b.amount - a.amount); // Sort by amount descending
-
-    // Return real data only, no mock data
-    return categoryBreakdown;
-  }
   
   async function handlePeriodChange(period: string) {
     if (period === 'custom') {
       showDateRangePicker = true;
     } else {
       selectedPeriod = period;
+      periodOffset = 0;
       customStartDate = '';
       customEndDate = '';
-      await loadData(period);
+      loading = true;
+      try {
+        await loadData(period, 0);
+      } finally {
+        loading = false;
+      }
+    }
+  }
+
+  async function handlePeriodNavigation(offset: number) {
+    periodOffset = offset;
+    loading = true;
+    try {
+      await loadData(selectedPeriod, offset);
+    } finally {
+      loading = false;
     }
   }
 
@@ -224,9 +229,25 @@
     customStartDate = startDate;
     customEndDate = endDate;
     selectedPeriod = 'custom';
-    await loadData('custom', startDate, endDate);
+    loading = true;
+    try {
+      await loadData('custom', startDate, endDate);
+    } finally {
+      loading = false;
+    }
   }
   
+  // Calculate trend percentage between latest and previous period
+  function calculateTrendPercentage(data: any[], field: string): number {
+    if (data.length < 2) return 0;
+
+    const current = data[data.length - 1][field] || 0;
+    const previous = data[data.length - 2][field] || 0;
+
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  }
+
   // Use the global currency formatter
   function formatCurrencyAmount(amount: number): string {
     return formatCurrency(amount, $currentCurrency);
@@ -247,10 +268,8 @@
   }
   
   onMount(async () => {
-    // Load transactions and categories from API
-    await apiTransactions.load();
-    await apiCategories.load();
-    await loadData(selectedPeriod);
+    // Load dashboard data with selected filters
+    await loadData(selectedPeriod, periodOffset);
   });
 
   // Format custom date range for display
@@ -261,6 +280,81 @@
       return `${start} - ${end}`;
     }
     return $t('dashboard.periods.custom');
+  }
+
+  // Generate navigation options based on selected period
+  function getPeriodNavigationOptions() {
+    const now = new Date();
+    const options = [];
+
+    switch (selectedPeriod) {
+      case 'week':
+        // Generate last 12 weeks
+        for (let i = 0; i < 12; i++) {
+          const weekStart = new Date(now);
+          weekStart.setDate(now.getDate() - now.getDay() - (i * 7));
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+
+          options.push({
+            offset: i,
+            label: i === 0 ? 'Esta semana' : `S${i + 1}`,
+            fullLabel: `${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`
+          });
+        }
+        break;
+
+      case 'month':
+        // Generate last 12 months
+        for (let i = 0; i < 12; i++) {
+          const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const monthName = monthDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+          options.push({
+            offset: i,
+            label: i === 0 ? 'Este mes' : monthName,
+            fullLabel: monthName
+          });
+        }
+        break;
+
+      case 'quarter':
+        // Generate last 8 quarters
+        for (let i = 0; i < 8; i++) {
+          const quarterDate = new Date(now.getFullYear(), now.getMonth() - (i * 3), 1);
+          const quarter = Math.floor(quarterDate.getMonth() / 3) + 1;
+          const year = quarterDate.getFullYear();
+
+          options.push({
+            offset: i,
+            label: i === 0 ? 'Este trimestre' : `Q${quarter} ${year}`,
+            fullLabel: `Q${quarter} ${year}`
+          });
+        }
+        break;
+
+      case 'year':
+        // Generate last 5 years
+        for (let i = 0; i < 5; i++) {
+          const year = now.getFullYear() - i;
+
+          options.push({
+            offset: i,
+            label: i === 0 ? 'Este año' : year.toString(),
+            fullLabel: year.toString()
+          });
+        }
+        break;
+    }
+
+    return options;
+  }
+
+  // Get current period label
+  function getCurrentPeriodLabel() {
+    const options = getPeriodNavigationOptions();
+    const current = options.find(opt => opt.offset === periodOffset);
+    return current?.fullLabel || options[0]?.fullLabel || '';
   }
 </script>
 
@@ -280,9 +374,13 @@
           <button
             class="period-button"
             class:active={selectedPeriod === period.value}
+            class:loading={loading && selectedPeriod === period.value}
+            disabled={loading}
             onclick={() => handlePeriodChange(period.value)}
           >
-            {#if period.icon}
+            {#if loading && selectedPeriod === period.value}
+              <div class="button-spinner"></div>
+            {:else if period.icon}
               <svelte:component this={period.icon} size={16} />
             {/if}
             <span>
@@ -291,13 +389,51 @@
           </button>
         {/each}
       </div>
+
+      <!-- Period Navigation -->
+      {#if selectedPeriod !== 'custom'}
+        <div class="period-navigation">
+          <div class="period-selector-dropdown">
+            <select
+              bind:value={periodOffset}
+              onchange={() => handlePeriodNavigation(periodOffset)}
+              disabled={loading}
+              class="period-select"
+            >
+              {#each getPeriodNavigationOptions() as option}
+                <option value={option.offset}>{option.label}</option>
+              {/each}
+            </select>
+          </div>
+
+          <div class="period-nav-buttons">
+            <button
+              class="nav-button"
+              onclick={() => handlePeriodNavigation(periodOffset + 1)}
+              disabled={loading}
+              title="Período anterior"
+            >
+              ←
+            </button>
+            <span class="current-period-label">{getCurrentPeriodLabel()}</span>
+            <button
+              class="nav-button"
+              onclick={() => handlePeriodNavigation(Math.max(0, periodOffset - 1))}
+              disabled={loading || periodOffset === 0}
+              title="Período siguiente"
+            >
+              →
+            </button>
+          </div>
+        </div>
+      {/if}
     </div>
   </header>
   
     <!-- Simple Spending Summary -->
-    <SpendingIndicator 
-      income={currentStats.income} 
-      expenses={currentStats.expenses} 
+    <SpendingIndicator
+      income={filteredMetrics().income}
+      expenses={filteredMetrics().expenses}
     />
     
     <!-- Main Metrics Grid -->
@@ -312,27 +448,32 @@
             <span class="metric-label">{$t('dashboard.metrics.income')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(Math.abs(dashboardData?.summary?.totalIncome?._amount || currentStats.income))}</div>
-            <div 
-              class="metric-trend"
-              style="color: {getTrendColor(trends.income, 'income')}"
-            >
-              {formatTrend(trends.income)}
+            <div class="metric-value">
+              {#if loading}
+                <div class="metric-skeleton"></div>
+              {:else}
+                {formatCurrencyAmount(filteredMetrics().income)}
+              {/if}
             </div>
+            {#if !loading}
+              <div
+                class="metric-trend"
+                style="color: {getTrendColor(trends.income, 'income')}"
+              >
+                {formatTrend(trends.income)}
+              </div>
+            {/if}
           </div>
         </article>
         
         <!-- Expenses Card with Breakdown -->
         <ExpensesCard
-          totalExpenses={Math.abs(
-            (dashboardData?.summary?.totalExpenses?._amount || 0) +
-            (dashboardData?.summary?.totalDebtPayments?._amount || 0) ||
-            currentStats.expenses
-          )}
-          essentialExpenses={Math.abs(dashboardData?.expenseDistribution?.essential?._amount || currentStats.expenses * 0.5)}
-          discretionaryExpenses={Math.abs(dashboardData?.expenseDistribution?.discretionary?._amount || currentStats.expenses * 0.33)}
-          debtPayments={Math.abs(dashboardData?.expenseDistribution?.debtPayments?._amount || currentStats.expenses * 0.17)}
+          totalExpenses={filteredMetrics().expenses}
+          essentialExpenses={Math.abs(dashboardData?.expenseDistribution?.essential?._amount || filteredMetrics().expenses * 0.5)}
+          discretionaryExpenses={Math.abs(dashboardData?.expenseDistribution?.discretionary?._amount || filteredMetrics().expenses * 0.33)}
+          debtPayments={Math.abs(dashboardData?.expenseDistribution?.debtPayments?._amount || filteredMetrics().expenses * 0.17)}
           trend={trends.expenses}
+          {loading}
           formatCurrency={formatCurrencyAmount}
           {formatTrend}
           {getTrendColor}
@@ -347,13 +488,21 @@
             <span class="metric-label">{$t('dashboard.metrics.investments')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(Math.abs(dashboardData?.summary?.totalInvestments?._amount || currentStats.investments || 0))}</div>
-            <div 
-              class="metric-trend"
-              style="color: {getTrendColor(trends.investments, 'investments')}"
-            >
-              {formatTrend(trends.investments)}
+            <div class="metric-value">
+              {#if loading}
+                <div class="metric-skeleton"></div>
+              {:else}
+                {formatCurrencyAmount(filteredMetrics().investments)}
+              {/if}
             </div>
+            {#if !loading}
+              <div
+                class="metric-trend"
+                style="color: {getTrendColor(trends.investments, 'investments')}"
+              >
+                {formatTrend(trends.investments)}
+              </div>
+            {/if}
           </div>
         </article>
         
@@ -366,10 +515,18 @@
             <span class="metric-label">{$t('dashboard.metrics.balance')}</span>
           </div>
           <div class="metric-body">
-            <div class="metric-value">{formatCurrencyAmount(dashboardData?.summary?.balance?._amount || currentStats.balance)}</div>
-            <div class="metric-subtext">
-              {@html $t('dashboard.metrics.saved_percentage', { percentage: (dashboardData?.spendingRate ? (100 - dashboardData.spendingRate).toFixed(1) : savingsRate.toFixed(1)) })}
+            <div class="metric-value">
+              {#if loading}
+                <div class="metric-skeleton"></div>
+              {:else}
+                {formatCurrencyAmount(filteredMetrics().balance)}
+              {/if}
             </div>
+            {#if !loading}
+              <div class="metric-subtext">
+                {@html $t('dashboard.metrics.saved_percentage', { percentage: filteredMetrics().savingsRate.toFixed(1) })}
+              </div>
+            {/if}
           </div>
         </article>
       </div>
@@ -410,6 +567,8 @@
         <FinancialChart
           data={realData.monthlyTrend}
           height={280}
+          period={selectedPeriod}
+          loading={loading}
         />
       </div>
     </section>
@@ -418,6 +577,8 @@
     <FinancialBarCharts
       data={realData.monthlyBarData}
       height={250}
+      period={selectedPeriod}
+      loading={loading}
     />
 </main>
 
@@ -501,7 +662,106 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
+  .period-button.loading {
+    pointer-events: none;
+  }
+
+  .button-spinner {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid currentColor;
+    border-top: 1.5px solid transparent;
+    border-radius: 50%;
+    animation: button-spin 1s linear infinite;
+  }
+
+  @keyframes button-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Period Navigation */
+  .period-navigation {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: var(--surface-muted);
+    border-radius: 8px;
+    border: 1px solid var(--border-color, transparent);
+  }
+
+  .period-selector-dropdown {
+    flex: 1;
+    max-width: 200px;
+  }
+
+  .period-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .period-select:hover:not(:disabled) {
+    border-color: var(--primary);
+  }
+
+  .period-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .period-nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .nav-button {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-button:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .nav-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .current-period-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 120px;
+    text-align: center;
+  }
+
   /* Metrics Section */
   .metrics-section {
     margin-bottom: 2rem;
@@ -588,6 +848,20 @@
   .metric-subtext {
     font-size: 0.875rem;
     color: var(--text-secondary);
+  }
+
+  .metric-skeleton {
+    width: 80%;
+    height: 1.5rem;
+    background: linear-gradient(90deg, var(--surface-muted) 25%, var(--surface-elevated) 50%, var(--surface-muted) 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    animation: skeleton-loading 1.5s infinite;
+  }
+
+  @keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
   
   /* Chart Section */
@@ -730,11 +1004,26 @@
       padding: 0.5rem 0.75rem;
       font-size: 0.8125rem;
     }
-    
+
+    .period-navigation {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .period-selector-dropdown {
+      max-width: none;
+      width: 100%;
+    }
+
+    .current-period-label {
+      min-width: auto;
+      font-size: 0.8125rem;
+    }
+
     .metrics-grid {
       grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .categories-grid {
       grid-template-columns: 1fr;
     }

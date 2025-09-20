@@ -64,6 +64,7 @@ const DashboardQuerySchema = z.object({
     .optional(),
   currency: z.string().min(3).max(3).optional().default("EUR"),
   includeInvestments: z.coerce.boolean().optional().default(true),
+  periodOffset: z.coerce.number().min(0).optional().default(0),
 });
 
 const SmartCategorizeSchema = z.object({
@@ -404,6 +405,7 @@ export class TransactionController {
           req.query.includeInvestments === "false" ? false : true,
         startDate: req.query.startDate as string | undefined,
         endDate: req.query.endDate as string | undefined,
+        periodOffset: req.query.periodOffset ? parseInt(req.query.periodOffset as string, 10) : 0,
       };
 
       const validationResult = DashboardQuerySchema.safeParse(queryData);
@@ -414,7 +416,7 @@ export class TransactionController {
         });
       }
 
-      const { period, startDate, endDate, currency, includeInvestments } =
+      const { period, startDate, endDate, currency, includeInvestments, periodOffset } =
         validationResult.data;
 
       const query = new DashboardQuery(
@@ -423,18 +425,27 @@ export class TransactionController {
         startDate,
         endDate,
         includeInvestments,
+        periodOffset,
       );
 
+      console.log('Executing getDashboardDataUseCase with query:', query);
       const result = await this.getDashboardDataUseCase.execute(query);
+      console.log('getDashboardDataUseCase result:', result);
+
       if (result.isFailure()) {
+        console.error('Dashboard data failed:', result.getError());
         return res.status(500).json({ error: result.getError() });
       }
 
+      const data = result.getValue();
+      console.log('Dashboard data success:', JSON.stringify(data, null, 2));
+
       res.json({
         success: true,
-        data: result.getValue(),
+        data: data,
       });
     } catch (error) {
+      console.error('Dashboard controller error:', error);
       res.status(500).json({
         error: "Internal server error",
         message: error instanceof Error ? error.message : "Unknown error",
