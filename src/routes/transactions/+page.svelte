@@ -570,8 +570,9 @@
     if (browser) {
       try {
         await apiTransactions.load();
+        await apiCategories.load();
       } catch (error) {
-        console.warn('Failed to load transactions on mount:', error);
+        console.warn('Failed to load transactions or categories on mount:', error);
         // Continue without failing the page
       }
     }
