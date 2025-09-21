@@ -391,8 +391,8 @@
 <div class="categories-page">
   <header class="page-header">
     <div class="header-content">
-      <h1 class="page-title">{$t('pages.categories.title')}</h1>
-      <p class="page-subtitle">{$t('pages.categories.subtitle')}</p>
+      <h1 class="page-title">Configuración de Categorías</h1>
+      <p class="page-subtitle">Gestiona tus categorías y presupuestos anuales</p>
     </div>
   </header>
 
@@ -424,7 +424,7 @@
                 <button
                   class="icon-display"
                   style="background-color: {newCategory.color}20"
-                  aria-label={$t('accessibility.select_icon_for_new_category')}
+                  aria-label="Seleccionar icono para nueva categoría"
                   aria-expanded={showIconPickerNew}
                   aria-haspopup="listbox"
                   onclick={(e) => {
@@ -443,13 +443,13 @@
                 <input
                   type="text"
                   class="category-name-input"
-                  placeholder={$t('pages.categories.name_placeholder')}
+                  placeholder="Nombre de la categoría"
                   bind:value={newCategory.name}
                   onkeydown={(e) => e.key === 'Enter' && saveNewCategory()}
                 />
 
                 <div class="budget-section">
-                  <label class="budget-label">{$t('pages.categories.annual_budget')}</label>
+                  <label class="budget-label">Presupuesto anual</label>
                   <div class="budget-input-group">
                     <span class="currency-symbol">{getCurrencySymbol()}</span>
                     <input
@@ -458,7 +458,7 @@
                       placeholder="0"
                       bind:value={newCategory.annualBudget}
                     />
-                    <span class="budget-period">/ {$t('dashboard.periods.year')}</span>
+                    <span class="budget-period">/ año</span>
                   </div>
                 </div>
 
@@ -492,7 +492,7 @@
                   <button
                     class="icon-display"
                     style="background-color: {editForm.color}20"
-                    aria-label={$t('accessibility.select_icon_for_category', { name: category.name })}
+                    aria-label="Seleccionar icono para {category.name}"
                     aria-expanded={showIconPickerEdit === category.id}
                     aria-haspopup="listbox"
                     onclick={(e) => {
@@ -516,7 +516,7 @@
                   />
 
                   <div class="budget-section">
-                    <label class="budget-label">{$t('pages.categories.annual_budget')}</label>
+                    <label class="budget-label">Presupuesto anual</label>
                     <div class="budget-input-group">
                       <span class="currency-symbol">{getCurrencySymbol()}</span>
                       <input
@@ -525,7 +525,7 @@
                         placeholder="0"
                         bind:value={editForm.annualBudget}
                       />
-                      <span class="budget-period">/ {$t('dashboard.periods.year')}</span>
+                      <span class="budget-period">/ año</span>
                     </div>
                   </div>
 
@@ -563,11 +563,11 @@
                   <h3 class="category-name">{category.name}</h3>
                   {#if category.annualBudget}
                     <span class="category-budget">
-                      {formatCurrency(category.annualBudget)} / {$t('dashboard.periods.year')}
+                      {formatCurrency(category.annualBudget)} / año
                     </span>
                   {:else}
                     <span class="category-budget no-budget">
-                      {$t('pages.categories.no_budget')}
+                      Sin presupuesto
                     </span>
                   {/if}
                 </div>
@@ -612,15 +612,15 @@
     "
     role="dialog"
     aria-modal="true"
-    aria-label={$t('accessibility.icon_picker')}
+    aria-label="Selector de iconos"
   >
     <!-- Picker header for better UX -->
     <div class="emoji-picker-header">
-      <span class="emoji-picker-title">{$t('pages.categories.select_icon')}</span>
+      <span class="emoji-picker-title">Seleccionar icono</span>
       <button
         class="emoji-picker-close"
         onclick={closeEmojiPicker}
-        aria-label={$t('accessibility.close_picker')}
+        aria-label="Cerrar selector"
       >
         <X size={14} />
       </button>
@@ -631,7 +631,7 @@
       class="emoji-picker-content"
       style="max-height: {pickerPosition.maxHeight};"
       role="listbox"
-      aria-label={$t('accessibility.available_icons')}
+      aria-label="Lista de iconos disponibles"
     >
       {#each availableIcons as icon}
         <button
@@ -639,7 +639,7 @@
           class:selected={showIconPickerNew ? newCategory?.icon === icon : editForm.icon === icon}
           role="option"
           aria-selected={showIconPickerNew ? newCategory?.icon === icon : editForm.icon === icon}
-          aria-label={$t('accessibility.icon_option', { icon })}
+          aria-label="Icono {icon}"
           onclick={() => {
             if (showIconPickerNew && newCategory) {
               newCategory.icon = icon;
@@ -662,7 +662,7 @@
   <div class="modal-backdrop" onclick={() => showDeleteModal = false}>
     <div class="modal-container" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <h3 class="modal-title">{$t('pages.categories.delete_modal_title')}</h3>
+        <h3 class="modal-title">Eliminar categoría</h3>
         <button class="close-button" onclick={() => showDeleteModal = false}>
           <X size={20} />
         </button>
@@ -677,10 +677,10 @@
           <div class="recategorize-section">
             <div class="transaction-count">
               <AlertCircle size={16} />
-              <span>{$t('pages.categories.transaction_count', { count: transactionsWithCategory })}</span>
+              <span>Hay {transactionsWithCategory} transacción{transactionsWithCategory !== 1 ? 'es' : ''} con esta categoría</span>
             </div>
 
-            <p class="recategorize-label">{$t('pages.categories.has_transactions_question')}</p>
+            <p class="recategorize-label">¿Qué deseas hacer con ellas?</p>
 
             <div class="recategorize-options">
               <label class="recategorize-option">
@@ -690,7 +690,7 @@
                   value="remove"
                   bind:group={recategorizeTarget}
                 />
-                <span>{$t('pages.categories.leave_uncategorized')}</span>
+                <span>Dejar sin categoría</span>
               </label>
 
               {#if alternativeCategories().length > 0}
@@ -712,16 +712,16 @@
             </div>
           </div>
         {:else}
-          <p class="no-transactions">{$t('pages.categories.no_transactions_message')}</p>
+          <p class="no-transactions">Esta categoría no tiene transacciones asociadas.</p>
         {/if}
       </div>
 
       <div class="modal-footer">
         <button class="cancel-button" onclick={() => showDeleteModal = false}>
-          {$t('common.cancel')}
+          Cancelar
         </button>
         <button class="delete-button" onclick={confirmDelete}>
-          {$t('common.delete')}
+          Eliminar
         </button>
       </div>
     </div>

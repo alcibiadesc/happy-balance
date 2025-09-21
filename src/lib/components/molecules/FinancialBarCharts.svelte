@@ -26,14 +26,24 @@
   let canvas: HTMLCanvasElement;
   let chart: Chart | null = null;
   
-  // Helper to get translations using i18n
-  function getLabels() {
-    return {
-      essential_expenses: $t('dashboard.metrics.essential_expenses'),
-      discretionary_expenses: $t('dashboard.metrics.discretionary_expenses'),
-      debt_payments: $t('dashboard.metrics.debt_payments'),
-      investments: $t('dashboard.metrics.investments')
+  // Helper to get translations directly from language
+  function getLabels(lang: string = $currentLanguage) {
+    const translations = {
+      en: {
+        essential_expenses: 'Essential Expenses',
+        discretionary_expenses: 'Discretionary Expenses',
+        debt_payments: 'Debt Payments',
+        investments: 'Investments'
+      },
+      es: {
+        essential_expenses: 'Gastos Esenciales',
+        discretionary_expenses: 'Gastos Discrecionales',
+        debt_payments: 'Pago de Deudas',
+        investments: 'Inversiones'
+      }
     };
+    
+    return translations[lang as keyof typeof translations] || translations.en;
   }
   
 

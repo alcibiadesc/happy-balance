@@ -18,10 +18,9 @@
     symbol: curr.symbol
   }));
   
-  // Languages - make reactive to handle i18n properly
-  $: languages = [
+  const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
-    { code: 'es', name: $t('settings.languages.spanish'), flag: '🇪🇸' }
+    { code: 'es', name: 'Español', flag: '🇪🇸' }
   ];
 
   // Theme state
@@ -487,7 +486,7 @@
         <div class="card-icon localization">
           <Globe size={20} strokeWidth={2} />
         </div>
-        <h2 class="card-title">{$t('pages.settings.localization')}</h2>
+        <h2 class="card-title">Localization</h2>
       </div>
       <div class="card-content">
         <div class="setting-item">
@@ -563,10 +562,10 @@
             />
             {#if importing}
               <div class="import-spinner"></div>
-              {$t('settings.importing')}
+              Importing...
             {:else}
               <Upload size={16} strokeWidth={2} />
-              {$t('settings.import_data')}
+              Import Data
             {/if}
           </label>
           
@@ -594,10 +593,10 @@
 <!-- Import Confirmation Modal -->
 <ConfirmModal
   bind:isOpen={showImportModal}
-  title={$t('settings.import_data')}
-  message={$t('pages.settings.import_confirmation', { count: pendingImportData?.transactions?.length || 0, date: pendingImportData?.settings?.exportDate ? new Date(pendingImportData.settings.exportDate).toLocaleDateString() : 'Unknown date' })}
-  confirmText={$t('pages.settings.import_button')}
-  cancelText={$t('pages.settings.cancel_button')}
+  title="Import Data"
+  message="Are you sure you want to import {pendingImportData?.transactions?.length || 0} transactions from {pendingImportData?.settings?.exportDate ? new Date(pendingImportData.settings.exportDate).toLocaleDateString() : 'Unknown date'}? This will merge with your existing data."
+  confirmText="Import"
+  cancelText="Cancel"
   type="info"
   onConfirm={confirmImport}
   onCancel={cancelImport}

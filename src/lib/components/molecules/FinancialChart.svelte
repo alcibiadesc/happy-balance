@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
-  import { currentLanguage, t } from '$lib/stores/i18n';
+  import { currentLanguage } from '$lib/stores/i18n';
   import { getChartThemeColors, updateChartTheme, updateChartDatasetColors, setupChartThemeObserver } from '$lib/utils/chartTheme';
   
   interface DataPoint {
@@ -24,13 +24,22 @@
   let canvas: HTMLCanvasElement;
   let chart: Chart | null = null;
   
-  // Helper to get translations using i18n
-  function getLabels() {
-    return {
-      income: $t('dashboard.metrics.income'),
-      expenses: $t('dashboard.metrics.expenses'),
-      balance: $t('dashboard.metrics.balance')
+  // Helper to get translations directly from language
+  function getLabels(lang: string = $currentLanguage) {
+    const translations = {
+      en: {
+        income: 'Income',
+        expenses: 'Expenses',
+        balance: 'Balance'
+      },
+      es: {
+        income: 'Ingresos',
+        expenses: 'Gastos',
+        balance: 'Balance'
+      }
     };
+    
+    return translations[lang as keyof typeof translations] || translations.en;
   }
 
   

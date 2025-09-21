@@ -5,7 +5,6 @@ import { TransactionDate } from "../value-objects/TransactionDate";
 import { Merchant } from "../value-objects/Merchant";
 import { Category, CategoryId } from "./Category";
 import { TransactionType } from "./TransactionType";
-import { getTranslation } from "../../utils/i18n-utils";
 
 /**
  * Transaction entity - Rich domain model
@@ -39,27 +38,27 @@ export class Transaction {
     // Business rule: Income transactions should have non-negative amounts
     if (type === TransactionType.INCOME && amount.amount < 0) {
       return Result.failWithMessage(
-        getTranslation("validation.income_negative_amount"),
+        "Income transactions cannot have negative amounts",
       );
     }
 
     // Business rule: Expense transactions should have non-negative amounts
     if (type === TransactionType.EXPENSE && amount.amount < 0) {
       return Result.failWithMessage(
-        getTranslation("validation.expense_negative_amount"),
+        "Expense transactions cannot have negative amounts",
       );
     }
 
     // Business rule: Investment transactions should have non-negative amounts
     if (type === TransactionType.INVESTMENT && amount.amount < 0) {
       return Result.failWithMessage(
-        getTranslation("validation.investment_negative_amount"),
+        "Investment transactions cannot have negative amounts",
       );
     }
 
     // Validate description
     if (description && description.length > 200) {
-      return Result.failWithMessage(getTranslation("validation.description_too_long"));
+      return Result.failWithMessage("Description cannot exceed 200 characters");
     }
 
     const transactionId = id || TransactionId.generate();
@@ -118,16 +117,13 @@ export class Transaction {
     // Business rule: Category type must match transaction type
     if (category.type !== this._type) {
       return Result.failWithMessage(
-        getTranslation("validation.category_type_mismatch", {
-          categoryType: category.type,
-          transactionType: this._type
-        }),
+        `Category type ${category.type} does not match transaction type ${this._type}`,
       );
     }
 
     // Business rule: Cannot categorize inactive categories
     if (!category.isActive) {
-      return Result.failWithMessage(getTranslation("validation.inactive_category"));
+      return Result.failWithMessage("Cannot categorize with inactive category");
     }
 
     this._categoryId = category.id;
@@ -140,7 +136,7 @@ export class Transaction {
 
   updateDescription(newDescription: string): Result<void> {
     if (newDescription && newDescription.length > 200) {
-      return Result.failWithMessage(getTranslation("validation.description_too_long"));
+      return Result.failWithMessage("Description cannot exceed 200 characters");
     }
 
     this._description = newDescription || "";

@@ -2,7 +2,6 @@
   import { X, Tag, Layers, Clock, Home } from 'lucide-svelte';
   import { apiTransactions } from '$lib/stores/api-transactions';
   import type { Transaction, Category } from '$lib/types/transaction';
-  import { t } from '$lib/stores/i18n';
 
   interface Props {
     show: boolean;
@@ -68,10 +67,10 @@
         onSuccess?.(result);
         onClose();
       } else {
-        error = result.message || $t('errors.generic');
+        error = result.message || 'Failed to categorize transaction';
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : $t('errors.generic');
+      error = err instanceof Error ? err.message : 'An error occurred';
     } finally {
       isLoading = false;
     }
@@ -92,7 +91,7 @@
 <div class="modal-overlay" onclick={handleClose}>
   <div class="modal-content" onclick={(e) => e.stopPropagation()}>
     <div class="modal-header">
-      <h3>{$t('modals.smart_categorize.title')}</h3>
+      <h3>Categorize Transaction</h3>
       <button class="close-btn" onclick={handleClose} disabled={isLoading}>
         <X size={20} />
       </button>
@@ -101,17 +100,17 @@
     <div class="modal-body">
       <div class="transaction-preview">
         <div class="preview-row">
-          <span class="preview-label">{$t('modals.smart_categorize.transaction_label')}</span>
+          <span class="preview-label">Transaction:</span>
           <span class="preview-value">{transaction.merchant}</span>
         </div>
         <div class="preview-row">
-          <span class="preview-label">{$t('modals.smart_categorize.amount_label')}</span>
+          <span class="preview-label">Amount:</span>
           <span class="preview-value amount-{transaction.amount > 0 ? 'income' : 'expense'}">
             {transaction.amount > 0 ? '+' : ''}{transaction.amount.toFixed(2)} €
           </span>
         </div>
         <div class="preview-row">
-          <span class="preview-label">{$t('modals.smart_categorize.category_label')}</span>
+          <span class="preview-label">Category:</span>
           <div class="category-badge" style="background-color: {category.color}20; color: {category.color}">
             <span>{category.icon}</span>
             <span>{category.name}</span>
@@ -122,12 +121,12 @@
       {#if isMortgagePayment && category.name.toLowerCase().includes('debt')}
       <div class="mortgage-hint">
         <Home size={16} />
-        <span>{$t('modals.smart_categorize.ai_explanation')}</span>
+        <span>This looks like a mortgage payment. It will be categorized under debt payments.</span>
       </div>
       {/if}
 
       <div class="options-section">
-        <h4>{$t('modals.smart_categorize.categorize_question')}</h4>
+        <h4>How would you like to categorize?</h4>
 
         <label class="option-card">
           <input
@@ -140,10 +139,10 @@
           <div class="option-content">
             <div class="option-header">
               <Tag size={18} />
-              <span class="option-title">{$t('modals.smart_categorize.scope_single_title')}</span>
+              <span class="option-title">Just this transaction</span>
             </div>
             <p class="option-description">
-              {$t('modals.smart_categorization.scope_single_detail')}
+              Only categorize this specific transaction
             </p>
           </div>
         </label>
@@ -159,7 +158,7 @@
           <div class="option-content">
             <div class="option-header">
               <Layers size={18} />
-              <span class="option-title">{$t('modals.smart_categorize.scope_similar_title')}</span>
+              <span class="option-title">All similar transactions</span>
             </div>
             <p class="option-description">
               Apply to all transactions from "{transaction.merchant}"
@@ -179,7 +178,7 @@
               disabled={isLoading}
             />
             <Clock size={16} />
-            <span>{$t('modals.smart_categorize.remember_pattern_checkbox')}</span>
+            <span>Remember this pattern for future transactions</span>
           </label>
 
           {#if createPattern}
@@ -187,7 +186,7 @@
             <p>
               Future transactions from "{transaction.merchant}" will be automatically categorized as "{category.name}"
               {#if isMortgagePayment}
-                <br/><small>{$t('modals.smart_categorize.help_text')}</small>
+                <br/><small>Perfect for recurring mortgage payments!</small>
               {/if}
             </p>
           </div>
@@ -205,7 +204,7 @@
 
     <div class="modal-footer">
       <button class="btn-secondary" onclick={handleClose} disabled={isLoading}>
-        {$t('common.cancel')}
+        Cancel
       </button>
       <button
         class="btn-primary"
@@ -213,11 +212,11 @@
         disabled={isLoading}
       >
         {#if isLoading}
-          {$t('transactions.modal.saving')}...
+          Categorizing...
         {:else if applyToAll}
-          {$t('modals.smart_categorize.categorize_all')}
+          Categorize All
         {:else}
-          {$t('modals.smart_categorize.categorize')}
+          Categorize
         {/if}
       </button>
     </div>

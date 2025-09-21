@@ -559,10 +559,10 @@
                 {$t("import.preview.stats.duplicates")}
               </div>
               {#if duplicateCount > 0}
-                <div class="stat-hint">{$t('pages.import.duplicates_detected')}</div>
+                <div class="stat-hint">Posibles duplicados detectados</div>
               {/if}
               {#if selectedDuplicatesCount > 0}
-                <div class="stat-hint accent">{$t('pages.import.selected_for_import', { count: selectedDuplicatesCount })}</div>
+                <div class="stat-hint accent">{selectedDuplicatesCount} seleccionados para importar</div>
               {/if}
             </div>
             <div class="stat-card error">
@@ -581,7 +581,7 @@
               </svg>
               <input
                 type="text"
-                placeholder={$t('pages.import.search_transactions')}
+                placeholder="Buscar transacciones..."
                 class="search-input"
                 on:input={handleSearch}
               />
@@ -595,14 +595,14 @@
                 class="filter-tab {viewMode === 'all' ? 'active' : ''}"
                 on:click={() => viewMode = 'all'}
               >
-                {$t('pages.import.filter_all')} ({transactions.length})
+                Todas ({transactions.length})
               </button>
 
               <button
                 class="filter-tab {viewMode === 'new' ? 'active' : ''}"
                 on:click={() => viewMode = 'new'}
               >
-                {$t('pages.import.filter_new')} ({newTransactionsCount})
+                Nuevas ({newTransactionsCount})
               </button>
 
               <button
@@ -610,7 +610,7 @@
                 on:click={() => viewMode = 'duplicates'}
                 disabled={duplicateCount === 0}
               >
-                {$t('pages.import.filter_duplicates')} ({duplicateCount})
+                Duplicados ({duplicateCount})
                 {#if selectedDuplicatesCount > 0}
                   <span class="selected-badge">{selectedDuplicatesCount}</span>
                 {/if}
@@ -785,7 +785,7 @@
                           <div class="status-badge {transaction.selected ? 'duplicate-selected' : 'duplicate'}">
                             <span class="status-dot"></span>
                             <span class="status-text">
-                              {transaction.selected ? $t("import.preview.status.duplicate_will_import") : $t("import.preview.status.duplicate")}
+                              {transaction.selected ? 'Duplicado (se importará)' : $t("import.preview.status.duplicate")}
                             </span>
                           </div>
                           {#if transaction.duplicateReason}

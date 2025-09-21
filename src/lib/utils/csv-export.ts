@@ -1,6 +1,4 @@
 import type { Transaction, Category } from "$lib/types/transaction";
-import { t, currentLanguage } from "$lib/stores/i18n";
-import { get } from "svelte/store";
 
 export interface ExportOptions {
   includeHidden?: boolean;
@@ -54,17 +52,16 @@ export function exportTransactionsToCSV(
   // Create category lookup
   const categoryLookup = new Map(categories.map((c) => [c.id, c]));
 
-  // CSV Headers - Get current translation function
-  const $t = get(t);
+  // CSV Headers
   const headers = [
-    $t('transactions.date'),
-    $t('transactions.time'),
-    $t('csv_export.headers.description'),
-    $t('transactions.merchant'),
-    $t('csv_export.headers.category'),
-    $t('csv_export.headers.category_type'),
-    $t('transactions.amount'),
-    $t('common.status'),
+    "Fecha",
+    "Hora",
+    "Descripción",
+    "Comercio",
+    "Categoría",
+    "Tipo de Categoría",
+    "Importe",
+    "Estado",
   ];
 
   // Build CSV content
@@ -83,7 +80,7 @@ export function exportTransactionsToCSV(
       category?.name || "",
       category?.type || "",
       formatAmount(transaction.amount),
-      transaction.hidden ? $t('common.hidden') : $t('common.visible'),
+      transaction.hidden ? "Oculto" : "Visible",
     ];
 
     csvLines.push(row.map((field) => escapeCSVField(field)).join(","));

@@ -1,5 +1,4 @@
 import { Result } from "../../domain/shared/Result";
-import { getTranslation } from "../../utils/i18n-utils";
 
 /**
  * Storage adapter interface - Port for data persistence
@@ -128,7 +127,7 @@ export class LocalStorageAdapter implements IStorageAdapter {
         error instanceof DOMException &&
         error.name === "QuotaExceededError"
       ) {
-        return Result.failWithMessage(getTranslation("validation.storage_quota_exceeded"));
+        return Result.failWithMessage("Storage quota exceeded");
       }
 
       return Result.failWithMessage(
@@ -302,7 +301,7 @@ export class LocalStorageAdapter implements IStorageAdapter {
       const backup = JSON.parse(jsonData);
 
       if (!backup.data || typeof backup.data !== "object") {
-        return Result.failWithMessage(getTranslation("validation.invalid_backup_format"));
+        return Result.failWithMessage("Invalid backup format");
       }
 
       let imported = 0;

@@ -1,5 +1,4 @@
 import { TransactionType } from "../../domain/entities/TransactionType";
-import { getTranslation } from "../../utils/i18n-utils";
 
 /**
  * Command for creating a new transaction
@@ -22,37 +21,37 @@ export class CreateTransactionCommand {
     const errors: string[] = [];
 
     if (!Number.isFinite(this.amount) || this.amount < 0) {
-      errors.push(getTranslation("validation.amount_invalid"));
+      errors.push("Amount must be a non-negative finite number");
     }
 
     if (!this.currency || this.currency.length !== 3) {
-      errors.push(getTranslation("validation.currency_invalid"));
+      errors.push("Currency must be a 3-letter ISO code");
     }
 
     if (!this.date || isNaN(Date.parse(this.date))) {
-      errors.push(getTranslation("validation.date_invalid"));
+      errors.push("Date must be a valid date string");
     }
 
     if (!this.merchantName || this.merchantName.trim().length === 0) {
-      errors.push(getTranslation("validation.merchant_empty"));
+      errors.push("Merchant name cannot be empty");
     }
 
     if (this.merchantName.length > 100) {
-      errors.push(getTranslation("validation.merchant_too_long"));
+      errors.push("Merchant name cannot exceed 100 characters");
     }
 
     if (!Object.values(TransactionType).includes(this.type)) {
-      errors.push(getTranslation("validation.transaction_type_invalid"));
+      errors.push("Invalid transaction type");
     }
 
     if (this.description && this.description.length > 200) {
-      errors.push(getTranslation("validation.description_too_long"));
+      errors.push("Description cannot exceed 200 characters");
     }
 
     const futureDate = new Date();
     futureDate.setHours(23, 59, 59, 999); // End of today
     if (new Date(this.date) > futureDate) {
-      errors.push(getTranslation("validation.future_date"));
+      errors.push("Transaction date cannot be in the future");
     }
 
     return {

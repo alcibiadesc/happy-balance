@@ -14,14 +14,7 @@
     "yes": "Sí",
     "no": "No",
     "back": "Atrás",
-    "done": "Hecho",
-    "status": "Estado",
-    "hidden": "Oculto",
-    "visible": "Visible",
-    "add": "Añadir",
-    "app_name": "Happy Balance",
-    "app_tagline": "Armonía financiera",
-    "app_logo_alt": "Logo de Happy Balance"
+    "done": "Hecho"
   },
   "navigation": {
     "transactions": "Transacciones",
@@ -156,19 +149,6 @@
       "file": "Transacción idéntica encontrada en el archivo",
       "database": "La transacción ya existe en la base de datos",
       "both": "Duplicado tanto en el archivo como en la base de datos"
-    },
-    "field_types": {
-      "booking_date": "Fecha de Reserva",
-      "value_date": "Fecha Valor",
-      "partner_name": "Nombre del Comercio",
-      "partner_iban": "IBAN del Comercio",
-      "transaction_type": "Tipo de Transacción",
-      "description": "Descripción",
-      "account_name": "Nombre de Cuenta",
-      "amount_eur": "Importe (EUR)",
-      "original_amount": "Importe Original",
-      "original_currency": "Moneda Original",
-      "exchange_rate": "Tipo de Cambio"
     }
   },
   "transactions": {
@@ -243,8 +223,6 @@
     "type": "Tipo",
     "no_categories": "No hay categorías",
     "delete_confirmation": "¿Estás seguro de que quieres eliminar esta categoría?",
-    "no_categories_help": "No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar mejor tus gastos e ingresos.",
-    "create_categories": "Crear categorías",
     "types": {
       "income": "Ingreso",
       "investment": "Inversión",
@@ -255,37 +233,29 @@
   },
   "settings": {
     "title": "Configuración",
+    "language": "Idioma",
+    "currency": "Moneda",
     "theme": "Tema",
     "themes": {
       "light": "Claro",
       "dark": "Oscuro",
       "system": "Sistema"
     },
-    "language": "Idioma",
-    "languages": {
-      "spanish": "Español"
-    },
-    "currency": "Moneda",
     "data": "Datos",
     "export_data": "Exportar Datos",
     "import_data": "Importar Datos",
-    "reset_data": "Restablecer a Defaults",
     "clear_data": "Limpiar Datos",
-    "importing": "Importando...",
-    "import_error": "Error al importar",
+    "clear_data_confirmation": "¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.",
+    "reset_data": "Restablecer a Defaults",
+    "reset_data_confirmation": "Esto restaurará todas las categorías y configuraciones por defecto. Tus transacciones se conservarán pero las categorías se restablecerán a las predeterminadas.",
     "export_success": "Datos exportados exitosamente",
     "import_success": "Se importaron exitosamente {count} transacciones",
     "import_invalid_file": "Por favor selecciona un archivo JSON válido",
     "import_file_too_large": "El archivo debe ser menor a 10MB",
     "import_invalid_format": "Formato de archivo de respaldo inválido",
-    "import_parse_error": "Error al analizar archivo de respaldo",
-    "import_read_error": "Error al leer archivo de respaldo",
-    "clear_data_confirmation": "¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.",
-    "reset_data_confirmation": "Esto restaurará todas las categorías y configuraciones por defecto. Tus transacciones se conservarán pero las categorías se restablecerán a las predeterminadas.",
     "import_confirmation": "Esto importará {transactions} transacciones desde {date}. ¿Continuar?",
-    "localization": "Localización",
-    "import_button": "Importar",
-    "cancel_button": "Cancelar"
+    "import_parse_error": "Error al analizar archivo de respaldo",
+    "import_read_error": "Error al leer archivo de respaldo"
   },
   "errors": {
     "generic": "Ocurrió un error",
@@ -310,356 +280,5 @@
     "reset_title": "Restablecer a Defaults",
     "reset_message": "⚠️ Esto restaurará las categorías y configuraciones por defecto. Tus transacciones se conservarán, pero las categorías personalizadas y configuraciones se perderán. ¡Esta acción no se puede deshacer!",
     "reset_everything": "Restablecer a Defaults"
-  },
-  "pages": {
-    "categories": {
-      "title": "Configuración de Categorías",
-      "subtitle": "Gestiona tus categorías y presupuestos anuales",
-      "name_placeholder": "Nombre de la categoría",
-      "annual_budget": "Presupuesto anual",
-      "select_icon": "Seleccionar icono",
-      "delete_modal_title": "Eliminar categoría",
-      "has_transactions_question": "¿Qué deseas hacer con ellas?",
-      "recategorize_to": "Recategorizar a",
-      "leave_uncategorized": "Dejar sin categoría",
-      "no_transactions_message": "Esta categoría no tiene transacciones asociadas.",
-      "no_budget": "Sin presupuesto",
-      "transaction_count": "Hay {count} transacción{count, plural, =1 {} other {es}} con esta categoría"
-    },
-    "import": {
-      "duplicates_detected": "Posibles duplicados detectados",
-      "search_transactions": "Buscar transacciones...",
-      "selected_for_import": "{count} seleccionados para importar",
-      "filter_all": "Todas",
-      "filter_new": "Nuevas",
-      "filter_duplicates": "Duplicados",
-      "field_types": {
-        "booking_date": "Fecha de Cargo",
-        "value_date": "Fecha de Valor",
-        "partner_name": "Nombre del Socio",
-        "partner_iban": "IBAN del Socio",
-        "transaction_type": "Tipo de Transacción",
-        "description": "Descripción",
-        "account_name": "Nombre de Cuenta",
-        "amount_eur": "Cantidad (EUR)",
-        "original_amount": "Cantidad Original",
-        "original_currency": "Moneda Original",
-        "exchange_rate": "Tipo de Cambio"
-      },
-      "duplicate_reasons": {
-        "database": "Ya existe en la base de datos",
-        "file": "Duplicado en el archivo de importación",
-        "partial": "Coincidencia parcial encontrada"
-      }
-    }
-  },
-  "modals": {
-    "smart_tag": {
-      "title": "Añadir etiqueta",
-      "tags_label": "Etiquetas:",
-      "new_tag_placeholder": "Nueva etiqueta...",
-      "scope_single_title": "Solo esta transacción",
-      "scope_single_detail": "1 transacción",
-      "scope_similar_title": "Todas las similares",
-      "add_to_count": "Añadir a {count}"
-    },
-    "smart_categorization": {
-      "title": "Aplicar categoría",
-      "scope_single_title": "Solo esta transacción",
-      "scope_single_detail": "Aplicar únicamente a esta transacción",
-      "scope_similar_title": "Transacciones similares",
-      "scope_similar_detail": "Aplicar a todas las transacciones similares",
-      "auto_apply_checkbox": "Aplicar automáticamente a futuras transacciones similares",
-      "preview_title": "Se aplicará también a:",
-      "apply_single": "Aplicar categoría",
-      "apply_multiple": "Aplicar a {count}"
-    },
-    "smart_categorize": {
-      "title": "Categorizar Transacción",
-      "transaction_label": "Transacción:",
-      "amount_label": "Cantidad:",
-      "category_label": "Categoría:",
-      "ai_explanation": "Esto parece un pago de hipoteca. Se categorizará bajo pagos de deudas.",
-      "categorize_question": "¿Cómo te gustaría categorizar?",
-      "scope_single_title": "Solo esta transacción",
-      "scope_similar_title": "Todas las transacciones similares",
-      "remember_pattern_checkbox": "Recordar este patrón para transacciones futuras",
-      "help_text": "¡Perfecto para pagos recurrentes de hipoteca!",
-      "categorize": "Categorizar",
-      "categorize_all": "Categorizar Todo"
-    },
-    "category_selection": {
-      "title": "Categorizar transacción"
-    }
-  },
-  "components": {
-    "field_mapping": {
-      "title": "Mapeo de Campos",
-      "required_not_mapped": "Campo requerido no mapeado",
-      "not_mapped": "No mapeado",
-      "mapped_stat": "Mapeados",
-      "missing_required_stat": "Requeridos Faltantes",
-      "total_columns_stat": "Total de Columnas",
-      "confidence": "confianza",
-      "auto_detected": "Auto-detectado desde encabezados CSV",
-      "hide": "Ocultar mapeo de campos",
-      "show": "Mostrar mapeo de campos",
-      "description": "Revisa y ajusta cómo las columnas CSV se mapean a los campos de transacción.",
-      "required_note": "Los campos marcados con * son requeridos para la importación."
-    },
-    "import_wizard": {
-      "title": "Importar Transacciones",
-      "settings_title": "Configuración de Importación",
-      "enable_preview_label": "Habilitar vista previa antes de importar",
-      "detect_duplicates_label": "Detectar transacciones duplicadas",
-      "ready_status": "Listo",
-      "total_stat": "Total",
-      "selected_stat": "Seleccionadas",
-      "duplicates_stat": "Duplicados",
-      "skipped_stat": "Omitidas",
-      "show_duplicates_toggle": "Mostrar transacciones duplicadas",
-      "importing_title": "Importando Transacciones",
-      "importing_text": "Por favor espera mientras procesamos tus datos...",
-      "success_title": "¡Importación Completada!",
-      "success_text": "Tus transacciones han sido importadas exitosamente.",
-      "imported_label": "Importadas:",
-      "skipped_label": "Omitidas:",
-      "duplicates_label": "Duplicados:"
-    },
-    "transaction_preview_table": {
-      "processing": "Procesando transacciones...",
-      "no_transactions": "No hay transacciones para mostrar",
-      "selected_suffix": "seleccionadas",
-      "duplicates_suffix": "duplicados",
-      "selection_header": "Selección",
-      "date_header": "Fecha",
-      "partner_header": "Comercio",
-      "description_header": "Descripción",
-      "amount_header": "Cantidad",
-      "status_header": "Estado"
-    },
-    "file_upload": {
-      "supported_formats": "Formatos soportados:"
-    },
-    "sidebar_footer": {
-      "import_transactions": "Importar transacciones"
-    },
-    "expenses_card": {
-      "collapse_breakdown": "Contraer desglose",
-      "view_breakdown": "Ver desglose"
-    },
-    "mobile_sidebar": {
-      "close_menu": "Cerrar menú"
-    },
-    "language_select": {
-      "select_language": "Seleccionar idioma"
-    }
-  },
-  "accessibility": {
-    "select_icon_for_new_category": "Seleccionar icono para nueva categoría",
-    "select_icon_for_category": "Seleccionar icono para {name}",
-    "icon_picker": "Selector de iconos",
-    "close_picker": "Cerrar selector",
-    "available_icons": "Lista de iconos disponibles",
-    "icon_option": "Icono {icon}",
-    "clear_search": "Limpiar búsqueda",
-    "select_transactions": "Seleccionar transacciones",
-    "show_filters": "Mostrar filtros",
-    "export_transactions": "Exportar transacciones",
-    "remove_income_filter": "Eliminar filtro de ingresos",
-    "remove_expenses_filter": "Eliminar filtro de gastos",
-    "remove_category_filter": "Eliminar categoría {name}",
-    "close_error_message": "Cerrar mensaje de error",
-    "close_modal": "Cerrar"
-  },
-  "validation": {
-    "income_negative_amount": "Las transacciones de ingresos no pueden tener cantidades negativas",
-    "expense_negative_amount": "Las transacciones de gastos no pueden tener cantidades negativas",
-    "investment_negative_amount": "Las transacciones de inversión no pueden tener cantidades negativas",
-    "description_too_long": "La descripción no puede exceder 200 caracteres",
-    "inactive_category": "No se puede categorizar con una categoría inactiva",
-    "category_id_empty": "El ID de categoría no puede estar vacío",
-    "category_name_empty": "El nombre de la categoría no puede estar vacío",
-    "category_name_too_long": "El nombre de la categoría no puede exceder 50 caracteres",
-    "invalid_hex_color": "El color debe ser un código hexadecimal válido",
-    "category_icon_empty": "El icono de categoría no puede estar vacío",
-    "amount_invalid": "La cantidad debe ser un número finito no negativo",
-    "currency_invalid": "La moneda debe ser un código ISO de 3 letras",
-    "date_invalid": "La fecha debe ser una cadena de fecha válida",
-    "merchant_empty": "El nombre del comercio no puede estar vacío",
-    "merchant_too_long": "El nombre del comercio no puede exceder 100 caracteres",
-    "transaction_type_invalid": "Tipo de transacción inválido",
-    "future_date": "La fecha de la transacción no puede estar en el futuro",
-    "category_type_mismatch": "El tipo de categoría {categoryType} no coincide con el tipo de transacción {transactionType}",
-    "invalid_transaction_type": "Tipo de transacción inválido: {type}",
-    "transaction_id_empty": "El ID de transacción no puede estar vacío",
-    "tag_empty": "La etiqueta no puede estar vacía",
-    "invalid_categorization_scope": "Ámbito de categorización inválido",
-    "invalid_date": "Fecha inválida proporcionada",
-    "transaction_not_found": "Transacción no encontrada",
-    "category_not_found": "Categoría no encontrada",
-    "storage_quota_exceeded": "Cuota de almacenamiento excedida",
-    "invalid_backup_format": "Formato de respaldo inválido",
-    "date_too_old": "La fecha de la transacción no puede tener más de 10 años"
-  },
-  "data": {
-    "transaction_exists": "La transacción idéntica ya existe",
-    "parsing_error": "Error de análisis desconocido",
-    "unknown_merchant": "Comercio Desconocido",
-    "unknown_category": "Categoría Desconocida",
-    "currency_mismatch": "No se puede calcular la tasa de gasto para diferentes monedas",
-    "default_categories": {
-      "food_groceries": "Alimentación y Supermercado",
-      "transport": "Transporte",
-      "entertainment": "Entretenimiento",
-      "utilities": "Servicios",
-      "income": "Ingresos",
-      "investment": "Inversión"
-    }
-  },
-  "import": {
-    "title": "Importar Transacciones",
-    "subtitle": "Sube tus extractos bancarios para importar transacciones automáticamente",
-    "errors": {
-      "invalid_file": "Formato de archivo inválido. Por favor, sube un archivo CSV o Excel.",
-      "file_too_large": "El archivo es demasiado grande. El tamaño máximo es de 10MB.",
-      "no_transactions": "No se encontraron transacciones válidas en el archivo.",
-      "parse_failed": "Error al procesar el archivo. Por favor, verifica el formato.",
-      "import_failed": "Error al importar transacciones. Por favor, inténtalo de nuevo."
-    },
-    "actions": {
-      "import_count": "Importar {count} transacción",
-      "import_count_plural": "Importar {count} transacciones"
-    },
-    "steps": {
-      "upload": "Subir Archivo",
-      "upload_desc": "Selecciona tu extracto bancario",
-      "preview": "Vista Previa y Mapeo",
-      "preview_desc": "Revisar y configurar importación",
-      "complete": "Completar",
-      "complete_desc": "Importación exitosa"
-    },
-    "settings": {
-      "title": "Configuración de Importación",
-      "enable_preview": "Habilitar vista previa antes de importar",
-      "enable_preview_desc": "La vista previa te permite revisar y editar transacciones antes de guardar"
-    },
-    "upload": {
-      "processing": "Procesando...",
-      "choose_file": "Elegir Archivo",
-      "drag_drop": "o arrastra y suelta aquí",
-      "ready": "Listo para importar"
-    },
-    "preview": {
-      "stats": {
-        "total": "Total",
-        "selected": "Seleccionadas",
-        "duplicates": "Duplicados",
-        "skipped": "Omitidas"
-      },
-      "controls": {
-        "show_all": "Mostrar todos los duplicados",
-        "deselect_all": "Deseleccionar todo",
-        "select_all": "Seleccionar todo"
-      },
-      "table": {
-        "select": "Seleccionar",
-        "date": "Fecha",
-        "partner": "Socio",
-        "description": "Descripción",
-        "amount": "Cantidad",
-        "status": "Estado"
-      },
-      "status": {
-        "duplicate": "Duplicado",
-        "duplicate_will_import": "Duplicado (se importará)",
-        "ready": "Listo",
-        "skipped": "Omitido"
-      },
-      "pagination": {
-        "showing": "Mostrando {start} a {end} de {total}",
-        "show_all": "Mostrar todo"
-      }
-    },
-    "field_types": {
-      "booking_date": "Fecha de Cargo",
-      "value_date": "Fecha de Valor",
-      "partner_name": "Nombre del Socio",
-      "partner_iban": "IBAN del Socio",
-      "transaction_type": "Tipo de Transacción",
-      "description": "Descripción",
-      "account_name": "Nombre de Cuenta",
-      "amount_eur": "Cantidad (EUR)",
-      "original_amount": "Cantidad Original",
-      "original_currency": "Moneda Original",
-      "exchange_rate": "Tipo de Cambio"
-    },
-    "duplicate_reasons": {
-      "database": "Ya existe en la base de datos",
-      "file": "Duplicado en el archivo de importación",
-      "partial": "Coincidencia parcial encontrada"
-    },
-    "preview": {
-      "status": {
-        "duplicate_will_import": "Duplicado (se importará)"
-      }
-    }
-  },
-  "transactions": {
-    "show_period": "Mostrar período seleccionado",
-    "show_all_transactions": "Mostrar todas las transacciones",
-    "category": "Categoría",
-    "date": "Fecha",
-    "time": "Hora",
-    "merchant": "Comercio",
-    "amount": "Cantidad",
-    "delete_all": "Eliminar Todo",
-    "delete_single_title": "Eliminar Transacción",
-    "delete_single_message": "¿Estás seguro de que quieres eliminar esta transacción?",
-    "period": {
-      "balance": "Balance del período",
-      "income": "Ingresos",
-      "total_expenses": "Gastos totales",
-      "expense_distribution": "Distribución de gastos",
-      "essential": "Esencial",
-      "discretionary": "Discrecional",
-      "uncategorized": "Sin categoría",
-      "all_time": "Todas las transacciones"
-    },
-    "modal": {
-      "new_transaction": "Nueva Transacción",
-      "amount_placeholder": "0.00",
-      "expense": "Gasto",
-      "income": "Ingreso",
-      "where_label": "Dónde",
-      "merchant_placeholder": "Nombre del comercio",
-      "what_for_label": "Para qué",
-      "description_placeholder": "Descripción",
-      "when_label": "Cuándo",
-      "saving": "Guardando...",
-      "save_transaction": "Guardar Transacción",
-      "validation": {
-        "amount_required": "La cantidad es requerida",
-        "merchant_required": "El comercio es requerido",
-        "date_required": "La fecha es requerida",
-        "future_date": "La fecha no puede ser en el futuro"
-      }
-    }
-  },
-  "csv_export": {
-    "headers": {
-      "description": "Descripción",
-      "category": "Categoría",
-      "category_type": "Tipo de Categoría"
-    }
-  },
-  "transactions_extended": {
-    "disabled_all_transactions": "Deshabilitado al mostrar todas las transacciones",
-    "change_to_custom": "Cambiar a rango personalizado",
-    "change_to_month": "Cambiar a selección de mes",
-    "categories_filter": "Categorías",
-    "remove_category": "Eliminar categoría {name}",
-    "assign_category_title": "Categoría: {name}",
-    "assign_category_default": "Asignar categoría"
   }
 }

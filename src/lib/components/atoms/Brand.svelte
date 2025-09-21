@@ -1,11 +1,9 @@
 <script lang="ts">
-  import { t } from '$lib/stores/i18n';
-
   interface Props {
     showText?: boolean;
     size?: 'sm' | 'md' | 'lg';
   }
-
+  
   let { showText = true, size = 'md' }: Props = $props();
   
   const sizeClasses = {
@@ -26,7 +24,7 @@
   <div class="brand-icon {sizeClasses[size]}">
     <img
       src="/logo/happy-balance-logo-without-text.png"
-      alt={$t('common.app_logo_alt')}
+      alt="Happy Balance Logo"
       class="logo-image {sizeClasses[size]}"
     />
   </div>
@@ -35,10 +33,10 @@
   {#if showText}
     <div class="brand-text">
       <div class="brand-name {textSizes[size]}">
-        {$t('common.app_name')}
+        Happy Balance
       </div>
       <div class="brand-tagline text-xs text-subtle">
-        {$t('common.app_tagline')}
+        Financial harmony
       </div>
     </div>
   {/if}

@@ -1,6 +1,5 @@
 import { writable, derived } from "svelte/store";
 import { browser } from "$app/environment";
-import { getTranslation } from "$lib/utils/i18n-utils";
 import type {
   Transaction,
   Category,
@@ -125,36 +124,36 @@ function createCategoryStore() {
     // Default categories
     {
       id: "1",
-      name: getTranslation("data.default_categories.food_groceries"),
+      name: "Food & Groceries",
       type: "essential",
       color: "#f5796c",
       icon: "🍽️",
     },
     {
       id: "2",
-      name: getTranslation("data.default_categories.transport"),
+      name: "Transport",
       type: "essential",
       color: "#7abaa5",
       icon: "🚇",
     },
     {
       id: "3",
-      name: getTranslation("data.default_categories.entertainment"),
+      name: "Entertainment",
       type: "discretionary",
       color: "#fecd2c",
       icon: "🎬",
     },
     {
       id: "4",
-      name: getTranslation("data.default_categories.utilities"),
+      name: "Utilities",
       type: "essential",
       color: "#023c46",
       icon: "⚡",
     },
-    { id: "5", name: getTranslation("data.default_categories.income"), type: "income", color: "#7abaa5", icon: "💰" },
+    { id: "5", name: "Income", type: "income", color: "#7abaa5", icon: "💰" },
     {
       id: "6",
-      name: getTranslation("data.default_categories.investment"),
+      name: "Investment",
       type: "investment",
       color: "#023c46",
       icon: "📈",
