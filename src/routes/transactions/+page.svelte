@@ -2843,71 +2843,32 @@
   
   .fab {
     position: fixed;
-    bottom: 2rem;
-    right: 2rem;
+    bottom: 1.5rem;
+    right: 1.5rem;
     z-index: 60;
-    width: 4rem;
-    height: 4rem;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--acapulco) 0%, #5a9d7a 100%);
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    background: var(--acapulco);
     color: white;
     border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 25px rgba(122, 186, 165, 0.35),
-                0 4px 12px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    font-weight: 600;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.3),
+                0 2px 4px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 400;
   }
 
   .fab:hover {
-    transform: translateY(-4px) scale(1.08);
-    box-shadow: 0 12px 35px rgba(122, 186, 165, 0.45),
-                0 6px 20px rgba(0, 0, 0, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    background: linear-gradient(135deg, #7ac2a8 0%, #4a8b68 100%);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(122, 186, 165, 0.4),
+                0 3px 8px rgba(0, 0, 0, 0.1);
   }
 
   .fab:active {
-    transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 6px 20px rgba(122, 186, 165, 0.4),
-                0 3px 8px rgba(0, 0, 0, 0.15);
-    transition: all 0.1s ease;
-  }
-
-  .fab:focus {
-    outline: none;
-    box-shadow: 0 8px 25px rgba(122, 186, 165, 0.35),
-                0 4px 12px rgba(0, 0, 0, 0.15),
-                0 0 0 4px rgba(122, 186, 165, 0.2);
-  }
-
-  /* Mobile responsiveness for FAB */
-  @media (max-width: 768px) {
-    .fab {
-      width: 3.5rem;
-      height: 3.5rem;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      box-shadow: 0 6px 20px rgba(122, 186, 165, 0.3),
-                  0 3px 8px rgba(0, 0, 0, 0.12),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
-
-    .fab:hover {
-      transform: translateY(-3px) scale(1.06);
-      box-shadow: 0 8px 25px rgba(122, 186, 165, 0.4),
-                  0 4px 12px rgba(0, 0, 0, 0.18);
-    }
-
-    .fab:active {
-      transform: translateY(-1px) scale(1.02);
-    }
+    transform: translateY(-1px) scale(1.02);
   }
 </style>
