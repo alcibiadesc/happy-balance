@@ -347,10 +347,10 @@ export class GetDashboardMetricsUseCase {
     const trends = [];
     const periodsToShow = 6;
 
-    for (let i = periodsToShow - 1; i >= 0; i--) {
+    for (let i = 0; i < periodsToShow; i++) {
       const trendQuery = {
         ...query,
-        periodOffset: (query.periodOffset || 0) + i,
+        periodOffset: (query.periodOffset || 0) + (periodsToShow - 1 - i),
       };
       const trendRange = this.calculateDateRange(trendQuery);
 
