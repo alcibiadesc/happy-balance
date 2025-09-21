@@ -829,6 +829,23 @@
             {$t('transactions.cancel')}
           </button>
         {:else}
+          <!-- Collapse/Expand toggle button -->
+          {#if groupedTransactions().length > 1}
+            <button
+              class="toolbar-btn icon-only"
+              onclick={allExpanded ? collapseAll : expandAll}
+              title={allExpanded ? 'Colapsar todo' : 'Expandir todo'}
+              aria-label={allExpanded ? 'Colapsar grupos' : 'Expandir grupos'}
+            >
+              {#if allExpanded}
+                <Minimize2 size={14} />
+              {:else}
+                <Maximize2 size={14} />
+              {/if}
+            </button>
+            <div class="toolbar-separator"></div>
+          {/if}
+
           <button
             class="toolbar-btn"
             class:pulse={isSelectionMode === false && filteredTransactions().length > 10}
@@ -897,28 +914,6 @@
     
     {#if showFilters}
       <div class="filters-bento" class:visible={showFilters}>
-        <!-- Collapse/Expand All Buttons -->
-        <div class="collapse-expand-controls">
-          <button
-            class="control-button"
-            onclick={expandAll}
-            disabled={allExpanded}
-            title="Expandir todo"
-          >
-            <Maximize2 size={14} />
-            <span>Expandir todo</span>
-          </button>
-          <button
-            class="control-button"
-            onclick={collapseAll}
-            disabled={!allExpanded && collapsedGroups.size === groupedTransactions().length}
-            title="Colapsar todo"
-          >
-            <Minimize2 size={14} />
-            <span>Colapsar todo</span>
-          </button>
-        </div>
-
         <!-- Filter Grid - Bento Box Layout -->
         <div class="filter-grid">
           <!-- Quick Type Filters -->
@@ -2072,6 +2067,13 @@
                 0 2px 4px rgba(0, 0, 0, 0.03);
   }
 
+  .toolbar-separator {
+    width: 1px;
+    height: 1.5rem;
+    background: rgba(148, 163, 184, 0.2);
+    margin: 0 0.25rem;
+  }
+
   .toolbar-btn {
     height: 2.5rem;
     padding: 0 1.25rem;
@@ -2106,6 +2108,12 @@
     box-shadow: 0 2px 8px rgba(122, 186, 165, 0.25);
   }
 
+  .toolbar-btn.icon-only {
+    padding: 0;
+    width: 2.5rem;
+    justify-content: center;
+  }
+
   .toolbar-btn.has-filters {
     background: rgba(122, 186, 165, 0.1);
     color: var(--acapulco);
@@ -2128,38 +2136,6 @@
     transform: translateY(-1px) scale(1.02);
   }
   
-  /* Collapse/Expand Controls */
-  .collapse-expand-controls {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding: 0.5rem 0;
-  }
-
-  .control-button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: white;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .control-button:hover:not(:disabled) {
-    background: var(--color-hover);
-    border-color: var(--color-primary);
-  }
-
-  .control-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
   /* Bento Box Filters */
   .filters-bento {
     background: white;
