@@ -2843,32 +2843,26 @@
   
   .fab {
     position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    z-index: 60;
-    width: 3.5rem;
-    height: 3.5rem;
-    border-radius: 1rem;
-    background: var(--acapulco);
-    color: white;
-    border: none;
+    bottom: var(--space-xl);
+    right: var(--space-xl);
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1px solid var(--gray-200);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.3),
-                0 2px 4px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-weight: 400;
+    box-shadow: none;
+    transition: all 0.2s ease;
+    font-weight: 300;
+    z-index: 60;
   }
 
   .fab:hover {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 6px 20px rgba(122, 186, 165, 0.4),
-                0 3px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .fab:active {
-    transform: translateY(-1px) scale(1.02);
+    border-color: var(--acapulco);
+    color: var(--acapulco);
   }
 </style>
