@@ -69,7 +69,8 @@
   $: groupedCategories = (() => {
     if (isIncomeTransaction) {
       return {
-        income: categories.filter(cat => cat.type === 'income' || cat.type === 'INCOME')
+        income: categories.filter(cat => cat.type === 'income' || cat.type === 'INCOME'),
+        no_compute: categories.filter(cat => cat.type === 'no_compute')
       };
     } else {
       return {
@@ -152,22 +153,24 @@
             </div>
           </div>
         {:else if isIncomeTransaction}
-          {#if groupedCategories.income?.length > 0}
-            <div class="category-group">
-              <h3 class="group-title">{typeDisplayNames.income}</h3>
-              <div class="category-grid">
-                {#each groupedCategories.income as category}
-                  <button
-                    class="category-option income-type"
-                    on:click={() => selectCategory(category.id)}
-                  >
-                    <span class="category-icon">{category.icon}</span>
-                    <span class="category-name">{category.name}</span>
-                  </button>
-                {/each}
+          {#each Object.entries(groupedCategories) as [type, categoryList]}
+            {#if categoryList.length > 0}
+              <div class="category-group">
+                <h3 class="group-title">{typeDisplayNames[type]}</h3>
+                <div class="category-grid">
+                  {#each categoryList as category}
+                    <button
+                      class="category-option {type}-type"
+                      on:click={() => selectCategory(category.id)}
+                    >
+                      <span class="category-icon">{category.icon}</span>
+                      <span class="category-name">{category.name}</span>
+                    </button>
+                  {/each}
+                </div>
               </div>
-            </div>
-          {/if}
+            {/if}
+          {/each}
         {:else}
           {#each Object.entries(groupedCategories) as [type, categoryList]}
             {#if categoryList.length > 0}

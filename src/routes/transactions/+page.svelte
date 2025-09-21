@@ -216,11 +216,17 @@
     // Exclude hidden transactions from statistics
     const visibleTransactions = filtered.filter(t => !t.hidden);
 
-    const income = visibleTransactions
+    // Filter out NO_COMPUTE transactions for financial metrics (similar to backend filtering)
+    const computedTransactions = visibleTransactions.filter(t => {
+      const category = getCategoryById(t.categoryId);
+      return !category || category.type !== 'no_compute';
+    });
+
+    const income = computedTransactions
       .filter(t => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const expenseTransactions = visibleTransactions.filter(t => t.amount < 0);
+    const expenseTransactions = computedTransactions.filter(t => t.amount < 0);
     const totalExpenses = expenseTransactions
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
