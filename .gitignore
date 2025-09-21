@@ -29,6 +29,7 @@ vite.config.ts.timestamp-*
 /prisma/dev.db*
 /prisma/generated/
 ejemplo.csv
+/example-data
 /.vite
 
 # Docker compose files for worktrees

@@ -263,6 +263,12 @@ export class Transaction {
     categoryType: CategoryType,
     transactionType: TransactionType,
   ): boolean {
+    // NO_COMPUTE categories can be applied to any transaction type
+    // as they represent internal transfers that don't affect financial metrics
+    if (categoryType === CategoryType.NO_COMPUTE) {
+      return true;
+    }
+
     switch (transactionType) {
       case TransactionType.INCOME:
         return categoryType === CategoryType.INCOME;
