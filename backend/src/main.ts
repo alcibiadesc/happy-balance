@@ -192,6 +192,7 @@ class App {
     // CORS configuration
     const allowedOrigins = [
       "http://localhost:5173",
+      "http://localhost:5177",
       "http://192.168.1.139:5173",
       "http://100.100.8.83:5173",
     ];
