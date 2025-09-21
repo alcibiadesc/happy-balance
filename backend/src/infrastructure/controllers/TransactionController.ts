@@ -94,6 +94,22 @@ const MetricsQuerySchema = z.object({
   periodOffset: z.coerce.number().min(0).optional().default(0),
 });
 
+const PaginatedTransactionSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(200).default(50),
+  sortBy: z.enum(["date", "amount", "merchant"]).optional().default("date"),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+  searchTerm: z.string().max(100).optional(),
+  type: z.enum(["INCOME", "EXPENSE", "INVESTMENT"]).optional(),
+  categoryId: z.string().optional(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  currency: z.string().min(3).max(3).optional().default("EUR"),
+  minAmount: z.coerce.number().optional(),
+  maxAmount: z.coerce.number().optional(),
+  includeHidden: z.coerce.boolean().optional().default(true),
+});
+
 export class TransactionController {
   constructor(
     private readonly transactionRepository: ITransactionRepository,
@@ -263,6 +279,128 @@ export class TransactionController {
       });
     } catch (error) {
       res.status(500).json({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  async getPaginatedTransactions(req: Request, res: Response) {
+    try {
+      const validationResult = PaginatedTransactionSchema.safeParse(req.query);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validationResult.error.errors,
+        });
+      }
+
+      const params = validationResult.data;
+      const { page, limit, sortBy, sortOrder, searchTerm, ...filters } = params;
+
+      // Build domain filters
+      const domainFilters: any = {};
+
+      if (filters.startDate) {
+        const dateResult = TransactionDate.fromString(filters.startDate);
+        if (dateResult.isSuccess()) {
+          domainFilters.startDate = dateResult.getValue();
+        }
+      }
+
+      if (filters.endDate) {
+        const dateResult = TransactionDate.fromString(filters.endDate);
+        if (dateResult.isSuccess()) {
+          domainFilters.endDate = dateResult.getValue();
+        }
+      }
+
+      if (filters.type) {
+        domainFilters.type = filters.type;
+      }
+
+      if (filters.categoryId) {
+        domainFilters.categoryId = filters.categoryId;
+      }
+
+      if (searchTerm) {
+        domainFilters.merchantName = searchTerm; // For now, search by merchant name
+      }
+
+      if (filters.minAmount !== undefined) {
+        domainFilters.minAmount = filters.minAmount;
+      }
+
+      if (filters.maxAmount !== undefined) {
+        domainFilters.maxAmount = filters.maxAmount;
+      }
+
+      if (filters.currency) {
+        domainFilters.currency = filters.currency;
+      }
+
+      domainFilters.includeHidden = filters.includeHidden;
+
+      // Calculate pagination
+      const pagination = {
+        offset: (page - 1) * limit,
+        limit,
+      };
+
+      const result = await this.transactionRepository.findWithFilters(
+        domainFilters,
+        pagination,
+      );
+
+      if (result.isFailure()) {
+        return res.status(500).json({
+          success: false,
+          error: result.getError()
+        });
+      }
+
+      const { transactions, totalCount } = result.getValue();
+
+      // Enhanced pagination response
+      const totalPages = Math.ceil(totalCount / limit);
+      const hasNext = page < totalPages;
+      const hasPrev = page > 1;
+
+      res.json({
+        success: true,
+        data: {
+          transactions: transactions.map((t) => ({
+            ...t.toSnapshot(),
+            hidden: (t as any).hidden || false,
+          })),
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages,
+            hasNext,
+            hasPrev,
+          },
+          meta: {
+            sortBy,
+            sortOrder,
+            searchTerm,
+            filters: {
+              type: filters.type,
+              categoryId: filters.categoryId,
+              startDate: filters.startDate,
+              endDate: filters.endDate,
+              currency: filters.currency,
+              minAmount: filters.minAmount,
+              maxAmount: filters.maxAmount,
+              includeHidden: filters.includeHidden,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
         error: "Internal server error",
         message: error instanceof Error ? error.message : "Unknown error",
       });

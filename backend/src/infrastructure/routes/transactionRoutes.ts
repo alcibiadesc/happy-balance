@@ -16,6 +16,10 @@ export const createTransactionRoutes = (
     transactionController.getTransactions.bind(transactionController),
   );
   router.get(
+    "/paginated",
+    transactionController.getPaginatedTransactions.bind(transactionController),
+  );
+  router.get(
     "/statistics",
     transactionController.getStatistics.bind(transactionController),
   );

@@ -11,11 +11,13 @@ import { ImportController } from "@infrastructure/controllers/ImportController";
 import { UserPreferencesController } from "@infrastructure/controllers/UserPreferencesController";
 import { SeedController } from "@infrastructure/controllers/SeedController";
 import { CategoryController } from "@infrastructure/controllers/CategoryController";
+import { MetricsController } from "@infrastructure/controllers/MetricsController";
 import { createTransactionRoutes } from "@infrastructure/routes/transactionRoutes";
 import { createImportRoutes } from "@infrastructure/routes/importRoutes";
 import { createUserPreferencesRoutes } from "@infrastructure/routes/userPreferencesRoutes";
 import { createSeedRoutes } from "@infrastructure/routes/seedRoutes";
 import { createCategoryRoutes } from "@infrastructure/routes/categoryRoutes";
+import { createMetricsRoutes } from "@infrastructure/routes/metricsRoutes";
 import { errorHandler } from "@infrastructure/middleware/errorHandler";
 import {
   apiLimiter,
@@ -51,6 +53,7 @@ class App {
   private userPreferencesController!: UserPreferencesController;
   private seedController!: SeedController;
   private categoryController!: CategoryController;
+  private metricsController!: MetricsController;
   private initialSetupService!: InitialSetupService;
 
   constructor() {
@@ -167,6 +170,10 @@ class App {
 
     this.categoryController = new CategoryController(this.categoryRepository);
 
+    this.metricsController = new MetricsController(
+      getDashboardMetricsUseCase,
+    );
+
     // Initialize setup service
     this.initialSetupService = new InitialSetupService(
       this.categoryRepository,
@@ -256,6 +263,10 @@ class App {
     this.app.use(
       "/api/categories",
       createCategoryRoutes(this.categoryController),
+    );
+    this.app.use(
+      "/api/metrics",
+      createMetricsRoutes(this.metricsController),
     );
 
     // 404 handler
