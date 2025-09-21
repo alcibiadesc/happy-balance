@@ -395,7 +395,10 @@ export class GetDashboardMetricsUseCase {
   }
 
   private formatPeriodLabel(dateString: string, period: string): string {
-    const date = new Date(dateString);
+    // Parse date string safely to avoid timezone issues
+    // dateString is in format YYYY-MM-DD
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed in Date constructor
 
     switch (period) {
       case "week":
