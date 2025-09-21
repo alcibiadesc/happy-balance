@@ -30,6 +30,8 @@ import { ImportTransactionsUseCase } from "@application/use-cases/ImportTransact
 import { CheckDuplicateHashesUseCase } from "@application/use-cases/CheckDuplicateHashesUseCase";
 import { ImportSelectedTransactionsUseCase } from "@application/use-cases/ImportSelectedTransactionsUseCase";
 import { SmartCategorizeTransactionUseCase } from "@application/use-cases/SmartCategorizeTransactionUseCase";
+import { FindSimilarTransactionsUseCase } from "@application/use-cases/FindSimilarTransactionsUseCase";
+import { GetDashboardMetricsUseCase } from "@application/use-cases/GetDashboardMetricsUseCase";
 import { DuplicateDetectionService } from "@domain/services/DuplicateDetectionService";
 import { CategorizationService } from "@domain/services/CategorizationService";
 import { FinancialCalculationService } from "@domain/services/FinancialCalculationService";
@@ -129,11 +131,24 @@ class App {
       smartCategorizationService,
     );
 
+    // Find similar transactions use case
+    const findSimilarTransactionsUseCase = new FindSimilarTransactionsUseCase(
+      this.transactionRepository
+    );
+
+    // Dashboard metrics use case
+    const getDashboardMetricsUseCase = new GetDashboardMetricsUseCase(
+      this.transactionRepository,
+      this.categoryRepository
+    );
+
     // Controllers
     this.transactionController = new TransactionController(
       this.transactionRepository,
       getDashboardDataUseCase,
       smartCategorizeUseCase,
+      findSimilarTransactionsUseCase,
+      getDashboardMetricsUseCase,
     );
 
     this.importController = new ImportController(

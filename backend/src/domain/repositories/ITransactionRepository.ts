@@ -13,6 +13,7 @@ export interface TransactionFilters {
   minAmount?: number;
   maxAmount?: number;
   currency?: string;
+  includeHidden?: boolean;
 }
 
 export interface PaginationOptions {

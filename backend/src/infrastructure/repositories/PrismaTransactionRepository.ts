@@ -620,49 +620,78 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   }
 
   private buildWhereClause(filters?: TransactionFilters) {
-    if (!filters) return {};
+    if (!filters) {
+      // Default: exclude hidden transactions
+      return { hidden: false };
+    }
 
     const where: any = {};
 
-    if (filters.startDate) {
-      where.date = { ...where.date, gte: filters.startDate.value };
+    // Date range filters - optimize with proper date handling
+    if (filters.startDate || filters.endDate) {
+      where.date = {};
+      if (filters.startDate) {
+        where.date.gte = filters.startDate.value;
+      }
+      if (filters.endDate) {
+        where.date.lte = filters.endDate.value;
+      }
     }
 
-    if (filters.endDate) {
-      where.date = { ...where.date, lte: filters.endDate.value };
-    }
-
+    // Transaction type filter
     if (filters.type) {
       where.type = filters.type;
     }
 
-    if (filters.categoryId) {
-      where.categoryId = filters.categoryId;
+    // Category filter - use null check for uncategorized
+    if (filters.categoryId !== undefined) {
+      if (filters.categoryId === null || filters.categoryId === "") {
+        where.categoryId = null;
+      } else {
+        where.categoryId = filters.categoryId;
+      }
     }
 
-    if (filters.merchantName) {
-      where.merchant = {
-        contains: filters.merchantName,
-        mode: "insensitive",
-      };
+    // Merchant name filter - optimized for search
+    if (filters.merchantName && filters.merchantName.trim()) {
+      const searchTerm = filters.merchantName.trim();
+
+      // Use exact match for short terms, contains for longer terms
+      if (searchTerm.length <= 3) {
+        where.merchant = {
+          startsWith: searchTerm,
+          mode: "insensitive",
+        };
+      } else {
+        where.merchant = {
+          contains: searchTerm,
+          mode: "insensitive",
+        };
+      }
     }
 
-    if (filters.minAmount !== undefined) {
-      where.amount = { ...where.amount, gte: filters.minAmount };
+    // Amount range filters
+    if (filters.minAmount !== undefined || filters.maxAmount !== undefined) {
+      where.amount = {};
+      if (filters.minAmount !== undefined) {
+        where.amount.gte = filters.minAmount;
+      }
+      if (filters.maxAmount !== undefined) {
+        where.amount.lte = filters.maxAmount;
+      }
     }
 
-    if (filters.maxAmount !== undefined) {
-      where.amount = { ...where.amount, lte: filters.maxAmount };
-    }
-
+    // Currency filter
     if (filters.currency) {
       where.currency = filters.currency;
     }
 
-    // By default, exclude hidden transactions unless explicitly requested
-    if (!(filters as any).includeHidden) {
+    // Hidden transactions filter - optimize for common case
+    const includeHidden = (filters as any).includeHidden;
+    if (!includeHidden) {
       where.hidden = false;
     }
+    // If includeHidden is true, we don't add any hidden filter (show all)
 
     return where;
   }

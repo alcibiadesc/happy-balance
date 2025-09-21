@@ -23,6 +23,10 @@ export const createTransactionRoutes = (
     "/dashboard",
     transactionController.getDashboard.bind(transactionController),
   );
+  router.get(
+    "/metrics",
+    transactionController.getMetrics.bind(transactionController),
+  );
   router.delete(
     "/",
     transactionController.deleteAll.bind(transactionController),
@@ -32,6 +36,14 @@ export const createTransactionRoutes = (
   router.post(
     "/:id/categorize",
     transactionController.smartCategorizeTransaction.bind(
+      transactionController,
+    ),
+  );
+
+  // Find similar transactions route
+  router.get(
+    "/:id/similar",
+    transactionController.findSimilarTransactions.bind(
       transactionController,
     ),
   );

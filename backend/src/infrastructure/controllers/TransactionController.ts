@@ -12,6 +12,8 @@ import { GetDashboardDataUseCase } from "@application/use-cases/GetDashboardData
 import { DashboardQuery } from "@application/queries/DashboardQuery";
 import { TransactionListQuery } from "@application/queries/TransactionListQuery";
 import { SmartCategorizeTransactionUseCase } from "@application/use-cases/SmartCategorizeTransactionUseCase";
+import { FindSimilarTransactionsUseCase } from "@application/use-cases/FindSimilarTransactionsUseCase";
+import { GetDashboardMetricsUseCase } from "@application/use-cases/GetDashboardMetricsUseCase";
 
 const CreateTransactionSchema = z.object({
   amount: z.number().positive(),
@@ -74,11 +76,31 @@ const SmartCategorizeSchema = z.object({
   createPattern: z.boolean().default(true),
 });
 
+const MetricsQuerySchema = z.object({
+  period: z
+    .enum(["week", "month", "quarter", "year", "custom"])
+    .optional()
+    .default("month"),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  currency: z.string().min(3).max(3).optional().default("EUR"),
+  includeInvestments: z.coerce.boolean().optional().default(true),
+  periodOffset: z.coerce.number().min(0).optional().default(0),
+});
+
 export class TransactionController {
   constructor(
     private readonly transactionRepository: ITransactionRepository,
     private readonly getDashboardDataUseCase: GetDashboardDataUseCase,
     private readonly smartCategorizeUseCase?: SmartCategorizeTransactionUseCase,
+    private readonly findSimilarTransactionsUseCase?: FindSimilarTransactionsUseCase,
+    private readonly getDashboardMetricsUseCase?: GetDashboardMetricsUseCase,
   ) {}
 
   async createTransaction(req: Request, res: Response) {
@@ -558,6 +580,119 @@ export class TransactionController {
         patternCreated: result.patternCreated,
         affectedTransactionIds: result.affectedTransactionIds,
         message: result.message,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  async findSimilarTransactions(req: Request, res: Response) {
+    try {
+      if (!this.findSimilarTransactionsUseCase) {
+        return res.status(501).json({
+          error: "Find similar transactions feature is not configured",
+        });
+      }
+
+      const { id } = req.params;
+      const { maxResults = 50, includeHidden = false } = req.query;
+
+      // Get the source transaction first
+      const transactionIdResult = TransactionId.create(id);
+      if (transactionIdResult.isFailure()) {
+        return res.status(400).json({ error: transactionIdResult.getError() });
+      }
+
+      const transactionResult = await this.transactionRepository.findById(
+        transactionIdResult.getValue()
+      );
+
+      if (transactionResult.isFailure()) {
+        return res.status(500).json({ error: transactionResult.getError() });
+      }
+
+      const transaction = transactionResult.getValue();
+      if (!transaction) {
+        return res.status(404).json({ error: "Transaction not found" });
+      }
+
+      const snapshot = transaction.toSnapshot();
+
+      // Find similar transactions
+      const similarResult = await this.findSimilarTransactionsUseCase.execute({
+        transactionId: id,
+        merchantName: snapshot.merchant,
+        description: snapshot.description,
+        maxResults: Number(maxResults),
+        includeHidden: Boolean(includeHidden),
+      });
+
+      if (similarResult.isFailure()) {
+        return res.status(500).json({ error: similarResult.getError() });
+      }
+
+      const similarTransactions = similarResult.getValue();
+
+      // Transform to API response format
+      const responseData = similarTransactions.map((item) => ({
+        transaction: {
+          ...item.transaction.toSnapshot(),
+          hidden: (item.transaction as any).hidden || false,
+        },
+        similarity: item.similarity,
+      }));
+
+      res.json({
+        success: true,
+        data: {
+          sourceTransaction: {
+            ...snapshot,
+            hidden: (transaction as any).hidden || false,
+          },
+          similarTransactions: responseData,
+          totalFound: responseData.length,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  async getMetrics(req: Request, res: Response) {
+    try {
+      if (!this.getDashboardMetricsUseCase) {
+        return res.status(501).json({
+          error: "Dashboard metrics feature is not configured",
+        });
+      }
+
+      const validationResult = MetricsQuerySchema.safeParse(req.query);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validationResult.error.errors,
+        });
+      }
+
+      const query = validationResult.data;
+
+      const result = await this.getDashboardMetricsUseCase.execute(query);
+
+      if (result.isFailure()) {
+        return res.status(500).json({ error: result.getError() });
+      }
+
+      const metrics = result.getValue();
+
+      res.json({
+        success: true,
+        data: metrics,
       });
     } catch (error) {
       res.status(500).json({

@@ -1,0 +1,410 @@
+import { Result } from "@domain/shared/Result";
+import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
+import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
+import { TransactionDate } from "@domain/value-objects/TransactionDate";
+import { TransactionType } from "@domain/entities/TransactionType";
+import { DashboardMetrics, Metrics } from "@domain/entities/Metrics";
+
+export interface DashboardMetricsQuery {
+  currency: string;
+  period: 'week' | 'month' | 'quarter' | 'year' | 'custom';
+  startDate?: string;
+  endDate?: string;
+  periodOffset?: number;
+  includeInvestments?: boolean;
+}
+
+export class GetDashboardMetricsUseCase {
+  constructor(
+    private readonly transactionRepository: ITransactionRepository,
+    private readonly categoryRepository: ICategoryRepository
+  ) {}
+
+  async execute(query: DashboardMetricsQuery): Promise<Result<DashboardMetrics>> {
+    try {
+      // Calculate date range
+      const dateRange = this.calculateDateRange(query);
+
+      // Get all transactions for the period
+      const startDateResult = TransactionDate.fromString(dateRange.startDate);
+      const endDateResult = TransactionDate.fromString(dateRange.endDate);
+
+      if (startDateResult.isFailure()) {
+        return Result.failWithMessage(startDateResult.getError());
+      }
+
+      if (endDateResult.isFailure()) {
+        return Result.failWithMessage(endDateResult.getError());
+      }
+
+      const transactionsResult = await this.transactionRepository.findWithFilters({
+        startDate: startDateResult.getValue(),
+        endDate: endDateResult.getValue(),
+        currency: query.currency,
+        includeHidden: false // Dashboard should only show visible transactions
+      });
+
+      if (transactionsResult.isFailure()) {
+        return Result.failWithMessage(transactionsResult.getError());
+      }
+
+      const { transactions } = transactionsResult.getValue();
+
+      // Get all categories for categorization
+      const categoriesResult = await this.categoryRepository.findActive();
+      if (categoriesResult.isFailure()) {
+        return Result.failWithMessage(categoriesResult.getError());
+      }
+
+      const categories = categoriesResult.getValue();
+
+      // Calculate metrics
+      const periodBalance = this.calculatePeriodBalance(transactions, query.currency);
+      const expenseDistribution = this.calculateExpenseDistribution(transactions, categories, query.currency);
+      const categoryBreakdown = this.calculateCategoryBreakdown(transactions, categories, query.currency);
+      const monthlyTrend = await this.calculateMonthlyTrend(query, dateRange);
+      const transactionMetrics = this.calculateTransactionMetrics(transactions);
+
+      const periodInfo = {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        periodType: query.period
+      };
+
+      // Create Metrics entity
+      const metricsResult = Metrics.create(
+        periodBalance,
+        expenseDistribution,
+        categoryBreakdown,
+        monthlyTrend,
+        transactionMetrics,
+        periodInfo
+      );
+
+      if (metricsResult.isFailure()) {
+        return Result.failWithMessage(metricsResult.getError());
+      }
+
+      return Result.ok(metricsResult.getValue().toSnapshot());
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to calculate dashboard metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  private calculateDateRange(query: DashboardMetricsQuery): { startDate: string; endDate: string } {
+    if (query.period === 'custom' && query.startDate && query.endDate) {
+      return {
+        startDate: query.startDate,
+        endDate: query.endDate
+      };
+    }
+
+    const now = new Date();
+    const offset = query.periodOffset || 0;
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (query.period) {
+      case 'week':
+        const currentWeekStart = new Date(now);
+        currentWeekStart.setDate(now.getDate() - now.getDay());
+        currentWeekStart.setHours(0, 0, 0, 0);
+
+        startDate = new Date(currentWeekStart);
+        startDate.setDate(currentWeekStart.getDate() - (offset * 7));
+
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() - offset + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+
+      case 'quarter':
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        const quarterStartMonth = (currentQuarter * 3) - (offset * 3);
+        startDate = new Date(now.getFullYear(), quarterStartMonth, 1);
+        endDate = new Date(now.getFullYear(), quarterStartMonth + 3, 0);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+
+      case 'year':
+        startDate = new Date(now.getFullYear() - offset, 0, 1);
+        endDate = new Date(now.getFullYear() - offset, 11, 31);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+
+      default:
+        // Default to current month
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+    }
+
+    // Ensure endDate is not in the future
+    if (endDate > now) {
+      endDate = new Date(now);
+    }
+
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0]
+    };
+  }
+
+  private calculatePeriodBalance(transactions: any[], currency: string) {
+    let income = 0;
+    let expenses = 0;
+
+    for (const transaction of transactions) {
+      const snapshot = transaction.toSnapshot();
+
+      if (snapshot.type === TransactionType.INCOME) {
+        income += snapshot.amount;
+      } else if (snapshot.type === TransactionType.EXPENSE) {
+        expenses += snapshot.amount;
+      }
+    }
+
+    return {
+      income,
+      expenses,
+      balance: income - expenses,
+      currency
+    };
+  }
+
+  private calculateExpenseDistribution(transactions: any[], categories: any[], currency: string) {
+    let essential = 0;
+    let discretionary = 0;
+    let uncategorized = 0;
+
+    // Get essential category IDs (you might want to mark categories as essential in your schema)
+    const essentialCategoryNames = [
+      'groceries', 'utilities', 'rent', 'mortgage', 'insurance', 'healthcare',
+      'transportation', 'gas', 'electricity', 'water', 'internet', 'phone'
+    ];
+
+    const essentialCategoryIds = new Set(
+      categories
+        .filter(cat => essentialCategoryNames.some(name =>
+          cat.name.toLowerCase().includes(name.toLowerCase())
+        ))
+        .map(cat => cat.id)
+    );
+
+    for (const transaction of transactions) {
+      const snapshot = transaction.toSnapshot();
+
+      if (snapshot.type === TransactionType.EXPENSE) {
+        if (!snapshot.categoryId) {
+          uncategorized += snapshot.amount;
+        } else if (essentialCategoryIds.has(snapshot.categoryId)) {
+          essential += snapshot.amount;
+        } else {
+          discretionary += snapshot.amount;
+        }
+      }
+    }
+
+    return {
+      essential,
+      discretionary,
+      uncategorized,
+      currency
+    };
+  }
+
+  private calculateCategoryBreakdown(transactions: any[], categories: any[], currency: string) {
+    const categoryTotals = new Map<string, { amount: number; count: number; name: string }>();
+    let totalExpenses = 0;
+
+    // Initialize with all categories
+    for (const category of categories) {
+      categoryTotals.set(category.id, {
+        amount: 0,
+        count: 0,
+        name: category.name
+      });
+    }
+
+    // Add uncategorized
+    categoryTotals.set('uncategorized', {
+      amount: 0,
+      count: 0,
+      name: 'Uncategorized'
+    });
+
+    // Calculate totals
+    for (const transaction of transactions) {
+      const snapshot = transaction.toSnapshot();
+
+      if (snapshot.type === TransactionType.EXPENSE) {
+        totalExpenses += snapshot.amount;
+
+        const categoryId = snapshot.categoryId || 'uncategorized';
+        const existing = categoryTotals.get(categoryId);
+
+        if (existing) {
+          existing.amount += snapshot.amount;
+          existing.count += 1;
+        }
+      }
+    }
+
+    // Convert to array and calculate percentages
+    const breakdown = Array.from(categoryTotals.entries())
+      .filter(([_, data]) => data.amount > 0)
+      .map(([categoryId, data]) => ({
+        categoryId: categoryId === 'uncategorized' ? null : categoryId,
+        categoryName: data.name,
+        amount: data.amount,
+        percentage: totalExpenses > 0 ? (data.amount / totalExpenses) * 100 : 0,
+        transactionCount: data.count,
+        isEssential: this.isEssentialCategory(data.name)
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
+    return breakdown;
+  }
+
+  private isEssentialCategory(categoryName: string): boolean {
+    const essentialKeywords = [
+      'groceries', 'utilities', 'rent', 'mortgage', 'insurance', 'healthcare',
+      'transportation', 'gas', 'electricity', 'water', 'internet', 'phone'
+    ];
+
+    return essentialKeywords.some(keyword =>
+      categoryName.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+
+  private async calculateMonthlyTrend(query: DashboardMetricsQuery, currentRange: { startDate: string; endDate: string }) {
+    // Calculate trend for the last 6 months or periods
+    const trends = [];
+    const periodsToShow = 6;
+
+    for (let i = periodsToShow - 1; i >= 0; i--) {
+      const trendQuery = { ...query, periodOffset: (query.periodOffset || 0) + i };
+      const trendRange = this.calculateDateRange(trendQuery);
+
+      const startDateResult = TransactionDate.fromString(trendRange.startDate);
+      const endDateResult = TransactionDate.fromString(trendRange.endDate);
+
+      if (startDateResult.isSuccess() && endDateResult.isSuccess()) {
+        const transactionsResult = await this.transactionRepository.findWithFilters({
+          startDate: startDateResult.getValue(),
+          endDate: endDateResult.getValue(),
+          currency: query.currency,
+          includeHidden: false
+        });
+
+        if (transactionsResult.isSuccess()) {
+          const { transactions } = transactionsResult.getValue();
+          const periodBalance = this.calculatePeriodBalance(transactions, query.currency);
+
+          trends.push({
+            month: this.formatPeriodLabel(trendRange.startDate, query.period),
+            income: periodBalance.income,
+            expenses: periodBalance.expenses,
+            balance: periodBalance.balance
+          });
+        }
+      }
+    }
+
+    return trends;
+  }
+
+  private formatPeriodLabel(dateString: string, period: string): string {
+    const date = new Date(dateString);
+
+    switch (period) {
+      case 'week':
+        return `Week of ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      case 'month':
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      case 'quarter':
+        const quarter = Math.floor(date.getMonth() / 3) + 1;
+        return `Q${quarter} ${date.getFullYear()}`;
+      case 'year':
+        return date.getFullYear().toString();
+      default:
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+    }
+  }
+
+  private calculateTransactionMetrics(transactions: any[]) {
+    if (transactions.length === 0) {
+      return {
+        totalCount: 0,
+        avgTransactionAmount: 0,
+        largestTransaction: 0,
+        smallestTransaction: 0,
+        mostFrequentMerchant: 'N/A',
+        transactionCountByType: {
+          income: 0,
+          expense: 0,
+          investment: 0
+        }
+      };
+    }
+
+    let totalAmount = 0;
+    let largestTransaction = 0;
+    let smallestTransaction = Number.MAX_VALUE;
+    const merchantCounts = new Map<string, number>();
+    const typeCounts = { income: 0, expense: 0, investment: 0 };
+
+    for (const transaction of transactions) {
+      const snapshot = transaction.toSnapshot();
+      const amount = Math.abs(snapshot.amount);
+
+      totalAmount += amount;
+      largestTransaction = Math.max(largestTransaction, amount);
+      smallestTransaction = Math.min(smallestTransaction, amount);
+
+      // Count merchants
+      const merchant = snapshot.merchant;
+      merchantCounts.set(merchant, (merchantCounts.get(merchant) || 0) + 1);
+
+      // Count by type
+      switch (snapshot.type) {
+        case TransactionType.INCOME:
+          typeCounts.income++;
+          break;
+        case TransactionType.EXPENSE:
+          typeCounts.expense++;
+          break;
+        case TransactionType.INVESTMENT:
+          typeCounts.investment++;
+          break;
+      }
+    }
+
+    // Find most frequent merchant
+    let mostFrequentMerchant = 'N/A';
+    let maxCount = 0;
+    for (const [merchant, count] of merchantCounts.entries()) {
+      if (count > maxCount) {
+        maxCount = count;
+        mostFrequentMerchant = merchant;
+      }
+    }
+
+    return {
+      totalCount: transactions.length,
+      avgTransactionAmount: totalAmount / transactions.length,
+      largestTransaction,
+      smallestTransaction: smallestTransaction === Number.MAX_VALUE ? 0 : smallestTransaction,
+      mostFrequentMerchant,
+      transactionCountByType: typeCounts
+    };
+  }
+}
