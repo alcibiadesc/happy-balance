@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import Badge from '../atoms/Badge.svelte';
+  import { t } from '$lib/stores/i18n';
 
   export let headers: string[] = [];
   export let detectedMapping: Record<string, number> = {};
@@ -12,18 +13,18 @@
   }>();
 
   // Available field types for mapping
-  const fieldTypes = [
-    { key: 'bookingDate', label: 'Booking Date', required: true },
-    { key: 'valueDate', label: 'Value Date', required: false },
-    { key: 'partnerName', label: 'Partner Name', required: true },
-    { key: 'partnerIban', label: 'Partner IBAN', required: false },
-    { key: 'type', label: 'Transaction Type', required: false },
-    { key: 'paymentReference', label: 'Description', required: true },
-    { key: 'accountName', label: 'Account Name', required: false },
-    { key: 'amountEur', label: 'Amount (EUR)', required: true },
-    { key: 'originalAmount', label: 'Original Amount', required: false },
-    { key: 'originalCurrency', label: 'Original Currency', required: false },
-    { key: 'exchangeRate', label: 'Exchange Rate', required: false }
+  $: fieldTypes = [
+    { key: 'bookingDate', label: $t('import.field_types.booking_date'), required: true },
+    { key: 'valueDate', label: $t('import.field_types.value_date'), required: false },
+    { key: 'partnerName', label: $t('import.field_types.partner_name'), required: true },
+    { key: 'partnerIban', label: $t('import.field_types.partner_iban'), required: false },
+    { key: 'type', label: $t('import.field_types.transaction_type'), required: false },
+    { key: 'paymentReference', label: $t('import.field_types.description'), required: true },
+    { key: 'accountName', label: $t('import.field_types.account_name'), required: false },
+    { key: 'amountEur', label: $t('import.field_types.amount_eur'), required: true },
+    { key: 'originalAmount', label: $t('import.field_types.original_amount'), required: false },
+    { key: 'originalCurrency', label: $t('import.field_types.original_currency'), required: false },
+    { key: 'exchangeRate', label: $t('import.field_types.exchange_rate'), required: false }
   ];
 
   let currentMapping = { ...detectedMapping };
@@ -65,13 +66,13 @@
   <!-- Header with toggle -->
   <div class="mapping-header">
     <div class="mapping-info">
-      <h3 class="text-sm font-medium text-evening-sea">Field Mapping</h3>
+      <h3 class="text-sm font-medium text-evening-sea">{$t('components.field_mapping.title')}</h3>
       <div class="flex items-center space-x-2">
         <Badge variant={mappingStatus} size="sm">
-          {confidence}% confidence
+          {confidence}% {$t('components.field_mapping.confidence')}
         </Badge>
         <span class="text-xs text-evening-sea opacity-60">
-          Auto-detected from CSV headers
+          {$t('components.field_mapping.auto_detected')}
         </span>
       </div>
     </div>
@@ -80,7 +81,7 @@
       type="button"
       class="toggle-button"
       on:click={toggleMappingVisibility}
-      aria-label={showMapping ? 'Hide field mapping' : 'Show field mapping'}
+      aria-label={showMapping ? $t('components.field_mapping.hide') : $t('components.field_mapping.show')}
     >
       <svg 
         class="w-4 h-4 transition-transform duration-200 {showMapping ? 'rotate-180' : ''}" 
@@ -98,8 +99,8 @@
     <div class="mapping-content">
       <div class="mapping-description">
         <p class="text-sm text-evening-sea opacity-70">
-          Review and adjust how CSV columns are mapped to transaction fields. 
-          Fields marked with <span class="text-froly">*</span> are required for import.
+          {$t('components.field_mapping.description')}
+          {$t('components.field_mapping.required_note')}
         </p>
       </div>
 
@@ -114,7 +115,7 @@
                 {/if}
               </label>
               {#if field.required && !currentMapping[field.key]}
-                <span class="error-text">Required field not mapped</span>
+                <span class="error-text">{$t('components.field_mapping.required_not_mapped')}</span>
               {/if}
             </div>
             
@@ -125,7 +126,7 @@
                 value={currentMapping[field.key] ?? -1}
                 on:change={(e) => updateFieldMapping(field.key, parseInt(e.currentTarget.value))}
               >
-                <option value={-1}>Not mapped</option>
+                <option value={-1}>{$t('components.field_mapping.not_mapped')}</option>
                 {#each headers as header, index}
                   <option value={index}>
                     Column {index + 1}: {header}
@@ -142,15 +143,15 @@
         <div class="summary-stats">
           <div class="stat">
             <span class="stat-value text-acapulco">{Object.keys(currentMapping).length}</span>
-            <span class="stat-label">Mapped</span>
+            <span class="stat-label">{$t('components.field_mapping.mapped_stat')}</span>
           </div>
           <div class="stat">
             <span class="stat-value text-sunglow">{fieldTypes.filter(f => f.required && !currentMapping[f.key]).length}</span>
-            <span class="stat-label">Missing Required</span>
+            <span class="stat-label">{$t('components.field_mapping.missing_required_stat')}</span>
           </div>
           <div class="stat">
             <span class="stat-value text-evening-sea">{headers.length}</span>
-            <span class="stat-label">Total Columns</span>
+            <span class="stat-label">{$t('components.field_mapping.total_columns_stat')}</span>
           </div>
         </div>
       </div>

@@ -14,7 +14,14 @@
     "yes": "Yes",
     "no": "No",
     "back": "Back",
-    "done": "Done"
+    "done": "Done",
+    "status": "Status",
+    "hidden": "Hidden",
+    "visible": "Visible",
+    "add": "Add",
+    "app_name": "Happy Balance",
+    "app_tagline": "Financial harmony",
+    "app_logo_alt": "Happy Balance Logo"
   },
   "navigation": {
     "transactions": "Transactions",
@@ -149,6 +156,19 @@
       "file": "Identical transaction found in file",
       "database": "Transaction already exists in database",
       "both": "Duplicate in both file and database"
+    },
+    "field_types": {
+      "booking_date": "Booking Date",
+      "value_date": "Value Date",
+      "partner_name": "Partner Name",
+      "partner_iban": "Partner IBAN",
+      "transaction_type": "Transaction Type",
+      "description": "Description",
+      "account_name": "Account Name",
+      "amount_eur": "Amount (EUR)",
+      "original_amount": "Original Amount",
+      "original_currency": "Original Currency",
+      "exchange_rate": "Exchange Rate"
     }
   },
   "transactions": {
@@ -223,6 +243,8 @@
     "type": "Type",
     "no_categories": "No categories",
     "delete_confirmation": "Are you sure you want to delete this category?",
+    "no_categories_help": "You have no categories configured. Categories help you organize and analyze your expenses and income better.",
+    "create_categories": "Create categories",
     "types": {
       "income": "Income",
       "investment": "Investment",
@@ -233,29 +255,37 @@
   },
   "settings": {
     "title": "Settings",
-    "language": "Language",
-    "currency": "Currency",
     "theme": "Theme",
     "themes": {
       "light": "Light",
       "dark": "Dark",
       "system": "System"
     },
+    "language": "Language",
+    "languages": {
+      "spanish": "Spanish"
+    },
+    "currency": "Currency",
     "data": "Data",
     "export_data": "Export Data",
     "import_data": "Import Data",
-    "clear_data": "Clear Data",
-    "clear_data_confirmation": "Are you sure you want to delete all data? This action cannot be undone.",
     "reset_data": "Reset to Defaults",
-    "reset_data_confirmation": "This will restore all default categories and settings. Your transactions will be preserved but categories will be reset to defaults.",
+    "clear_data": "Clear Data",
+    "importing": "Importing...",
+    "import_error": "Import failed",
     "export_success": "Data exported successfully",
     "import_success": "Successfully imported {count} transactions",
     "import_invalid_file": "Please select a valid JSON file",
     "import_file_too_large": "File size must be less than 10MB",
     "import_invalid_format": "Invalid backup file format",
-    "import_confirmation": "This will import {transactions} transactions from {date}. Continue?",
     "import_parse_error": "Error parsing backup file",
-    "import_read_error": "Error reading backup file"
+    "import_read_error": "Error reading backup file",
+    "clear_data_confirmation": "Are you sure you want to delete all data? This action cannot be undone.",
+    "reset_data_confirmation": "This will restore all default categories and settings. Your transactions will be preserved but categories will be reset to defaults.",
+    "import_confirmation": "This will import {transactions} transactions from {date}. Continue?",
+    "localization": "Localization",
+    "import_button": "Import",
+    "cancel_button": "Cancel"
   },
   "errors": {
     "generic": "An error occurred",
@@ -280,5 +310,356 @@
     "reset_title": "Reset to Defaults",
     "reset_message": "⚠️ This will restore default categories and settings. Your transactions will be preserved, but custom categories and settings will be lost. This action cannot be undone!",
     "reset_everything": "Reset to Defaults"
+  },
+  "pages": {
+    "categories": {
+      "title": "Category Configuration",
+      "subtitle": "Manage your categories and annual budgets",
+      "name_placeholder": "Category name",
+      "annual_budget": "Annual budget",
+      "select_icon": "Select icon",
+      "delete_modal_title": "Delete category",
+      "has_transactions_question": "What do you want to do with them?",
+      "recategorize_to": "Recategorize to",
+      "leave_uncategorized": "Leave uncategorized",
+      "no_transactions_message": "This category has no associated transactions.",
+      "no_budget": "No budget",
+      "transaction_count": "There {count, plural, =1 {is # transaction} other {are # transactions}} with this category"
+    },
+    "import": {
+      "duplicates_detected": "Possible duplicates detected",
+      "search_transactions": "Search transactions...",
+      "selected_for_import": "{count} selected for import",
+      "filter_all": "All",
+      "filter_new": "New",
+      "filter_duplicates": "Duplicates",
+      "field_types": {
+        "booking_date": "Booking Date",
+        "value_date": "Value Date",
+        "partner_name": "Partner Name",
+        "partner_iban": "Partner IBAN",
+        "transaction_type": "Transaction Type",
+        "description": "Description",
+        "account_name": "Account Name",
+        "amount_eur": "Amount (EUR)",
+        "original_amount": "Original Amount",
+        "original_currency": "Original Currency",
+        "exchange_rate": "Exchange Rate"
+      },
+      "duplicate_reasons": {
+        "database": "Already exists in database",
+        "file": "Duplicate in import file",
+        "partial": "Partial match found"
+      }
+    }
+  },
+  "modals": {
+    "smart_tag": {
+      "title": "Add tag",
+      "tags_label": "Tags:",
+      "new_tag_placeholder": "New tag...",
+      "scope_single_title": "Only this transaction",
+      "scope_single_detail": "1 transaction",
+      "scope_similar_title": "All similar ones",
+      "add_to_count": "Add to {count}"
+    },
+    "smart_categorization": {
+      "title": "Apply category",
+      "scope_single_title": "Only this transaction",
+      "scope_single_detail": "Apply only to this transaction",
+      "scope_similar_title": "Similar transactions",
+      "scope_similar_detail": "Apply to all similar transactions",
+      "auto_apply_checkbox": "Apply automatically to future similar transactions",
+      "preview_title": "Will also be applied to:",
+      "apply_single": "Apply category",
+      "apply_multiple": "Apply to {count}"
+    },
+    "smart_categorize": {
+      "title": "Categorize Transaction",
+      "transaction_label": "Transaction:",
+      "amount_label": "Amount:",
+      "category_label": "Category:",
+      "ai_explanation": "This looks like a mortgage payment. It will be categorized under debt payments.",
+      "categorize_question": "How would you like to categorize?",
+      "scope_single_title": "Just this transaction",
+      "scope_similar_title": "All similar transactions",
+      "remember_pattern_checkbox": "Remember this pattern for future transactions",
+      "help_text": "Perfect for recurring mortgage payments!",
+      "categorize": "Categorize",
+      "categorize_all": "Categorize All"
+    },
+    "category_selection": {
+      "title": "Categorize transaction"
+    }
+  },
+  "components": {
+    "field_mapping": {
+      "title": "Field Mapping",
+      "required_not_mapped": "Required field not mapped",
+      "not_mapped": "Not mapped",
+      "mapped_stat": "Mapped",
+      "missing_required_stat": "Missing Required",
+      "total_columns_stat": "Total Columns",
+      "confidence": "confidence",
+      "auto_detected": "Auto-detected from CSV headers",
+      "hide": "Hide field mapping",
+      "show": "Show field mapping",
+      "description": "Review and adjust how CSV columns are mapped to transaction fields.",
+      "required_note": "Fields marked with * are required for import."
+    },
+    "import_wizard": {
+      "title": "Import Transactions",
+      "settings_title": "Import Settings",
+      "enable_preview_label": "Enable preview before import",
+      "detect_duplicates_label": "Detect duplicate transactions",
+      "ready_status": "Ready",
+      "total_stat": "Total",
+      "selected_stat": "Selected",
+      "duplicates_stat": "Duplicates",
+      "skipped_stat": "Skipped",
+      "show_duplicates_toggle": "Show duplicate transactions",
+      "importing_title": "Importing Transactions",
+      "importing_text": "Please wait while we process your data...",
+      "success_title": "Import Complete!",
+      "success_text": "Your transactions have been successfully imported.",
+      "imported_label": "Imported:",
+      "skipped_label": "Skipped:",
+      "duplicates_label": "Duplicates:"
+    },
+    "transaction_preview_table": {
+      "processing": "Processing transactions...",
+      "no_transactions": "No transactions to display",
+      "selected_suffix": "selected",
+      "duplicates_suffix": "duplicates",
+      "selection_header": "Selection",
+      "date_header": "Date",
+      "partner_header": "Partner",
+      "description_header": "Description",
+      "amount_header": "Amount",
+      "status_header": "Status"
+    },
+    "file_upload": {
+      "supported_formats": "Supported formats:"
+    },
+    "sidebar_footer": {
+      "import_transactions": "Import transactions"
+    },
+    "expenses_card": {
+      "collapse_breakdown": "Collapse breakdown",
+      "view_breakdown": "View breakdown"
+    },
+    "mobile_sidebar": {
+      "close_menu": "Close menu"
+    },
+    "language_select": {
+      "select_language": "Select language"
+    }
+  },
+  "accessibility": {
+    "select_icon_for_new_category": "Select icon for new category",
+    "select_icon_for_category": "Select icon for {name}",
+    "icon_picker": "Icon picker",
+    "close_picker": "Close picker",
+    "available_icons": "Available icons list",
+    "icon_option": "Icon {icon}",
+    "clear_search": "Clear search",
+    "select_transactions": "Select transactions",
+    "show_filters": "Show filters",
+    "export_transactions": "Export transactions",
+    "remove_income_filter": "Remove income filter",
+    "remove_expenses_filter": "Remove expenses filter",
+    "remove_category_filter": "Remove category {name}",
+    "close_error_message": "Close error message",
+    "close_modal": "Close"
+  },
+  "validation": {
+    "income_negative_amount": "Income transactions cannot have negative amounts",
+    "expense_negative_amount": "Expense transactions cannot have negative amounts",
+    "investment_negative_amount": "Investment transactions cannot have negative amounts",
+    "description_too_long": "Description cannot exceed 200 characters",
+    "inactive_category": "Cannot categorize with inactive category",
+    "category_id_empty": "Category ID cannot be empty",
+    "category_name_empty": "Category name cannot be empty",
+    "category_name_too_long": "Category name cannot exceed 50 characters",
+    "invalid_hex_color": "Color must be a valid hex color code",
+    "category_icon_empty": "Category icon cannot be empty",
+    "amount_invalid": "Amount must be a non-negative finite number",
+    "currency_invalid": "Currency must be a 3-letter ISO code",
+    "date_invalid": "Date must be a valid date string",
+    "merchant_empty": "Merchant name cannot be empty",
+    "merchant_too_long": "Merchant name cannot exceed 100 characters",
+    "transaction_type_invalid": "Invalid transaction type",
+    "future_date": "Transaction date cannot be in the future",
+    "category_type_mismatch": "Category type {categoryType} does not match transaction type {transactionType}",
+    "invalid_transaction_type": "Invalid transaction type: {type}",
+    "transaction_id_empty": "Transaction ID cannot be empty",
+    "tag_empty": "Tag cannot be empty",
+    "invalid_categorization_scope": "Invalid categorization scope",
+    "invalid_date": "Invalid date provided",
+    "transaction_not_found": "Transaction not found",
+    "category_not_found": "Category not found",
+    "storage_quota_exceeded": "Storage quota exceeded",
+    "invalid_backup_format": "Invalid backup format",
+    "date_too_old": "Transaction date cannot be older than 10 years"
+  },
+  "data": {
+    "transaction_exists": "Identical transaction already exists",
+    "parsing_error": "Unknown parsing error",
+    "unknown_merchant": "Unknown Merchant",
+    "unknown_category": "Unknown Category",
+    "currency_mismatch": "Cannot calculate spending rate for different currencies",
+    "default_categories": {
+      "food_groceries": "Food & Groceries",
+      "transport": "Transport",
+      "entertainment": "Entertainment",
+      "utilities": "Utilities",
+      "income": "Income",
+      "investment": "Investment"
+    }
+  },
+  "import": {
+    "title": "Import Transactions",
+    "subtitle": "Upload your bank statements to import transactions automatically",
+    "errors": {
+      "invalid_file": "Invalid file format. Please upload a CSV or Excel file.",
+      "file_too_large": "File is too large. Maximum size is 10MB.",
+      "no_transactions": "No valid transactions found in the file.",
+      "parse_failed": "Failed to parse the file. Please check the format.",
+      "import_failed": "Failed to import transactions. Please try again."
+    },
+    "actions": {
+      "import_count": "Import {count} transaction",
+      "import_count_plural": "Import {count} transactions"
+    },
+    "steps": {
+      "upload": "Upload File",
+      "upload_desc": "Select your bank statement",
+      "preview": "Preview & Map",
+      "preview_desc": "Review and configure import",
+      "complete": "Complete",
+      "complete_desc": "Import successful"
+    },
+    "settings": {
+      "title": "Import Settings",
+      "enable_preview": "Enable preview before import",
+      "enable_preview_desc": "Preview allows you to review and edit transactions before saving"
+    },
+    "upload": {
+      "processing": "Processing...",
+      "choose_file": "Choose File",
+      "drag_drop": "or drag and drop here",
+      "ready": "Ready to import"
+    },
+    "preview": {
+      "stats": {
+        "total": "Total",
+        "selected": "Selected",
+        "duplicates": "Duplicates",
+        "skipped": "Skipped"
+      },
+      "controls": {
+        "show_all": "Show all duplicates",
+        "deselect_all": "Deselect all",
+        "select_all": "Select all"
+      },
+      "table": {
+        "select": "Select",
+        "date": "Date",
+        "partner": "Partner",
+        "description": "Description",
+        "amount": "Amount",
+        "status": "Status"
+      },
+      "status": {
+        "duplicate": "Duplicate",
+        "duplicate_will_import": "Duplicate (will be imported)",
+        "ready": "Ready",
+        "skipped": "Skipped"
+      },
+      "pagination": {
+        "showing": "Showing {start} to {end} of {total}",
+        "show_all": "Show all"
+      }
+    },
+    "field_types": {
+      "booking_date": "Booking Date",
+      "value_date": "Value Date",
+      "partner_name": "Partner Name",
+      "partner_iban": "Partner IBAN",
+      "transaction_type": "Transaction Type",
+      "description": "Description",
+      "account_name": "Account Name",
+      "amount_eur": "Amount (EUR)",
+      "original_amount": "Original Amount",
+      "original_currency": "Original Currency",
+      "exchange_rate": "Exchange Rate"
+    },
+    "duplicate_reasons": {
+      "database": "Already exists in database",
+      "file": "Duplicate in import file",
+      "partial": "Partial match found"
+    },
+    "preview": {
+      "status": {
+        "duplicate_will_import": "Duplicate (will be imported)"
+      }
+    }
+  },
+  "transactions": {
+    "show_period": "Show selected period",
+    "show_all_transactions": "Show all transactions",
+    "category": "Category",
+    "date": "Date",
+    "time": "Time",
+    "merchant": "Merchant",
+    "amount": "Amount",
+    "delete_all": "Delete All",
+    "delete_single_title": "Delete Transaction",
+    "delete_single_message": "Are you sure you want to delete this transaction?",
+    "period": {
+      "balance": "Period balance",
+      "income": "Income",
+      "total_expenses": "Total expenses",
+      "expense_distribution": "Expense distribution",
+      "essential": "Essential",
+      "discretionary": "Discretionary",
+      "uncategorized": "Uncategorized",
+      "all_time": "All transactions"
+    },
+    "modal": {
+      "new_transaction": "New Transaction",
+      "amount_placeholder": "0.00",
+      "expense": "Expense",
+      "income": "Income",
+      "where_label": "Where",
+      "merchant_placeholder": "Merchant name",
+      "what_for_label": "What for",
+      "description_placeholder": "Description",
+      "when_label": "When",
+      "saving": "Saving...",
+      "save_transaction": "Save Transaction",
+      "validation": {
+        "amount_required": "Amount is required",
+        "merchant_required": "Merchant is required",
+        "date_required": "Date is required",
+        "future_date": "Date cannot be in the future"
+      }
+    }
+  },
+  "csv_export": {
+    "headers": {
+      "description": "Description",
+      "category": "Category",
+      "category_type": "Category Type"
+    }
+  },
+  "transactions_extended": {
+    "disabled_all_transactions": "Disabled when showing all transactions",
+    "change_to_custom": "Change to custom range",
+    "change_to_month": "Change to month selection",
+    "categories_filter": "Categories",
+    "remove_category": "Remove category {name}",
+    "assign_category_title": "Category: {name}",
+    "assign_category_default": "Assign category"
   }
 }

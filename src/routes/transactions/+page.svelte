@@ -446,7 +446,7 @@
 
     // Calculate the primary pattern
     const merchantPattern = normalizeText(transaction.merchant);
-    const reason = `Transacciones similares con "${merchantPattern || transaction.merchant}"`;
+    const reason = `${$t('pages.transactions.similar_transactions_with')} "${merchantPattern || transaction.merchant}"`;
 
     return [{
       categoryId: smartCategorizationCategory?.id || '',
@@ -686,8 +686,8 @@
           class="all-toggle-btn"
           class:active={showAllTransactions}
           onclick={() => showAllTransactions = !showAllTransactions}
-          title={showAllTransactions ? 'Mostrar período seleccionado' : 'Mostrar todas las transacciones'}
-          aria-label={showAllTransactions ? 'Mostrar período' : 'Mostrar todas'}
+          title={showAllTransactions ? $t('transactions.show_period') : $t('transactions.show_all_transactions')}
+          aria-label={showAllTransactions ? $t('transactions.show_period') : $t('transactions.show_all_transactions')}
         >
           <Layers size={14} />
         </button>
@@ -723,7 +723,7 @@
               type="date"
               class="date-input"
               bind:value={customStartDate}
-              placeholder="Desde"
+              placeholder={$t('pages.transactions.date_from')}
               disabled={showAllTransactions}
             />
             <span class="date-separator">-</span>
@@ -731,7 +731,7 @@
               type="date"
               class="date-input"
               bind:value={customEndDate}
-              placeholder="Hasta"
+              placeholder={$t('pages.transactions.date_to')}
               disabled={showAllTransactions}
             />
           </div>
@@ -741,7 +741,7 @@
           class="date-mode-btn"
           class:disabled={showAllTransactions}
           onclick={showAllTransactions ? null : () => dateRangeMode = dateRangeMode === 'month' ? 'custom' : 'month'}
-          title={showAllTransactions ? 'Deshabilitado al mostrar todas las transacciones' : (dateRangeMode === 'month' ? 'Cambiar a rango personalizado' : 'Cambiar a selección de mes')}
+          title={showAllTransactions ? $t('transactions_extended.disabled_all_transactions') : (dateRangeMode === 'month' ? $t('transactions_extended.change_to_custom') : $t('transactions_extended.change_to_month'))}
         >
           <CalendarRange size={14} />
         </button>
@@ -773,7 +773,7 @@
           <button
             class="clear-search"
             onclick={() => searchQuery = ''}
-            aria-label="Limpiar búsqueda"
+            aria-label={$t('accessibility.clear_search')}
           >
             <X size={12} />
           </button>
@@ -880,7 +880,7 @@
               aria-pressed={transactionTypeFilter === 'income'}
             >
               <TrendingUp size={12} class="pill-icon" />
-              <span>Ingresos</span>
+              <span>{$t('pages.transactions.income_filter')}</span>
               {#if transactionTypeFilter === 'income' && selectedCategories.length === 0}
                 <span class="pill-indicator"></span>
               {/if}
@@ -898,7 +898,7 @@
               aria-pressed={transactionTypeFilter === 'expenses'}
             >
               <TrendingDown size={12} class="pill-icon" />
-              <span>Gastos</span>
+              <span>{$t('pages.transactions.expenses_filter')}</span>
               {#if transactionTypeFilter === 'expenses' && selectedCategories.length === 0}
                 <span class="pill-indicator"></span>
               {/if}
@@ -920,7 +920,7 @@
               <span>
                 {selectedCategories.length > 0
                   ? `${selectedCategories.length} categorías`
-                  : 'Categorías'}
+                  : $t('transactions_extended.categories_filter')}
               </span>
               <ChevronDown size={12} class="chevron {showCategoryFilterDropdown ? 'rotated' : ''}" />
             </button>
@@ -959,7 +959,7 @@
             <div class="bento-item clear-section">
               <button class="clear-pill" onclick={clearAllFilters}>
                 <X size={12} />
-                <span>Limpiar</span>
+                <span>{$t('pages.transactions.clear_filters')}</span>
               </button>
             </div>
           {/if}
@@ -972,10 +972,10 @@
               <button
                 class="tag-mini income-tag"
                 onclick={() => transactionTypeFilter = 'all'}
-                aria-label="Eliminar filtro de ingresos"
+                aria-label={$t('accessibility.remove_income_filter')}
               >
                 <TrendingUp size={10} />
-                <span>Ingresos</span>
+                <span>{$t('pages.transactions.income_filter')}</span>
                 <X size={10} class="tag-close" />
               </button>
             {/if}
@@ -984,10 +984,10 @@
               <button
                 class="tag-mini expense-tag"
                 onclick={() => transactionTypeFilter = 'all'}
-                aria-label="Eliminar filtro de gastos"
+                aria-label={$t('accessibility.remove_expenses_filter')}
               >
                 <TrendingDown size={10} />
-                <span>Gastos</span>
+                <span>{$t('pages.transactions.expenses_filter')}</span>
                 <X size={10} class="tag-close" />
               </button>
             {/if}
@@ -1001,7 +1001,7 @@
                   onclick={() => {
                     selectedCategories = selectedCategories.filter(c => c !== categoryId);
                   }}
-                  aria-label="Eliminar categoría {category.name}"
+                  aria-label={$t('transactions_extended.remove_category', { name: category.name })}
                 >
                   <span class="tag-emoji">{category.icon}</span>
                   <span>{category.name}</span>
@@ -1061,7 +1061,7 @@
                 <button
                   class="category-btn"
                   class:has-category={category}
-                  title={category ? `Categoría: ${category.name}` : 'Asignar categoría'}
+                  title={category ? $t('transactions_extended.assign_category_title', { name: category.name }) : $t('transactions_extended.assign_category_default')}
                   onclick={(e) => {
                     e.stopPropagation();
                     openCategoryModal(transaction);
@@ -1083,7 +1083,7 @@
                   <div class="category-dropdown-compact">
                     {#if isIncomeTransaction && incomeCategories.length > 0}
                       <div class="category-section">
-                        <div class="category-section-label">Categorías de Ingresos</div>
+                        <div class="category-section-label">{$t('pages.transactions.income_categories')}</div>
                         <div class="category-grid">
                           {#each incomeCategories as cat}
                             <button
@@ -1104,7 +1104,7 @@
 
                     {#if !isIncomeTransaction && expenseCategories.length > 0}
                       <div class="category-section">
-                        <div class="category-section-label">Categorías de Gastos</div>
+                        <div class="category-section-label">{$t('pages.transactions.expense_categories')}</div>
                         <div class="category-grid">
                           {#each expenseCategories as cat}
                             <button

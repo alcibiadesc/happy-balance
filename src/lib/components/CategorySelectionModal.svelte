@@ -3,6 +3,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import type { Transaction, Category } from '$lib/types/transaction';
+  import { t } from '$lib/stores/i18n';
 
   // Props
   export let isOpen = false;
@@ -82,12 +83,12 @@
   })();
 
   // Type display names
-  const typeDisplayNames = {
-    essential: 'Gastos Esenciales',
-    discretionary: 'Gastos Discrecionales',
-    investment: 'Inversiones',
-    debt_payment: 'Pago de Deudas',
-    income: 'Ingresos'
+  $: typeDisplayNames = {
+    essential: $t('categories.types.essential'),
+    discretionary: $t('categories.types.discretionary'),
+    investment: $t('categories.types.investment'),
+    debt_payment: $t('categories.types.debt_payment'),
+    income: $t('categories.types.income')
   };
 
   function navigateToCategories() {
@@ -115,7 +116,7 @@
       <!-- Header with minimal design -->
       <div class="modal-header">
         <div class="header-content">
-          <h2 id="category-selection-title" class="modal-title">Categorizar transacción</h2>
+          <h2 id="category-selection-title" class="modal-title">{$t('modals.category_selection.title')}</h2>
           <div class="transaction-preview">
             <span class="merchant">{transaction.merchant}</span>
             <span class="amount" class:income={transaction.amount > 0}>
@@ -126,7 +127,7 @@
             </span>
           </div>
         </div>
-        <button class="close-btn" on:click={closeModal} aria-label="Cerrar">
+        <button class="close-btn" on:click={closeModal} aria-label="{$t('accessibility.close_modal')}">
           <X size={20} />
         </button>
       </div>
@@ -138,14 +139,14 @@
             <div class="empty-categories-content">
               <span class="empty-categories-icon">🏷️</span>
               <p class="empty-categories-text">
-                No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar mejor tus gastos e ingresos.
+                {$t('categories.no_categories_help')}
               </p>
               <button
                 class="create-categories-btn"
                 on:click={navigateToCategories}
               >
                 <Plus size={16} />
-                Crear categorías
+                {$t('categories.create_categories')}
               </button>
             </div>
           </div>

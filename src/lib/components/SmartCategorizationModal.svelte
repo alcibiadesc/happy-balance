@@ -1,6 +1,7 @@
 <script lang="ts">
   import { X } from 'lucide-svelte';
   import type { Transaction, Category } from '$lib/types/transaction';
+  import { t } from '$lib/stores/i18n';
 
   // Props
   export let isOpen = false;
@@ -34,7 +35,7 @@
   }
 
   function getPatternName(transaction: Transaction): string {
-    return transaction.merchant || transaction.description || 'Esta transacción';
+    return transaction.merchant || transaction.description || $t('data.unknown_merchant');
   }
 
   function getTotalAmount(): string {
@@ -49,7 +50,7 @@
       <!-- Header minimalista -->
       <div class="modal-header">
         <div class="header-content">
-          <h2 id="categorization-title" class="modal-title">Aplicar categoría</h2>
+          <h2 id="categorization-title" class="modal-title">{$t('modals.smart_categorization.title')}</h2>
           <div class="category-preview">
             <span class="merchant-name">{getPatternName(transaction)}</span>
             <div class="category-assignment">
@@ -61,7 +62,7 @@
             </div>
           </div>
         </div>
-        <button class="close-btn" on:click={onCancel} aria-label="Cerrar">
+        <button class="close-btn" on:click={onCancel} aria-label="{$t('accessibility.close_modal')}">
           <X size={20} />
         </button>
       </div>
@@ -79,8 +80,8 @@
             />
             <div class="option-content">
               <div class="option-info">
-                <span class="option-title">Solo esta transacción</span>
-                <span class="option-detail">Aplicar únicamente a esta transacción</span>
+                <span class="option-title">{$t('modals.smart_categorization.scope_single_title')}</span>
+                <span class="option-detail">{$t('modals.smart_categorization.scope_single_detail')}</span>
               </div>
               <span class="option-count">1</span>
             </div>
@@ -97,8 +98,8 @@
               />
               <div class="option-content">
                 <div class="option-info">
-                  <span class="option-title">Transacciones similares</span>
-                  <span class="option-detail">Aplicar a todas las transacciones similares</span>
+                  <span class="option-title">{$t('modals.smart_categorization.scope_similar_title')}</span>
+                  <span class="option-detail">{$t('modals.smart_categorization.scope_similar_detail')}</span>
                 </div>
                 <span class="option-count">{matchingTransactions.length + 1}</span>
               </div>
@@ -109,7 +110,7 @@
               <div class="future-option">
                 <label class="checkbox-option">
                   <input type="checkbox" bind:checked={applyToFuture} />
-                  <span class="checkbox-label">Aplicar automáticamente a futuras transacciones similares</span>
+                  <span class="checkbox-label">{$t('modals.smart_categorization.auto_apply_checkbox')}</span>
                 </label>
               </div>
             {/if}
@@ -120,7 +121,7 @@
         {#if selectedScope === 'pattern' && hasMatches && matchingTransactions.length > 0}
           <div class="preview-section">
             <div class="preview-header">
-              <span class="preview-title">Se aplicará también a:</span>
+              <span class="preview-title">{$t('modals.smart_categorization.preview_title')}</span>
               <span class="preview-total">{getTotalAmount()}</span>
             </div>
             <div class="preview-list">
@@ -131,7 +132,7 @@
                 </div>
               {/each}
               {#if matchingTransactions.length > 3}
-                <div class="preview-more">+{matchingTransactions.length - 3} transacciones más</div>
+                <div class="preview-more">+{matchingTransactions.length - 3} {$t('navigation.transactions').toLowerCase()} más</div>
               {/if}
             </div>
           </div>
@@ -141,10 +142,10 @@
       <!-- Action buttons -->
       <div class="modal-actions">
         <button class="btn-secondary" on:click={onCancel}>
-          Cancelar
+          {$t('common.cancel')}
         </button>
         <button class="btn-primary" on:click={handleConfirm}>
-          {selectedScope === 'single' ? 'Aplicar categoría' : `Aplicar a ${matchingTransactions.length + 1}`}
+          {selectedScope === 'single' ? $t('modals.smart_categorization.apply_single') : $t('modals.smart_categorization.apply_multiple', { count: matchingTransactions.length + 1 })}
         </button>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Money } from "../value-objects/Money";
 import { TransactionDate } from "../value-objects/TransactionDate";
 import { TransactionType } from "../entities/TransactionType";
 import { Result } from "../shared/Result";
+import { getTranslation } from "../../utils/i18n-utils";
 
 export interface FinancialSummary {
   totalIncome: Money;
@@ -268,7 +269,7 @@ export class FinancialCalculationService {
 
     if (income.currency !== expenses.currency) {
       return Result.failWithMessage(
-        "Cannot calculate spending rate for different currencies",
+        getTranslation("data.currency_mismatch"),
       );
     }
 

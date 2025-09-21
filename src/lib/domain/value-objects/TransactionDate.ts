@@ -1,4 +1,5 @@
 import { Result } from "../shared/Result";
+import { getTranslation } from "../../utils/i18n-utils";
 
 /**
  * Transaction Date value object
@@ -17,13 +18,13 @@ export class TransactionDate {
     }
 
     if (isNaN(parsedDate.getTime())) {
-      return Result.failWithMessage("Invalid date provided");
+      return Result.failWithMessage(getTranslation("validation.invalid_date"));
     }
 
     // Business rule: transactions cannot be in the future
     const now = new Date();
     if (parsedDate > now) {
-      return Result.failWithMessage("Transaction date cannot be in the future");
+      return Result.failWithMessage(getTranslation("validation.future_date"));
     }
 
     // Business rule: transactions cannot be older than 10 years
@@ -31,7 +32,7 @@ export class TransactionDate {
     tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
     if (parsedDate < tenYearsAgo) {
       return Result.failWithMessage(
-        "Transaction date cannot be older than 10 years",
+        getTranslation("validation.date_too_old"),
       );
     }
 

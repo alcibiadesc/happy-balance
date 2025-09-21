@@ -1,3 +1,5 @@
+import { getTranslationForLang } from "../../utils/i18n-utils";
+
 /**
  * Transaction Type enumeration
  * Represents the different types of financial transactions
@@ -21,20 +23,13 @@ export class TransactionTypeHelper {
   }
 
   static getDisplayName(type: TransactionType, locale = "en"): string {
-    const names: Record<string, Record<TransactionType, string>> = {
-      en: {
-        [TransactionType.INCOME]: "Income",
-        [TransactionType.EXPENSE]: "Expense",
-        [TransactionType.INVESTMENT]: "Investment",
-      },
-      es: {
-        [TransactionType.INCOME]: "Ingreso",
-        [TransactionType.EXPENSE]: "Gasto",
-        [TransactionType.INVESTMENT]: "Inversión",
-      },
+    const keyMap: Record<TransactionType, string> = {
+      [TransactionType.INCOME]: "transactions.type.income",
+      [TransactionType.EXPENSE]: "transactions.type.expense",
+      [TransactionType.INVESTMENT]: "transactions.type.investment",
     };
 
-    return names[locale]?.[type] || names.en[type];
+    return getTranslationForLang(keyMap[type], locale);
   }
 
   static isValidType(value: string): boolean {

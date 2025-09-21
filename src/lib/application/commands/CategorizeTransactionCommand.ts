@@ -1,3 +1,5 @@
+import { getTranslation } from "../../utils/i18n-utils";
+
 export type CategorizationScope = "single" | "pattern" | "all";
 
 /**
@@ -18,16 +20,16 @@ export class CategorizeTransactionCommand {
     const errors: string[] = [];
 
     if (!this.transactionId || this.transactionId.trim().length === 0) {
-      errors.push("Transaction ID cannot be empty");
+      errors.push(getTranslation("validation.transaction_id_empty"));
     }
 
     if (!this.categoryId || this.categoryId.trim().length === 0) {
-      errors.push("Category ID cannot be empty");
+      errors.push(getTranslation("validation.category_id_empty"));
     }
 
     const validScopes: CategorizationScope[] = ["single", "pattern", "all"];
     if (!validScopes.includes(this.scope)) {
-      errors.push("Invalid categorization scope");
+      errors.push(getTranslation("validation.invalid_categorization_scope"));
     }
 
     return {
@@ -54,16 +56,16 @@ export class TagTransactionCommand {
     const errors: string[] = [];
 
     if (!this.transactionId || this.transactionId.trim().length === 0) {
-      errors.push("Transaction ID cannot be empty");
+      errors.push(getTranslation("validation.transaction_id_empty"));
     }
 
     if (!this.tag || this.tag.trim().length === 0) {
-      errors.push("Tag cannot be empty");
+      errors.push(getTranslation("validation.tag_empty"));
     }
 
     const validScopes: CategorizationScope[] = ["single", "pattern", "all"];
     if (!validScopes.includes(this.scope)) {
-      errors.push("Invalid categorization scope");
+      errors.push(getTranslation("validation.invalid_categorization_scope"));
     }
 
     return {

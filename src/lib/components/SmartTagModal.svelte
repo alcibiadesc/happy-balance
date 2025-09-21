@@ -1,6 +1,7 @@
 <script lang="ts">
   import { X } from 'lucide-svelte';
   import type { Transaction } from '$lib/types/transaction';
+  import { t } from '$lib/stores/i18n';
 
   // Props
   export let isOpen = false;
@@ -37,7 +38,7 @@
   }
 
   function getPatternName(transaction: Transaction): string {
-    return transaction.merchant || transaction.description || 'Esta transacción';
+    return transaction.merchant || transaction.description || $t('data.unknown_merchant');
   }
 
   function getTotalAmount(): string {
@@ -51,8 +52,8 @@
     <div class="modal-content">
       <!-- Header minimalista -->
       <div class="modal-header">
-        <h2 id="tag-title" class="modal-title">Añadir etiqueta</h2>
-        <button class="close-btn" onclick={onCancel} aria-label="Cerrar">
+        <h2 id="tag-title" class="modal-title">{$t('modals.smart_tag.title')}</h2>
+        <button class="close-btn" onclick={onCancel} aria-label="{$t('accessibility.close_modal')}">
           <X size={16} />
         </button>
       </div>
@@ -65,7 +66,7 @@
         </div>
         {#if transaction.tags && transaction.tags.length > 0}
           <div class="existing-tags">
-            <span class="tags-label">Etiquetas:</span>
+            <span class="tags-label">{$t('modals.smart_tag.tags_label')}</span>
             {#each transaction.tags as tag}
               <span class="tag-chip">{tag}</span>
             {/each}
@@ -79,7 +80,7 @@
           type="text"
           bind:value={newTag}
           onkeydown={handleKeydown}
-          placeholder="Nueva etiqueta..."
+          placeholder="{$t('modals.smart_tag.new_tag_placeholder')}"
           class="tag-input"
           autocomplete="off"
         />
@@ -96,8 +97,8 @@
             name="tag-scope"
           />
           <div class="scope-content">
-            <span class="scope-title">Solo esta transacción</span>
-            <span class="scope-detail">1 transacción</span>
+            <span class="scope-title">{$t('modals.smart_tag.scope_single_title')}</span>
+            <span class="scope-detail">{$t('modals.smart_tag.scope_single_detail')}</span>
           </div>
         </label>
 
@@ -111,7 +112,7 @@
               name="tag-scope"
             />
             <div class="scope-content">
-              <span class="scope-title">Todas las similares</span>
+              <span class="scope-title">{$t('modals.smart_tag.scope_similar_title')}</span>
               <span class="scope-detail">
                 {matchingTransactions.length + 1} transacciones • {getTotalAmount()}
               </span>
@@ -124,7 +125,7 @@
       {#if selectedScope === 'pattern' && hasMatches && matchingTransactions.length > 0}
         <div class="preview-section">
           <div class="preview-summary">
-            Se añadirá a {matchingTransactions.length} transacciones más:
+            {$t('modals.smart_categorization.preview_title')}
           </div>
           <div class="preview-items">
             {#each matchingTransactions.slice(0, 2) as match}
@@ -143,14 +144,14 @@
       <!-- Botones de acción -->
       <div class="modal-actions">
         <button class="btn-cancel" onclick={onCancel}>
-          Cancelar
+          {$t('common.cancel')}
         </button>
         <button
           class="btn-confirm"
           onclick={handleConfirm}
           disabled={!newTag.trim()}
         >
-          {selectedScope === 'single' ? 'Añadir' : `Añadir a ${matchingTransactions.length + 1}`}
+          {selectedScope === 'single' ? $t('common.add') : $t('modals.smart_tag.add_to_count', { count: matchingTransactions.length + 1 })}
         </button>
       </div>
     </div>

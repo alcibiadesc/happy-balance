@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Globe } from 'lucide-svelte';
+  import { t } from '$lib/stores/i18n';
   
   interface Props {
     value?: string;
@@ -10,7 +11,7 @@
   
   const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
-    { code: 'es', name: 'Español', flag: '🇪🇸' }
+    { code: 'es', name: $t('settings.languages.spanish'), flag: '🇪🇸' }
   ];
   
   function handleChange(event: Event) {

@@ -1,5 +1,6 @@
 import { Result } from "../shared/Result";
 import { TransactionType, TransactionTypeHelper } from "./TransactionType";
+import { getTranslation } from "../../utils/i18n-utils";
 
 /**
  * Category ID value object
@@ -9,7 +10,7 @@ export class CategoryId {
 
   static create(value: string): Result<CategoryId> {
     if (!value || value.trim().length === 0) {
-      return Result.failWithMessage("Category ID cannot be empty");
+      return Result.failWithMessage(getTranslation("validation.category_id_empty"));
     }
 
     return Result.ok(new CategoryId(value.trim()));
@@ -57,24 +58,24 @@ export class Category {
   ): Result<Category> {
     // Validate name
     if (!name || name.trim().length === 0) {
-      return Result.failWithMessage("Category name cannot be empty");
+      return Result.failWithMessage(getTranslation("validation.category_name_empty"));
     }
 
     if (name.length > 50) {
       return Result.failWithMessage(
-        "Category name cannot exceed 50 characters",
+        getTranslation("validation.category_name_too_long"),
       );
     }
 
     // Validate color (hex format)
     const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
     if (!colorRegex.test(color)) {
-      return Result.failWithMessage("Color must be a valid hex color code");
+      return Result.failWithMessage(getTranslation("validation.invalid_hex_color"));
     }
 
     // Validate icon (basic validation)
     if (!icon || icon.trim().length === 0) {
-      return Result.failWithMessage("Category icon cannot be empty");
+      return Result.failWithMessage(getTranslation("validation.category_icon_empty"));
     }
 
     const categoryId = id || CategoryId.generate();
@@ -122,12 +123,12 @@ export class Category {
   // Business methods
   changeName(newName: string): Result<void> {
     if (!newName || newName.trim().length === 0) {
-      return Result.failWithMessage("Category name cannot be empty");
+      return Result.failWithMessage(getTranslation("validation.category_name_empty"));
     }
 
     if (newName.length > 50) {
       return Result.failWithMessage(
-        "Category name cannot exceed 50 characters",
+        getTranslation("validation.category_name_too_long"),
       );
     }
 
@@ -138,7 +139,7 @@ export class Category {
   changeColor(newColor: string): Result<void> {
     const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
     if (!colorRegex.test(newColor)) {
-      return Result.failWithMessage("Color must be a valid hex color code");
+      return Result.failWithMessage(getTranslation("validation.invalid_hex_color"));
     }
 
     this._color = newColor.toLowerCase();
@@ -147,7 +148,7 @@ export class Category {
 
   changeIcon(newIcon: string): Result<void> {
     if (!newIcon || newIcon.trim().length === 0) {
-      return Result.failWithMessage("Category icon cannot be empty");
+      return Result.failWithMessage(getTranslation("validation.category_icon_empty"));
     }
 
     this._icon = newIcon.trim();
@@ -220,7 +221,7 @@ export class Category {
     const typeResult = TransactionTypeHelper.fromString(snapshot.type);
     if (!typeResult) {
       return Result.failWithMessage(
-        `Invalid transaction type: ${snapshot.type}`,
+        getTranslation("validation.invalid_transaction_type", { type: snapshot.type }),
       );
     }
 
