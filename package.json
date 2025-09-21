@@ -32,6 +32,7 @@
     "clean": "rm -rf node_modules dist build backend/node_modules backend/dist"
   },
   "dependencies": {
+    "chart.js": "^4.5.0",
     "lucide-svelte": "^0.542.0"
   },
   "devDependencies": {

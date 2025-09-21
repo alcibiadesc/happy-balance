@@ -1,6 +1,9 @@
 <script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
+  import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
-  import { t } from '$lib/stores/i18n';
+  import { currentLanguage, t } from '$lib/stores/i18n';
+  import { getChartThemeColors, updateChartTheme, updateChartDatasetColors, setupChartThemeObserver } from '$lib/utils/chartTheme';
 
   interface DataPoint {
     month: string;
@@ -20,30 +23,246 @@
 
   let { data = [], height = 250, period = 'month', loading = false }: Props = $props();
 
-  // Calculate max values for scaling
-  let maxValue = $derived(() => {
-    if (!data?.length) return 100;
-    return Math.max(
-      ...data.flatMap(d => [
-        Math.abs(d.income),
-        Math.abs(d.essentialExpenses),
-        Math.abs(d.discretionaryExpenses),
-        Math.abs(d.debtPayments),
-        Math.abs(d.investments)
-      ])
-    );
+  let canvasRef: HTMLCanvasElement;
+  let chart: Chart | null = null;
+  let cleanupThemeObserver: (() => void) | null = null;
+
+  // Reactive data processing
+  let chartData = $derived(() => {
+    if (!data?.length) return {
+      labels: [],
+      income: [],
+      essentialExpenses: [],
+      discretionaryExpenses: [],
+      debtPayments: [],
+      investments: []
+    };
+
+    return {
+      labels: data.map(d => d.month),
+      income: data.map(d => Math.abs(d.income)),
+      essentialExpenses: data.map(d => Math.abs(d.essentialExpenses)),
+      discretionaryExpenses: data.map(d => Math.abs(d.discretionaryExpenses)),
+      debtPayments: data.map(d => Math.abs(d.debtPayments)),
+      investments: data.map(d => Math.abs(d.investments))
+    };
   });
 
-  // Format values for display
-  function formatValue(value: number): string {
-    return formatCurrency(Math.abs(value), $currentCurrency);
+  // Format currency for tooltips
+  function formatTooltipValue(value: number): string {
+    return formatCurrency(value, $currentCurrency);
   }
 
-  // Calculate percentage for bar height
-  function getPercentage(value: number): number {
-    if (maxValue() === 0) return 0;
-    return (Math.abs(value) / maxValue()) * 100;
+  // Chart configuration
+  function getChartConfig() {
+    const colors = getChartThemeColors();
+
+    return {
+      type: 'bar' as const,
+      data: {
+        labels: chartData().labels,
+        datasets: [
+          {
+            label: $t('dashboard.metrics.income'),
+            data: chartData().income,
+            backgroundColor: colors.income + '80',
+            borderColor: colors.income,
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          },
+          {
+            label: $t('dashboard.metrics.essential_expenses'),
+            data: chartData().essentialExpenses,
+            backgroundColor: colors.expenses + '80',
+            borderColor: colors.expenses,
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          },
+          {
+            label: $t('dashboard.metrics.discretionary_expenses'),
+            data: chartData().discretionaryExpenses,
+            backgroundColor: '#f59e0b80',
+            borderColor: '#f59e0b',
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          },
+          {
+            label: $t('dashboard.metrics.debt_payments'),
+            data: chartData().debtPayments,
+            backgroundColor: '#dc262680',
+            borderColor: '#dc2626',
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          },
+          {
+            label: $t('dashboard.metrics.investments'),
+            data: chartData().investments,
+            backgroundColor: colors.investments + '80',
+            borderColor: colors.investments,
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: 'index' as const
+        },
+        plugins: {
+          legend: {
+            position: 'top' as const,
+            labels: {
+              color: colors.text,
+              font: {
+                size: 11,
+                weight: '500'
+              },
+              usePointStyle: true,
+              pointStyle: 'rect',
+              padding: 15
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+            titleColor: '#f9fafb',
+            bodyColor: '#f9fafb',
+            borderColor: colors.grid,
+            borderWidth: 1,
+            cornerRadius: 8,
+            displayColors: true,
+            callbacks: {
+              label: (context: any) => {
+                const label = context.dataset.label || '';
+                const value = formatTooltipValue(context.parsed.y);
+                return `${label}: ${value}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'category',
+            grid: {
+              color: colors.grid,
+              drawBorder: false
+            },
+            ticks: {
+              color: colors.text,
+              font: {
+                size: 11
+              },
+              maxRotation: 45
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: colors.grid,
+              drawBorder: false
+            },
+            ticks: {
+              color: colors.text,
+              font: {
+                size: 11
+              },
+              callback: function(value: any) {
+                return formatCurrency(value, $currentCurrency);
+              }
+            }
+          }
+        },
+        elements: {
+          bar: {
+            borderRadius: 4
+          }
+        }
+      }
+    };
   }
+
+  function initChart() {
+    if (!canvasRef || chart) return;
+
+    const ctx = canvasRef.getContext('2d');
+    if (!ctx) return;
+
+    // Clear any existing chart
+    if (chart) {
+      chart.destroy();
+    }
+
+    const config = getChartConfig();
+    chart = new Chart(ctx, config);
+  }
+
+  function updateChart() {
+    if (!chart) return;
+
+    const newData = chartData();
+    chart.data.labels = newData.labels;
+    chart.data.datasets[0].data = newData.income;
+    chart.data.datasets[1].data = newData.essentialExpenses;
+    chart.data.datasets[2].data = newData.discretionaryExpenses;
+    chart.data.datasets[3].data = newData.debtPayments;
+    chart.data.datasets[4].data = newData.investments;
+
+    chart.update('none');
+  }
+
+  // Watch for data changes
+  $effect(() => {
+    if (chart && data?.length) {
+      updateChart();
+    }
+  });
+
+  // Watch for currency changes to update tooltips
+  $effect(() => {
+    if (chart && $currentCurrency) {
+      chart.options.scales!.y!.ticks!.callback = function(value: any) {
+        return formatCurrency(value, $currentCurrency);
+      };
+      chart.update('none');
+    }
+  });
+
+  // Watch for loading state
+  $effect(() => {
+    if (!loading && canvasRef && !chart) {
+      setTimeout(() => {
+        initChart();
+      }, 100);
+    }
+  });
+
+  onMount(() => {
+    if (!loading) {
+      initChart();
+    }
+
+    // Setup theme observer
+    cleanupThemeObserver = setupChartThemeObserver(chart, () => {
+      updateChartDatasetColors(chart, 2, 'investments');
+    });
+  });
+
+  onDestroy(() => {
+    if (chart) {
+      chart.destroy();
+      chart = null;
+    }
+    if (cleanupThemeObserver) {
+      cleanupThemeObserver();
+    }
+  });
 </script>
 
 <section class="financial-bar-charts">
@@ -58,70 +277,10 @@
       </div>
     {:else if !data?.length}
       <div class="chart-empty">
-        <span>No data available</span>
+        <span>No data available for the selected period</span>
       </div>
     {:else}
-      <div class="chart-container">
-        <!-- Chart legend -->
-        <div class="chart-legend">
-          <div class="legend-item">
-            <div class="legend-color income"></div>
-            <span>{$t('dashboard.metrics.income')}</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color essential"></div>
-            <span>{$t('dashboard.metrics.essential_expenses')}</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color discretionary"></div>
-            <span>{$t('dashboard.metrics.discretionary_expenses')}</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color debt"></div>
-            <span>{$t('dashboard.metrics.debt_payments')}</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color investments"></div>
-            <span>{$t('dashboard.metrics.investments')}</span>
-          </div>
-        </div>
-
-        <!-- Chart bars -->
-        <div class="chart-bars">
-          {#each data as point}
-            <div class="bar-group">
-              <div class="bars">
-                <div
-                  class="bar income"
-                  style="height: {getPercentage(point.income)}%"
-                  title="Income: {formatValue(point.income)}"
-                ></div>
-                <div
-                  class="bar essential"
-                  style="height: {getPercentage(point.essentialExpenses)}%"
-                  title="Essential: {formatValue(point.essentialExpenses)}"
-                ></div>
-                <div
-                  class="bar discretionary"
-                  style="height: {getPercentage(point.discretionaryExpenses)}%"
-                  title="Discretionary: {formatValue(point.discretionaryExpenses)}"
-                ></div>
-                <div
-                  class="bar debt"
-                  style="height: {getPercentage(point.debtPayments)}%"
-                  title="Debt: {formatValue(point.debtPayments)}"
-                ></div>
-                <div
-                  class="bar investments"
-                  style="height: {getPercentage(point.investments)}%"
-                  title="Investments: {formatValue(point.investments)}"
-                ></div>
-              </div>
-              <div class="bar-label">{point.month}</div>
-            </div>
-          {/each}
-        </div>
-      </div>
+      <canvas bind:this={canvasRef}></canvas>
     {/if}
   </div>
 </section>
@@ -181,150 +340,8 @@
     100% { transform: rotate(360deg); }
   }
 
-  .chart-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .chart-legend {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-  }
-
-  .legend-color {
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-  }
-
-  .legend-color.income {
-    background: var(--success);
-  }
-
-  .legend-color.essential {
-    background: var(--accent);
-  }
-
-  .legend-color.discretionary {
-    background: var(--warning);
-  }
-
-  .legend-color.debt {
-    background: var(--error);
-  }
-
-  .legend-color.investments {
-    background: var(--primary);
-  }
-
-  .chart-bars {
-    flex: 1;
-    display: flex;
-    align-items: flex-end;
-    gap: 1rem;
-    padding: 1rem 0;
-    overflow-x: auto;
-  }
-
-  .bar-group {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 80px;
-    flex: 1;
-  }
-
-  .bars {
-    display: flex;
-    gap: 2px;
-    align-items: flex-end;
-    height: 180px;
-    margin-bottom: 0.5rem;
-  }
-
-  .bar {
-    width: 10px;
-    min-height: 4px;
-    border-radius: 2px 2px 0 0;
-    transition: all 0.3s ease;
-    cursor: pointer;
-  }
-
-  .bar:hover {
-    opacity: 0.8;
-    transform: scaleY(1.05);
-  }
-
-  .bar.income {
-    background: var(--success);
-  }
-
-  .bar.essential {
-    background: var(--accent);
-  }
-
-  .bar.discretionary {
-    background: var(--warning);
-  }
-
-  .bar.debt {
-    background: var(--error);
-  }
-
-  .bar.investments {
-    background: var(--primary);
-  }
-
-  .bar-label {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    text-align: center;
-    max-width: 80px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  @media (max-width: 768px) {
-    .financial-bar-charts {
-      padding: 1rem;
-    }
-
-    .chart-legend {
-      gap: 0.5rem;
-    }
-
-    .legend-item {
-      font-size: 0.7rem;
-    }
-
-    .chart-bars {
-      gap: 0.5rem;
-    }
-
-    .bar-group {
-      min-width: 60px;
-    }
-
-    .bars {
-      height: 140px;
-      gap: 1px;
-    }
-
-    .bar {
-      width: 8px;
-    }
+  canvas {
+    max-width: 100%;
+    height: auto;
   }
 </style>
