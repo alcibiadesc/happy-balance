@@ -84,7 +84,7 @@
   async function loadData(period: string, offset: number = 0, startDate?: string, endDate?: string) {
     loading = true;
     try {
-      let url = `${API_BASE}/transactions/dashboard?currency=${$currentCurrency}`;
+      let url = `${API_BASE}/metrics/dashboard?currency=${$currentCurrency}`;
 
       if (period === 'custom' && startDate && endDate) {
         url += `&startDate=${startDate}&endDate=${endDate}`;
@@ -103,35 +103,41 @@
 
           // Transform trends data for charts
 
-          if (result.data.trends && result.data.trends.length > 0) {
-            // Use all trends data, including zeros - this shows proper historical progression
-            realData.monthlyTrend = result.data.trends.map((trend: any) => ({
-              month: trend.period,
-              income: trend.income?._amount || 0,
-              expenses: trend.expenses?._amount || 0,
-              balance: trend.balance?._amount || 0
+          if (result.data.monthlyTrend && result.data.monthlyTrend.length > 0) {
+            // Use the monthlyTrend data from the new unified API
+            realData.monthlyTrend = result.data.monthlyTrend.map((trend: any) => ({
+              month: trend.month,
+              income: trend.income || 0,
+              expenses: trend.expenses || 0,
+              balance: trend.balance || 0
             }));
 
+            // Use monthlyBarData directly from API if available, otherwise calculate
+            if (result.data.monthlyBarData && result.data.monthlyBarData.length > 0) {
+              realData.monthlyBarData = result.data.monthlyBarData;
+            } else {
+              // Fallback: calculate from expense distribution ratios
+              const essentialRatio = result.data.expenseDistribution?.essentialPercentage
+                ? result.data.expenseDistribution.essentialPercentage / 100
+                : 0.5;
+              const discretionaryRatio = result.data.expenseDistribution?.discretionaryPercentage
+                ? result.data.expenseDistribution.discretionaryPercentage / 100
+                : 0.33;
+              const debtPaymentRatio = result.data.expenseDistribution?.debtPaymentPercentage
+                ? result.data.expenseDistribution.debtPaymentPercentage / 100
+                : 0.17;
 
-            // For bar data - use all trends data consistently
-            const essentialRatio = result.data.expenseDistribution?.essentialPercentage
-              ? result.data.expenseDistribution.essentialPercentage / 100
-              : 0.5;
-            const discretionaryRatio = result.data.expenseDistribution?.discretionaryPercentage
-              ? result.data.expenseDistribution.discretionaryPercentage / 100
-              : 0.33;
-            const debtPaymentRatio = result.data.expenseDistribution?.debtPaymentPercentage
-              ? result.data.expenseDistribution.debtPaymentPercentage / 100
-              : 0.17;
-
-            realData.monthlyBarData = result.data.trends.map((trend: any) => ({
-              month: trend.period,
-              income: trend.income?._amount || 0,
-              essentialExpenses: (trend.expenses?._amount || 0) * essentialRatio,
-              discretionaryExpenses: (trend.expenses?._amount || 0) * discretionaryRatio,
-              debtPayments: trend.debtPayments?._amount || 0,
-              investments: trend.investments?._amount || 0
-            }));
+              realData.monthlyBarData = result.data.monthlyTrend.map((trend: any) => ({
+                month: trend.month,
+                income: trend.income || 0,
+                essentialExpenses: (trend.expenses || 0) * essentialRatio,
+                discretionaryExpenses: (trend.expenses || 0) * discretionaryRatio,
+                debtPayments: 0,
+                investments: 0
+              }));
+            }
+            console.log('Charts data - monthlyTrend:', realData.monthlyTrend);
+            console.log('Charts data - monthlyBarData:', realData.monthlyBarData);
 
           } else {
             // Use summary data as fallback
@@ -231,7 +237,7 @@
     selectedPeriod = 'custom';
     loading = true;
     try {
-      await loadData('custom', startDate, endDate);
+      await loadData('custom', 0, startDate, endDate);
     } finally {
       loading = false;
     }

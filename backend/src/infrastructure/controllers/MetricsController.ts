@@ -153,6 +153,150 @@ export class MetricsController {
   }
 
   /**
+   * Get complete dashboard data (unified endpoint for frontend)
+   * Combines period stats and trends in one call
+   */
+  async getDashboardData(req: Request, res: Response) {
+    try {
+      const validationResult = PeriodStatsSchema.safeParse(req.query);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validationResult.error.errors,
+        });
+      }
+
+      const params = validationResult.data;
+
+      const query = new DashboardQuery(
+        params.currency,
+        params.period,
+        params.startDate,
+        params.endDate,
+        true, // includeInvestments
+        params.periodOffset
+      );
+
+      const result = await this.getDashboardMetricsUseCase.execute(query);
+      if (result.isFailure()) {
+        return res.status(500).json({
+          error: "Failed to get dashboard data",
+          message: result.getError()
+        });
+      }
+
+      const data = result.getValue();
+
+      // Calculate savings rate
+      const savingsRate = data.periodBalance.income > 0
+        ? (data.periodBalance.balance / data.periodBalance.income) * 100
+        : 0;
+
+      // Calculate spending rate
+      const spendingRate = data.periodBalance.income > 0
+        ? (data.periodBalance.expenses / data.periodBalance.income) * 100
+        : 0;
+
+      // Calculate essential and discretionary percentages
+      const totalExpenses = data.periodBalance.expenses;
+      const essentialPercentage = totalExpenses > 0 ? (data.expenseDistribution.essential / totalExpenses) * 100 : 0;
+      const discretionaryPercentage = totalExpenses > 0 ? (data.expenseDistribution.discretionary / totalExpenses) * 100 : 0;
+      const uncategorizedPercentage = totalExpenses > 0 ? (data.expenseDistribution.uncategorized / totalExpenses) * 100 : 0;
+
+      // Transform trends data for charts
+      const monthlyTrend = data.monthlyTrend.map(trend => ({
+        month: trend.month,
+        income: trend.income,
+        expenses: trend.expenses,
+        balance: trend.balance
+      }));
+
+      // Transform monthly bar data for expense distribution charts
+      const monthlyBarData = data.monthlyTrend.map(trend => ({
+        month: trend.month,
+        income: trend.income,
+        essentialExpenses: data.expenseDistribution.essential / data.monthlyTrend.length, // Distribute evenly for now
+        discretionaryExpenses: data.expenseDistribution.discretionary / data.monthlyTrend.length,
+        debtPayments: 0,
+        investments: 0
+      }));
+
+      // Return complete dashboard data
+      res.json({
+        success: true,
+        data: {
+          summary: {
+            totalIncome: {
+              _amount: data.periodBalance.income,
+              _currency: data.periodBalance.currency,
+            },
+            totalExpenses: {
+              _amount: data.periodBalance.expenses,
+              _currency: data.periodBalance.currency,
+            },
+            totalInvestments: {
+              _amount: 0,
+              _currency: data.periodBalance.currency,
+            },
+            totalDebtPayments: {
+              _amount: 0,
+              _currency: data.periodBalance.currency,
+            },
+            balance: {
+              _amount: data.periodBalance.balance,
+              _currency: data.periodBalance.currency,
+            },
+            savingsRate: savingsRate,
+            period: {
+              startDate: {
+                _date: new Date(data.periodInfo.startDate).toISOString(),
+              },
+              endDate: {
+                _date: new Date(data.periodInfo.endDate).toISOString(),
+              },
+              label: this.formatPeriodLabel(data.periodInfo.startDate, data.periodInfo.periodType),
+            }
+          },
+          trends: monthlyTrend,
+          spendingRate: spendingRate,
+          expenseDistribution: {
+            essential: {
+              _amount: data.expenseDistribution.essential,
+              _currency: data.expenseDistribution.currency,
+            },
+            discretionary: {
+              _amount: data.expenseDistribution.discretionary,
+              _currency: data.expenseDistribution.currency,
+            },
+            debtPayments: {
+              _amount: 0,
+              _currency: data.expenseDistribution.currency,
+            },
+            essentialPercentage: essentialPercentage,
+            discretionaryPercentage: discretionaryPercentage,
+            debtPaymentPercentage: 0,
+          },
+          categoryBreakdown: data.categoryBreakdown.map(category => ({
+            categoryId: category.categoryId,
+            categoryName: category.categoryName,
+            amount: category.amount,
+            percentage: category.percentage,
+            transactionCount: category.transactionCount,
+          })),
+          monthlyTrend: monthlyTrend,
+          monthlyBarData: monthlyBarData
+        },
+      });
+    } catch (error) {
+      console.error("Error in getDashboardData:", error);
+      res.status(500).json({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  /**
    * Get trends data for charts (lightweight aggregated data)
    */
   async getTrends(req: Request, res: Response) {

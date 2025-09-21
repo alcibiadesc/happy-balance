@@ -6,6 +6,11 @@ export function createMetricsRoutes(
 ): Router {
   const router = Router();
 
+  // GET /api/metrics/dashboard - Get complete dashboard data (unified endpoint)
+  router.get("/dashboard", (req, res) =>
+    metricsController.getDashboardData(req, res)
+  );
+
   // GET /api/metrics/period - Get period statistics (fast aggregated data)
   router.get("/period", (req, res) =>
     metricsController.getPeriodStats(req, res)

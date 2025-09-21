@@ -23,7 +23,7 @@
 
   let { data = [], height = 250, period = 'month', loading = false }: Props = $props();
 
-  let canvasRef: HTMLCanvasElement;
+  let canvasRef = $state<HTMLCanvasElement>();
   let chart: Chart | null = null;
   let cleanupThemeObserver: (() => void) | null = null;
 
@@ -189,14 +189,15 @@
   }
 
   function initChart() {
-    if (!canvasRef || chart) return;
+    if (!canvasRef) return;
 
     const ctx = canvasRef.getContext('2d');
     if (!ctx) return;
 
-    // Clear any existing chart
+    // Clear any existing chart before creating new one
     if (chart) {
       chart.destroy();
+      chart = null;
     }
 
     const config = getChartConfig();
@@ -219,7 +220,8 @@
 
   // Watch for data changes
   $effect(() => {
-    if (chart && data?.length) {
+    // Reference data to make effect reactive to data changes
+    if (chart) {
       updateChart();
     }
   });
@@ -234,9 +236,10 @@
     }
   });
 
-  // Watch for loading state
+  // Watch for loading state and reinitialize chart when needed
   $effect(() => {
-    if (!loading && canvasRef && !chart) {
+    if (!loading && canvasRef) {
+      // Always try to initialize/reinitialize when loading completes
       setTimeout(() => {
         initChart();
       }, 100);
