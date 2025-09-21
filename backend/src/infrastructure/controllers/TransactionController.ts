@@ -48,7 +48,7 @@ const TransactionFiltersSchema = z.object({
   currency: z.string().min(3).max(3).optional(),
   includeHidden: z.coerce.boolean().optional().default(false),
   page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
+  limit: z.coerce.number().min(1).max(50000).default(50000),
 });
 
 const DashboardQuerySchema = z.object({

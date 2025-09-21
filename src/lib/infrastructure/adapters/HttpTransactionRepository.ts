@@ -111,7 +111,7 @@ export class HttpTransactionRepository implements ITransactionRepository {
 
   async findAll(): Promise<Result<Transaction[]>> {
     try {
-      const response = await fetch(`${this.baseUrl}/transactions?limit=1000`);
+      const response = await fetch(`${this.baseUrl}/transactions`);
 
       if (!response.ok) {
         const error = await response.json();

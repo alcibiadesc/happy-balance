@@ -6,7 +6,7 @@ import { TransactionType } from "../../domain/entities/TransactionType";
 export class TransactionListQuery {
   constructor(
     public readonly page: number = 1,
-    public readonly limit: number = 50,
+    public readonly limit: number = 50000,
     public readonly sortBy: "date" | "amount" | "merchant" = "date",
     public readonly sortOrder: "asc" | "desc" = "desc",
     public readonly searchTerm?: string,
@@ -29,8 +29,8 @@ export class TransactionListQuery {
       errors.push("Page must be a positive integer");
     }
 
-    if (!Number.isInteger(this.limit) || this.limit < 1 || this.limit > 100) {
-      errors.push("Limit must be between 1 and 100");
+    if (!Number.isInteger(this.limit) || this.limit < 1 || this.limit > 50000) {
+      errors.push("Limit must be between 1 and 50000");
     }
 
     const validSortFields = ["date", "amount", "merchant"];
