@@ -44,8 +44,11 @@ function createApiTransactionStore() {
 
         const result = await response.json();
         if (result.success && result.data.transactions) {
-          const transactions =
-            result.data.transactions.map(mapApiToTransaction).filter((t: Transaction | undefined): t is Transaction => t !== undefined);
+          const transactions = result.data.transactions
+            .map(mapApiToTransaction)
+            .filter(
+              (t: Transaction | undefined): t is Transaction => t !== undefined,
+            );
           set(transactions);
         } else {
           set([]);
@@ -147,7 +150,11 @@ function createApiTransactionStore() {
 
         // Update with the server response (in case server modified something)
         update((transactions) =>
-          transactions.map((t) => (t.id === id ? updatedTransaction : t)).filter((t: Transaction | undefined): t is Transaction => t !== undefined),
+          transactions
+            .map((t) => (t.id === id ? updatedTransaction : t))
+            .filter(
+              (t: Transaction | undefined): t is Transaction => t !== undefined,
+            ),
         );
       } catch (error) {
         console.error("Failed to update transaction:", error);
@@ -155,7 +162,12 @@ function createApiTransactionStore() {
         // Rollback on error
         if (originalTransaction) {
           update((transactions) =>
-            transactions.map((t) => (t.id === id ? originalTransaction : t)).filter((t: Transaction | undefined): t is Transaction => t !== undefined),
+            transactions
+              .map((t) => (t.id === id ? originalTransaction : t))
+              .filter(
+                (t: Transaction | undefined): t is Transaction =>
+                  t !== undefined,
+              ),
           );
         }
 
@@ -250,12 +262,15 @@ function createApiTransactionStore() {
     },
 
     // Import from file
-    async importFile(file: File, options: {
-      currency?: string;
-      duplicateDetectionEnabled?: boolean;
-      skipDuplicates?: boolean;
-      autoCategorizationEnabled?: boolean;
-    } = {}) {
+    async importFile(
+      file: File,
+      options: {
+        currency?: string;
+        duplicateDetectionEnabled?: boolean;
+        skipDuplicates?: boolean;
+        autoCategorizationEnabled?: boolean;
+      } = {},
+    ) {
       try {
         const formData = new FormData();
         formData.append("file", file);

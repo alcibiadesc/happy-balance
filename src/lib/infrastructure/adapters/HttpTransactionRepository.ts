@@ -523,9 +523,7 @@ export class HttpTransactionRepository implements ITransactionRepository {
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to update tags",
-        );
+        return Result.failWithMessage(error.error || "Failed to update tags");
       }
 
       return Result.ok(undefined);

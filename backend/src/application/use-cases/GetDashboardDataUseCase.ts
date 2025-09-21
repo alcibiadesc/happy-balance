@@ -52,7 +52,7 @@ export class GetDashboardDataUseCase {
     try {
       // Get date range
       const { startDate, endDate } = query.getDateRange();
-      console.log('Dashboard dates:', { startDate, endDate, now: new Date() });
+      console.log("Dashboard dates:", { startDate, endDate, now: new Date() });
 
       const startTransactionDate = TransactionDate.create(startDate);
       const endTransactionDate = TransactionDate.create(endDate);

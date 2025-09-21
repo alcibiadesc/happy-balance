@@ -279,9 +279,7 @@ export class ImportTransactionsUseCase {
       const description = this.cleanString(values[mapping.description] || "");
 
       if (!dateStr) {
-        return Result.failWithMessage(
-          "Missing required field: date",
-        );
+        return Result.failWithMessage("Missing required field: date");
       }
 
       // Create value objects

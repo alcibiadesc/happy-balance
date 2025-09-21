@@ -308,9 +308,7 @@ export class ImportTransactionsUseCase {
       const typeStr = this.cleanString(values[mapping.type] || "");
 
       if (!dateStr) {
-        return Result.failWithMessage(
-          "Missing required field: date",
-        );
+        return Result.failWithMessage("Missing required field: date");
       }
 
       // Create value objects

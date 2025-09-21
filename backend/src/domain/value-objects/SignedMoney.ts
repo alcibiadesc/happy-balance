@@ -57,8 +57,10 @@ export class SignedMoney {
   }
 
   add(other: Money | SignedMoney): Result<SignedMoney> {
-    const otherAmount = other instanceof SignedMoney ? other._amount : other.amount;
-    const otherCurrency = other instanceof SignedMoney ? other._currency : other.currency;
+    const otherAmount =
+      other instanceof SignedMoney ? other._amount : other.amount;
+    const otherCurrency =
+      other instanceof SignedMoney ? other._currency : other.currency;
 
     if (this._currency !== otherCurrency) {
       return Result.failWithMessage("Cannot add different currencies");
@@ -68,8 +70,10 @@ export class SignedMoney {
   }
 
   subtract(other: Money | SignedMoney): Result<SignedMoney> {
-    const otherAmount = other instanceof SignedMoney ? other._amount : other.amount;
-    const otherCurrency = other instanceof SignedMoney ? other._currency : other.currency;
+    const otherAmount =
+      other instanceof SignedMoney ? other._amount : other.amount;
+    const otherCurrency =
+      other instanceof SignedMoney ? other._currency : other.currency;
 
     if (this._currency !== otherCurrency) {
       return Result.failWithMessage("Cannot subtract different currencies");
@@ -88,25 +92,31 @@ export class SignedMoney {
 
   isGreaterThan(other: Money | SignedMoney): boolean {
     this.ensureSameCurrency(other);
-    const otherAmount = other instanceof SignedMoney ? other._amount : other.amount;
+    const otherAmount =
+      other instanceof SignedMoney ? other._amount : other.amount;
     return this._amount > otherAmount;
   }
 
   isLessThan(other: Money | SignedMoney): boolean {
     this.ensureSameCurrency(other);
-    const otherAmount = other instanceof SignedMoney ? other._amount : other.amount;
+    const otherAmount =
+      other instanceof SignedMoney ? other._amount : other.amount;
     return this._amount < otherAmount;
   }
 
   equals(other: Money | SignedMoney): boolean {
-    const otherAmount = other instanceof SignedMoney ? other._amount : other.amount;
-    const otherCurrency = other instanceof SignedMoney ? other._currency : other.currency;
+    const otherAmount =
+      other instanceof SignedMoney ? other._amount : other.amount;
+    const otherCurrency =
+      other instanceof SignedMoney ? other._currency : other.currency;
     return this._amount === otherAmount && this._currency === otherCurrency;
   }
 
   toPositiveMoney(): Result<Money> {
     if (this._amount < 0) {
-      return Result.failWithMessage("Cannot convert negative SignedMoney to Money");
+      return Result.failWithMessage(
+        "Cannot convert negative SignedMoney to Money",
+      );
     }
     return Money.create(this._amount, this._currency);
   }
@@ -130,7 +140,8 @@ export class SignedMoney {
   }
 
   private ensureSameCurrency(other: Money | SignedMoney): void {
-    const otherCurrency = other instanceof SignedMoney ? other._currency : other.currency;
+    const otherCurrency =
+      other instanceof SignedMoney ? other._currency : other.currency;
     if (this._currency !== otherCurrency) {
       throw new Error(
         `Cannot compare different currencies: ${this._currency} vs ${otherCurrency}`,

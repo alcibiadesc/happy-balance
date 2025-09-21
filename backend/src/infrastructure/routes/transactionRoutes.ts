@@ -43,9 +43,7 @@ export const createTransactionRoutes = (
   // Find similar transactions route
   router.get(
     "/:id/similar",
-    transactionController.findSimilarTransactions.bind(
-      transactionController,
-    ),
+    transactionController.findSimilarTransactions.bind(transactionController),
   );
 
   router.get(

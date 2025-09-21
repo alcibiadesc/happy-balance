@@ -1,5 +1,9 @@
 import { Result } from "../shared/Result";
-import { Category, CategoryId, type CategorySnapshot } from "../entities/Category";
+import {
+  Category,
+  CategoryId,
+  type CategorySnapshot,
+} from "../entities/Category";
 import { TransactionType } from "../entities/TransactionType";
 
 export interface CategoryFilters {

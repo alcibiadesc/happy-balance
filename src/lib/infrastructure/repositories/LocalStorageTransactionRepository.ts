@@ -531,7 +531,7 @@ export class LocalStorageTransactionRepository
       }
 
       const transactions = transactionsResult.getValue();
-      const transactionIndex = transactions.findIndex(t => t.id === id.value);
+      const transactionIndex = transactions.findIndex((t) => t.id === id.value);
 
       if (transactionIndex === -1) {
         return Result.failWithMessage("Transaction not found");
@@ -566,10 +566,13 @@ export class LocalStorageTransactionRepository
 
       const transactions = allResult.getValue();
       // Simple pattern matching based on merchant and description similarity
-      const matches = transactions.filter(t => {
-        const transactionPattern = `${t.merchant.name}-${t.description || ''}`.toLowerCase();
-        return transactionPattern.includes(patternHash.toLowerCase()) ||
-               patternHash.toLowerCase().includes(transactionPattern);
+      const matches = transactions.filter((t) => {
+        const transactionPattern =
+          `${t.merchant.name}-${t.description || ""}`.toLowerCase();
+        return (
+          transactionPattern.includes(patternHash.toLowerCase()) ||
+          patternHash.toLowerCase().includes(transactionPattern)
+        );
       });
 
       return Result.ok(matches);
@@ -630,13 +633,14 @@ export class LocalStorageTransactionRepository
       const sourceAmount = sourceTransaction.amount.amount;
 
       // Find transactions with similar merchant names and similar amounts
-      const matches = transactions.filter(t => {
+      const matches = transactions.filter((t) => {
         if (t.id.equals(sourceTransaction.id)) {
           return false; // Don't match self
         }
 
-        const merchantMatch = t.merchant.name.toLowerCase().includes(sourceMerchant) ||
-                            sourceMerchant.includes(t.merchant.name.toLowerCase());
+        const merchantMatch =
+          t.merchant.name.toLowerCase().includes(sourceMerchant) ||
+          sourceMerchant.includes(t.merchant.name.toLowerCase());
 
         const amountMatch = Math.abs(t.amount.amount - sourceAmount) < 0.01; // Similar amounts
 

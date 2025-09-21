@@ -110,7 +110,7 @@ export class FinancialCalculationService {
 
     // Calculate balance (income - expenses - investments - debt payments)
     // Use SignedMoney to allow negative balances
-    console.log('About to calculate balance with SignedMoney...');
+    console.log("About to calculate balance with SignedMoney...");
     const signedIncome = SignedMoney.fromMoney(totalIncome);
     const balanceStep1 = signedIncome.subtract(totalExpenses);
     if (balanceStep1.isFailure()) return Result.fail(balanceStep1.getError());

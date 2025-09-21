@@ -133,13 +133,13 @@ class App {
 
     // Find similar transactions use case
     const findSimilarTransactionsUseCase = new FindSimilarTransactionsUseCase(
-      this.transactionRepository
+      this.transactionRepository,
     );
 
     // Dashboard metrics use case
     const getDashboardMetricsUseCase = new GetDashboardMetricsUseCase(
       this.transactionRepository,
-      this.categoryRepository
+      this.categoryRepository,
     );
 
     // Controllers

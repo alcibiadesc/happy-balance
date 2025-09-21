@@ -53,7 +53,7 @@ export interface DashboardMetrics {
   periodInfo: {
     startDate: string;
     endDate: string;
-    periodType: 'week' | 'month' | 'quarter' | 'year' | 'custom';
+    periodType: "week" | "month" | "quarter" | "year" | "custom";
   };
 }
 
@@ -65,7 +65,7 @@ export class Metrics {
     private readonly _monthlyTrend: MonthlyTrend[],
     private readonly _transactionMetrics: TransactionMetrics,
     private readonly _lastUpdated: Date,
-    private readonly _periodInfo: DashboardMetrics['periodInfo']
+    private readonly _periodInfo: DashboardMetrics["periodInfo"],
   ) {}
 
   static create(
@@ -74,7 +74,7 @@ export class Metrics {
     categoryBreakdown: CategoryBreakdown[],
     monthlyTrend: MonthlyTrend[],
     transactionMetrics: TransactionMetrics,
-    periodInfo: DashboardMetrics['periodInfo']
+    periodInfo: DashboardMetrics["periodInfo"],
   ): Result<Metrics> {
     // Validation
     if (periodBalance.income < 0) {
@@ -97,13 +97,23 @@ export class Metrics {
 
     const tolerance = 0.01; // Allow for small rounding differences
     if (Math.abs(totalDistribution - periodBalance.expenses) > tolerance) {
-      return Result.failWithMessage("Expense distribution must equal total expenses");
+      return Result.failWithMessage(
+        "Expense distribution must equal total expenses",
+      );
     }
 
     // Validate category breakdown percentages
-    const totalPercentage = categoryBreakdown.reduce((sum, cat) => sum + cat.percentage, 0);
-    if (categoryBreakdown.length > 0 && Math.abs(totalPercentage - 100) > tolerance) {
-      return Result.failWithMessage("Category breakdown percentages must sum to 100%");
+    const totalPercentage = categoryBreakdown.reduce(
+      (sum, cat) => sum + cat.percentage,
+      0,
+    );
+    if (
+      categoryBreakdown.length > 0 &&
+      Math.abs(totalPercentage - 100) > tolerance
+    ) {
+      return Result.failWithMessage(
+        "Category breakdown percentages must sum to 100%",
+      );
     }
 
     return Result.ok(
@@ -114,8 +124,8 @@ export class Metrics {
         monthlyTrend,
         transactionMetrics,
         new Date(),
-        periodInfo
-      )
+        periodInfo,
+      ),
     );
   }
 
@@ -143,7 +153,7 @@ export class Metrics {
     return new Date(this._lastUpdated);
   }
 
-  get periodInfo(): DashboardMetrics['periodInfo'] {
+  get periodInfo(): DashboardMetrics["periodInfo"] {
     return { ...this._periodInfo };
   }
 
@@ -172,13 +182,15 @@ export class Metrics {
 
   getTopCategories(limit: number = 5): CategoryBreakdown[] {
     return this._categoryBreakdown
-      .filter(cat => cat.amount > 0)
+      .filter((cat) => cat.amount > 0)
       .sort((a, b) => b.amount - a.amount)
       .slice(0, limit);
   }
 
   getEssentialExpenseRatio(): number {
     if (this._periodBalance.expenses === 0) return 0;
-    return (this._expenseDistribution.essential / this._periodBalance.expenses) * 100;
+    return (
+      (this._expenseDistribution.essential / this._periodBalance.expenses) * 100
+    );
   }
 }

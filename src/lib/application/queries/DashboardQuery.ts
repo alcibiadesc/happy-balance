@@ -74,7 +74,7 @@ export class DashboardQuery {
         currentWeekStart.setHours(0, 0, 0, 0);
 
         startDate = new Date(currentWeekStart);
-        startDate.setDate(currentWeekStart.getDate() - (this.periodOffset * 7));
+        startDate.setDate(currentWeekStart.getDate() - this.periodOffset * 7);
 
         endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 6);
@@ -83,15 +83,23 @@ export class DashboardQuery {
 
       case "month":
         // Get start of current month and apply offset
-        startDate = new Date(now.getFullYear(), now.getMonth() - this.periodOffset, 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() - this.periodOffset + 1, 0);
+        startDate = new Date(
+          now.getFullYear(),
+          now.getMonth() - this.periodOffset,
+          1,
+        );
+        endDate = new Date(
+          now.getFullYear(),
+          now.getMonth() - this.periodOffset + 1,
+          0,
+        );
         endDate.setHours(23, 59, 59, 999);
         break;
 
       case "quarter":
         // Get start of current quarter and apply offset
         const currentQuarter = Math.floor(now.getMonth() / 3);
-        const quarterStartMonth = (currentQuarter * 3) - (this.periodOffset * 3);
+        const quarterStartMonth = currentQuarter * 3 - this.periodOffset * 3;
         startDate = new Date(now.getFullYear(), quarterStartMonth, 1);
         endDate = new Date(now.getFullYear(), quarterStartMonth + 3, 0);
         endDate.setHours(23, 59, 59, 999);

@@ -24,16 +24,23 @@ export class FindSimilarTransactionsUseCase {
   constructor(private readonly transactionRepository: ITransactionRepository) {}
 
   async execute(
-    query: SimilarTransactionQuery
+    query: SimilarTransactionQuery,
   ): Promise<Result<SimilarTransactionResult[]>> {
     try {
-      const { transactionId, merchantName, description, maxResults = 50, includeHidden = false } = query;
+      const {
+        transactionId,
+        merchantName,
+        description,
+        maxResults = 50,
+        includeHidden = false,
+      } = query;
 
       // Get all transactions from database (not limited by frontend pagination)
-      const allTransactionsResult = await this.transactionRepository.findWithFilters(
-        { includeHidden },
-        { offset: 0, limit: 10000 } // Large limit to get all transactions
-      );
+      const allTransactionsResult =
+        await this.transactionRepository.findWithFilters(
+          { includeHidden },
+          { offset: 0, limit: 10000 }, // Large limit to get all transactions
+        );
 
       if (allTransactionsResult.isFailure()) {
         return Result.fail(allTransactionsResult.getError());
@@ -44,7 +51,7 @@ export class FindSimilarTransactionsUseCase {
 
       // Normalize search patterns
       const normalizedMerchant = this.normalizeText(merchantName);
-      const normalizedDescription = this.normalizeText(description || '');
+      const normalizedDescription = this.normalizeText(description || "");
 
       for (const transaction of transactions) {
         // Skip the source transaction itself
@@ -54,14 +61,14 @@ export class FindSimilarTransactionsUseCase {
         const similarity = this.calculateSimilarity(
           transaction,
           normalizedMerchant,
-          normalizedDescription
+          normalizedDescription,
         );
 
         // Only include transactions with meaningful similarity
         if (similarity.score > 0.3) {
           similarTransactions.push({
             transaction,
-            similarity
+            similarity,
           });
         }
       }
@@ -74,7 +81,7 @@ export class FindSimilarTransactionsUseCase {
       return Result.ok(sortedResults);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find similar transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to find similar transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
@@ -82,11 +89,13 @@ export class FindSimilarTransactionsUseCase {
   private calculateSimilarity(
     transaction: Transaction,
     normalizedMerchant: string,
-    normalizedDescription: string
-  ): SimilarTransactionResult['similarity'] {
+    normalizedDescription: string,
+  ): SimilarTransactionResult["similarity"] {
     const snapshot = transaction.toSnapshot();
     const transactionMerchant = this.normalizeText(snapshot.merchant);
-    const transactionDescription = this.normalizeText(snapshot.description || '');
+    const transactionDescription = this.normalizeText(
+      snapshot.description || "",
+    );
 
     let score = 0;
     let merchantMatch = false;
@@ -99,12 +108,19 @@ export class FindSimilarTransactionsUseCase {
         // Exact match
         merchantMatch = true;
         score += 0.6;
-      } else if (transactionMerchant.includes(normalizedMerchant) ||
-                 normalizedMerchant.includes(transactionMerchant)) {
+      } else if (
+        transactionMerchant.includes(normalizedMerchant) ||
+        normalizedMerchant.includes(transactionMerchant)
+      ) {
         // Partial match
         merchantMatch = true;
         score += 0.4;
-      } else if (this.calculateLevenshteinSimilarity(transactionMerchant, normalizedMerchant) > 0.8) {
+      } else if (
+        this.calculateLevenshteinSimilarity(
+          transactionMerchant,
+          normalizedMerchant,
+        ) > 0.8
+      ) {
         // Similar strings (typos, etc.)
         merchantMatch = true;
         score += 0.3;
@@ -116,8 +132,10 @@ export class FindSimilarTransactionsUseCase {
       if (transactionDescription === normalizedDescription) {
         descriptionMatch = true;
         score += 0.3;
-      } else if (transactionDescription.includes(normalizedDescription) ||
-                 normalizedDescription.includes(transactionDescription)) {
+      } else if (
+        transactionDescription.includes(normalizedDescription) ||
+        normalizedDescription.includes(transactionDescription)
+      ) {
         descriptionMatch = true;
         score += 0.2;
       }
@@ -126,7 +144,8 @@ export class FindSimilarTransactionsUseCase {
     // Amount similarity (lower priority)
     const sourceAmount = Math.abs(snapshot.amount);
     if (sourceAmount > 0) {
-      const amountDifference = Math.abs(sourceAmount - Math.abs(snapshot.amount)) / sourceAmount;
+      const amountDifference =
+        Math.abs(sourceAmount - Math.abs(snapshot.amount)) / sourceAmount;
       amountSimilarity = Math.max(0, 1 - amountDifference);
 
       if (amountSimilarity > 0.9) {
@@ -140,7 +159,7 @@ export class FindSimilarTransactionsUseCase {
       merchantMatch,
       descriptionMatch,
       amountSimilarity,
-      score: Math.min(1, score) // Cap at 1.0
+      score: Math.min(1, score), // Cap at 1.0
     };
   }
 
@@ -148,9 +167,9 @@ export class FindSimilarTransactionsUseCase {
     return text
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s]/g, '') // Remove special characters
-      .replace(/\s+/g, ' ') // Normalize whitespace
-      .replace(/\b(ltd|llc|inc|corp|sa|sl|slu|s\.l\.)\b/g, '') // Remove common company suffixes
+      .replace(/[^\w\s]/g, "") // Remove special characters
+      .replace(/\s+/g, " ") // Normalize whitespace
+      .replace(/\b(ltd|llc|inc|corp|sa|sl|slu|s\.l\.)\b/g, "") // Remove common company suffixes
       .trim();
   }
 
@@ -163,7 +182,9 @@ export class FindSimilarTransactionsUseCase {
   }
 
   private levenshteinDistance(str1: string, str2: string): number {
-    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+    const matrix = Array(str2.length + 1)
+      .fill(null)
+      .map(() => Array(str1.length + 1).fill(null));
 
     for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
     for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
@@ -174,7 +195,7 @@ export class FindSimilarTransactionsUseCase {
         matrix[j][i] = Math.min(
           matrix[j][i - 1] + 1, // deletion
           matrix[j - 1][i] + 1, // insertion
-          matrix[j - 1][i - 1] + substitutionCost // substitution
+          matrix[j - 1][i - 1] + substitutionCost, // substitution
         );
       }
     }

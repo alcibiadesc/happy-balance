@@ -427,7 +427,9 @@ export class TransactionController {
           req.query.includeInvestments === "false" ? false : true,
         startDate: req.query.startDate as string | undefined,
         endDate: req.query.endDate as string | undefined,
-        periodOffset: req.query.periodOffset ? parseInt(req.query.periodOffset as string, 10) : 0,
+        periodOffset: req.query.periodOffset
+          ? parseInt(req.query.periodOffset as string, 10)
+          : 0,
       };
 
       const validationResult = DashboardQuerySchema.safeParse(queryData);
@@ -438,8 +440,14 @@ export class TransactionController {
         });
       }
 
-      const { period, startDate, endDate, currency, includeInvestments, periodOffset } =
-        validationResult.data;
+      const {
+        period,
+        startDate,
+        endDate,
+        currency,
+        includeInvestments,
+        periodOffset,
+      } = validationResult.data;
 
       const query = new DashboardQuery(
         currency,
@@ -450,24 +458,24 @@ export class TransactionController {
         periodOffset,
       );
 
-      console.log('Executing getDashboardDataUseCase with query:', query);
+      console.log("Executing getDashboardDataUseCase with query:", query);
       const result = await this.getDashboardDataUseCase.execute(query);
-      console.log('getDashboardDataUseCase result:', result);
+      console.log("getDashboardDataUseCase result:", result);
 
       if (result.isFailure()) {
-        console.error('Dashboard data failed:', result.getError());
+        console.error("Dashboard data failed:", result.getError());
         return res.status(500).json({ error: result.getError() });
       }
 
       const data = result.getValue();
-      console.log('Dashboard data success:', JSON.stringify(data, null, 2));
+      console.log("Dashboard data success:", JSON.stringify(data, null, 2));
 
       res.json({
         success: true,
         data: data,
       });
     } catch (error) {
-      console.error('Dashboard controller error:', error);
+      console.error("Dashboard controller error:", error);
       res.status(500).json({
         error: "Internal server error",
         message: error instanceof Error ? error.message : "Unknown error",
@@ -607,7 +615,7 @@ export class TransactionController {
       }
 
       const transactionResult = await this.transactionRepository.findById(
-        transactionIdResult.getValue()
+        transactionIdResult.getValue(),
       );
 
       if (transactionResult.isFailure()) {
