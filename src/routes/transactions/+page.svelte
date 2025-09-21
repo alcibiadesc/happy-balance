@@ -6,10 +6,10 @@
   import SmartCategorizationModal from '$lib/components/SmartCategorizationModal.svelte';
   import CategorySelectionModal from '$lib/components/CategorySelectionModal.svelte';
   import {
-    ChevronDown, Search, Filter, Download, Plus, Calendar,
+    ChevronDown, ChevronUp, Search, Filter, Download, Plus, Calendar,
     TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,
     Tag, MoreVertical, ChevronLeft, ChevronRight, Layers,
-    CalendarDays, CalendarRange
+    CalendarDays, CalendarRange, Minimize2, Maximize2
   } from 'lucide-svelte';
   import {
     apiTransactions,
@@ -68,6 +68,10 @@
     reason: string;
     potentialMatches: number;
   }>>([]);
+
+  // Collapse/expand state
+  let collapsedGroups = $state<Set<string>>(new Set());
+  let allExpanded = $state(true);
 
 
   // Click outside handler
@@ -182,6 +186,29 @@
   function clearAllFilters() {
     selectedCategories = [];
     transactionTypeFilter = 'all';
+  }
+
+  // Collapse/expand functions
+  function toggleGroup(date: string) {
+    const newCollapsed = new Set(collapsedGroups);
+    if (newCollapsed.has(date)) {
+      newCollapsed.delete(date);
+    } else {
+      newCollapsed.add(date);
+    }
+    collapsedGroups = newCollapsed;
+    allExpanded = newCollapsed.size === 0;
+  }
+
+  function collapseAll() {
+    const allDates = groupedTransactions().map(g => g.date);
+    collapsedGroups = new Set(allDates);
+    allExpanded = false;
+  }
+
+  function expandAll() {
+    collapsedGroups = new Set();
+    allExpanded = true;
   }
 
   let groupedTransactions = $derived(() => {
@@ -870,6 +897,28 @@
     
     {#if showFilters}
       <div class="filters-bento" class:visible={showFilters}>
+        <!-- Collapse/Expand All Buttons -->
+        <div class="collapse-expand-controls">
+          <button
+            class="control-button"
+            onclick={expandAll}
+            disabled={allExpanded}
+            title="Expandir todo"
+          >
+            <Maximize2 size={14} />
+            <span>Expandir todo</span>
+          </button>
+          <button
+            class="control-button"
+            onclick={collapseAll}
+            disabled={!allExpanded && collapsedGroups.size === groupedTransactions().length}
+            title="Colapsar todo"
+          >
+            <Minimize2 size={14} />
+            <span>Colapsar todo</span>
+          </button>
+        </div>
+
         <!-- Filter Grid - Bento Box Layout -->
         <div class="filter-grid">
           <!-- Quick Type Filters -->
@@ -1024,15 +1073,30 @@
   <!-- Transaction List -->
   <main class="transactions-list">
     {#each groupedTransactions() as group}
-      <div class="transaction-group">
-        <h3 class="group-header">
-          <span>{formatDate(group.date)}</span>
+      <div class="transaction-group" class:collapsed={collapsedGroups.has(group.date)}>
+        <button
+          class="group-header"
+          onclick={() => toggleGroup(group.date)}
+          aria-expanded={!collapsedGroups.has(group.date)}
+        >
+          <div class="group-header-left">
+            {#if collapsedGroups.has(group.date)}
+              <ChevronRight size={16} class="group-chevron" />
+            {:else}
+              <ChevronDown size={16} class="group-chevron" />
+            {/if}
+            <span>{formatDate(group.date)}</span>
+            {#if collapsedGroups.has(group.date)}
+              <span class="group-count">({group.items.length} transacciones)</span>
+            {/if}
+          </div>
           <span class="group-total">
             {formatAmount(group.items.reduce((sum, t) => sum + t.amount, 0))}
           </span>
-        </h3>
+        </button>
 
-        {#each group.items as transaction}
+        {#if !collapsedGroups.has(group.date)}
+          {#each group.items as transaction}
           {@const category = getCategoryById(transaction.categoryId)}
           <div
             class="transaction-card"
@@ -1166,6 +1230,7 @@
             </div>
           </div>
         {/each}
+        {/if}
       </div>
     {/each}
   </main>
@@ -2063,6 +2128,38 @@
     transform: translateY(-1px) scale(1.02);
   }
   
+  /* Collapse/Expand Controls */
+  .collapse-expand-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+  }
+
+  .control-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .control-button:hover:not(:disabled) {
+    background: var(--color-hover);
+    border-color: var(--color-primary);
+  }
+
+  .control-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   /* Bento Box Filters */
   .filters-bento {
     background: white;
@@ -2526,16 +2623,47 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 0 1rem 0;
-    border-bottom: 2px solid rgba(229, 231, 235, 0.5);
-    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    margin: -0.5rem -0.5rem 1rem -0.5rem;
+    border-radius: 0.5rem;
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: calc(100% + 1rem);
   }
 
-  .group-header span:first-child {
+  .group-header:hover {
+    background: rgba(229, 231, 235, 0.3);
+  }
+
+  .group-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     color: var(--text-primary);
+  }
+
+  .group-chevron {
+    transition: transform 0.2s;
+    color: var(--text-secondary);
+  }
+
+  .group-count {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .transaction-group.collapsed {
+    padding-bottom: 0.5rem;
+  }
+
+  .transaction-group.collapsed .group-header {
+    margin-bottom: 0;
   }
   
   .transaction-card {
