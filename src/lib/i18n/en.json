@@ -280,5 +280,26 @@
     "reset_title": "Reset to Defaults",
     "reset_message": "⚠️ This will restore default categories and settings. Your transactions will be preserved, but custom categories and settings will be lost. This action cannot be undone!",
     "reset_everything": "Reset to Defaults"
+  },
+  "accessibility": {
+    "close": "Close",
+    "close_selector": "Close selector",
+    "select_icon": "Select icon",
+    "select_icon_for": "Select icon for {name}",
+    "search_transactions": "Search transactions",
+    "date_from": "From",
+    "date_to": "To",
+    "select_transactions": "Select transactions",
+    "show_filters": "Show filters",
+    "export_transactions": "Export transactions",
+    "remove_income_filter": "Remove income filter",
+    "remove_expense_filter": "Remove expense filter",
+    "close_error_message": "Close error message",
+    "show_period": "Show period",
+    "show_all": "Show all",
+    "select_language": "Select language",
+    "more_actions": "More actions",
+    "scroll_to_top": "Scroll to top",
+    "filter_by_month": "Filter by month"
   }
 }

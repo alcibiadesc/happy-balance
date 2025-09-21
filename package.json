@@ -33,8 +33,7 @@
   },
   "dependencies": {
     "chart.js": "^4.5.0",
-    "lucide-svelte": "^0.542.0",
-    "svelte-i18n": "^4.0.1"
+    "lucide-svelte": "^0.542.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",

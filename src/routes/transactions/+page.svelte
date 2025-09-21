@@ -687,7 +687,7 @@
           class:active={showAllTransactions}
           onclick={() => showAllTransactions = !showAllTransactions}
           title={showAllTransactions ? 'Mostrar período seleccionado' : 'Mostrar todas las transacciones'}
-          aria-label={showAllTransactions ? 'Mostrar período' : 'Mostrar todas'}
+          aria-label={showAllTransactions ? $t('accessibility.show_period') : $t('accessibility.show_all')}
         >
           <Layers size={14} />
         </button>
@@ -723,7 +723,7 @@
               type="date"
               class="date-input"
               bind:value={customStartDate}
-              placeholder="Desde"
+              placeholder={$t('accessibility.date_from')}
               disabled={showAllTransactions}
             />
             <span class="date-separator">-</span>
@@ -731,7 +731,7 @@
               type="date"
               class="date-input"
               bind:value={customEndDate}
-              placeholder="Hasta"
+              placeholder={$t('accessibility.date_to')}
               disabled={showAllTransactions}
             />
           </div>
@@ -773,7 +773,7 @@
           <button
             class="clear-search"
             onclick={() => searchQuery = ''}
-            aria-label="Limpiar búsqueda"
+            aria-label={$t('common.reset')}
           >
             <X size={12} />
           </button>
@@ -800,7 +800,7 @@
             class="toolbar-btn"
             class:pulse={isSelectionMode === false && filteredTransactions().length > 10}
             onclick={() => isSelectionMode = true}
-            aria-label="Seleccionar transacciones"
+            aria-label={$t('accessibility.select_transactions')}
           >
             {$t('transactions.select')}
           </button>
@@ -809,7 +809,7 @@
             class:active={showFilters}
             class:has-filters={selectedCategories.length > 0 || transactionTypeFilter !== 'all'}
             onclick={() => showFilters = !showFilters}
-            aria-label="Mostrar filtros"
+            aria-label={$t('accessibility.show_filters')}
           >
             <Filter size={14} />
             {#if selectedCategories.length > 0 || transactionTypeFilter !== 'all'}
@@ -819,7 +819,7 @@
           <button
             class="toolbar-btn"
             onclick={downloadTransactionsCSV}
-            aria-label="Exportar transacciones"
+            aria-label={$t('accessibility.export_transactions')}
           >
             <Download size={14} />
           </button>
@@ -972,7 +972,7 @@
               <button
                 class="tag-mini income-tag"
                 onclick={() => transactionTypeFilter = 'all'}
-                aria-label="Eliminar filtro de ingresos"
+                aria-label={$t('accessibility.remove_income_filter')}
               >
                 <TrendingUp size={10} />
                 <span>Ingresos</span>
@@ -984,7 +984,7 @@
               <button
                 class="tag-mini expense-tag"
                 onclick={() => transactionTypeFilter = 'all'}
-                aria-label="Eliminar filtro de gastos"
+                aria-label={$t('accessibility.remove_expense_filter')}
               >
                 <TrendingDown size={10} />
                 <span>Gastos</span>
@@ -1001,7 +1001,7 @@
                   onclick={() => {
                     selectedCategories = selectedCategories.filter(c => c !== categoryId);
                   }}
-                  aria-label="Eliminar categoría {category.name}"
+                  aria-label={$t('common.delete')}
                 >
                   <span class="tag-emoji">{category.icon}</span>
                   <span>{category.name}</span>

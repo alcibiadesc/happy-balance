@@ -424,7 +424,7 @@
                 <button
                   class="icon-display"
                   style="background-color: {newCategory.color}20"
-                  aria-label="Seleccionar icono para nueva categoría"
+                  aria-label={$t('accessibility.select_icon')}
                   aria-expanded={showIconPickerNew}
                   aria-haspopup="listbox"
                   onclick={(e) => {
@@ -492,7 +492,7 @@
                   <button
                     class="icon-display"
                     style="background-color: {editForm.color}20"
-                    aria-label="Seleccionar icono para {category.name}"
+                    aria-label={$t('accessibility.select_icon_for', { name: category.name })}
                     aria-expanded={showIconPickerEdit === category.id}
                     aria-haspopup="listbox"
                     onclick={(e) => {
@@ -612,7 +612,7 @@
     "
     role="dialog"
     aria-modal="true"
-    aria-label="Selector de iconos"
+    aria-label={$t('accessibility.select_icon')}
   >
     <!-- Picker header for better UX -->
     <div class="emoji-picker-header">
@@ -620,7 +620,7 @@
       <button
         class="emoji-picker-close"
         onclick={closeEmojiPicker}
-        aria-label="Cerrar selector"
+        aria-label={$t('accessibility.close_selector')}
       >
         <X size={14} />
       </button>
@@ -631,7 +631,7 @@
       class="emoji-picker-content"
       style="max-height: {pickerPosition.maxHeight};"
       role="listbox"
-      aria-label="Lista de iconos disponibles"
+      aria-label={$t('accessibility.select_icon')}
     >
       {#each availableIcons as icon}
         <button
@@ -639,7 +639,7 @@
           class:selected={showIconPickerNew ? newCategory?.icon === icon : editForm.icon === icon}
           role="option"
           aria-selected={showIconPickerNew ? newCategory?.icon === icon : editForm.icon === icon}
-          aria-label="Icono {icon}"
+          aria-label={$t('accessibility.select_icon')}
           onclick={() => {
             if (showIconPickerNew && newCategory) {
               newCategory.icon = icon;
