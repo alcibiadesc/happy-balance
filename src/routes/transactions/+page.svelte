@@ -101,8 +101,8 @@
       selectedPeriod = new Date().toISOString().slice(0, 7);
       return;
     }
-    const [year, month] = selectedPeriod.split('-');
-    const date = new Date(Number(year), Number(month) - 2);
+    const date = new Date(selectedPeriod + '-01');
+    date.setMonth(date.getMonth() - 1);
     selectedPeriod = date.toISOString().slice(0, 7);
   }
 
@@ -111,8 +111,8 @@
       selectedPeriod = new Date().toISOString().slice(0, 7);
       return;
     }
-    const [year, month] = selectedPeriod.split('-');
-    const date = new Date(Number(year), Number(month));
+    const date = new Date(selectedPeriod + '-01');
+    date.setMonth(date.getMonth() + 1);
     selectedPeriod = date.toISOString().slice(0, 7);
   }
 
