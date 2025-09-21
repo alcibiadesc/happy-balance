@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import {
     Plus, Edit2, Trash2, Check, X, DollarSign,
-    TrendingUp, TrendingDown, Wallet, Coins, AlertCircle
+    TrendingUp, TrendingDown, Wallet, Coins, AlertCircle, ArrowRightLeft, Info
   } from 'lucide-svelte';
   import { apiCategories, apiTransactions } from '$lib/stores/api-transactions';
   import type { Category, Transaction } from '$lib/types/transaction';
@@ -12,7 +12,7 @@
   // States
   let editingCategory = $state<string | null>(null);
   let newCategory = $state<Partial<Category> | null>(null);
-  let selectedType = $state<'income' | 'essential' | 'discretionary' | 'investment' | 'debt_payment' | null>(null);
+  let selectedType = $state<'income' | 'essential' | 'discretionary' | 'investment' | 'debt_payment' | 'no_compute' | null>(null);
   let showDeleteModal = $state(false);
   let categoryToDelete = $state<Category | null>(null);
   let recategorizeTarget = $state<string>('none');
@@ -20,6 +20,13 @@
   let showIconPickerNew = $state(false);
   let showIconPickerEdit = $state<string | null>(null);
   let pickerButtonElement = $state<HTMLElement | null>(null);
+  let showHelperTooltip = $state(false);
+  let tooltipButtonElement = $state<HTMLElement | null>(null);
+  let tooltipPosition = $state({
+    top: 0,
+    left: 0,
+    position: 'bottom'
+  });
   let pickerPosition = $state({
     top: 0,
     left: 0,
@@ -36,6 +43,49 @@
     annualBudget: 0,
     type: 'essential' as Category['type']
   });
+
+  // Tooltip positioning system
+  function calculateTooltipPosition(buttonElement: HTMLElement) {
+    const rect = buttonElement.getBoundingClientRect();
+
+    // Tooltip dimensions
+    const tooltipWidth = 320;
+    const tooltipHeight = 80; // Estimated height
+    const spacing = 8;
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    // Calculate available space
+    const spaceAbove = rect.top;
+    const spaceBelow = viewportHeight - rect.bottom;
+
+    let top, left, position;
+
+    // Choose position based on available space
+    if (spaceBelow >= tooltipHeight + spacing) {
+      // Enough space below
+      position = 'bottom';
+      top = rect.bottom + spacing;
+    } else if (spaceAbove >= tooltipHeight + spacing) {
+      // Not enough space below, but enough above
+      position = 'top';
+      top = rect.top - tooltipHeight - spacing;
+    } else {
+      // Use the larger space
+      if (spaceAbove > spaceBelow) {
+        position = 'top';
+        top = rect.top - tooltipHeight - spacing;
+      } else {
+        position = 'bottom';
+        top = rect.bottom + spacing;
+      }
+    }
+
+    // Horizontal positioning - center on button but stay in viewport
+    left = Math.max(spacing, Math.min(rect.left + (rect.width / 2) - (tooltipWidth / 2), viewportWidth - tooltipWidth - spacing));
+
+    return { top, left, position };
+  }
 
   // Advanced positioning system with proper viewport detection
   function calculatePickerPosition(buttonElement: HTMLElement) {
@@ -233,7 +283,8 @@
     { value: 'investment', label: $t('categories.types.investment'), icon: TrendingDown },
     { value: 'essential', label: $t('categories.types.essential'), icon: Wallet },
     { value: 'discretionary', label: $t('categories.types.discretionary'), icon: Coins },
-    { value: 'debt_payment', label: $t('categories.types.debt_payment'), icon: AlertCircle }
+    { value: 'debt_payment', label: $t('categories.types.debt_payment'), icon: AlertCircle },
+    { value: 'no_compute', label: $t('categories.types.no_compute'), icon: ArrowRightLeft }
   ]);
 
   // Computed categories by type
@@ -243,7 +294,8 @@
       essential: [] as Category[],
       discretionary: [] as Category[],
       investment: [] as Category[],
-      debt_payment: [] as Category[]
+      debt_payment: [] as Category[],
+      no_compute: [] as Category[]
     };
 
     $apiCategories.forEach(cat => {
@@ -405,6 +457,30 @@
             <svelte:component this={categoryType.icon} size={16} />
             <h2>{categoryType.label}</h2>
             <span class="category-count">{categories.length}</span>
+            {#if categoryType.value === 'no_compute'}
+              <div class="helper-tooltip">
+                <button
+                  class="helper-button"
+                  bind:this={tooltipButtonElement}
+                  onmouseenter={() => {
+                    if (tooltipButtonElement) {
+                      tooltipPosition = calculateTooltipPosition(tooltipButtonElement);
+                    }
+                    showHelperTooltip = true;
+                  }}
+                  onmouseleave={() => showHelperTooltip = false}
+                  onfocus={() => {
+                    if (tooltipButtonElement) {
+                      tooltipPosition = calculateTooltipPosition(tooltipButtonElement);
+                    }
+                    showHelperTooltip = true;
+                  }}
+                  onblur={() => showHelperTooltip = false}
+                >
+                  <Info size={14} />
+                </button>
+              </div>
+            {/if}
           </div>
 
           {#if selectedType !== categoryType.value}
@@ -725,6 +801,22 @@
         </button>
       </div>
     </div>
+  </div>
+{/if}
+
+<!-- Custom Tooltip -->
+{#if showHelperTooltip && tooltipButtonElement}
+  <div
+    class="custom-tooltip"
+    class:position-top={tooltipPosition.position === 'top'}
+    style="
+      top: {tooltipPosition.top}px;
+      left: {tooltipPosition.left}px;
+    "
+  >
+    <p class="tooltip-text">
+      {$t('categories.helpers.no_compute')}
+    </p>
   </div>
 {/if}
 
@@ -1481,5 +1573,110 @@
     font-size: 0.875rem;
     color: var(--text-muted);
     font-style: italic;
+  }
+
+  /* Helper Tooltip Styles */
+  .helper-tooltip {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .helper-button {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--gray-200);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: help;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin-left: var(--space-xs);
+  }
+
+  .helper-button:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+    color: var(--text-secondary);
+  }
+
+  .helper-button:focus {
+    outline: none;
+    border-color: var(--acapulco);
+    box-shadow: 0 0 0 2px rgba(122, 186, 165, 0.2);
+  }
+
+  .custom-tooltip {
+    position: fixed;
+    z-index: 90;
+    width: 320px;
+    padding: var(--space-md);
+    background: var(--surface-elevated);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0 10px 25px rgba(0, 0, 0, 0.1),
+      0 4px 8px rgba(0, 0, 0, 0.05);
+    animation: tooltipSlideIn 0.2s ease-out;
+  }
+
+  .custom-tooltip.position-top {
+    animation: tooltipSlideInFromTop 0.2s ease-out;
+  }
+
+  .custom-tooltip::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+  }
+
+  .custom-tooltip:not(.position-top)::before {
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-bottom: 8px solid var(--surface-elevated);
+    filter: drop-shadow(0 -2px 2px rgba(0, 0, 0, 0.05));
+  }
+
+  .custom-tooltip.position-top::before {
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-top: 8px solid var(--surface-elevated);
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.05));
+  }
+
+  .tooltip-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  @keyframes tooltipSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes tooltipSlideInFromTop {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 </style>

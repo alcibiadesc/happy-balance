@@ -219,7 +219,7 @@
           <label class="field-label" for="category">{$t('transactions.category')}</label>
           {#if categories.length > 0}
             <div class="category-grid">
-              {#each categories.filter(c => (type === 'income' && c.type === 'income') || (type === 'expense' && ['essential', 'discretionary', 'investment', 'debt_payment'].includes(c.type))) as category}
+              {#each categories.filter(c => (type === 'income' && c.type === 'income') || (type === 'expense' && ['essential', 'discretionary', 'investment', 'debt_payment', 'no_compute'].includes(c.type))) as category}
                 <button
                   type="button"
                   class="category-chip"

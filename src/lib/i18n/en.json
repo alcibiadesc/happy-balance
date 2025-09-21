@@ -228,7 +228,11 @@
       "investment": "Investment",
       "essential": "Essential Expense",
       "discretionary": "Discretionary Expense",
-      "debt_payment": "Debt Payment"
+      "debt_payment": "Debt Payment",
+      "no_compute": "No Compute"
+    },
+    "helpers": {
+      "no_compute": "'No Compute' categories are for account transfers (bank transfers, account movements, etc.) that shouldn't affect your financial metrics. They will appear in transactions but be excluded from expense and income analysis."
     }
   },
   "settings": {

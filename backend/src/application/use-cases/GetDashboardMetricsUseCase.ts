@@ -3,6 +3,7 @@ import { ITransactionRepository } from "@domain/repositories/ITransactionReposit
 import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
 import { TransactionDate } from "@domain/value-objects/TransactionDate";
 import { TransactionType } from "@domain/entities/TransactionType";
+import { CategoryType } from "@domain/entities/CategoryType";
 import { DashboardMetrics, Metrics } from "@domain/entities/Metrics";
 
 export interface DashboardMetricsQuery {
@@ -32,11 +33,11 @@ export class GetDashboardMetricsUseCase {
       const endDateResult = TransactionDate.fromString(dateRange.endDate);
 
       if (startDateResult.isFailure()) {
-        return Result.failWithMessage(startDateResult.getError());
+        return Result.failWithMessage(startDateResult.getError().message);
       }
 
       if (endDateResult.isFailure()) {
-        return Result.failWithMessage(endDateResult.getError());
+        return Result.failWithMessage(endDateResult.getError().message);
       }
 
       const transactionsResult =
@@ -48,7 +49,7 @@ export class GetDashboardMetricsUseCase {
         });
 
       if (transactionsResult.isFailure()) {
-        return Result.failWithMessage(transactionsResult.getError());
+        return Result.failWithMessage(transactionsResult.getError().message);
       }
 
       const { transactions } = transactionsResult.getValue();
@@ -56,28 +57,31 @@ export class GetDashboardMetricsUseCase {
       // Get all categories for categorization
       const categoriesResult = await this.categoryRepository.findActive();
       if (categoriesResult.isFailure()) {
-        return Result.failWithMessage(categoriesResult.getError());
+        return Result.failWithMessage(categoriesResult.getError().message);
       }
 
       const categories = categoriesResult.getValue();
 
+      // Filter out no_compute transactions for metrics calculations
+      const computedTransactions = this.filterComputedTransactions(transactions, categories);
+
       // Calculate metrics
       const periodBalance = this.calculatePeriodBalance(
-        transactions,
+        computedTransactions,
         query.currency,
       );
       const expenseDistribution = this.calculateExpenseDistribution(
-        transactions,
+        computedTransactions,
         categories,
         query.currency,
       );
       const categoryBreakdown = this.calculateCategoryBreakdown(
-        transactions,
+        computedTransactions,
         categories,
         query.currency,
       );
       const monthlyTrend = await this.calculateMonthlyTrend(query, dateRange);
-      const transactionMetrics = this.calculateTransactionMetrics(transactions);
+      const transactionMetrics = this.calculateTransactionMetrics(computedTransactions);
 
       const periodInfo = {
         startDate: dateRange.startDate,
@@ -96,7 +100,7 @@ export class GetDashboardMetricsUseCase {
       );
 
       if (metricsResult.isFailure()) {
-        return Result.failWithMessage(metricsResult.getError());
+        return Result.failWithMessage(metricsResult.getError().message);
       }
 
       return Result.ok(metricsResult.getValue().toSnapshot());
@@ -364,17 +368,25 @@ export class GetDashboardMetricsUseCase {
 
         if (transactionsResult.isSuccess()) {
           const { transactions } = transactionsResult.getValue();
-          const periodBalance = this.calculatePeriodBalance(
-            transactions,
-            query.currency,
-          );
 
-          trends.push({
-            month: this.formatPeriodLabel(trendRange.startDate, query.period),
-            income: periodBalance.income,
-            expenses: periodBalance.expenses,
-            balance: periodBalance.balance,
-          });
+          // Get categories for filtering
+          const categoriesResult = await this.categoryRepository.findActive();
+          if (categoriesResult.isSuccess()) {
+            const categories = categoriesResult.getValue();
+            const computedTransactions = this.filterComputedTransactions(transactions, categories);
+
+            const periodBalance = this.calculatePeriodBalance(
+              computedTransactions,
+              query.currency,
+            );
+
+            trends.push({
+              month: this.formatPeriodLabel(trendRange.startDate, query.period),
+              income: periodBalance.income,
+              expenses: periodBalance.expenses,
+              balance: periodBalance.balance,
+            });
+          }
         }
       }
     }
@@ -404,6 +416,29 @@ export class GetDashboardMetricsUseCase {
           month: "short",
         });
     }
+  }
+
+  private filterComputedTransactions(transactions: any[], categories: any[]) {
+    // Create a map of category ID to category type for quick lookup
+    const categoryTypeMap = new Map<string, CategoryType>();
+    for (const category of categories) {
+      const snapshot = category.toSnapshot ? category.toSnapshot() : category;
+      categoryTypeMap.set(snapshot.id, snapshot.type);
+    }
+
+    // Filter out transactions with NO_COMPUTE category type
+    return transactions.filter(transaction => {
+      const snapshot = transaction.toSnapshot ? transaction.toSnapshot() : transaction;
+
+      // If transaction has no category, include it
+      if (!snapshot.categoryId) {
+        return true;
+      }
+
+      // Check if the category type is NO_COMPUTE
+      const categoryType = categoryTypeMap.get(snapshot.categoryId);
+      return categoryType !== CategoryType.NO_COMPUTE;
+    });
   }
 
   private calculateTransactionMetrics(transactions: any[]) {

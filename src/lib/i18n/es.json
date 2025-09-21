@@ -228,7 +228,11 @@
       "investment": "Inversión",
       "essential": "Gasto Esencial",
       "discretionary": "Gasto Discrecional",
-      "debt_payment": "Pago de Deudas"
+      "debt_payment": "Pago de Deudas",
+      "no_compute": "No Computar"
+    },
+    "helpers": {
+      "no_compute": "Las categorías 'No Computar' son para movimientos entre cuentas (transferencias, cambios de banco, etc.) que no deben afectar tus métricas financieras. Aparecerán en transacciones pero se excluirán de análisis de gastos e ingresos."
     }
   },
   "settings": {

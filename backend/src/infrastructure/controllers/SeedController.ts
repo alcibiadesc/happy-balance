@@ -177,6 +177,28 @@ export class SeedController {
         color: "#7C3AED",
         icon: "🚗",
       },
+      // No Compute categories
+      {
+        id: "22",
+        name: "Account Transfer",
+        type: "no_compute",
+        color: "#6B7280",
+        icon: "🔄",
+      },
+      {
+        id: "23",
+        name: "Bank Transfer",
+        type: "no_compute",
+        color: "#9CA3AF",
+        icon: "🏦",
+      },
+      {
+        id: "24",
+        name: "Internal Movement",
+        type: "no_compute",
+        color: "#4B5563",
+        icon: "↔️",
+      },
     ];
 
     // Default app settings

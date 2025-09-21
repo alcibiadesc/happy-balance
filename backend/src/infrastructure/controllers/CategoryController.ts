@@ -15,6 +15,7 @@ const CreateCategorySchema = z.object({
     "discretionary",
     "investment",
     "debt_payment",
+    "no_compute",
   ]),
   color: z
     .string()
@@ -43,6 +44,7 @@ const CategoryFiltersSchema = z.object({
       "discretionary",
       "investment",
       "debt_payment",
+      "no_compute",
     ])
     .optional(),
   isActive: z.boolean().optional(),

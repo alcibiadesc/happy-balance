@@ -76,7 +76,8 @@
         essential: categories.filter(cat => cat.type === 'essential'),
         discretionary: categories.filter(cat => cat.type === 'discretionary'),
         investment: categories.filter(cat => cat.type === 'investment'),
-        debt_payment: categories.filter(cat => cat.type === 'debt_payment')
+        debt_payment: categories.filter(cat => cat.type === 'debt_payment'),
+        no_compute: categories.filter(cat => cat.type === 'no_compute')
       };
     }
   })();
@@ -87,6 +88,7 @@
     discretionary: 'Gastos Discrecionales',
     investment: 'Inversiones',
     debt_payment: 'Pago de Deudas',
+    no_compute: 'No Computar',
     income: 'Ingresos'
   };
 
@@ -394,6 +396,16 @@
   .income-type:hover {
     border-color: #047857;
     box-shadow: 0 8px 25px rgba(5, 150, 105, 0.15);
+  }
+
+  .no_compute-type {
+    border-color: #6b7280;
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.03), rgba(107, 114, 128, 0.01));
+  }
+
+  .no_compute-type:hover {
+    border-color: #4b5563;
+    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.15);
   }
 
   .category-icon {

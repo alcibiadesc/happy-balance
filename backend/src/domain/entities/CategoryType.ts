@@ -8,6 +8,7 @@ export enum CategoryType {
   DISCRETIONARY = "discretionary",
   INVESTMENT = "investment",
   DEBT_PAYMENT = "debt_payment",
+  NO_COMPUTE = "no_compute",
 }
 
 export class CategoryTypeHelper {
@@ -30,6 +31,7 @@ export class CategoryTypeHelper {
         [CategoryType.DISCRETIONARY]: "Discretionary",
         [CategoryType.INVESTMENT]: "Investment",
         [CategoryType.DEBT_PAYMENT]: "Debt Payment",
+        [CategoryType.NO_COMPUTE]: "No Compute",
       },
       es: {
         [CategoryType.INCOME]: "Ingreso",
@@ -37,6 +39,7 @@ export class CategoryTypeHelper {
         [CategoryType.DISCRETIONARY]: "Discrecional",
         [CategoryType.INVESTMENT]: "Inversión",
         [CategoryType.DEBT_PAYMENT]: "Pago de Deudas",
+        [CategoryType.NO_COMPUTE]: "No Computar",
       },
     };
 
