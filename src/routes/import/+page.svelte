@@ -20,13 +20,14 @@
   let previewEnabled = true;
   let showAllTransactions = false;
   let mounted = false;
+  let importedCount = 0;
 
   // View modes: 'all' | 'duplicates' | 'new'
   let viewMode: 'all' | 'duplicates' | 'new' = 'all';
 
   // Search functionality
   let searchQuery = '';
-  let searchTimeout: number;
+  let searchTimeout: ReturnType<typeof setTimeout>;
 
   // Load preview preference from localStorage
   function loadPreviewPreference(): boolean {
@@ -179,26 +180,38 @@
     step = 3;
 
     try {
-      // If preview was disabled, we need to parse and process transactions first
+      let result;
+
       if (transactions.length === 0) {
-        transactions = await getCSVPreview(selectedFile);
+        // Preview was disabled - import directly from file
+        result = await apiTransactions.importFile(selectedFile, {
+          currency: "EUR",
+          duplicateDetectionEnabled: true,
+          skipDuplicates: true,
+          autoCategorizationEnabled: true,
+        });
+
+        // Store counts for success message
+        importedCount = result.imported || 0;
+        (window as any).lastImportDuplicates = result.duplicatesSkipped || 0;
+        (window as any).lastImportDuplicatesForced = 0;
+      } else {
+        // Preview was enabled - import selected transactions
+        const selectedTransactions = transactions.filter(tx => tx.selected);
+        const duplicatesSkipped = transactions.filter(tx => tx.isDuplicate && !tx.selected).length;
+        const duplicatesImported = transactions.filter(tx => tx.isDuplicate && tx.selected).length;
+
+        if (selectedTransactions.length === 0) {
+          throw new Error('No transactions selected for import');
+        }
+
+        result = await apiTransactions.importSelectedTransactions(selectedTransactions);
+
+        // Store duplicate counts for success message
+        importedCount = selectedTransactions.length;
+        (window as any).lastImportDuplicates = duplicatesSkipped;
+        (window as any).lastImportDuplicatesForced = duplicatesImported;
       }
-
-      // Get selected transactions (including duplicates if user selected them)
-      const selectedTransactions = transactions.filter(tx => tx.selected);
-      const duplicatesSkipped = transactions.filter(tx => tx.isDuplicate && !tx.selected).length;
-      const duplicatesImported = transactions.filter(tx => tx.isDuplicate && tx.selected).length;
-
-      if (selectedTransactions.length === 0) {
-        throw new Error('No transactions selected for import');
-      }
-
-      // Use new DDD endpoint to import selected transactions
-      const result = await apiTransactions.importSelectedTransactions(selectedTransactions);
-
-      // Store duplicate counts for success message
-      window.lastImportDuplicates = duplicatesSkipped;
-      window.lastImportDuplicatesForced = duplicatesImported;
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -237,6 +250,7 @@
       selectedFile = null;
       transactions = [];
       error = "";
+      importedCount = 0;
     }
   }
 
@@ -849,16 +863,16 @@
               </div>
               <h3 class="complete-title">{$t("import.complete.success")}</h3>
               <p class="complete-subtitle">
-                {$t("import.complete.success_desc", { count: selectedCount })}
+                {$t("import.complete.success_desc", { count: importedCount })}
               </p>
-              {#if window.lastImportDuplicates > 0}
+              {#if (window as any).lastImportDuplicates > 0}
                 <p class="complete-info">
-                  ⚠️ {window.lastImportDuplicates} transacciones duplicadas fueron omitidas
+                  ⚠️ {(window as any).lastImportDuplicates} transacciones duplicadas fueron omitidas
                 </p>
               {/if}
-              {#if window.lastImportDuplicatesForced > 0}
+              {#if (window as any).lastImportDuplicatesForced > 0}
                 <p class="complete-info">
-                  ✅ {window.lastImportDuplicatesForced} posibles duplicados fueron importados por petición del usuario
+                  ✅ {(window as any).lastImportDuplicatesForced} posibles duplicados fueron importados por petición del usuario
                 </p>
               {/if}
             </div>
@@ -888,6 +902,7 @@
                   selectedFile = null;
                   transactions = [];
                   step = 1;
+                  importedCount = 0;
                 }}
               >
                 {$t("import.complete.import_another")}
