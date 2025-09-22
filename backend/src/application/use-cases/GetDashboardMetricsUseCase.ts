@@ -69,6 +69,7 @@ export class GetDashboardMetricsUseCase {
       const periodBalance = this.calculatePeriodBalance(
         computedTransactions,
         query.currency,
+        categories,
       );
       const expenseDistribution = this.calculateExpenseDistribution(
         computedTransactions,
@@ -187,9 +188,21 @@ export class GetDashboardMetricsUseCase {
     };
   }
 
-  private calculatePeriodBalance(transactions: any[], currency: string) {
+  private calculatePeriodBalance(transactions: any[], currency: string, categories?: any[]) {
     let income = 0;
     let expenses = 0;
+    let investments = 0;
+
+    // Create a map of category ID to category type for quick lookup
+    const categoryTypeMap = new Map<string, CategoryType>();
+    if (categories) {
+      for (const category of categories) {
+        const snapshot = category.toSnapshot ? category.toSnapshot() : category;
+        categoryTypeMap.set(snapshot.id, snapshot.type);
+      }
+    }
+
+    console.log(`[DEBUG] Processing ${transactions.length} transactions`);
 
     for (const transaction of transactions) {
       const snapshot = transaction.toSnapshot();
@@ -197,14 +210,26 @@ export class GetDashboardMetricsUseCase {
       if (snapshot.type === TransactionType.INCOME) {
         income += snapshot.amount;
       } else if (snapshot.type === TransactionType.EXPENSE) {
-        expenses += snapshot.amount;
+        // Check if this expense is actually an investment based on category
+        const categoryType = snapshot.categoryId ? categoryTypeMap.get(snapshot.categoryId) : null;
+
+        if (categoryType === CategoryType.INVESTMENT) {
+          investments += snapshot.amount;
+          console.log(`[DEBUG] FOUND INVESTMENT: ${snapshot.amount} from ${snapshot.merchant || 'unknown'}`);
+        } else {
+          expenses += snapshot.amount;
+        }
       }
     }
+
+    console.log(`[DEBUG] Final calculations: income=${income}, expenses=${expenses}, investments=${investments}`);
 
     return {
       income,
       expenses,
-      balance: income - expenses,
+      investments,
+      debtPayments: 0,
+      balance: income - expenses - investments,
       currency,
     };
   }
@@ -217,6 +242,13 @@ export class GetDashboardMetricsUseCase {
     let essential = 0;
     let discretionary = 0;
     let uncategorized = 0;
+
+    // Create a map of category ID to category type for quick lookup
+    const categoryTypeMap = new Map<string, CategoryType>();
+    for (const category of categories) {
+      const snapshot = category.toSnapshot ? category.toSnapshot() : category;
+      categoryTypeMap.set(snapshot.id, snapshot.type);
+    }
 
     // Get essential category IDs (you might want to mark categories as essential in your schema)
     const essentialCategoryNames = [
@@ -248,6 +280,12 @@ export class GetDashboardMetricsUseCase {
       const snapshot = transaction.toSnapshot();
 
       if (snapshot.type === TransactionType.EXPENSE) {
+        // Skip investment transactions in expense distribution
+        const categoryType = snapshot.categoryId ? categoryTypeMap.get(snapshot.categoryId) : null;
+        if (categoryType === CategoryType.INVESTMENT) {
+          continue;
+        }
+
         if (!snapshot.categoryId) {
           uncategorized += snapshot.amount;
         } else if (essentialCategoryIds.has(snapshot.categoryId)) {
@@ -277,6 +315,13 @@ export class GetDashboardMetricsUseCase {
     >();
     let totalExpenses = 0;
 
+    // Create a map of category ID to category type for quick lookup
+    const categoryTypeMap = new Map<string, CategoryType>();
+    for (const category of categories) {
+      const snapshot = category.toSnapshot ? category.toSnapshot() : category;
+      categoryTypeMap.set(snapshot.id, snapshot.type);
+    }
+
     // Initialize with all categories
     for (const category of categories) {
       categoryTotals.set(category.id, {
@@ -298,6 +343,12 @@ export class GetDashboardMetricsUseCase {
       const snapshot = transaction.toSnapshot();
 
       if (snapshot.type === TransactionType.EXPENSE) {
+        // Skip investment transactions in category breakdown
+        const categoryType = snapshot.categoryId ? categoryTypeMap.get(snapshot.categoryId) : null;
+        if (categoryType === CategoryType.INVESTMENT) {
+          continue;
+        }
+
         totalExpenses += snapshot.amount;
 
         const categoryId = snapshot.categoryId || "uncategorized";
@@ -389,12 +440,15 @@ export class GetDashboardMetricsUseCase {
             const periodBalance = this.calculatePeriodBalance(
               computedTransactions,
               query.currency,
+              categories,
             );
 
             trends.push({
               month: this.formatPeriodLabel(trendRange.startDate, query.period),
               income: periodBalance.income,
               expenses: periodBalance.expenses,
+              investments: periodBalance.investments,
+              debtPayments: periodBalance.debtPayments,
               balance: periodBalance.balance,
             });
           }
