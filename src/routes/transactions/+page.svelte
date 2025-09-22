@@ -1144,7 +1144,6 @@
             class="transaction-card"
             class:selected={$apiSelectedTransactions.has(transaction.id)}
             class:hidden={transaction.hidden}
-            class:has-dropdown-open={showCategoryDropdown === transaction.id}
           >
             {#if isSelectionMode}
               <input 
@@ -1176,13 +1175,8 @@
                   title={category ? `Categoría: ${category.name}` : 'Asignar categoría'}
                   onclick={(e) => {
                     e.stopPropagation();
-                    if (category) {
-                      // If transaction has category, show dropdown with options
-                      showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id;
-                    } else {
-                      // If no category, open modal directly
-                      openCategoryModal(transaction);
-                    }
+                    // Always open modal directly
+                    openCategoryModal(transaction);
                   }}
                 >
                   {#if category}
@@ -1194,35 +1188,6 @@
                   {/if}
                 </button>
 
-                {#if showCategoryDropdown === transaction.id}
-                  <div class="category-actions-dropdown">
-                    <button
-                      class="category-action-btn uncategorize-action"
-                      onclick={async (e) => {
-                        e.stopPropagation();
-                        showCategoryDropdown = null;
-                        await categorizeTransaction(transaction, '', false);
-                      }}
-                      title="Quitar categoría"
-                    >
-                      <span class="action-icon">❌</span>
-                      <span class="action-text">Quitar categoría</span>
-                    </button>
-
-                    <button
-                      class="category-action-btn change-category-action"
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        showCategoryDropdown = null;
-                        openCategoryModal(transaction);
-                      }}
-                      title="Cambiar categoría"
-                    >
-                      <span class="action-icon">🔄</span>
-                      <span class="action-text">Cambiar categoría</span>
-                    </button>
-                  </div>
-                {/if}
               </div>
             </div>
             

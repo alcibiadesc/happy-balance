@@ -73,7 +73,11 @@
       const transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'> = {
         amount: finalAmount,
         date,
-        time: new Date().toLocaleTimeString(),
+        time: new Date().toLocaleTimeString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }),
         merchant: merchant.trim(),
         description: description.trim(),
         categoryId: categoryId || undefined,

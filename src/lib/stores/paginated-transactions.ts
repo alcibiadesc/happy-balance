@@ -257,7 +257,11 @@ function mapApiToTransaction(apiTransaction: any): Transaction {
   return {
     id: apiTransaction.id,
     date: apiTransaction.date,
-    time: new Date(apiTransaction.createdAt).toLocaleTimeString(),
+    time: new Date(apiTransaction.createdAt).toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }),
     merchant: apiTransaction.merchant,
     description: apiTransaction.description || '',
     amount: apiTransaction.type === 'EXPENSE'

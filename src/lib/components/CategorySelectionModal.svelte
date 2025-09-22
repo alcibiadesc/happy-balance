@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X, Plus } from 'lucide-svelte';
+  import { X, Plus, Search } from 'lucide-svelte';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import type { Transaction, Category } from '$lib/types/transaction';
@@ -12,12 +12,20 @@
   export let onCancel: () => void = () => {};
 
   let modalElement: HTMLDivElement;
+  let searchTerm = '';
+  let searchInput: HTMLInputElement;
 
   // Prevent body scroll when modal is open
   $: if (isOpen) {
     preventBodyScroll();
+    // Focus search input when modal opens
+    setTimeout(() => {
+      searchInput?.focus();
+    }, 100);
   } else {
     restoreBodyScroll();
+    // Reset search when modal closes
+    searchTerm = '';
   }
 
   function preventBodyScroll() {
@@ -59,21 +67,25 @@
     closeModal();
   }
 
-  // Group categories by type
+  // Group categories by type and filter by search term
   $: isIncomeTransaction = transaction ? transaction.amount > 0 : false;
+  $: filteredCategories = categories.filter(cat =>
+    searchTerm === '' ||
+    cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   $: groupedCategories = (() => {
     if (isIncomeTransaction) {
       return {
-        income: categories.filter(cat => cat.type === 'income' || cat.type === 'INCOME'),
-        no_compute: categories.filter(cat => cat.type === 'no_compute')
+        income: filteredCategories.filter(cat => cat.type === 'income' || cat.type === 'INCOME'),
+        no_compute: filteredCategories.filter(cat => cat.type === 'no_compute')
       };
     } else {
       return {
-        essential: categories.filter(cat => cat.type === 'essential'),
-        discretionary: categories.filter(cat => cat.type === 'discretionary'),
-        investment: categories.filter(cat => cat.type === 'investment'),
-        debt_payment: categories.filter(cat => cat.type === 'debt_payment'),
-        no_compute: categories.filter(cat => cat.type === 'no_compute')
+        essential: filteredCategories.filter(cat => cat.type === 'essential'),
+        discretionary: filteredCategories.filter(cat => cat.type === 'discretionary'),
+        investment: filteredCategories.filter(cat => cat.type === 'investment'),
+        debt_payment: filteredCategories.filter(cat => cat.type === 'debt_payment'),
+        no_compute: filteredCategories.filter(cat => cat.type === 'no_compute')
       };
     }
   })();
@@ -110,23 +122,45 @@
     aria-labelledby="category-selection-title"
   >
     <div class="modal-content">
-      <!-- Header with minimal design -->
+      <!-- Header with modern design -->
       <div class="modal-header">
         <div class="header-content">
-          <h2 id="category-selection-title" class="modal-title">Categorizar transacción</h2>
+          <div class="title-section">
+            <h2 id="category-selection-title" class="modal-title">Categorizar</h2>
+            <p class="modal-subtitle">Selecciona una categoría para organizar esta transacción</p>
+          </div>
           <div class="transaction-preview">
-            <span class="merchant">{transaction.merchant}</span>
-            <span class="amount" class:income={transaction.amount > 0}>
-              {new Intl.NumberFormat('es-ES', {
-                style: 'currency',
-                currency: 'EUR'
-              }).format(Math.abs(transaction.amount))}
-            </span>
+            <div class="transaction-info">
+              <div class="merchant-name">{transaction.merchant}</div>
+              <div class="transaction-details">
+                <span class="amount" class:income={transaction.amount > 0}>
+                  {new Intl.NumberFormat('es-ES', {
+                    style: 'currency',
+                    currency: 'EUR'
+                  }).format(Math.abs(transaction.amount))}
+                </span>
+                <span class="separator">•</span>
+                <span class="date">{transaction.time}</span>
+              </div>
+            </div>
           </div>
         </div>
         <button class="close-btn" on:click={closeModal} aria-label="Cerrar">
-          <X size={20} />
+          <X size={18} />
         </button>
+      </div>
+
+      <!-- Search section -->
+      <div class="search-section">
+        <div class="search-input-container">
+          <input
+            bind:this={searchInput}
+            bind:value={searchTerm}
+            type="text"
+            placeholder="🔍 Buscar categorías..."
+            class="search-input"
+          />
+        </div>
       </div>
 
       <!-- Category sections -->
@@ -165,7 +199,7 @@
             {#if categoryList.length > 0}
               <div class="category-group">
                 <h3 class="group-title">{typeDisplayNames[type]}</h3>
-                <div class="category-grid">
+                <div class="category-list">
                   {#each categoryList as category}
                     <button
                       class="category-option {type}-type"
@@ -184,7 +218,7 @@
             {#if categoryList.length > 0}
               <div class="category-group">
                 <h3 class="group-title">{typeDisplayNames[type]}</h3>
-                <div class="category-grid">
+                <div class="category-list">
                   {#each categoryList as category}
                     <button
                       class="category-option {type}-type"
@@ -221,9 +255,9 @@
   }
 
   .modal-content {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    background: var(--surface-elevated);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
     max-width: 500px;
     width: 100%;
     max-height: 85vh;
@@ -247,51 +281,87 @@
     align-items: flex-start;
     justify-content: space-between;
     padding: 24px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .header-content {
     flex: 1;
   }
 
+  .title-section {
+    margin-bottom: 12px;
+  }
+
   .modal-title {
     font-size: 18px;
     font-weight: 600;
-    color: #1e293b;
-    margin: 0 0 8px 0;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
     line-height: 1.3;
   }
 
-  .transaction-preview {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+  .modal-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+    font-weight: 400;
+    line-height: 1.4;
   }
 
-  .merchant {
-    font-size: 14px;
-    color: #64748b;
-    font-weight: 500;
+  .transaction-preview {
+    background: var(--surface-muted);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+  }
+
+  .transaction-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .merchant-name {
+    font-size: 15px;
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .transaction-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
   }
 
   .amount {
-    font-size: 16px;
-    font-weight: 600;
-    color: #dc2626;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 14px;
   }
 
   .amount.income {
-    color: #059669;
+    color: var(--success);
+  }
+
+  .separator {
+    color: var(--gray-300);
+    font-weight: 400;
+  }
+
+  .date {
+    color: var(--text-secondary);
+    font-weight: 500;
   }
 
   .close-btn {
     padding: 8px;
     border: none;
     background: none;
-    color: #64748b;
+    color: var(--text-secondary);
     cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    border-radius: var(--radius-md);
+    transition: var(--transition-theme);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -299,12 +369,43 @@
   }
 
   .close-btn:hover {
-    background: #f1f5f9;
-    color: #374151;
+    background: var(--surface-muted);
+    color: var(--text-primary);
+  }
+
+  .search-section {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .search-input-container {
+    display: flex;
+    align-items: center;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--surface-elevated);
+    transition: var(--transition-theme);
+    outline: none;
+  }
+
+  .search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+  }
+
+  .search-input::placeholder {
+    color: var(--text-muted);
   }
 
   .category-content {
-    padding: 8px 24px 24px;
+    padding: 8px 24px 32px;
     max-height: calc(85vh - 140px);
     overflow-y: auto;
   }
@@ -312,7 +413,7 @@
   .uncategorize-section {
     margin-bottom: 24px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .uncategorize-btn {
@@ -321,22 +422,22 @@
     gap: 12px;
     width: 100%;
     padding: 16px;
-    border: 2px dashed #ef4444;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02));
-    color: #dc2626;
+    border: 2px dashed var(--accent);
+    border-radius: var(--radius-lg);
+    background: var(--accent-light);
+    color: var(--accent);
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: var(--transition-theme);
     text-align: left;
   }
 
   .uncategorize-btn:hover {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.04));
-    border-color: #dc2626;
+    background: var(--accent-light);
+    border-color: var(--accent-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+    box-shadow: 0 4px 12px rgba(245, 121, 108, 0.15);
   }
 
   .uncategorize-btn:active {
@@ -364,123 +465,130 @@
   .group-title {
     font-size: 12px;
     font-weight: 600;
-    color: #64748b;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0 0 12px 0;
     padding-left: 2px;
   }
 
-  .category-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 8px;
+  .category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .category-option {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 16px 12px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 12px;
-    background: white;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--surface-elevated);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    min-height: 88px;
+    transition: var(--transition-theme);
     position: relative;
+    text-align: left;
+    width: 100%;
   }
 
   .category-option:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-    border-color: #cbd5e1;
+    border-color: var(--border-color-hover);
   }
 
   .category-option:active {
     transform: scale(0.98);
   }
 
-  /* Type-specific styling */
+  /* Type-specific background colors using app's palette */
   .essential-type {
-    border-color: #fbbf24;
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.03), rgba(251, 191, 36, 0.01));
+    background: var(--warning-light);
+    border-color: var(--warning);
   }
 
   .essential-type:hover {
-    border-color: #f59e0b;
-    box-shadow: 0 8px 25px rgba(251, 191, 36, 0.15);
+    background: var(--warning-light);
+    border-color: var(--warning-hover);
+    box-shadow: 0 8px 25px rgba(254, 205, 44, 0.15);
   }
 
   .discretionary-type {
-    border-color: #3b82f6;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.03), rgba(59, 130, 246, 0.01));
+    background: var(--accent-light);
+    border-color: var(--accent);
   }
 
   .discretionary-type:hover {
-    border-color: #2563eb;
-    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+    background: var(--accent-light);
+    border-color: var(--accent-hover);
+    box-shadow: 0 8px 25px rgba(245, 121, 108, 0.15);
   }
 
   .investment-type {
-    border-color: #10b981;
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.03), rgba(16, 185, 129, 0.01));
+    background: var(--success-light);
+    border-color: var(--success);
   }
 
   .investment-type:hover {
-    border-color: #059669;
-    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+    background: var(--success-light);
+    border-color: var(--success-hover);
+    box-shadow: 0 8px 25px rgba(122, 186, 165, 0.15);
   }
 
   .debt_payment-type {
-    border-color: #ef4444;
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.03), rgba(239, 68, 68, 0.01));
+    background: var(--accent-light);
+    border-color: var(--accent);
   }
 
   .debt_payment-type:hover {
-    border-color: #dc2626;
-    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.15);
+    background: var(--accent-light);
+    border-color: var(--accent-hover);
+    box-shadow: 0 8px 25px rgba(245, 121, 108, 0.15);
   }
 
   .income-type {
-    border-color: #059669;
-    background: linear-gradient(135deg, rgba(5, 150, 105, 0.03), rgba(5, 150, 105, 0.01));
+    background: var(--success-light);
+    border-color: var(--success);
   }
 
   .income-type:hover {
-    border-color: #047857;
-    box-shadow: 0 8px 25px rgba(5, 150, 105, 0.15);
+    background: var(--success-light);
+    border-color: var(--success-hover);
+    box-shadow: 0 8px 25px rgba(122, 186, 165, 0.15);
   }
 
   .no_compute-type {
-    border-color: #6b7280;
-    background: linear-gradient(135deg, rgba(107, 114, 128, 0.03), rgba(107, 114, 128, 0.01));
+    background: var(--surface-muted);
+    border-color: var(--gray-300);
   }
 
   .no_compute-type:hover {
-    border-color: #4b5563;
-    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.15);
+    background: var(--surface-muted);
+    border-color: var(--gray-400);
+    box-shadow: 0 8px 25px rgba(120, 113, 108, 0.08);
   }
 
+
   .category-icon {
-    font-size: 28px;
+    font-size: 20px;
     line-height: 1;
+    flex-shrink: 0;
   }
 
   .category-name {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
-    color: #374151;
-    text-align: center;
+    color: var(--text-primary);
     line-height: 1.3;
+    flex: 1;
   }
 
   .empty-categories {
     padding: 2rem 1.5rem;
     text-align: center;
-    background: #f8fafc;
-    border-radius: 12px;
+    background: var(--surface-muted);
+    border-radius: var(--radius-lg);
     margin: 0 8px;
   }
 
@@ -498,7 +606,7 @@
 
   .empty-categories-text {
     font-size: 14px;
-    color: #64748b;
+    color: var(--text-secondary);
     line-height: 1.5;
     margin: 0;
     max-width: 300px;
@@ -506,14 +614,14 @@
 
   .create-categories-btn {
     padding: 12px 20px;
-    border: 2px solid #059669;
-    border-radius: 12px;
-    background: #059669;
-    color: white;
+    border: 2px solid var(--success);
+    border-radius: var(--radius-lg);
+    background: var(--success);
+    color: var(--surface-elevated);
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: var(--transition-theme);
     outline: none;
     display: flex;
     align-items: center;
@@ -521,10 +629,10 @@
   }
 
   .create-categories-btn:hover {
-    background: #047857;
-    border-color: #047857;
+    background: var(--success-hover);
+    border-color: var(--success-hover);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(5, 150, 105, 0.25);
+    box-shadow: 0 8px 25px rgba(122, 186, 165, 0.25);
   }
 
   /* Responsive design */
@@ -539,29 +647,38 @@
     }
 
     .modal-header {
-      padding: 20px;
+      padding: 24px 20px 16px;
     }
 
     .category-content {
-      padding: 8px 20px 20px;
+      padding: 16px 20px 24px;
     }
 
-    .category-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
+    .search-section {
+      padding: 16px 20px;
+    }
+
+    .search-input {
+      padding: 12px 16px;
+      font-size: 14px;
     }
 
     .category-option {
-      padding: 12px 8px;
-      min-height: 76px;
+      padding: 14px 14px;
+      gap: 14px;
     }
 
     .category-icon {
-      font-size: 24px;
+      font-size: 20px;
     }
 
     .category-name {
-      font-size: 11px;
+      font-size: 14px;
+    }
+
+    .group-title {
+      padding: 14px 16px 10px;
+      font-size: 12px;
     }
   }
 
@@ -571,7 +688,21 @@
     }
 
     .category-content {
-      padding: 8px 16px 16px;
+      padding: 12px 16px 20px;
+    }
+
+    .search-section {
+      padding: 16px 16px 16px;
+    }
+
+    .search-input {
+      padding: 12px 12px 12px 40px;
+      font-size: 14px;
+    }
+
+    .uncategorize-btn {
+      padding: 16px 18px;
+      gap: 12px;
     }
   }
 
