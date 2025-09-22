@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
-  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-  import AddTransactionModal from '$lib/components/AddTransactionModal.svelte';
-  import SmartCategorizationModal from '$lib/components/SmartCategorizationModal.svelte';
-  import CategorySelectionModal from '$lib/components/CategorySelectionModal.svelte';
+  import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
+  import AddTransactionModal from '$lib/components/organisms/AddTransactionModal.svelte';
+  import SmartCategorizationModal from '$lib/components/organisms/SmartCategorizationModal.svelte';
+  import CategorySelectionModal from '$lib/components/organisms/CategorySelectionModal.svelte';
   import {
     ChevronDown, ChevronUp, Search, Filter, Download, Plus, Calendar,
     TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,

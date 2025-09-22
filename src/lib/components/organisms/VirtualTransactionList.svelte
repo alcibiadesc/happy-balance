@@ -8,15 +8,29 @@
   import { t } from '$lib/stores/i18n';
 
   // Props
-  export let query: Partial<PaginatedQuery> = {};
-  export let onTransactionSelect: ((transaction: Transaction) => void) | undefined = undefined;
-  export let onTransactionEdit: ((transaction: Transaction) => void) | undefined = undefined;
-  export let onTransactionDelete: ((transactionId: string) => void) | undefined = undefined;
-  export let onTransactionToggleHidden: ((transaction: Transaction) => void) | undefined = undefined;
-  export let onCategoryAssign: ((transaction: Transaction) => void) | undefined = undefined;
-  export let isSelectionMode: boolean = false;
-  export let selectedTransactions: Set<string> = new Set();
-  export let showHiddenTransactions: boolean = true;
+  interface Props {
+    query?: Partial<PaginatedQuery>;
+    onTransactionSelect?: (transaction: Transaction) => void;
+    onTransactionEdit?: (transaction: Transaction) => void;
+    onTransactionDelete?: (transactionId: string) => void;
+    onTransactionToggleHidden?: (transaction: Transaction) => void;
+    onCategoryAssign?: (transaction: Transaction) => void;
+    isSelectionMode?: boolean;
+    selectedTransactions?: Set<string>;
+    showHiddenTransactions?: boolean;
+  }
+
+  let {
+    query = {},
+    onTransactionSelect = undefined,
+    onTransactionEdit = undefined,
+    onTransactionDelete = undefined,
+    onTransactionToggleHidden = undefined,
+    onCategoryAssign = undefined,
+    isSelectionMode = false,
+    selectedTransactions = new Set(),
+    showHiddenTransactions = true
+  }: Props = $props();
 
   // Internal state
   let listContainer: HTMLElement;
@@ -196,7 +210,7 @@
   {:else}
     <div
       class="virtual-scroll-container"
-      on:scroll={handleScroll}
+      onscroll={handleScroll}
     >
       <!-- Virtual spacer for items above visible area -->
       <div style="height: {Math.max(0, visibleStart) * ITEM_HEIGHT}px;"></div>
@@ -241,7 +255,7 @@
                   {:else}
                     <button
                       class="assign-category-btn"
-                      onclick|stopPropagation={() => handleCategoryAssign(transaction)}
+                      onclick={(e) => { e.stopPropagation(); handleCategoryAssign(transaction); }}
                     >
                       <Tag size={14} />
                       {$t('transactions.assignCategory')}
@@ -266,7 +280,7 @@
                 <div class="transaction-actions">
                   <button
                     class="action-btn"
-                    onclick|stopPropagation={() => handleToggleHidden(transaction)}
+                    onclick={(e) => { e.stopPropagation(); handleToggleHidden(transaction); }}
                     title={transaction.hidden ? $t('transactions.show') : $t('transactions.hide')}
                   >
                     {#if transaction.hidden}
@@ -278,7 +292,7 @@
 
                   <button
                     class="action-btn"
-                    onclick|stopPropagation={() => handleEdit(transaction)}
+                    onclick={(e) => { e.stopPropagation(); handleEdit(transaction); }}
                     title={$t('transactions.edit')}
                   >
                     <MoreVertical size={16} />
@@ -286,7 +300,7 @@
 
                   <button
                     class="action-btn delete"
-                    onclick|stopPropagation={() => handleDelete(transaction)}
+                    onclick={(e) => { e.stopPropagation(); handleDelete(transaction); }}
                     title={$t('transactions.delete')}
                   >
                     <Trash2 size={16} />

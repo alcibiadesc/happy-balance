@@ -14,7 +14,7 @@
   import MetricsGrid from "$lib/components/molecules/MetricsGrid.svelte";
 
   // Domain Store
-  import { createDashboardStore } from "$lib/pages/dashboard/presentation/stores/dashboardStore.svelte";
+  import { createDashboardStore } from "$lib/modules/dashboard/presentation/stores/dashboardStore.svelte.ts";
 
   // Initialize store with API configuration
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3004/api";

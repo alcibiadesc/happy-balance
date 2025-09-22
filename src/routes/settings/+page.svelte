@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Download, Upload, Trash2, DollarSign, Palette, Globe, FileText, AlertCircle, CheckCircle, RotateCcw } from 'lucide-svelte';
-  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+  import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
   import { t, currentLanguage, setLanguage } from '$lib/stores/i18n';
   import { currentCurrency, currencies, setCurrency } from '$lib/stores/currency';
   import { theme, setTheme, effectiveTheme } from '$lib/stores/theme';
