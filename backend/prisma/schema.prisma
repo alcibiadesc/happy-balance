@@ -8,20 +8,21 @@ datasource db {
 }
 
 model Transaction {
-  id          String    @id @db.VarChar(36)
-  amount      Decimal   @db.Decimal(15, 2)
-  currency    String    @db.VarChar(3)
-  date        DateTime  @db.Date
-  merchant    String    @db.VarChar(200)
-  type        String    @db.VarChar(20)
-  description String    @default("")
-  categoryId  String?   @db.VarChar(36)
-  isSelected  Boolean   @default(true)
-  hidden      Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  hash        String?   @db.VarChar(50)
-  category    Category? @relation(fields: [categoryId], references: [id])
+  id           String    @id @db.VarChar(36)
+  amount       Decimal   @db.Decimal(15, 2)
+  currency     String    @db.VarChar(3)
+  date         DateTime  @db.Date
+  merchant     String    @db.VarChar(200)
+  type         String    @db.VarChar(20)
+  description  String    @default("")
+  observations String?   @db.VarChar(500)
+  categoryId   String?   @db.VarChar(36)
+  isSelected   Boolean   @default(true)
+  hidden       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  hash         String?   @db.VarChar(50)
+  category     Category? @relation(fields: [categoryId], references: [id])
 
   @@index([date])
   @@index([merchant])

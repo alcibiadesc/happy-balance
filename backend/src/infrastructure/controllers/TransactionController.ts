@@ -27,6 +27,7 @@ const CreateTransactionSchema = z.object({
 
 const UpdateTransactionSchema = z.object({
   description: z.string().max(200).optional(),
+  observations: z.string().max(500).optional(),
   categoryId: z.string().nullable().optional(),
   hidden: z.boolean().optional(),
 });
@@ -488,6 +489,16 @@ export class TransactionController {
         }
       }
 
+      // Update observations if provided
+      if (data.observations !== undefined) {
+        const updateResult = existingTransaction.updateObservations(
+          data.observations,
+        );
+        if (updateResult.isFailure()) {
+          return res.status(400).json({ error: updateResult.getError() });
+        }
+      }
+
       // Update hidden status if provided
       if (data.hidden !== undefined) {
         // For now, we'll handle this directly in the repository
@@ -501,7 +512,7 @@ export class TransactionController {
       }
 
       // TODO: Add support for updating other fields if needed
-      // For now, we only support updating description, hidden, and categoryId
+      // For now, we support updating description, observations, hidden, and categoryId
 
       const saveResult =
         await this.transactionRepository.update(existingTransaction);

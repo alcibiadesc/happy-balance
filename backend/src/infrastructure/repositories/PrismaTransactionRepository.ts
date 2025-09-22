@@ -33,6 +33,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           merchant: snapshot.merchant,
           type: snapshot.type,
           description: snapshot.description,
+          observations: snapshot.observations,
           categoryId: snapshot.categoryId,
           isSelected: snapshot.isSelected,
           hash: snapshot.hash,
@@ -46,6 +47,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           merchant: snapshot.merchant,
           type: snapshot.type,
           description: snapshot.description,
+          observations: snapshot.observations,
           categoryId: snapshot.categoryId,
           isSelected: snapshot.isSelected,
           hash: snapshot.hash,
@@ -80,6 +82,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 merchant: snapshot.merchant,
                 type: snapshot.type,
                 description: snapshot.description,
+                observations: snapshot.observations,
                 categoryId: snapshot.categoryId,
                 isSelected: snapshot.isSelected,
                 hash: snapshot.hash,
@@ -707,6 +710,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       merchant: prismaTransaction.merchant,
       type: prismaTransaction.type as TransactionType,
       description: prismaTransaction.description,
+      observations: prismaTransaction.observations || undefined,
       categoryId: prismaTransaction.categoryId || undefined,
       isSelected: prismaTransaction.isSelected,
       hash: prismaTransaction.hash || undefined,
@@ -720,32 +724,6 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     return result;
   }
 
-  async findByMerchant(merchant: string): Promise<Transaction[]> {
-    try {
-      const prismaTransactions = await this.prisma.transaction.findMany({
-        where: {
-          merchant: {
-            contains: merchant,
-            mode: "insensitive",
-          },
-        },
-        orderBy: { date: "desc" },
-      });
-
-      const transactions: Transaction[] = [];
-      for (const pt of prismaTransactions) {
-        const result = this.mapFromPrisma(pt);
-        if (result.isSuccess()) {
-          transactions.push(result.getValue());
-        }
-      }
-
-      return transactions;
-    } catch (error) {
-      console.error("Error finding transactions by merchant:", error);
-      return [];
-    }
-  }
 
   async findByPattern(pattern: string): Promise<Transaction[]> {
     try {

@@ -15,6 +15,7 @@ import { HashGenerationService } from "../services/HashGenerationService";
 export class Transaction {
   private _categoryId?: CategoryId;
   private _description: string;
+  private _observations?: string;
   private _isSelected: boolean = true;
   private _hash?: string;
 
@@ -27,8 +28,10 @@ export class Transaction {
     description: string,
     private readonly _createdAt: Date = new Date(),
     hash?: string,
+    observations?: string,
   ) {
     this._description = description;
+    this._observations = observations;
     // Only generate hash if not provided (for new transactions)
     this._hash = hash || this.generateHash();
   }
@@ -108,6 +111,10 @@ export class Transaction {
     return this._description;
   }
 
+  get observations(): string | undefined {
+    return this._observations;
+  }
+
   get categoryId(): CategoryId | undefined {
     return this._categoryId;
   }
@@ -160,6 +167,15 @@ export class Transaction {
     }
 
     this._description = newDescription || "";
+    return Result.ok(undefined);
+  }
+
+  updateObservations(newObservations: string): Result<void> {
+    if (newObservations && newObservations.length > 500) {
+      return Result.failWithMessage("Observations cannot exceed 500 characters");
+    }
+
+    this._observations = newObservations || undefined;
     return Result.ok(undefined);
   }
 
@@ -294,6 +310,7 @@ export class Transaction {
       merchant: this._merchant.name,
       type: this._type,
       description: this._description,
+      observations: this._observations,
       categoryId: this._categoryId?.value,
       isSelected: this._isSelected,
       hash: this._hash,
@@ -333,6 +350,7 @@ export class Transaction {
       snapshot.description,
       new Date(snapshot.createdAt),
       snapshot.hash, // Preserve the hash from snapshot
+      snapshot.observations,
     );
 
     // Set optional fields
@@ -358,6 +376,7 @@ export interface TransactionSnapshot {
   merchant: string;
   type: TransactionType;
   description: string;
+  observations?: string;
   categoryId?: string;
   isSelected?: boolean;
   hash?: string;
