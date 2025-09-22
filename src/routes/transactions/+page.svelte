@@ -26,7 +26,7 @@
   let showFilters = $state(false);
   let selectedPeriod = $state(new Date().toISOString().slice(0, 7)); // Current month by default
   let selectedCategories = $state<string[]>([]);
-  let transactionTypeFilter = $state<'all' | 'income' | 'expenses'>('all');
+  let transactionTypeFilter = $state<'all' | 'income' | 'expenses' | 'uncategorized'>('all');
   let showCategoryFilterDropdown = $state(false);
   let isSelectionMode = $state(false);
   let showCategoryModal = $state(false);
@@ -163,6 +163,8 @@
         filtered = filtered.filter(t => t.amount > 0);
       } else if (transactionTypeFilter === 'expenses') {
         filtered = filtered.filter(t => t.amount < 0);
+      } else if (transactionTypeFilter === 'uncategorized') {
+        filtered = filtered.filter(t => !t.categoryId);
       }
     }
 
@@ -374,6 +376,13 @@
     if (!categoryModalTransaction) return;
 
     try {
+      // If categoryId is empty, uncategorize directly
+      if (categoryId === '') {
+        await categorizeTransaction(categoryModalTransaction, '', false);
+        closeCategoryModal();
+        return;
+      }
+
       // Check for matching transactions and initialize smart categorization
       await initSmartCategorization(categoryModalTransaction, categoryId);
       closeCategoryModal();
@@ -385,10 +394,13 @@
 
   async function categorizeTransaction(transaction: Transaction, categoryId: string, applyToAll = false) {
     try {
+      // Save current scroll position
+      const scrollPosition = window.scrollY;
+
       const selectedCategory = getCategoryById(categoryId);
 
       // Fix: Update transaction amount based on category type
-      let updates: Partial<Transaction> = { categoryId };
+      let updates: Partial<Transaction> = { categoryId: categoryId || null };
 
       // If changing from expense to income or vice versa
       if (selectedCategory) {
@@ -409,6 +421,11 @@
 
       // Reload transactions to ensure UI is in sync
       await apiTransactions.load();
+
+      // Restore scroll position after DOM updates
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPosition);
+      });
     } catch (error) {
       console.error('❌ Failed to categorize transaction:', error);
     }
@@ -953,6 +970,24 @@
                 <span class="pill-indicator"></span>
               {/if}
             </button>
+
+            <button
+              class="filter-pill uncategorized"
+              class:active={transactionTypeFilter === 'uncategorized' && selectedCategories.length === 0}
+              class:disabled={selectedCategories.length > 0}
+              onclick={() => {
+                if (selectedCategories.length === 0) {
+                  transactionTypeFilter = transactionTypeFilter === 'uncategorized' ? 'all' : 'uncategorized'
+                }
+              }}
+              aria-pressed={transactionTypeFilter === 'uncategorized'}
+            >
+              <Tag size={12} class="pill-icon" style="opacity: 0.5" />
+              <span>{$t('transactions.period.uncategorized')}</span>
+              {#if transactionTypeFilter === 'uncategorized' && selectedCategories.length === 0}
+                <span class="pill-indicator"></span>
+              {/if}
+            </button>
           </div>
 
           <!-- Category Selector -->
@@ -1038,6 +1073,18 @@
               >
                 <TrendingDown size={10} />
                 <span>Gastos</span>
+                <X size={10} class="tag-close" />
+              </button>
+            {/if}
+
+            {#if transactionTypeFilter === 'uncategorized'}
+              <button
+                class="tag-mini uncategorized-tag"
+                onclick={() => transactionTypeFilter = 'all'}
+                aria-label={$t('accessibility.remove_filter')}
+              >
+                <Tag size={10} style="opacity: 0.5" />
+                <span>{$t('transactions.period.uncategorized')}</span>
                 <X size={10} class="tag-close" />
               </button>
             {/if}
@@ -1129,7 +1176,13 @@
                   title={category ? `Categoría: ${category.name}` : 'Asignar categoría'}
                   onclick={(e) => {
                     e.stopPropagation();
-                    openCategoryModal(transaction);
+                    if (category) {
+                      // If transaction has category, show dropdown with options
+                      showCategoryDropdown = showCategoryDropdown === transaction.id ? null : transaction.id;
+                    } else {
+                      // If no category, open modal directly
+                      openCategoryModal(transaction);
+                    }
                   }}
                 >
                   {#if category}
@@ -1142,60 +1195,31 @@
                 </button>
 
                 {#if showCategoryDropdown === transaction.id}
-                  {@const isIncomeTransaction = transaction.amount > 0}
-                  {@const incomeCategories = $apiCategories.filter(c => c.type === 'income')}
-                  {@const expenseCategories = $apiCategories.filter(c => c.type === 'essential' || c.type === 'discretionary' || c.type === 'investment')}
-                  <div class="category-dropdown-compact">
-                    {#if isIncomeTransaction && incomeCategories.length > 0}
-                      <div class="category-section">
-                        <div class="category-section-label">Categorías de Ingresos</div>
-                        <div class="category-grid">
-                          {#each incomeCategories as cat}
-                            <button
-                              class="category-grid-item income-cat"
-                              onclick={async (e) => {
-                                e.stopPropagation();
-                                showCategoryDropdown = null;
-                                await initSmartCategorization(transaction, cat.id);
-                              }}
-                              title="{cat.name}"
-                            >
-                              <span class="category-emoji">{cat.icon}</span>
-                            </button>
-                          {/each}
-                        </div>
-                      </div>
-                    {/if}
-
-                    {#if !isIncomeTransaction && expenseCategories.length > 0}
-                      <div class="category-section">
-                        <div class="category-section-label">Categorías de Gastos</div>
-                        <div class="category-grid">
-                          {#each expenseCategories as cat}
-                            <button
-                              class="category-grid-item expense-cat"
-                              onclick={async (e) => {
-                                e.stopPropagation();
-                                showCategoryDropdown = null;
-                                await initSmartCategorization(transaction, cat.id);
-                              }}
-                              title="{cat.name}"
-                            >
-                              <span class="category-emoji">{cat.icon}</span>
-                            </button>
-                          {/each}
-                        </div>
-                      </div>
-                    {/if}
+                  <div class="category-actions-dropdown">
+                    <button
+                      class="category-action-btn uncategorize-action"
+                      onclick={async (e) => {
+                        e.stopPropagation();
+                        showCategoryDropdown = null;
+                        await categorizeTransaction(transaction, '', false);
+                      }}
+                      title="Quitar categoría"
+                    >
+                      <span class="action-icon">❌</span>
+                      <span class="action-text">Quitar categoría</span>
+                    </button>
 
                     <button
-                      class="category-close-btn"
+                      class="category-action-btn change-category-action"
                       onclick={(e) => {
                         e.stopPropagation();
                         showCategoryDropdown = null;
+                        openCategoryModal(transaction);
                       }}
+                      title="Cambiar categoría"
                     >
-                      Cerrar
+                      <span class="action-icon">🔄</span>
+                      <span class="action-text">Cambiar categoría</span>
                     </button>
                   </div>
                 {/if}
@@ -2242,6 +2266,11 @@
     color: white;
   }
 
+  .filter-pill.uncategorized.active {
+    background: var(--gray-600);
+    color: white;
+  }
+
   .filter-pill.disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -2479,6 +2508,11 @@
   .tag-mini.expense-tag {
     background: #FEE2E2;
     color: #EF4444;
+  }
+
+  .tag-mini.uncategorized-tag {
+    background: var(--gray-100);
+    color: var(--gray-600);
   }
 
   .tag-mini.category-tag {
@@ -2908,6 +2942,61 @@
   .category-close-btn:hover {
     background: var(--gray-200);
     color: var(--text-secondary);
+  }
+
+  .category-actions-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 35;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 3px 10px rgba(0, 0, 0, 0.05);
+    padding: 8px;
+    min-width: 200px;
+    animation: dropdownOpen 0.2s ease-out;
+  }
+
+  .category-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+  }
+
+  .category-action-btn:hover {
+    background: #f1f5f9;
+  }
+
+  .uncategorize-action:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+  }
+
+  .change-category-action:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+  }
+
+  .action-icon {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .action-text {
+    font-size: 14px;
+    font-weight: 500;
   }
   
   .transaction-actions {

@@ -1,7 +1,7 @@
 import { writable, derived } from "svelte/store";
 import type { Transaction, Category } from "$lib/types/transaction";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3006/api";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3004/api";
 
 // Transaction Store using Backend APIs
 function createApiTransactionStore() {

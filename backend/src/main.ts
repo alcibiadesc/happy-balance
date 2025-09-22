@@ -190,16 +190,18 @@ class App {
     this.app.use("/api/", apiLimiter);
 
     // CORS configuration
-    const allowedOrigins = [
+    const defaultAllowedOrigins = [
       "http://localhost:5173",
       "http://localhost:5177",
       "http://192.168.1.139:5173",
       "http://100.100.8.83:5173",
     ];
 
-    // Add CORS_ORIGIN from environment if set
+    // Parse CORS_ORIGIN from environment - can be comma-separated list
+    const allowedOrigins = [...defaultAllowedOrigins];
     if (process.env.CORS_ORIGIN) {
-      allowedOrigins.push(process.env.CORS_ORIGIN);
+      const envOrigins = process.env.CORS_ORIGIN.split(',').map(o => o.trim());
+      allowedOrigins.push(...envOrigins);
     }
 
     this.app.use(
@@ -213,7 +215,7 @@ class App {
             return callback(null, true);
           }
 
-          // For development, also allow any localhost origin
+          // For development, allow any localhost origin
           if (
             process.env.NODE_ENV === "development" &&
             origin.includes("localhost")
@@ -221,6 +223,8 @@ class App {
             return callback(null, true);
           }
 
+          // Log rejected origins for debugging
+          console.warn(`CORS rejected origin: ${origin}`);
           callback(new Error("CORS policy violation"), false);
         },
         credentials: true,

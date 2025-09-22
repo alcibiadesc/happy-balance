@@ -64,6 +64,11 @@
     closeModal();
   }
 
+  function uncategorizeTransaction() {
+    onSelect(''); // Pass empty string to uncategorize
+    closeModal();
+  }
+
   // Group categories by type
   $: isIncomeTransaction = transaction ? transaction.amount > 0 : false;
   $: groupedCategories = (() => {
@@ -136,6 +141,19 @@
 
       <!-- Category sections -->
       <div class="category-content">
+        <!-- Uncategorize option - only show if transaction already has a category -->
+        {#if transaction?.categoryId}
+          <div class="uncategorize-section">
+            <button
+              class="uncategorize-btn"
+              on:click={uncategorizeTransaction}
+            >
+              <span class="uncategorize-icon">❌</span>
+              <span class="uncategorize-text">Quitar categoría</span>
+            </button>
+          </div>
+        {/if}
+
         {#if categories.length === 0}
           <div class="empty-categories">
             <div class="empty-categories-content">
@@ -299,6 +317,50 @@
     padding: 8px 24px 24px;
     max-height: calc(85vh - 140px);
     overflow-y: auto;
+  }
+
+  .uncategorize-section {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .uncategorize-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px;
+    border: 2px dashed #ef4444;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02));
+    color: #dc2626;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+  }
+
+  .uncategorize-btn:hover {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.04));
+    border-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+  }
+
+  .uncategorize-btn:active {
+    transform: scale(0.98);
+  }
+
+  .uncategorize-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .uncategorize-text {
+    font-size: 14px;
+    font-weight: 600;
   }
 
   .category-group {

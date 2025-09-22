@@ -621,8 +621,8 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
   private buildWhereClause(filters?: TransactionFilters) {
     if (!filters) {
-      // Default: exclude hidden transactions
-      return { hidden: false };
+      // Default: show all transactions (no filter)
+      return {};
     }
 
     const where: any = {};
