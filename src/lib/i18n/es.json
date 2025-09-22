@@ -161,6 +161,8 @@
     "date": "Fecha",
     "merchant": "Comercio",
     "time": "Hora",
+    "observations_placeholder": "Añadir observación...",
+    "observations_edit_tooltip": "Haz clic para editar observaciones",
     "type": {
       "income": "Ingreso",
       "expense": "Gasto",

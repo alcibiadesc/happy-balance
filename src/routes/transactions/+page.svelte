@@ -575,11 +575,23 @@
     editingObservationsText = '';
   }
 
+  let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  async function saveObservationsDebounced(transaction: Transaction) {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+
+    saveTimeout = setTimeout(async () => {
+      await saveObservations(transaction);
+    }, 1000); // Auto-save after 1 second of no typing
+  }
+
   async function saveObservations(transaction: Transaction) {
     if (editingObservations !== transaction.id) return;
 
     try {
-      const response = await fetch(`/api/transactions/${transaction.id}`, {
+      const response = await fetch(`http://localhost:3004/api/transactions/${transaction.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -591,15 +603,12 @@
 
       if (response.ok) {
         // Update the transaction in the store
-        const updatedTransaction = await response.json();
         apiTransactions.update(transactions =>
           transactions.map(t => t.id === transaction.id
             ? { ...t, observations: editingObservationsText.trim() || undefined }
             : t
           )
         );
-
-        cancelEditingObservations();
       } else {
         console.error('Failed to update observations');
       }
@@ -1213,42 +1222,32 @@
                         type="text"
                         class="observations-input"
                         bind:value={editingObservationsText}
-                        placeholder="Añadir observación..."
+                        placeholder={$t('transactions.observations_placeholder')}
                         maxlength="500"
+                        oninput={() => saveObservationsDebounced(transaction)}
                         onkeydown={(e) => {
                           if (e.key === 'Enter') {
                             saveObservations(transaction);
+                            cancelEditingObservations();
                           } else if (e.key === 'Escape') {
                             cancelEditingObservations();
                           }
                         }}
+                        onblur={() => {
+                          saveObservations(transaction);
+                          cancelEditingObservations();
+                        }}
                         use:focus
                       />
-                      <div class="observations-actions">
-                        <button
-                          type="button"
-                          class="save-btn"
-                          onclick={() => saveObservations(transaction)}
-                        >
-                          <Check size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          class="cancel-btn"
-                          onclick={cancelEditingObservations}
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
                     </div>
                   {:else}
                     <div
                       class="transaction-observations"
                       class:empty={!transaction.observations}
                       onclick={() => startEditingObservations(transaction)}
-                      title="Haz clic para editar observaciones"
+                      title={$t('transactions.observations_edit_tooltip')}
                     >
-                      {transaction.observations || 'Añadir observación...'}
+                      {transaction.observations || $t('transactions.observations_placeholder')}
                     </div>
                   {/if}
                   <div class="transaction-meta">
@@ -2846,53 +2845,23 @@
 
   .observations-editor {
     margin-top: 2px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
   }
 
   .observations-input {
-    flex: 1;
+    width: 100%;
     font-size: 0.8rem;
     padding: 2px 6px;
     border: 1px solid var(--border-color);
     border-radius: 3px;
     background: var(--surface-primary);
     color: var(--text-primary);
+    font-style: italic;
   }
 
-  .observations-actions {
-    display: flex;
-    gap: 2px;
-  }
-
-  .save-btn, .cancel-btn {
-    padding: 2px;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s ease;
-  }
-
-  .save-btn {
-    background: var(--acapulco);
-    color: white;
-  }
-
-  .save-btn:hover {
-    background: var(--acapulco-dark, #059669);
-  }
-
-  .cancel-btn {
-    background: var(--surface-secondary);
-    color: var(--text-muted);
-  }
-
-  .cancel-btn:hover {
-    background: var(--surface-hover);
+  .observations-input:focus {
+    outline: none;
+    border-color: var(--acapulco);
+    box-shadow: 0 0 0 1px var(--acapulco);
   }
 
   .transaction-meta {

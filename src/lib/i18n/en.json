@@ -161,6 +161,8 @@
     "date": "Date",
     "merchant": "Merchant",
     "time": "Time",
+    "observations_placeholder": "Add observation...",
+    "observations_edit_tooltip": "Click to edit observations",
     "type": {
       "income": "Income",
       "expense": "Expense",
