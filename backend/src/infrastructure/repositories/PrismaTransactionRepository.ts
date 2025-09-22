@@ -34,7 +34,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           type: snapshot.type,
           description: snapshot.description,
           observations: snapshot.observations,
-          categoryId: snapshot.categoryId,
+          categoryId: snapshot.categoryId || null, // Convert undefined to null for Prisma
           isSelected: snapshot.isSelected,
           hash: snapshot.hash,
           hidden: (transaction as any).hidden || false,
@@ -48,7 +48,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           type: snapshot.type,
           description: snapshot.description,
           observations: snapshot.observations,
-          categoryId: snapshot.categoryId,
+          categoryId: snapshot.categoryId || null, // Convert undefined to null for Prisma
           isSelected: snapshot.isSelected,
           hash: snapshot.hash,
           hidden: (transaction as any).hidden || false,
@@ -272,7 +272,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
         type: snapshot.type,
         description: snapshot.description,
         observations: snapshot.observations,
-        categoryId: snapshot.categoryId,
+        categoryId: snapshot.categoryId || null, // Convert undefined to null for Prisma
         isSelected: snapshot.isSelected,
         hash: snapshot.hash,
         hidden: (transaction as any).hidden || false,

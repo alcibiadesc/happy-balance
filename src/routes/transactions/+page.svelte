@@ -311,6 +311,23 @@
       .filter(t => !t.categoryId)
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
+    // Calculate expenses excluding investments for breakdown section
+    const expensesWithoutInvestments = expenseTransactions
+      .filter(t => {
+        const category = getCategoryById(t.categoryId);
+        return !category || category.type !== 'investment';
+      })
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const uncategorizedExpensesOnly = expenseTransactions
+      .filter(t => {
+        if (!t.categoryId) return true;
+        const category = getCategoryById(t.categoryId);
+        return !category || category.type !== 'investment';
+      })
+      .filter(t => !t.categoryId)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
     const balance = isNaN(income - totalExpenses) ? 0 : income - totalExpenses;
 
     return {
@@ -320,6 +337,8 @@
       discretionaryExpenses: isNaN(discretionaryExpenses) ? 0 : discretionaryExpenses,
       investmentExpenses: isNaN(investmentExpenses) ? 0 : investmentExpenses,
       uncategorizedExpenses: isNaN(uncategorizedExpenses) ? 0 : uncategorizedExpenses,
+      expensesWithoutInvestments: isNaN(expensesWithoutInvestments) ? 0 : expensesWithoutInvestments,
+      uncategorizedExpensesOnly: isNaN(uncategorizedExpensesOnly) ? 0 : uncategorizedExpensesOnly,
       balance
     };
   });
@@ -408,13 +427,14 @@
     categoryModalTransaction = null;
   }
 
-  async function handleCategorySelection(categoryId: string) {
+  async function handleCategorySelection(categoryId: string | null) {
     if (!categoryModalTransaction) return;
 
     try {
-      // If categoryId is empty, uncategorize directly
-      if (categoryId === '') {
-        await categorizeTransaction(categoryModalTransaction, '', false);
+      // If categoryId is null or empty, uncategorize directly
+      if (!categoryId || categoryId === '') {
+        console.log('🔄 Uncategorizing transaction:', categoryModalTransaction.id);
+        await categorizeTransaction(categoryModalTransaction, null, false);
         closeCategoryModal();
         return;
       }
@@ -428,15 +448,23 @@
     }
   }
 
-  async function categorizeTransaction(transaction: Transaction, categoryId: string, applyToAll = false) {
+  async function categorizeTransaction(transaction: Transaction, categoryId: string | null, applyToAll = false) {
     try {
       // Save current scroll position
       const scrollPosition = window.scrollY;
 
-      const selectedCategory = getCategoryById(categoryId);
+      const selectedCategory = categoryId ? getCategoryById(categoryId) : null;
 
       // Fix: Update transaction amount based on category type
-      let updates: Partial<Transaction> = { categoryId: categoryId || null };
+      let updates: Partial<Transaction> = {
+        categoryId: categoryId
+      };
+
+      console.log('📝 Categorizing transaction:', {
+        transactionId: transaction.id,
+        categoryId,
+        updates
+      });
 
       // If changing from expense to income or vice versa
       if (selectedCategory) {
@@ -455,8 +483,7 @@
         await apiTransactions.update(transaction.id, updates);
       }
 
-      // Reload transactions to ensure UI is in sync
-      await apiTransactions.load();
+      console.log('✅ Transaction categorization completed successfully');
 
       // Restore scroll position after DOM updates
       requestAnimationFrame(() => {
@@ -747,7 +774,7 @@
           </div>
           <div class="stat-row">
             <span class="stat-label">{$t('transactions.period.total_expenses')}</span>
-            <span class="stat-value expense">{formatAmount(periodStats().expenses)}</span>
+            <span class="stat-value expense">{formatAmount(periodStats().expensesWithoutInvestments)}</span>
           </div>
         </div>
 
@@ -774,42 +801,28 @@
               <span class="breakdown-value">{formatAmount(periodStats().discretionaryExpenses)}</span>
             </div>
 
-            <div class="breakdown-row">
-              <div class="breakdown-item">
-                <div class="breakdown-dot investment"></div>
-                <span class="breakdown-label">{$t('dashboard.metrics.investments')}</span>
-              </div>
-              <span class="breakdown-value">{formatAmount(periodStats().investmentExpenses)}</span>
-            </div>
-
-            {#if periodStats().uncategorizedExpenses > 0}
             <div class="breakdown-row uncategorized">
               <div class="breakdown-item">
                 <div class="breakdown-dot uncategorized"></div>
                 <span class="breakdown-label">{$t('transactions.period.uncategorized')}</span>
               </div>
-              <span class="breakdown-value">{formatAmount(periodStats().uncategorizedExpenses)}</span>
+              <span class="breakdown-value">{formatAmount(periodStats().uncategorizedExpensesOnly)}</span>
             </div>
-            {/if}
           </div>
 
           <!-- Visual bar -->
           <div class="visual-bar">
             <div
               class="bar-segment essential"
-              style="width: {periodStats().expenses > 0 ? (periodStats().essentialExpenses / periodStats().expenses * 100) : 0}%"
+              style="width: {periodStats().expensesWithoutInvestments > 0 ? (periodStats().essentialExpenses / periodStats().expensesWithoutInvestments * 100) : 0}%"
             ></div>
             <div
               class="bar-segment discretionary"
-              style="width: {periodStats().expenses > 0 ? (periodStats().discretionaryExpenses / periodStats().expenses * 100) : 0}%"
-            ></div>
-            <div
-              class="bar-segment investment"
-              style="width: {periodStats().expenses > 0 ? (periodStats().investmentExpenses / periodStats().expenses * 100) : 0}%"
+              style="width: {periodStats().expensesWithoutInvestments > 0 ? (periodStats().discretionaryExpenses / periodStats().expensesWithoutInvestments * 100) : 0}%"
             ></div>
             <div
               class="bar-segment uncategorized"
-              style="width: {periodStats().expenses > 0 ? (periodStats().uncategorizedExpenses / periodStats().expenses * 100) : 0}%"
+              style="width: {periodStats().expensesWithoutInvestments > 0 ? (periodStats().uncategorizedExpensesOnly / periodStats().expensesWithoutInvestments * 100) : 0}%"
             ></div>
           </div>
         </div>
@@ -1235,6 +1248,9 @@
             class="transaction-card"
             class:selected={$apiSelectedTransactions.has(transaction.id)}
             class:hidden={transaction.hidden}
+            data-testid="transaction-item"
+            data-transaction-id={transaction.id}
+            onclick={() => openCategoryModal(transaction)}
           >
             {#if isSelectionMode}
               <input 
@@ -1303,6 +1319,7 @@
                   class="category-btn"
                   class:has-category={category}
                   title={category ? `Categoría: ${category.name}` : 'Asignar categoría'}
+                  data-testid="transaction-category"
                   onclick={(e) => {
                     e.stopPropagation();
                     // Always open modal directly

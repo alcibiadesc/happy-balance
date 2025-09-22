@@ -154,11 +154,19 @@ export class Transaction {
   }
 
   setCategoryId(categoryId: string | undefined | null): void {
+    console.log('🔧 Transaction.setCategoryId called with:', categoryId, typeof categoryId);
+    console.log('🔧 Before update - current categoryId:', this._categoryId?.value);
+
     if (categoryId && categoryId !== "") {
       this._categoryId = { value: categoryId } as CategoryId;
+      console.log('🔧 Set categoryId to:', this._categoryId.value);
     } else {
+      // Clear the category when null, undefined, or empty string
       this._categoryId = undefined;
+      console.log('🔧 Cleared categoryId (set to undefined)');
     }
+
+    console.log('🔧 After update - new categoryId:', this._categoryId?.value);
   }
 
   updateDescription(newDescription: string): Result<void> {
