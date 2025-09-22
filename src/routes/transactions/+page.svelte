@@ -11,6 +11,11 @@
     Tag, MoreVertical, ChevronLeft, ChevronRight, Layers,
     CalendarDays, CalendarRange, Minimize2, Maximize2
   } from 'lucide-svelte';
+
+  // Focus directive for auto-focusing input
+  function focus(node: HTMLElement) {
+    node.focus();
+  }
   import {
     apiTransactions,
     apiCategories,
@@ -32,6 +37,8 @@
   let showCategoryModal = $state(false);
   let categoryModalTransaction = $state<Transaction | null>(null);
   let editingTransaction = $state<Transaction | null>(null);
+  let editingObservations = $state<string | null>(null); // Transaction ID being edited for observations
+  let editingObservationsText = $state(''); // Current text being edited
   let showAddModal = $state(false);
   let showCategoryDropdown = $state<string | null>(null); // Transaction ID showing category dropdown
   let showAllTransactions = $state(
@@ -557,6 +564,49 @@
     smartSuggestions = [];
   }
 
+  // Observations editing functions
+  function startEditingObservations(transaction: Transaction) {
+    editingObservations = transaction.id;
+    editingObservationsText = transaction.observations || '';
+  }
+
+  function cancelEditingObservations() {
+    editingObservations = null;
+    editingObservationsText = '';
+  }
+
+  async function saveObservations(transaction: Transaction) {
+    if (editingObservations !== transaction.id) return;
+
+    try {
+      const response = await fetch(`/api/transactions/${transaction.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          observations: editingObservationsText.trim() || undefined
+        }),
+      });
+
+      if (response.ok) {
+        // Update the transaction in the store
+        const updatedTransaction = await response.json();
+        apiTransactions.update(transactions =>
+          transactions.map(t => t.id === transaction.id
+            ? { ...t, observations: editingObservationsText.trim() || undefined }
+            : t
+          )
+        );
+
+        cancelEditingObservations();
+      } else {
+        console.error('Failed to update observations');
+      }
+    } catch (error) {
+      console.error('Error updating observations:', error);
+    }
+  }
 
   function formatAmount(amount: number): string {
     if (isNaN(amount)) return '€0.00';
@@ -1157,6 +1207,50 @@
               <div class="transaction-main">
                 <div>
                   <div class="transaction-description">{transaction.description}</div>
+                  {#if editingObservations === transaction.id}
+                    <div class="observations-editor">
+                      <input
+                        type="text"
+                        class="observations-input"
+                        bind:value={editingObservationsText}
+                        placeholder="Añadir observación..."
+                        maxlength="500"
+                        onkeydown={(e) => {
+                          if (e.key === 'Enter') {
+                            saveObservations(transaction);
+                          } else if (e.key === 'Escape') {
+                            cancelEditingObservations();
+                          }
+                        }}
+                        use:focus
+                      />
+                      <div class="observations-actions">
+                        <button
+                          type="button"
+                          class="save-btn"
+                          onclick={() => saveObservations(transaction)}
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          class="cancel-btn"
+                          onclick={cancelEditingObservations}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  {:else}
+                    <div
+                      class="transaction-observations"
+                      class:empty={!transaction.observations}
+                      onclick={() => startEditingObservations(transaction)}
+                      title="Haz clic para editar observaciones"
+                    >
+                      {transaction.observations || 'Añadir observación...'}
+                    </div>
+                  {/if}
                   <div class="transaction-meta">
                     <span>{transaction.merchant}</span>
                     <span>•</span>
@@ -2729,7 +2823,78 @@
     font-weight: 500;
     color: var(--text-primary);
   }
-  
+
+  .transaction-observations {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-top: 2px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+  }
+
+  .transaction-observations:hover {
+    background-color: var(--surface-hover);
+  }
+
+  .transaction-observations.empty {
+    color: var(--text-muted);
+    opacity: 0.7;
+  }
+
+  .observations-editor {
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .observations-input {
+    flex: 1;
+    font-size: 0.8rem;
+    padding: 2px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    background: var(--surface-primary);
+    color: var(--text-primary);
+  }
+
+  .observations-actions {
+    display: flex;
+    gap: 2px;
+  }
+
+  .save-btn, .cancel-btn {
+    padding: 2px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+  }
+
+  .save-btn {
+    background: var(--acapulco);
+    color: white;
+  }
+
+  .save-btn:hover {
+    background: var(--acapulco-dark, #059669);
+  }
+
+  .cancel-btn {
+    background: var(--surface-secondary);
+    color: var(--text-muted);
+  }
+
+  .cancel-btn:hover {
+    background: var(--surface-hover);
+  }
+
   .transaction-meta {
     font-size: 0.75rem;
     color: var(--text-muted);

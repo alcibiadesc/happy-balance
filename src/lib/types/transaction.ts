@@ -14,7 +14,7 @@ export interface Transaction {
   createdAt: Date;
   updatedAt: Date;
   hidden?: boolean;
-  notes?: string;
+  observations?: string;
 }
 
 export interface Category {
