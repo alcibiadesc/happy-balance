@@ -23,9 +23,13 @@ function setupEnvironment() {
 
   // Create frontend .env.local if it doesn't exist
   if (!existsSync(frontendEnvPath)) {
+    const gitInfo = getGitInfo(rootDir);
+    const backendPort = gitInfo.isWorktree ? "3003" : "3004";
+    const frontendPort = gitInfo.isWorktree ? "5176" : "5173";
+
     const frontendEnv = `# Frontend Configuration
-VITE_API_URL=http://localhost:3003/api
-VITE_PORT=5176`;
+VITE_API_URL=http://localhost:${backendPort}/api
+VITE_PORT=${frontendPort}`;
 
     writeFileSync(frontendEnvPath, frontendEnv);
     log("✅ Created .env.local", "green");
@@ -202,7 +206,7 @@ async function main() {
 
   // Find available ports
   log("\n🔍 Finding available ports...", "yellow");
-  const ports = await getAvailablePorts();
+  const ports = await getAvailablePorts(gitInfo.isWorktree);
   log(
     "✅ Ports found - Backend: " +
       ports.backend +

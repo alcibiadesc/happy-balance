@@ -156,38 +156,49 @@ export function updateDatabaseUrl(envPath, dbName) {
       envContent = `DATABASE_URL="${newUrl}"\n${envContent}`;
     }
 
-    // Also ensure PORT is correct
+    // Set PORT and CORS based on environment type
+    const gitInfo = getGitInfo(".");
+    const backendPort = gitInfo.isWorktree ? "3003" : "3004";
+    const frontendPort = gitInfo.isWorktree ? "5176" : "5173";
+
     const portRegex = /^PORT=.*$/m;
     if (portRegex.test(envContent)) {
-      envContent = envContent.replace(portRegex, "PORT=3003");
+      envContent = envContent.replace(portRegex, `PORT=${backendPort}`);
     } else {
-      envContent += "\nPORT=3003";
+      envContent += `\nPORT=${backendPort}`;
     }
 
-    // Ensure CORS_ORIGIN is correct
+    // Set CORS_ORIGIN based on environment type
     const corsRegex = /^CORS_ORIGIN=.*$/m;
+    const corsOrigin = gitInfo.isWorktree
+      ? `"http://localhost:${frontendPort}"`
+      : `"http://localhost:5173,http://localhost:5177"`;
+
     if (corsRegex.test(envContent)) {
-      envContent = envContent.replace(
-        corsRegex,
-        'CORS_ORIGIN="http://localhost:5176"',
-      );
+      envContent = envContent.replace(corsRegex, `CORS_ORIGIN=${corsOrigin}`);
     } else {
-      envContent += '\nCORS_ORIGIN="http://localhost:5176"';
+      envContent += `\nCORS_ORIGIN=${corsOrigin}`;
     }
 
     writeFileSync(envPath, envContent);
     log(`  ✅ Updated DATABASE_URL and config in .env`, "green");
   } else {
     // Create new .env file with DATABASE_URL
+    const gitInfo = getGitInfo(".");
+    const backendPort = gitInfo.isWorktree ? "3003" : "3004";
+    const corsOrigin = gitInfo.isWorktree
+      ? `"http://localhost:5176"`
+      : `"http://localhost:5173,http://localhost:5177"`;
+
     const envContent = `# Database
 DATABASE_URL="${newUrl}"
 
 # Server
-PORT=3003
+PORT=${backendPort}
 NODE_ENV=development
 
 # CORS
-CORS_ORIGIN="http://localhost:5176"
+CORS_ORIGIN=${corsOrigin}
 
 # File upload
 MAX_FILE_SIZE=10485760  # 10MB in bytes
@@ -210,17 +221,21 @@ RATE_LIMIT_MAX_REQUESTS=100
  */
 export function setupWorktreeDatabase(rootDir) {
   const gitInfo = getGitInfo(rootDir);
-  const dbName = getDatabaseName(gitInfo.branch);
   const backendEnvPath = resolve(rootDir, "backend", ".env");
 
   log("\n🗄️  Database Configuration:", "bright");
 
+  let dbName;
   if (gitInfo.isWorktree) {
+    // Worktree: Use branch-specific database (isolated)
+    dbName = getDatabaseName(gitInfo.branch);
     log(`  📍 Worktree branch: ${gitInfo.branch}`, "cyan");
-    log(`  📍 Database name: ${dbName}`, "cyan");
+    log(`  📍 Database name: ${dbName} (isolated)`, "cyan");
   } else {
+    // Regular branch: Always use main database (shared)
+    dbName = "happy_balance_main";
     log(`  📍 Regular repository`, "cyan");
-    log(`  📍 Database name: ${dbName}`, "cyan");
+    log(`  📍 Database name: ${dbName} (shared)`, "green");
   }
 
   // Check if PostgreSQL is running

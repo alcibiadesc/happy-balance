@@ -45,16 +45,37 @@ export async function findAvailablePort(basePort, maxAttempts = 10) {
 }
 
 /**
- * Get ports for frontend and backend
+ * Get ports for frontend and backend based on environment type
+ * @param {boolean} isWorktree - Whether we're in a worktree
  * @returns {Promise<{frontend: number, backend: number}>}
  */
-export async function getAvailablePorts() {
-  // Try to find available ports
-  const backendPort = await findAvailablePort(3003, 20);
-  const frontendPort = await findAvailablePort(5176, 20);
+export async function getAvailablePorts(isWorktree = false) {
+  if (isWorktree) {
+    // Worktree: Use dynamic port selection
+    const backendPort = await findAvailablePort(3003, 20);
+    const frontendPort = await findAvailablePort(5176, 20);
 
-  return {
-    backend: backendPort,
-    frontend: frontendPort,
-  };
+    return {
+      backend: backendPort,
+      frontend: frontendPort,
+    };
+  } else {
+    // Regular branch: Use fixed stable ports
+    const backendPort = 3004;
+    const frontendPort = 5173;
+
+    // Check if fixed ports are available, fallback if needed
+    const finalBackendPort = (await isPortAvailable(backendPort))
+      ? backendPort
+      : await findAvailablePort(backendPort + 1, 10);
+
+    const finalFrontendPort = (await isPortAvailable(frontendPort))
+      ? frontendPort
+      : await findAvailablePort(frontendPort + 1, 10);
+
+    return {
+      backend: finalBackendPort,
+      frontend: finalFrontendPort,
+    };
+  }
 }
