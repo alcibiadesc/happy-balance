@@ -520,7 +520,10 @@ export class TransactionController {
 
       // Update categoryId if provided
       if (data.categoryId !== undefined) {
+        console.log('🔧 Controller: Updating categoryId from', existingTransaction.categoryId?.value, 'to', data.categoryId);
         existingTransaction.setCategoryId(data.categoryId);
+      } else {
+        console.log('🔧 Controller: categoryId not provided in update data');
       }
 
       // TODO: Add support for updating other fields if needed

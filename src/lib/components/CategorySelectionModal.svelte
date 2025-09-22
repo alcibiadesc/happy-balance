@@ -8,7 +8,7 @@
   export let isOpen = false;
   export let transaction: Transaction | null = null;
   export let categories: Category[] = [];
-  export let onSelect: (categoryId: string) => void = () => {};
+  export let onSelect: (categoryId: string | null) => void = () => {};
   export let onCancel: () => void = () => {};
 
   let modalElement: HTMLDivElement;
@@ -63,7 +63,8 @@
   }
 
   function uncategorizeTransaction() {
-    onSelect(''); // Pass empty string to uncategorize
+    console.log('🔄 Uncategorize button clicked');
+    onSelect(null); // Pass null instead of empty string
     closeModal();
   }
 
@@ -120,6 +121,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="category-selection-title"
+    data-testid="category-modal"
   >
     <div class="modal-content">
       <!-- Header with modern design -->
@@ -171,6 +173,7 @@
             <button
               class="uncategorize-btn"
               on:click={uncategorizeTransaction}
+              data-testid="uncategorize-btn"
             >
               <span class="uncategorize-icon">❌</span>
               <span class="uncategorize-text">Quitar categoría</span>
