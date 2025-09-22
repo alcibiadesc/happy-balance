@@ -11,7 +11,7 @@
   import DateRangePicker from '$lib/components/molecules/DateRangePicker.svelte';
 
   // API Configuration
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3004/api';
   
   // Period options - using i18n
   let periods = $derived([
@@ -48,16 +48,14 @@
       };
     }
 
-    console.log('Processing filteredMetrics with dashboardData.summary:', dashboardData.summary);
 
-    const income = Math.abs(dashboardData.summary.totalIncome?._amount || 0);
-    const expenses = Math.abs(dashboardData.summary.totalExpenses?._amount || 0) + Math.abs(dashboardData.summary.totalDebtPayments?._amount || 0);
-    const investments = Math.abs(dashboardData.summary.totalInvestments?._amount || 0);
+    const income = dashboardData.summary.totalIncome?._amount || 0;
+    const expenses = (dashboardData.summary.totalExpenses?._amount || 0) + (dashboardData.summary.totalDebtPayments?._amount || 0);
+    const investments = dashboardData.summary.totalInvestments?._amount || 0;
     const balance = dashboardData.summary.balance?._amount || 0;
     const spendingRate = dashboardData.spendingRate || 0;
     const savingsRate = spendingRate ? (100 - spendingRate) : 0;
 
-    console.log('Calculated metrics:', { income, expenses, investments, balance, spendingRate, savingsRate });
 
     return {
       income,

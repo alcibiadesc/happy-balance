@@ -249,6 +249,7 @@
   
   let periodStats = $derived(() => {
     const filtered = filteredTransactions();
+
     // Exclude hidden transactions from statistics
     const visibleTransactions = filtered.filter(t => !t.hidden);
 
@@ -285,13 +286,15 @@
       .filter(t => !t.categoryId)
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
+    const balance = isNaN(income - totalExpenses) ? 0 : income - totalExpenses;
+
     return {
       income: isNaN(income) ? 0 : income,
       expenses: isNaN(totalExpenses) ? 0 : totalExpenses,
       essentialExpenses: isNaN(essentialExpenses) ? 0 : essentialExpenses,
       discretionaryExpenses: isNaN(discretionaryExpenses) ? 0 : discretionaryExpenses,
       uncategorizedExpenses: isNaN(uncategorizedExpenses) ? 0 : uncategorizedExpenses,
-      balance: isNaN(income - totalExpenses) ? 0 : income - totalExpenses
+      balance
     };
   });
   
