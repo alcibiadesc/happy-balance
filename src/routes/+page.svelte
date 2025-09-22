@@ -473,9 +473,9 @@
         <!-- Expenses Card with Breakdown -->
         <ExpensesCard
           totalExpenses={filteredMetrics().expenses}
-          essentialExpenses={Math.abs(dashboardData?.expenseDistribution?.essential?._amount || filteredMetrics().expenses * 0.5)}
-          discretionaryExpenses={Math.abs(dashboardData?.expenseDistribution?.discretionary?._amount || filteredMetrics().expenses * 0.33)}
-          debtPayments={Math.abs(dashboardData?.expenseDistribution?.debtPayments?._amount || filteredMetrics().expenses * 0.17)}
+          essentialExpenses={dashboardData?.expenseDistribution?.essential?._amount || 0}
+          discretionaryExpenses={dashboardData?.expenseDistribution?.discretionary?._amount || 0}
+          debtPayments={dashboardData?.expenseDistribution?.debtPayments?._amount || 0}
           trend={trends.expenses}
           {loading}
           formatCurrency={formatCurrencyAmount}

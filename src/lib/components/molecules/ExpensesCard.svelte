@@ -70,7 +70,7 @@
     {/if}
   </div>
   
-  {#if expanded}
+  {#if expanded && totalExpenses > 0}
     <div class="expenses-breakdown">
       <div class="breakdown-item">
         <div class="breakdown-info">
@@ -81,7 +81,7 @@
           {Math.round((essentialExpenses / totalExpenses) * 100)}%
         </div>
       </div>
-      
+
       <div class="breakdown-item">
         <div class="breakdown-info">
           <span class="breakdown-label">{$t('dashboard.metrics.discretionary_expenses')}</span>
@@ -100,6 +100,12 @@
         <div class="breakdown-percentage">
           {Math.round((debtPayments / totalExpenses) * 100)}%
         </div>
+      </div>
+    </div>
+  {:else if expanded && totalExpenses === 0}
+    <div class="expenses-breakdown">
+      <div class="no-expenses-message">
+        <span class="no-expenses-text">No hay gastos para este período</span>
       </div>
     </div>
   {/if}
@@ -240,5 +246,16 @@
   @keyframes skeleton-loading {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+  }
+
+  .no-expenses-message {
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .no-expenses-text {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-style: italic;
   }
 </style>

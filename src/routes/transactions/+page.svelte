@@ -300,6 +300,13 @@
       })
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
+    const investmentExpenses = expenseTransactions
+      .filter(t => {
+        const category = getCategoryById(t.categoryId);
+        return category?.type === 'investment';
+      })
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
     const uncategorizedExpenses = expenseTransactions
       .filter(t => !t.categoryId)
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
@@ -311,6 +318,7 @@
       expenses: isNaN(totalExpenses) ? 0 : totalExpenses,
       essentialExpenses: isNaN(essentialExpenses) ? 0 : essentialExpenses,
       discretionaryExpenses: isNaN(discretionaryExpenses) ? 0 : discretionaryExpenses,
+      investmentExpenses: isNaN(investmentExpenses) ? 0 : investmentExpenses,
       uncategorizedExpenses: isNaN(uncategorizedExpenses) ? 0 : uncategorizedExpenses,
       balance
     };
@@ -734,6 +742,10 @@
             <span class="stat-value income">{formatAmount(periodStats().income)}</span>
           </div>
           <div class="stat-row">
+            <span class="stat-label">{$t('dashboard.metrics.investments')}</span>
+            <span class="stat-value investment">{formatAmount(periodStats().investmentExpenses)}</span>
+          </div>
+          <div class="stat-row">
             <span class="stat-label">{$t('transactions.period.total_expenses')}</span>
             <span class="stat-value expense">{formatAmount(periodStats().expenses)}</span>
           </div>
@@ -762,6 +774,14 @@
               <span class="breakdown-value">{formatAmount(periodStats().discretionaryExpenses)}</span>
             </div>
 
+            <div class="breakdown-row">
+              <div class="breakdown-item">
+                <div class="breakdown-dot investment"></div>
+                <span class="breakdown-label">{$t('dashboard.metrics.investments')}</span>
+              </div>
+              <span class="breakdown-value">{formatAmount(periodStats().investmentExpenses)}</span>
+            </div>
+
             {#if periodStats().uncategorizedExpenses > 0}
             <div class="breakdown-row uncategorized">
               <div class="breakdown-item">
@@ -782,6 +802,10 @@
             <div
               class="bar-segment discretionary"
               style="width: {periodStats().expenses > 0 ? (periodStats().discretionaryExpenses / periodStats().expenses * 100) : 0}%"
+            ></div>
+            <div
+              class="bar-segment investment"
+              style="width: {periodStats().expenses > 0 ? (periodStats().investmentExpenses / periodStats().expenses * 100) : 0}%"
             ></div>
             <div
               class="bar-segment uncategorized"
@@ -1785,6 +1809,10 @@
     color: var(--acapulco);
   }
 
+  .stat-value.investment {
+    color: #8B5CF6;
+  }
+
   .stat-value.expense {
     color: var(--text-primary);
   }
@@ -1843,6 +1871,10 @@
     background: var(--acapulco);
   }
 
+  .breakdown-dot.investment {
+    background: #8B5CF6;
+  }
+
   .breakdown-dot.uncategorized {
     background: var(--text-muted);
   }
@@ -1878,6 +1910,10 @@
 
   .bar-segment.discretionary {
     background: var(--acapulco);
+  }
+
+  .bar-segment.investment {
+    background: #8B5CF6;
   }
 
   .bar-segment.uncategorized {
