@@ -324,16 +324,28 @@ export class TransactionController {
         domainFilters.categoryId = filters.categoryId;
       }
 
-      if (searchTerm) {
-        domainFilters.merchantName = searchTerm; // For now, search by merchant name
-      }
-
+      // Handle explicit amount filters first
       if (filters.minAmount !== undefined) {
         domainFilters.minAmount = filters.minAmount;
       }
-
       if (filters.maxAmount !== undefined) {
         domainFilters.maxAmount = filters.maxAmount;
+      }
+
+      if (searchTerm) {
+        // Check if search term is numeric for amount-based search
+        const numericValue = parseFloat(searchTerm);
+        const isNumeric = !isNaN(numericValue) && isFinite(numericValue) && searchTerm.trim() === numericValue.toString();
+
+        if (isNumeric && filters.minAmount === undefined && filters.maxAmount === undefined) {
+          // For numeric search, add amount filters with tolerance (only if no explicit amount filters)
+          const tolerance = 0.01;
+          domainFilters.minAmount = Math.max(0, numericValue - tolerance);
+          domainFilters.maxAmount = numericValue + tolerance;
+        } else {
+          // For text search, search by merchant name
+          domainFilters.merchantName = searchTerm;
+        }
       }
 
       if (filters.currency) {

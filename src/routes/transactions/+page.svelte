@@ -178,10 +178,28 @@
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(t =>
-        t.merchant.toLowerCase().includes(query) ||
-        t.description.toLowerCase().includes(query)
-      );
+
+      // Try to parse as a number for amount search
+      const numericQuery = parseFloat(searchQuery);
+      const isNumeric = !isNaN(numericQuery) && isFinite(numericQuery);
+
+      filtered = filtered.filter(t => {
+        // Text-based search (merchant and description)
+        const textMatch = t.merchant.toLowerCase().includes(query) ||
+                         t.description.toLowerCase().includes(query);
+
+        // Amount-based search
+        let amountMatch = false;
+        if (isNumeric) {
+          const transactionAmount = Math.abs(t.amount);
+          // Check for exact amount match or close match (within 0.01)
+          amountMatch = Math.abs(transactionAmount - numericQuery) < 0.01 ||
+                       // Check if amount contains the searched number (for partial matches)
+                       transactionAmount.toString().includes(numericQuery.toString());
+        }
+
+        return textMatch || amountMatch;
+      });
     }
 
     // Hide hidden transactions unless explicitly showing them

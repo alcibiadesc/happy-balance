@@ -656,21 +656,42 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       }
     }
 
-    // Merchant name filter - optimized for search
+    // Merchant name filter - enhanced to search both merchant and description
     if (filters.merchantName && filters.merchantName.trim()) {
       const searchTerm = filters.merchantName.trim();
 
-      // Use exact match for short terms, contains for longer terms
       if (searchTerm.length <= 3) {
-        where.merchant = {
-          startsWith: searchTerm,
-          mode: "insensitive",
-        };
+        // For short terms, use OR condition with startsWith for both fields
+        where.OR = [
+          {
+            merchant: {
+              startsWith: searchTerm,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              startsWith: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        ];
       } else {
-        where.merchant = {
-          contains: searchTerm,
-          mode: "insensitive",
-        };
+        // For longer terms, use OR condition with contains for both fields
+        where.OR = [
+          {
+            merchant: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        ];
       }
     }
 
