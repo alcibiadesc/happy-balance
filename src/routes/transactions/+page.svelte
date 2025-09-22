@@ -590,6 +590,8 @@
   async function saveObservations(transaction: Transaction) {
     if (editingObservations !== transaction.id) return;
 
+    const observationValue = editingObservationsText.trim() || undefined;
+
     try {
       const response = await fetch(`http://localhost:3004/api/transactions/${transaction.id}`, {
         method: 'PUT',
@@ -597,23 +599,26 @@
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          observations: editingObservationsText.trim() || undefined
+          observations: observationValue
         }),
       });
 
       if (response.ok) {
-        // Update the transaction in the store
+        // Update the transaction in the store FIRST
         apiTransactions.update(transactions =>
           transactions.map(t => t.id === transaction.id
-            ? { ...t, observations: editingObservationsText.trim() || undefined }
+            ? { ...t, observations: observationValue }
             : t
           )
         );
+        return true; // Success
       } else {
         console.error('Failed to update observations');
+        return false; // Failure
       }
     } catch (error) {
       console.error('Error updating observations:', error);
+      return false; // Failure
     }
   }
 
@@ -1225,17 +1230,22 @@
                         placeholder={$t('transactions.observations_placeholder')}
                         maxlength="500"
                         oninput={() => saveObservationsDebounced(transaction)}
-                        onkeydown={(e) => {
+                        onkeydown={async (e) => {
                           if (e.key === 'Enter') {
-                            saveObservations(transaction);
-                            cancelEditingObservations();
+                            await saveObservations(transaction);
+                            setTimeout(() => {
+                              cancelEditingObservations();
+                            }, 50);
                           } else if (e.key === 'Escape') {
                             cancelEditingObservations();
                           }
                         }}
-                        onblur={() => {
-                          saveObservations(transaction);
-                          cancelEditingObservations();
+                        onblur={async () => {
+                          await saveObservations(transaction);
+                          // Small delay to ensure store update completes
+                          setTimeout(() => {
+                            cancelEditingObservations();
+                          }, 50);
                         }}
                         use:focus
                       />
