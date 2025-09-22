@@ -271,6 +271,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
         merchant: snapshot.merchant,
         type: snapshot.type,
         description: snapshot.description,
+        observations: snapshot.observations,
         categoryId: snapshot.categoryId,
         isSelected: snapshot.isSelected,
         hash: snapshot.hash,
