@@ -110,11 +110,11 @@ export class MetricsController {
               currency: data.periodBalance.currency,
             },
             totalInvestments: {
-              amount: 0, // Not in current metrics structure
+              amount: data.periodBalance.investments,
               currency: data.periodBalance.currency,
             },
             totalDebtPayments: {
-              amount: 0, // Not in current metrics structure
+              amount: data.periodBalance.debtPayments,
               currency: data.periodBalance.currency,
             },
             balance: {
@@ -217,8 +217,8 @@ export class MetricsController {
         income: trend.income,
         essentialExpenses: data.expenseDistribution.essential / data.monthlyTrend.length, // Distribute evenly for now
         discretionaryExpenses: data.expenseDistribution.discretionary / data.monthlyTrend.length,
-        debtPayments: 0,
-        investments: 0
+        debtPayments: trend.debtPayments,
+        investments: trend.investments
       }));
 
       // Return complete dashboard data
@@ -235,11 +235,11 @@ export class MetricsController {
               _currency: data.periodBalance.currency,
             },
             totalInvestments: {
-              _amount: 0,
+              _amount: data.periodBalance.investments,
               _currency: data.periodBalance.currency,
             },
             totalDebtPayments: {
-              _amount: 0,
+              _amount: data.periodBalance.debtPayments,
               _currency: data.periodBalance.currency,
             },
             balance: {
@@ -342,11 +342,11 @@ export class MetricsController {
           currency: data.periodBalance.currency,
         },
         investments: {
-          amount: 0, // Not in current structure
+          amount: trend.investments,
           currency: data.periodBalance.currency,
         },
         debtPayments: {
-          amount: 0, // Not in current structure
+          amount: trend.debtPayments,
           currency: data.periodBalance.currency,
         },
         balance: {

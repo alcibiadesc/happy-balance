@@ -3,6 +3,8 @@ import { Result } from "@domain/shared/Result";
 export interface PeriodBalance {
   income: number;
   expenses: number;
+  investments: number;
+  debtPayments: number;
   balance: number;
   currency: string;
 }
@@ -27,6 +29,8 @@ export interface MonthlyTrend {
   month: string; // YYYY-MM format
   income: number;
   expenses: number;
+  investments: number;
+  debtPayments: number;
   balance: number;
 }
 
@@ -83,6 +87,14 @@ export class Metrics {
 
     if (periodBalance.expenses < 0) {
       return Result.failWithMessage("Expenses cannot be negative");
+    }
+
+    if (periodBalance.investments < 0) {
+      return Result.failWithMessage("Investments cannot be negative");
+    }
+
+    if (periodBalance.debtPayments < 0) {
+      return Result.failWithMessage("Debt payments cannot be negative");
     }
 
     if (!periodBalance.currency || periodBalance.currency.length !== 3) {
