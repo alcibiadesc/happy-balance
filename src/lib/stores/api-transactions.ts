@@ -22,7 +22,7 @@ function createApiTransactionStore() {
     hash: undefined,
     updatedAt: new Date("2025-01-15T00:00:00Z"),
     hidden: false,
-    notes: undefined,
+    observations: undefined,
   };
 
   const { subscribe, set, update } = writable<Transaction[]>([]);
@@ -120,11 +120,13 @@ function createApiTransactionStore() {
 
       try {
         // Prepare update payload for backend
-        const payload: any = {
-          description: updates.description,
-          hidden: updates.hidden,
-          categoryId: updates.categoryId,
-        };
+        const payload: any = {};
+
+        // Only include fields that are being updated (not undefined)
+        if (updates.description !== undefined) payload.description = updates.description;
+        if (updates.hidden !== undefined) payload.hidden = updates.hidden;
+        if (updates.categoryId !== undefined) payload.categoryId = updates.categoryId;
+        if (updates.observations !== undefined) payload.observations = updates.observations;
 
         // If amount is being updated, handle the type change
         if (updates.amount !== undefined) {
@@ -483,7 +485,7 @@ function mapApiToTransaction(apiTransaction: any): Transaction {
     createdAt: new Date(apiTransaction.createdAt),
     updatedAt: new Date(apiTransaction.updatedAt || apiTransaction.createdAt),
     hidden: apiTransaction.hidden || false,
-    notes: undefined,
+    observations: apiTransaction.observations || undefined,
   };
 }
 

@@ -593,29 +593,11 @@
     const observationValue = editingObservationsText.trim() || undefined;
 
     try {
-      const response = await fetch(`http://localhost:3004/api/transactions/${transaction.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          observations: observationValue
-        }),
+      // Use the store's update method which handles optimistic updates
+      await apiTransactions.update(transaction.id, {
+        observations: observationValue
       });
-
-      if (response.ok) {
-        // Update the transaction in the store FIRST
-        apiTransactions.update(transactions =>
-          transactions.map(t => t.id === transaction.id
-            ? { ...t, observations: observationValue }
-            : t
-          )
-        );
-        return true; // Success
-      } else {
-        console.error('Failed to update observations');
-        return false; // Failure
-      }
+      return true; // Success
     } catch (error) {
       console.error('Error updating observations:', error);
       return false; // Failure
