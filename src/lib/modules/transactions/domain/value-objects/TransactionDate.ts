@@ -1,137 +1,160 @@
-import { Result } from "../shared/Result";
-
-/**
- * Transaction Date value object
- * Encapsulates date business rules and validation for transactions
- */
 export class TransactionDate {
-  private constructor(private readonly _date: Date) {}
+  private constructor(private readonly date: Date) {}
 
-  static create(date: Date | string): Result<TransactionDate> {
-    let parsedDate: Date;
-
-    if (typeof date === "string") {
-      parsedDate = new Date(date);
-    } else {
-      parsedDate = new Date(date.getTime());
+  static create(dateString: string): TransactionDate {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      throw new Error('Invalid date string');
     }
+    return new TransactionDate(date);
+  }
 
-    if (isNaN(parsedDate.getTime())) {
-      return Result.failWithMessage("Invalid date provided");
+  static fromDate(date: Date): TransactionDate {
+    if (isNaN(date.getTime())) {
+      throw new Error('Invalid date');
     }
-
-    // Business rule: transactions cannot be in the future
-    const now = new Date();
-    if (parsedDate > now) {
-      return Result.failWithMessage("Transaction date cannot be in the future");
-    }
-
-    // Business rule: transactions cannot be older than 10 years
-    const tenYearsAgo = new Date();
-    tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
-    if (parsedDate < tenYearsAgo) {
-      return Result.failWithMessage(
-        "Transaction date cannot be older than 10 years",
-      );
-    }
-
-    return Result.ok(new TransactionDate(parsedDate));
+    return new TransactionDate(new Date(date));
   }
 
   static today(): TransactionDate {
-    const result = TransactionDate.create(new Date());
-    if (result.isFailure()) {
-      throw new Error("Failed to create today's date");
-    }
-    return result.getValue();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new TransactionDate(today);
   }
 
-  static fromString(dateString: string): Result<TransactionDate> {
-    // Support multiple date formats
-    const formats = [
-      /^(\d{4})-(\d{2})-(\d{2})$/, // YYYY-MM-DD
-      /^(\d{2})\/(\d{2})\/(\d{4})$/, // DD/MM/YYYY
-      /^(\d{2})-(\d{2})-(\d{4})$/, // DD-MM-YYYY
-    ];
-
-    for (const format of formats) {
-      const match = dateString.match(format);
-      if (match) {
-        let year: number, month: number, day: number;
-
-        if (format === formats[0]) {
-          // YYYY-MM-DD
-          [, year, month, day] = match.map(Number);
-        } else {
-          // DD/MM/YYYY or DD-MM-YYYY
-          [, day, month, year] = match.map(Number);
-        }
-
-        const date = new Date(year, month - 1, day);
-        return TransactionDate.create(date);
-      }
-    }
-
-    return TransactionDate.create(dateString);
+  static yesterday(): TransactionDate {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
+    return new TransactionDate(yesterday);
   }
 
-  get value(): Date {
-    return new Date(this._date.getTime());
+  getDate(): Date {
+    return new Date(this.date);
   }
 
   getYear(): number {
-    return this._date.getFullYear();
+    return this.date.getFullYear();
   }
 
   getMonth(): number {
-    return this._date.getMonth() + 1; // 1-based month
+    return this.date.getMonth() + 1; // 1-indexed
   }
 
   getDay(): number {
-    return this._date.getDate();
+    return this.date.getDate();
+  }
+
+  getDayOfWeek(): number {
+    return this.date.getDay();
+  }
+
+  getMonthYear(): string {
+    return `${this.getYear()}-${String(this.getMonth()).padStart(2, '0')}`;
+  }
+
+  formatLong(): string {
+    const formatter = new Intl.DateTimeFormat('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    return formatter.format(this.date);
+  }
+
+  formatShort(): string {
+    const formatter = new Intl.DateTimeFormat('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+    return formatter.format(this.date);
+  }
+
+  formatMonthYear(): string {
+    const formatter = new Intl.DateTimeFormat('es-ES', {
+      year: 'numeric',
+      month: 'long'
+    });
+    return formatter.format(this.date);
   }
 
   isSameDay(other: TransactionDate): boolean {
-    return this.toDateString() === other.toDateString();
+    return (
+      this.date.getFullYear() === other.date.getFullYear() &&
+      this.date.getMonth() === other.date.getMonth() &&
+      this.date.getDate() === other.date.getDate()
+    );
   }
 
   isSameMonth(other: TransactionDate): boolean {
     return (
-      this.getYear() === other.getYear() && this.getMonth() === other.getMonth()
+      this.date.getFullYear() === other.date.getFullYear() &&
+      this.date.getMonth() === other.date.getMonth()
     );
   }
 
+  isSameYear(other: TransactionDate): boolean {
+    return this.date.getFullYear() === other.date.getFullYear();
+  }
+
   isBefore(other: TransactionDate): boolean {
-    return this._date < other._date;
+    return this.date < other.date;
   }
 
   isAfter(other: TransactionDate): boolean {
-    return this._date > other._date;
+    return this.date > other.date;
   }
 
-  addDays(days: number): Result<TransactionDate> {
-    const newDate = new Date(this._date.getTime());
+  isToday(): boolean {
+    const today = new Date();
+    return this.isSameDay(TransactionDate.fromDate(today));
+  }
+
+  isYesterday(): boolean {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return this.isSameDay(TransactionDate.fromDate(yesterday));
+  }
+
+  isInCurrentMonth(): boolean {
+    const today = new Date();
+    return this.isSameMonth(TransactionDate.fromDate(today));
+  }
+
+  addDays(days: number): TransactionDate {
+    const newDate = new Date(this.date);
     newDate.setDate(newDate.getDate() + days);
-    return TransactionDate.create(newDate);
+    return new TransactionDate(newDate);
   }
 
-  toDateString(): string {
-    return this._date.toISOString().split("T")[0];
+  addMonths(months: number): TransactionDate {
+    const newDate = new Date(this.date);
+    newDate.setMonth(newDate.getMonth() + months);
+    return new TransactionDate(newDate);
   }
 
-  toDisplayString(locale = "en-US"): string {
-    return this._date.toLocaleDateString(locale, {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  startOfMonth(): TransactionDate {
+    const newDate = new Date(this.date.getFullYear(), this.date.getMonth(), 1);
+    return new TransactionDate(newDate);
+  }
+
+  endOfMonth(): TransactionDate {
+    const newDate = new Date(this.date.getFullYear(), this.date.getMonth() + 1, 0);
+    return new TransactionDate(newDate);
   }
 
   equals(other: TransactionDate): boolean {
-    return this._date.getTime() === other._date.getTime();
+    return this.date.getTime() === other.date.getTime();
   }
 
   toString(): string {
-    return this.toDateString();
+    // Return ISO date string (YYYY-MM-DD)
+    return this.date.toISOString().split('T')[0];
+  }
+
+  toISOString(): string {
+    return this.date.toISOString();
   }
 }
