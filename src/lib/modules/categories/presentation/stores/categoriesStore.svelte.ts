@@ -134,8 +134,8 @@ export function createCategoriesStore() {
       newCategory.annualBudget || 0
     );
 
-    await apiCategories.addCategory(entity.toJSON() as Category);
-    categories = [...categories, entity];
+    const newCat = await apiCategories.add(entity.toJSON() as Category);
+    await loadCategories(); // Reload to get the updated list
     cancelNewCategory();
   }
 
@@ -163,13 +163,8 @@ export function createCategoriesStore() {
     if (index === -1) return;
 
     const updated = categories[index].update(editForm);
-    await apiCategories.updateCategory(updated.toJSON() as Category);
-
-    categories = [
-      ...categories.slice(0, index),
-      updated,
-      ...categories.slice(index + 1)
-    ];
+    await apiCategories.update(editingCategory, updated.toJSON() as Category);
+    await loadCategories(); // Reload to get the updated list
 
     cancelEdit();
   }
@@ -190,11 +185,12 @@ export function createCategoriesStore() {
   async function confirmDelete() {
     if (!categoryToDelete) return;
 
-    await apiCategories.deleteCategory(categoryToDelete.getId());
-    categories = categories.filter(c => c.getId() !== categoryToDelete.getId());
+    await apiCategories.delete(categoryToDelete.getId());
+    await loadCategories(); // Reload to get the updated list
 
     showDeleteModal = false;
     categoryToDelete = null;
+    recategorizeTarget = 'none';
   }
 
   // Icon Picker
