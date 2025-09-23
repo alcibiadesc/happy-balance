@@ -1,419 +1,39 @@
 <script lang="ts">
-  import { Download, Upload, Trash2, DollarSign, Palette, Globe, FileText, AlertCircle, CheckCircle, RotateCcw } from 'lucide-svelte';
+  import { DollarSign, Palette, Globe } from 'lucide-svelte';
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
-  import { t, currentLanguage, setLanguage } from '$lib/stores/i18n';
-  import { currentCurrency, currencies, setCurrency } from '$lib/stores/currency';
-  import { theme, setTheme, effectiveTheme } from '$lib/stores/theme';
+  import SettingsStatusMessage from '$lib/components/molecules/SettingsStatusMessage.svelte';
+  import SettingsCard from '$lib/components/organisms/SettingsCard.svelte';
+  import SettingsThemeToggle from '$lib/components/molecules/SettingsThemeToggle.svelte';
+  import SettingsLanguageSelect from '$lib/components/molecules/SettingsLanguageSelect.svelte';
+  import SettingsCurrencySelect from '$lib/components/molecules/SettingsCurrencySelect.svelte';
+  import SettingsActionButtons from '$lib/components/organisms/SettingsActionButtons.svelte';
+  import { createSettingsStore } from '$lib/modules/settings/presentation/stores/settingsStore.svelte.ts';
+  import { t } from '$lib/stores/i18n';
+  import { currencies } from '$lib/stores/currency';
   import { userPreferences } from '$lib/stores/user-preferences';
-  import { apiCategories } from '$lib/stores/api-transactions';
-  import { browser } from '$app/environment';
   import { onMount } from 'svelte';
 
   // API Configuration
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-  
+
+  // Create settings store instance
+  const store = createSettingsStore(API_BASE);
+
   const currencyOptions = Object.values(currencies).map(curr => ({
     value: curr.code,
     label: `${curr.symbol} ${curr.name}`,
     symbol: curr.symbol
   }));
-  
+
   const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
     { code: 'es', name: 'Español', flag: '🇪🇸' }
   ];
 
-  // Theme state
-  $: isDark = $effectiveTheme === 'dark';
-
-  // Theme toggle function
-  async function toggleTheme() {
-    const newTheme = isDark ? 'light' : 'dark';
-    setTheme(newTheme);
-    await userPreferences.updateTheme(newTheme);
-  }
-
-  // Import/Export state
-  let importStatus = '';
-  let importError = '';
-  let importSuccess = false;
-  let importing = false;
-
-  // Modal state
-  let showImportModal = false;
-  let showDeleteAllModal = false;
-  let showResetModal = false;
-  let pendingImportData: any = null;
-  
-  function handleExportData() {
-    // Create a comprehensive data export
-    const data = {
-      transactions: JSON.parse(localStorage.getItem('transactions') || '[]'),
-      transactionHashes: JSON.parse(localStorage.getItem('transaction-hashes') || '[]'),
-      categories: JSON.parse(localStorage.getItem('categories') || '[]'),
-      settings: {
-        currency: $currentCurrency,
-        language: $currentLanguage,
-        theme: $theme,
-        exportDate: new Date().toISOString(),
-        version: '1.0.0'
-      },
-      metadata: {
-        appName: 'Happy Balance',
-        exportedBy: 'Settings Export',
-        totalTransactions: JSON.parse(localStorage.getItem('transactions') || '[]').length
-      }
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `happy-balance-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    // Show success feedback
-    importStatus = $t('settings.export_success');
-    importSuccess = true;
-    setTimeout(() => {
-      importStatus = '';
-      importSuccess = false;
-    }, 3000);
-  }
-  
-  function handleFileImport(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    
-    if (!file) return;
-    
-    // Reset states
-    importError = '';
-    importStatus = '';
-    importSuccess = false;
-    importing = true;
-    
-    // Validate file type
-    if (!file.name.toLowerCase().endsWith('.json')) {
-      importError = $t('settings.import_invalid_file');
-      importing = false;
-      return;
-    }
-    
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      importError = $t('settings.import_file_too_large');
-      importing = false;
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const content = e.target?.result as string;
-        const data = JSON.parse(content);
-        
-        // Validate data structure
-        if (!validateImportData(data)) {
-          importError = $t('settings.import_invalid_format');
-          importing = false;
-          return;
-        }
-        
-        // Store data and show modal for confirmation
-        pendingImportData = data;
-        showImportModal = true;
-        importing = false;
-        
-        // Success feedback
-        importStatus = $t('settings.import_success', { count: data.transactions?.length || 0 });
-        importSuccess = true;
-        importing = false;
-        
-        setTimeout(() => {
-          importStatus = '';
-          importSuccess = false;
-        }, 5000);
-        
-      } catch (error) {
-        console.error('Import error:', error);
-        importError = $t('settings.import_parse_error');
-        importing = false;
-      }
-    };
-    
-    reader.onerror = () => {
-      importError = $t('settings.import_read_error');
-      importing = false;
-    };
-    
-    reader.readAsText(file);
-    
-    // Clear the input so the same file can be selected again
-    input.value = '';
-  }
-  
-  function validateImportData(data: any): boolean {
-    // Check if it's a valid Happy Balance export
-    if (!data || typeof data !== 'object') return false;
-    
-    // Must have transactions array (can be empty)
-    if (!Array.isArray(data.transactions)) return false;
-    
-    // Optional but recommended: settings and metadata
-    if (data.settings && typeof data.settings !== 'object') return false;
-    if (data.metadata && typeof data.metadata !== 'object') return false;
-    
-    return true;
-  }
-  
-  async function importData(data: any) {
-    if (!browser) return;
-    
-    // Import transactions
-    if (data.transactions && Array.isArray(data.transactions)) {
-      const existingTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-      const existingHashes = JSON.parse(localStorage.getItem('transaction-hashes') || '[]');
-      
-      // Filter out duplicates based on hash
-      const newTransactions = data.transactions.filter((tx: any) => {
-        return tx.hash && !existingHashes.includes(tx.hash);
-      });
-      
-      // Merge transactions
-      const mergedTransactions = [...existingTransactions, ...newTransactions];
-      const mergedHashes = [...existingHashes, ...newTransactions.map((tx: any) => tx.hash)];
-      
-      localStorage.setItem('transactions', JSON.stringify(mergedTransactions));
-      localStorage.setItem('transaction-hashes', JSON.stringify(mergedHashes));
-    }
-    
-    // Import transaction hashes (if provided separately)
-    if (data.transactionHashes && Array.isArray(data.transactionHashes)) {
-      const existingHashes = JSON.parse(localStorage.getItem('transaction-hashes') || '[]');
-      const uniqueHashes = [...new Set([...existingHashes, ...data.transactionHashes])];
-      localStorage.setItem('transaction-hashes', JSON.stringify(uniqueHashes));
-    }
-    
-    // Import categories (if provided)
-    if (data.categories && Array.isArray(data.categories)) {
-      const existingCategories = JSON.parse(localStorage.getItem('categories') || '[]');
-      const mergedCategories = [...existingCategories, ...data.categories];
-      localStorage.setItem('categories', JSON.stringify(mergedCategories));
-    }
-    
-    // Import settings (optional)
-    if (data.settings) {
-      if (data.settings.currency && currencies[data.settings.currency]) {
-        setCurrency(data.settings.currency);
-        await userPreferences.updateCurrency(data.settings.currency);
-      }
-      if (data.settings.language && languages.find(l => l.code === data.settings.language)) {
-        setLanguage(data.settings.language);
-        await userPreferences.updateLanguage(data.settings.language);
-      }
-      if (data.settings.theme && ['light', 'dark', 'system'].includes(data.settings.theme)) {
-        setTheme(data.settings.theme);
-        await userPreferences.updateTheme(data.settings.theme);
-      }
-    }
-  }
-
-  async function confirmImport() {
-    if (!pendingImportData) return;
-
-    importing = true;
-    try {
-      await importData(pendingImportData);
-
-      // Success feedback
-      importStatus = $t('settings.import_success', { count: pendingImportData.transactions?.length || 0 });
-      importSuccess = true;
-
-      setTimeout(() => {
-        importStatus = '';
-        importSuccess = false;
-      }, 5000);
-    } catch (error) {
-      console.error('Import error:', error);
-      importError = $t('settings.import_error');
-    } finally {
-      importing = false;
-      pendingImportData = null;
-    }
-  }
-
-  function cancelImport() {
-    pendingImportData = null;
-  }
-  
-  function handleDeleteAllData() {
-    showDeleteAllModal = true;
-  }
-
-  function handleResetData() {
-    showResetModal = true;
-  }
-
-  async function confirmReset() {
-    try {
-      // Reset categories to defaults by calling the seed endpoint
-      try {
-        const response = await fetch(`${API_BASE}/seed`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          console.warn('Failed to reset data from database, falling back to localStorage reset');
-        }
-      } catch (apiError) {
-        console.warn('API not available, proceeding with localStorage reset');
-      }
-
-      // Reset localStorage categories and settings but preserve transactions
-      if (browser) {
-        // Remove categories to force reload from defaults
-        localStorage.removeItem('categories');
-
-        // Reset user preferences to defaults
-        localStorage.removeItem('user-preferences');
-
-        // Reset any cached settings but keep transactions and transaction hashes
-        const keysToKeep = [
-          'transactions',
-          'transaction-hashes',
-          'theme',
-          'expense-tracker-language',
-          'expense-tracker-currency'
-        ];
-        const allKeys = Object.keys(localStorage);
-        allKeys.forEach(key => {
-          if (!keysToKeep.includes(key)) {
-            localStorage.removeItem(key);
-          }
-        });
-      }
-
-      // Reset user preferences to defaults
-      await userPreferences.updateCurrency('EUR');
-      await userPreferences.updateLanguage('en');
-      await userPreferences.updateTheme('light');
-
-      // Update stores to reflect defaults
-      setCurrency('EUR');
-      setLanguage('en');
-      setTheme('light');
-
-      // Reload categories from the API to reflect the reset
-      await apiCategories.load();
-
-      // Show success feedback
-      importStatus = 'Data has been successfully reset to defaults';
-      importSuccess = true;
-      setTimeout(() => {
-        importStatus = '';
-        importSuccess = false;
-      }, 3000);
-
-      // Optionally reload the page to reset the application state
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    } catch (error) {
-      console.error('Error resetting data:', error);
-      importError = 'Failed to reset data to defaults';
-    }
-  }
-
-  async function confirmDeleteAll() {
-    try {
-      // Clear localStorage data
-      if (browser) {
-        const keysToKeep = ['theme', 'expense-tracker-language', 'expense-tracker-currency'];
-        const allKeys = Object.keys(localStorage);
-        allKeys.forEach(key => {
-          if (!keysToKeep.includes(key)) {
-            localStorage.removeItem(key);
-          }
-        });
-      }
-
-      // Also clear data from the database via API
-      try {
-        // Clear transactions
-        const transactionsResponse = await fetch(`${API_BASE}/transactions`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!transactionsResponse.ok) {
-          console.warn('Failed to delete transactions from database, but localStorage was cleared');
-        }
-
-        // Clear categories
-        const categoriesResponse = await fetch(`${API_BASE}/categories`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!categoriesResponse.ok) {
-          console.warn('Failed to delete categories from database, but localStorage was cleared');
-        }
-      } catch (apiError) {
-        console.warn('API not available, but localStorage was cleared');
-      }
-
-      // Show success feedback
-      importStatus = 'All data has been successfully deleted';
-      importSuccess = true;
-      setTimeout(() => {
-        importStatus = '';
-        importSuccess = false;
-      }, 3000);
-
-      // Optionally reload the page to reset the application state
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    } catch (error) {
-      console.error('Error deleting data:', error);
-      importError = 'Failed to delete all data';
-    }
-  }
-  
-  async function handleLanguageChange(event: Event) {
-    const target = event.target as HTMLSelectElement;
-    setLanguage(target.value);
-    await userPreferences.updateLanguage(target.value);
-  }
-
-  async function handleCurrencyChange(event: Event) {
-    const target = event.target as HTMLSelectElement;
-    setCurrency(target.value);
-    await userPreferences.updateCurrency(target.value);
-  }
-
   // Load user preferences on mount
   onMount(async () => {
     await userPreferences.load();
   });
-
-  // Clear status messages after some time
-  $: if (importError) {
-    setTimeout(() => {
-      importError = '';
-    }, 5000);
-  }
 </script>
 
 <svelte:head>
@@ -426,204 +46,123 @@
   </div>
   
   <!-- Status Messages -->
-  {#if importStatus}
-    <div class="status-message {importSuccess ? 'success' : 'info'}">
-      {#if importSuccess}
-        <CheckCircle size={20} strokeWidth={2} />
-      {:else}
-        <FileText size={20} strokeWidth={2} />
-      {/if}
-      <span>{importStatus}</span>
-    </div>
-  {/if}
-  
-  {#if importError}
-    <div class="status-message error">
-      <AlertCircle size={20} strokeWidth={2} />
-      <span>{importError}</span>
-    </div>
-  {/if}
+  <SettingsStatusMessage
+    message={store.importStatus}
+    type={store.importSuccess ? 'success' : 'info'}
+  />
+
+  <SettingsStatusMessage
+    message={store.importError}
+    type="error"
+  />
   
   <div class="settings-grid">
     <!-- Appearance Settings -->
-    <div class="settings-card">
-      <div class="card-header">
-        <div class="card-icon appearance">
-          <Palette size={20} strokeWidth={2} />
-        </div>
-        <h2 class="card-title">{$t('settings.theme')}</h2>
-      </div>
-      <div class="card-content">
+    <SettingsCard
+      title={$t('settings.theme')}
+      icon={Palette}
+      iconClass="appearance"
+    >
         <div class="setting-item">
           <div class="setting-info">
             <span class="setting-label">{$t('settings.theme')}</span>
             <span class="setting-desc">
-              {isDark ? $t('settings.themes.dark') : $t('settings.themes.light')}
+              {store.isDark ? $t('settings.themes.dark') : $t('settings.themes.light')}
             </span>
           </div>
-          <!-- DaisyUI Toggle with custom styling -->
-          <div class="theme-toggle-container">
-            <div class="theme-option {!isDark ? 'active' : ''}">
-              ☀️
-            </div>
-            <input
-              type="checkbox"
-              checked={isDark}
-              onchange={toggleTheme}
-              class="toggle toggle-primary toggle-lg"
-            />
-            <div class="theme-option {isDark ? 'active' : ''}">
-              🌙
-            </div>
-          </div>
+          <SettingsThemeToggle
+            isDark={store.isDark}
+            onToggle={store.toggleTheme}
+          />
         </div>
-      </div>
-    </div>
+    </SettingsCard>
 
     <!-- Localization Settings -->
-    <div class="settings-card">
-      <div class="card-header">
-        <div class="card-icon localization">
-          <Globe size={20} strokeWidth={2} />
-        </div>
-        <h2 class="card-title">Localization</h2>
-      </div>
-      <div class="card-content">
+    <SettingsCard
+      title="Localization"
+      icon={Globe}
+      iconClass="localization"
+    >
         <div class="setting-item">
           <div class="setting-info">
             <span class="setting-label">{$t('settings.language')}</span>
             <span class="setting-desc">
-              {languages.find(l => l.code === $currentLanguage)?.name || 'English'}
+              {store.currentLanguage.name}
             </span>
           </div>
-          <div class="language-select">
-            <div class="language-select__icon">
-              <Globe size={16} strokeWidth={2} />
-            </div>
-            <select 
-              class="language-select__input"
-              value={$currentLanguage}
-              onchange={handleLanguageChange}
-            >
-              {#each languages as lang}
-                <option value={lang.code}>
-                  {lang.flag} {lang.name}
-                </option>
-              {/each}
-            </select>
-          </div>
+          <SettingsLanguageSelect
+            value={store.currentLanguage.code}
+            {languages}
+            onChange={async (e) => await store.changeLanguage((e.target as HTMLSelectElement).value)}
+          />
         </div>
-        
+
         <div class="setting-item">
           <div class="setting-info">
             <span class="setting-label">{$t('settings.currency')}</span>
             <span class="setting-desc">
-              {currencyOptions.find(c => c.value === $currentCurrency)?.label || 'EUR'}
+              {currencyOptions.find(c => c.value === store.settings.currency)?.label || 'EUR'}
             </span>
           </div>
-          <select 
-            class="currency-select"
-            value={$currentCurrency}
-            onchange={handleCurrencyChange}
-          >
-            {#each currencyOptions as currency}
-              <option value={currency.value}>{currency.label}</option>
-            {/each}
-          </select>
+          <SettingsCurrencySelect
+            value={store.settings.currency}
+            options={currencyOptions}
+            onChange={async (e) => await store.changeCurrency((e.target as HTMLSelectElement).value)}
+          />
         </div>
-      </div>
-    </div>
+    </SettingsCard>
 
     <!-- Data Management -->
-    <div class="settings-card">
-      <div class="card-header">
-        <div class="card-icon data">
-          <DollarSign size={20} strokeWidth={2} />
-        </div>
-        <h2 class="card-title">{$t('settings.data')}</h2>
-      </div>
-      <div class="card-content">
-        <div class="action-buttons">
-          <button 
-            class="action-button export"
-            onclick={handleExportData}
-          >
-            <Download size={16} strokeWidth={2} />
-            {$t('settings.export_data')}
-          </button>
-          
-          <label class="action-button import {importing ? 'loading' : ''}">
-            <input 
-              type="file" 
-              accept=".json"
-              onchange={handleFileImport}
-              style="display: none;"
-              disabled={importing}
-            />
-            {#if importing}
-              <div class="import-spinner"></div>
-              Importing...
-            {:else}
-              <Upload size={16} strokeWidth={2} />
-              Import Data
-            {/if}
-          </label>
-          
-          <button
-            class="action-button reset"
-            onclick={handleResetData}
-          >
-            <RotateCcw size={16} strokeWidth={2} />
-            {$t('settings.reset_data')}
-          </button>
-
-          <button
-            class="action-button delete"
-            onclick={handleDeleteAllData}
-          >
-            <Trash2 size={16} strokeWidth={2} />
-            {$t('settings.clear_data')}
-          </button>
-        </div>
-      </div>
-    </div>
+    <SettingsCard
+      title={$t('settings.data')}
+      icon={DollarSign}
+      iconClass="data"
+    >
+        <SettingsActionButtons
+          onExport={store.exportData}
+          onFileImport={store.handleFileImport}
+          onReset={store.resetData}
+          onDeleteAll={store.deleteAllData}
+          importing={store.importing}
+        />
+    </SettingsCard>
   </div>
 </main>
 
 <!-- Import Confirmation Modal -->
 <ConfirmModal
-  bind:isOpen={showImportModal}
+  bind:isOpen={store.showImportModal}
   title="Import Data"
-  message="Are you sure you want to import {pendingImportData?.transactions?.length || 0} transactions from {pendingImportData?.settings?.exportDate ? new Date(pendingImportData.settings.exportDate).toLocaleDateString() : 'Unknown date'}? This will merge with your existing data."
+  message="Are you sure you want to import {store.pendingImportData?.transactions?.length || 0} transactions from {store.pendingImportData?.settings?.exportDate ? new Date(store.pendingImportData.settings.exportDate).toLocaleDateString() : 'Unknown date'}? This will merge with your existing data."
   confirmText="Import"
   cancelText="Cancel"
   type="info"
-  onConfirm={confirmImport}
-  onCancel={cancelImport}
+  onConfirm={store.confirmImport}
+  onCancel={() => store.showImportModal = false}
 />
 
 <!-- Reset Data Confirmation Modal -->
 <ConfirmModal
-  bind:isOpen={showResetModal}
+  bind:isOpen={store.showResetModal}
   title={$t('modal.reset_title')}
   message={$t('modal.reset_message')}
   confirmText={$t('modal.reset_everything')}
   cancelText={$t('common.cancel')}
   type="warning"
-  onConfirm={confirmReset}
-  onCancel={() => {}}
+  onConfirm={store.confirmReset}
+  onCancel={() => store.showResetModal = false}
 />
 
 <!-- Delete All Data Confirmation Modal -->
 <ConfirmModal
-  bind:isOpen={showDeleteAllModal}
+  bind:isOpen={store.showDeleteAllModal}
   title={$t('modal.delete_all_title')}
   message={$t('modal.delete_all_message')}
   confirmText={$t('modal.delete_everything')}
   cancelText={$t('common.cancel')}
   type="danger"
-  onConfirm={confirmDeleteAll}
-  onCancel={() => {}}
+  onConfirm={store.confirmDeleteAll}
+  onCancel={() => store.showDeleteAllModal = false}
 />
 
 <style>
@@ -646,99 +185,10 @@
     margin: 0;
     letter-spacing: -0.025em;
   }
-  
-  /* Status Messages */
-  .status-message {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.25rem;
-    border-radius: 0.75rem;
-    margin-bottom: 1.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-  
-  .status-message.success {
-    background: rgba(122, 186, 165, 0.1);
-    border: 1px solid rgba(122, 186, 165, 0.2);
-    color: var(--acapulco);
-  }
-  
-  .status-message.error {
-    background: rgba(245, 121, 108, 0.1);
-    border: 1px solid rgba(245, 121, 108, 0.2);
-    color: #f5796c;
-  }
-  
-  .status-message.info {
-    background: rgba(254, 205, 44, 0.1);
-    border: 1px solid rgba(254, 205, 44, 0.2);
-    color: #fecd2c;
-  }
-  
+
   .settings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 1.5rem;
-  }
-  
-  .settings-card {
-    background: var(--surface-elevated);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    border: 1px solid var(--border-color);
-    transition: all 0.2s ease;
-  }
-  
-  .settings-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
-  }
-  
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
-  }
-  
-  .card-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .card-icon.appearance {
-    background: rgba(245, 121, 108, 0.1);
-    color: #f5796c;
-  }
-  
-  .card-icon.localization {
-    background: rgba(122, 186, 165, 0.1);
-    color: var(--acapulco);
-  }
-  
-  .card-icon.data {
-    background: rgba(254, 205, 44, 0.1);
-    color: #fecd2c;
-  }
-  
-  .card-title {
-    font-size: 1.125rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    margin: 0;
-  }
-  
-  .card-content {
-    display: flex;
-    flex-direction: column;
     gap: 1.5rem;
   }
   
@@ -766,236 +216,26 @@
     font-size: 0.75rem;
     color: var(--text-muted);
   }
-
-  /* DaisyUI Theme Toggle Container */
-  .theme-toggle-container {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
-    background: var(--surface-muted);
-    border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
-    transition: all 0.2s ease;
-  }
-  
-  .theme-option {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    font-size: 1.25rem;
-    transition: all 0.2s ease;
-    user-select: none;
-  }
-  
-  .theme-option.active {
-    color: var(--acapulco);
-    transform: scale(1.1);
-  }
-  
-  /* Custom DaisyUI toggle styling */
-  .toggle:checked {
-    background-color: var(--acapulco);
-    border-color: var(--acapulco);
-  }
-  
-  .toggle:checked:hover {
-    background-color: rgba(122, 186, 165, 0.9);
-    border-color: rgba(122, 186, 165, 0.9);
-  }
-  
-  .toggle:focus {
-    box-shadow: 0 0 0 2px var(--acapulco), 0 0 0 4px rgba(122, 186, 165, 0.2);
-  }
-
-  /* Language Select */
-  .language-select {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    border: 1px solid var(--border-color);
-    background: var(--surface);
-    transition: all 0.2s ease;
-    min-width: 140px;
-  }
-  
-  .language-select:hover,
-  .language-select:focus-within {
-    border-color: var(--acapulco);
-    box-shadow: 0 0 0 3px rgba(122, 186, 165, 0.1);
-  }
-  
-  .language-select__icon {
-    display: flex;
-    color: var(--text-muted);
-    flex-shrink: 0;
-  }
-  
-  .language-select__input {
-    border: none;
-    background: transparent;
-    color: var(--text-primary);
-    font-size: 0.875rem;
-    cursor: pointer;
-    outline: none;
-    flex: 1;
-    font-weight: 500;
-  }
-  
-  .currency-select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
-    background: var(--surface);
-    color: var(--text-primary);
-    font-size: 0.875rem;
-    min-width: 140px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .currency-select:hover,
-  .currency-select:focus {
-    border-color: var(--acapulco);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(122, 186, 165, 0.1);
-  }
-  
-  .action-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .action-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    font-weight: 500;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px solid;
-    text-decoration: none;
-  }
-  
-  .action-button.export {
-    background: transparent;
-    border-color: var(--acapulco);
-    color: var(--acapulco);
-  }
-  
-  .action-button.export:hover {
-    background: var(--acapulco);
-    color: var(--text-inverse);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.3);
-  }
-  
-  .action-button.import {
-    background: transparent;
-    border-color: #7abaa5;
-    color: #7abaa5;
-  }
-  
-  .action-button.import:hover:not(.loading) {
-    background: #7abaa5;
-    color: var(--text-inverse);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.2);
-  }
-  
-  .action-button.import.loading {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-  
-  .action-button.reset {
-    background: transparent;
-    border-color: #FDCB6E;
-    color: #FDCB6E;
-  }
-
-  .action-button.reset:hover {
-    background: #FDCB6E;
-    color: var(--text-inverse);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(253, 203, 110, 0.3);
-  }
-
-  .action-button.delete {
-    background: transparent;
-    border-color: #f5796c;
-    color: #f5796c;
-  }
-
-  .action-button.delete:hover {
-    background: #f5796c;
-    color: var(--text-inverse);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(245, 121, 108, 0.3);
-  }
-  
-  .action-button:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(122, 186, 165, 0.3);
-  }
-  
-  /* Import spinner */
-  .import-spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--text-muted);
-    border-top: 2px solid var(--acapulco);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
   
   /* Mobile responsive */
   @media (max-width: 768px) {
     .settings-page {
       padding: 1rem;
     }
-    
+
     .settings-grid {
       grid-template-columns: 1fr;
       gap: 1rem;
     }
-    
-    .settings-card {
-      padding: 1.25rem;
-    }
-    
+
     .setting-item {
       flex-direction: column;
       align-items: stretch;
       gap: 1rem;
     }
-    
+
     .setting-info {
       text-align: center;
-    }
-    
-    .currency-select,
-    .language-select {
-      min-width: unset;
-      width: 100%;
-    }
-
-    .theme-toggle-container {
-      align-self: center;
-      justify-self: center;
     }
   }
 </style>
