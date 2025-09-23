@@ -56,7 +56,7 @@
         </button>
 
         <button
-          class="filter-pill expenses"
+          class="filter-pill expense"
           class:active={transactionTypeFilter === 'expenses' && selectedCategories.length === 0}
           class:disabled={selectedCategories.length > 0}
           onclick={() => {
@@ -104,14 +104,16 @@
         <div class="category-grid-compact">
           {#each categories as category}
             <button
-              class="category-chip"
-              class:active={selectedCategories.includes(category.id)}
-              style="--category-color: {getCategoryColor(category.type)}"
+              class="category-chip-mini"
+              class:selected={selectedCategories.includes(category.id)}
               onclick={() => onToggleCategory(category.id)}
             >
-              <span class="category-name">{category.name}</span>
+              <span class="chip-emoji">{category.icon}</span>
+              <span class="chip-name">{category.name}</span>
               {#if selectedCategories.includes(category.id)}
-                <Check size={12} />
+                <div class="chip-check">
+                  <Check size={10} />
+                </div>
               {/if}
             </button>
           {/each}
@@ -123,20 +125,26 @@
 
 <style>
   .filters-bento {
+    background: white;
+    border: none;
+    padding: 1.5rem;
+    margin: 1rem auto 2rem auto;
     max-width: 1200px;
-    margin: 1rem auto;
-    padding: 1.25rem 2rem;
-    background: var(--surface);
-    border-radius: 1rem;
     opacity: 0;
+    transform: translateY(-8px);
     animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    position: relative;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
+                0 2px 4px rgba(0, 0, 0, 0.03);
+  }
+
+  .filters-bento:hover {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05),
+                0 4px 6px rgba(0, 0, 0, 0.03);
   }
 
   @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
     to {
       opacity: 1;
       transform: translateY(0);
@@ -144,23 +152,36 @@
   }
 
   .filter-grid {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 1rem;
+    align-items: center;
+  }
+
+  @media (min-width: 768px) {
+    .filter-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
   }
 
   .bento-item {
-    padding: 1rem;
-    background: white;
-    border-radius: 0.75rem;
-    border: 1px solid var(--gray-100);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    background: rgba(249, 250, 251, 0.5);
+    border: 1px solid rgba(229, 231, 235, 0.5);
+    border-radius: 0.625rem;
+    padding: 0.75rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bento-item:hover {
+    background: rgba(249, 250, 251, 0.8);
+    border-color: rgba(209, 213, 219, 0.5);
+    transform: translateY(-2px);
   }
 
   .quick-filters {
     display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+    gap: var(--space-xs);
   }
 
   .filter-pill {
@@ -196,7 +217,7 @@
     background: var(--acapulco);
   }
 
-  .filter-pill.expenses.active {
+  .filter-pill.expense.active {
     background: var(--froly);
   }
 
@@ -251,53 +272,54 @@
 
   .category-grid-compact {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    padding: var(--space-xs);
   }
 
-  .category-chip {
-    display: inline-flex;
+  .category-chip-mini {
+    display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.375rem;
-    padding: 0.5rem 0.75rem;
-    background: white;
-    border: 1.5px solid var(--gray-200);
-    border-radius: 2rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--text-primary);
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
     cursor: pointer;
     transition: all 0.2s ease;
-    text-align: left;
     position: relative;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    text-align: left;
   }
 
-  .category-chip:hover {
+  .category-chip-mini:hover {
     background: var(--gray-50);
-    border-color: var(--gray-300);
-    transform: translateY(-1px);
   }
 
-  .category-chip.active {
-    background: var(--category-color);
-    color: white;
-    border-color: var(--category-color);
+  .category-chip-mini.selected {
+    background: rgba(122, 186, 165, 0.1);
+    color: var(--acapulco);
   }
 
-  .category-name {
+  .chip-emoji {
+    font-size: 0.875rem;
+    width: 16px;
+    text-align: center;
+  }
+
+  .chip-name {
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    flex: 1;
   }
 
-  @media (max-width: 768px) {
-    .category-grid-compact {
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    }
+  .chip-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--acapulco);
   }
+
 </style>
