@@ -54,21 +54,21 @@
   );
 
   // Reactive computations
-  let filteredTransactions = $derived(() => {
-    return filterTransactions(
+  const filteredTransactions = $derived(
+    filterTransactions(
       $apiTransactions,
       pageStore.filterState,
       $apiCategories
-    );
-  });
+    )
+  );
 
-  let groupedTransactions = $derived(() => {
-    return groupTransactionsByDate(filteredTransactions());
-  });
+  const groupedTransactions = $derived(
+    groupTransactionsByDate(filteredTransactions)
+  );
 
-  let periodStats = $derived(() => {
-    return calculatePeriodStats(filteredTransactions(), $apiCategories);
-  });
+  const periodStats = $derived(
+    calculatePeriodStats(filteredTransactions, $apiCategories)
+  );
 
   // Period navigation
   function previousPeriod() {
@@ -240,7 +240,7 @@
       }
     }
 
-    const transactionsToExport = filteredTransactions();
+    const transactionsToExport = filteredTransactions;
     const csv = exportTransactionsToCSV(transactionsToExport, $apiCategories);
     const filename = generateFilename(dateRange);
     downloadCSV(csv, filename);
@@ -277,7 +277,7 @@
 <div class="transactions-page">
   <header class="transactions-header">
     <div class="header-content">
-      <PeriodStats stats={periodStats()} />
+      <PeriodStats stats={periodStats} />
     </div>
   </header>
 
@@ -327,11 +327,11 @@
             {$t('transactions.cancel')}
           </button>
         {:else}
-          {#if groupedTransactions().length > 1}
+          {#if groupedTransactions.length > 1}
             <button
               class="toolbar-btn icon-only"
               onclick={pageStore.groupingState.allExpanded
-                ? () => pageStore.collapseAll(groupedTransactions().map(g => g.date))
+                ? () => pageStore.collapseAll(groupedTransactions.map(g => g.date))
                 : () => pageStore.expandAll()}
               title={pageStore.groupingState.allExpanded ? 'Colapsar todo' : 'Expandir todo'}
               aria-label={pageStore.groupingState.allExpanded ? 'Colapsar grupos' : 'Expandir grupos'}
@@ -390,7 +390,7 @@
 
   <!-- Transactions list -->
   <main class="transactions-list">
-    {#each groupedTransactions() as group}
+    {#each groupedTransactions as group}
       <TransactionGroup
         date={formatDate(group.date)}
         transactions={group.items}
