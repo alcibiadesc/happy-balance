@@ -46,17 +46,23 @@
     formatAmount
   }: Props = $props();
 
-  $: groupTotal = transactions
-    .filter(t => !t.hidden)
-    .reduce((sum, t) => sum + t.amount, 0);
+  const groupTotal = $derived(
+    transactions
+      .filter(t => !t.hidden)
+      .reduce((sum, t) => sum + t.amount, 0)
+  );
 
-  $: incomeTotal = transactions
-    .filter(t => !t.hidden && t.amount > 0)
-    .reduce((sum, t) => sum + t.amount, 0);
+  const incomeTotal = $derived(
+    transactions
+      .filter(t => !t.hidden && t.amount > 0)
+      .reduce((sum, t) => sum + t.amount, 0)
+  );
 
-  $: expenseTotal = transactions
-    .filter(t => !t.hidden && t.amount < 0)
-    .reduce((sum, t) => sum + t.amount, 0);
+  const expenseTotal = $derived(
+    transactions
+      .filter(t => !t.hidden && t.amount < 0)
+      .reduce((sum, t) => sum + t.amount, 0)
+  );
 </script>
 
 <div class="transaction-group" class:collapsed={!isExpanded}>
