@@ -1,85 +1,107 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { browser } from '$app/environment';
-  import '$lib/modules/transactions/presentation/styles/transactions-page.css';
+  import { onMount, onDestroy } from "svelte";
+  import { browser } from "$app/environment";
+  import "$lib/modules/transactions/presentation/styles/transactions-page.css";
 
   // Components
-  import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
-  import AddTransactionModal from '$lib/components/organisms/AddTransactionModal.svelte';
-  import SmartCategorizationModal from '$lib/components/organisms/SmartCategorizationModal.svelte';
-  import CategorySelectionModal from '$lib/components/organisms/CategorySelectionModal.svelte';
-  import PeriodStats from '$lib/components/molecules/PeriodStats.svelte';
-  import DateSelector from '$lib/components/molecules/DateSelector.svelte';
-  import SearchBar from '$lib/components/molecules/SearchBar.svelte';
-  import TransactionRow from '$lib/components/organisms/TransactionRow.svelte';
-  import FiltersPanel from '$lib/components/organisms/FiltersPanel.svelte';
-  import TransactionGroup from '$lib/components/organisms/TransactionGroup.svelte';
+  import ConfirmModal from "$lib/components/organisms/ConfirmModal.svelte";
+  import AddTransactionModal from "$lib/components/organisms/AddTransactionModal.svelte";
+  import SmartCategorizationModal from "$lib/components/organisms/SmartCategorizationModal.svelte";
+  import CategorySelectionModal from "$lib/components/organisms/CategorySelectionModal.svelte";
+  import PeriodStats from "$lib/components/molecules/PeriodStats.svelte";
+  import DateSelector from "$lib/components/molecules/DateSelector.svelte";
+  import SearchBar from "$lib/components/molecules/SearchBar.svelte";
+  import TransactionRow from "$lib/components/organisms/TransactionRow.svelte";
+  import FiltersPanel from "$lib/components/organisms/FiltersPanel.svelte";
+  import TransactionGroup from "$lib/components/organisms/TransactionGroup.svelte";
 
   // Services and utilities
-  import { createTransactionsPageStore } from '$lib/modules/transactions/infrastructure/stores/transactionsPageStore.svelte';
-  import { calculatePeriodStats } from '$lib/modules/transactions/domain/services/PeriodStatsCalculator';
-  import { createDateNavigationService } from '$lib/modules/transactions/domain/services/DateNavigationService';
-  import { filterTransactions } from '$lib/modules/transactions/application/services/FilterService';
-  import { groupTransactionsByDate, formatDate } from '$lib/modules/transactions/application/services/GroupingService';
-  import { findMatchingTransactions, getCategoryById, formatAmount } from '$lib/modules/transactions/application/services/CategoryService';
-  import { createObservationsHandler } from '$lib/modules/transactions/application/services/ObservationsService';
-  import { TransactionOperationsService } from '$lib/modules/transactions/application/services/TransactionOperationsService';
+  import { createTransactionsPageStore } from "$lib/modules/transactions/infrastructure/stores/transactionsPageStore.svelte";
+  import { calculatePeriodStats } from "$lib/modules/transactions/domain/services/PeriodStatsCalculator";
+  import { createDateNavigationService } from "$lib/modules/transactions/domain/services/DateNavigationService";
+  import { filterTransactions } from "$lib/modules/transactions/application/services/FilterService";
+  import {
+    groupTransactionsByDate,
+    formatDate,
+  } from "$lib/modules/transactions/application/services/GroupingService";
+  import {
+    findMatchingTransactions,
+    getCategoryById,
+    formatAmount,
+  } from "$lib/modules/transactions/application/services/CategoryService";
+  import { createObservationsHandler } from "$lib/modules/transactions/application/services/ObservationsService";
+  import { TransactionOperationsService } from "$lib/modules/transactions/application/services/TransactionOperationsService";
 
   // Icons
   import {
-    ChevronDown, ChevronUp, ChevronRight, Filter, Download, Plus,
-    TrendingUp, TrendingDown, Check, X, Trash2,
-    Tag, MoreVertical, Minimize2, Maximize2, EyeOff
-  } from 'lucide-svelte';
+    ChevronDown,
+    ChevronUp,
+    ChevronRight,
+    Filter,
+    Download,
+    Plus,
+    TrendingUp,
+    TrendingDown,
+    Check,
+    X,
+    Trash2,
+    Tag,
+    MoreVertical,
+    Minimize2,
+    Maximize2,
+    EyeOff,
+  } from "lucide-svelte";
 
   // Stores
   import {
     apiTransactions,
     apiCategories,
-    apiSelectedTransactions
-  } from '$lib/stores/api-transactions';
-  import type { Transaction, Category } from '$lib/types/transaction';
-  import { t } from '$lib/stores/i18n';
-  import { exportTransactionsToCSV, downloadCSV, generateFilename } from '$lib/utils/csv-export';
+    apiSelectedTransactions,
+  } from "$lib/stores/api-transactions";
+  import type { Transaction, Category } from "$lib/types/transaction";
+  import { t } from "$lib/stores/i18n";
+  import {
+    exportTransactionsToCSV,
+    downloadCSV,
+    generateFilename,
+  } from "$lib/utils/csv-export";
 
   // Initialize page store
   const pageStore = createTransactionsPageStore();
   const dateNavigationService = createDateNavigationService();
   const transactionOps = new TransactionOperationsService(
     apiTransactions,
-    (id) => getCategoryById($apiCategories, id)
+    (id) => getCategoryById($apiCategories, id),
   );
-  const observationsHandler = createObservationsHandler(
-    (id, updates) => apiTransactions.update(id, updates)
+  const observationsHandler = createObservationsHandler((id, updates) =>
+    apiTransactions.update(id, updates),
   );
 
   // Reactive computations
   const filteredTransactions = $derived(
-    filterTransactions(
-      $apiTransactions,
-      pageStore.filterState,
-      $apiCategories
-    )
+    filterTransactions($apiTransactions, pageStore.filterState, $apiCategories),
   );
 
   const groupedTransactions = $derived(
-    groupTransactionsByDate(filteredTransactions)
+    groupTransactionsByDate(filteredTransactions),
   );
 
   const periodStats = $derived(
-    calculatePeriodStats(filteredTransactions, $apiCategories)
+    calculatePeriodStats(filteredTransactions, $apiCategories),
   );
 
   // Period navigation
   function previousPeriod() {
     pageStore.setPeriod(
-      dateNavigationService.previousPeriod(pageStore.filterState.selectedPeriod)
+      dateNavigationService.previousPeriod(
+        pageStore.filterState.selectedPeriod,
+      ),
     );
   }
 
   function nextPeriod() {
     pageStore.setPeriod(
-      dateNavigationService.nextPeriod(pageStore.filterState.selectedPeriod)
+      dateNavigationService.nextPeriod(pageStore.filterState.selectedPeriod),
     );
   }
 
@@ -120,12 +142,17 @@
     pageStore.closeDeleteSingleModal();
   }
 
-  async function addTransaction(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>) {
+  async function addTransaction(
+    transaction: Omit<
+      Transaction,
+      "id" | "createdAt" | "updatedAt" | "status" | "tags" | "hash"
+    >,
+  ) {
     try {
       await transactionOps.add(transaction);
       pageStore.closeAddModal();
     } catch (error) {
-      console.error('Failed to add transaction:', error);
+      console.error("Failed to add transaction:", error);
     }
   }
 
@@ -135,17 +162,24 @@
     if (!transaction) return;
 
     try {
-      if (!categoryId || categoryId === '') {
+      if (!categoryId || categoryId === "") {
         await transactionOps.categorize(transaction, null, false);
         pageStore.closeCategoryModal();
         return;
       }
 
-      const matchingTransactions = findMatchingTransactions(transaction, $apiTransactions);
+      const matchingTransactions = findMatchingTransactions(
+        transaction,
+        $apiTransactions,
+      );
       if (matchingTransactions.length > 0) {
         const category = getCategoryById($apiCategories, categoryId);
         if (category) {
-          pageStore.openSmartCategorization(transaction, category, matchingTransactions);
+          pageStore.openSmartCategorization(
+            transaction,
+            category,
+            matchingTransactions,
+          );
         }
       } else {
         await transactionOps.categorize(transaction, categoryId, false);
@@ -153,7 +187,7 @@
 
       pageStore.closeCategoryModal();
     } catch (error) {
-      console.error('Failed to categorize transaction:', error);
+      console.error("Failed to categorize transaction:", error);
       pageStore.closeCategoryModal();
     }
   }
@@ -184,10 +218,8 @@
 
   function saveObservationsDebounced(transaction: Transaction) {
     const text = pageStore.observationsState.editingText;
-    observationsHandler.saveObservationsDebounced(
-      transaction,
-      text,
-      () => pageStore.cancelEditingObservations()
+    observationsHandler.saveObservationsDebounced(transaction, text, () =>
+      pageStore.cancelEditingObservations(),
     );
   }
 
@@ -197,7 +229,7 @@
 
   // Selection operations
   function toggleSelection(id: string) {
-    apiSelectedTransactions.update(s => {
+    apiSelectedTransactions.update((s) => {
       const newSet = new Set(s);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -209,7 +241,7 @@
   }
 
   function selectAll() {
-    const allIds = filteredTransactions().map(t => t.id);
+    const allIds = filteredTransactions().map((t) => t.id);
     apiSelectedTransactions.set(new Set(allIds));
   }
 
@@ -223,19 +255,24 @@
     let dateRange: { start: string; end: string } | undefined;
 
     if (!pageStore.filterState.showAllTransactions) {
-      if (pageStore.filterState.dateRangeMode === 'month' && pageStore.filterState.selectedPeriod) {
-        const date = new Date(pageStore.filterState.selectedPeriod + '-01');
+      if (
+        pageStore.filterState.dateRangeMode === "month" &&
+        pageStore.filterState.selectedPeriod
+      ) {
+        const date = new Date(pageStore.filterState.selectedPeriod + "-01");
         const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
         dateRange = {
-          start: date.toISOString().split('T')[0],
-          end: lastDay.toISOString().split('T')[0]
+          start: date.toISOString().split("T")[0],
+          end: lastDay.toISOString().split("T")[0],
         };
-      } else if (pageStore.filterState.dateRangeMode === 'custom' &&
-                 pageStore.filterState.customStartDate &&
-                 pageStore.filterState.customEndDate) {
+      } else if (
+        pageStore.filterState.dateRangeMode === "custom" &&
+        pageStore.filterState.customStartDate &&
+        pageStore.filterState.customEndDate
+      ) {
         dateRange = {
           start: pageStore.filterState.customStartDate,
-          end: pageStore.filterState.customEndDate
+          end: pageStore.filterState.customEndDate,
         };
       }
     }
@@ -250,25 +287,36 @@
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
 
-    if (pageStore.isShowingCategoryFilterDropdown && !target.closest('.category-selector')) {
+    if (
+      pageStore.isShowingCategoryFilterDropdown &&
+      !target.closest(".category-selector")
+    ) {
       pageStore.closeCategoryFilterDropdown();
     }
 
-    if (pageStore.isShowingDatePicker && !target.closest('.date-selector-section')) {
+    if (
+      pageStore.isShowingDatePicker &&
+      !target.closest(".date-selector-section")
+    ) {
       pageStore.closeDatePicker();
     }
   }
 
   // Lifecycle
-  onMount(() => {
+  onMount(async () => {
     if (browser) {
-      document.addEventListener('click', handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
+      // Load transactions and categories
+      await Promise.all([
+        apiTransactions.load(),
+        apiCategories.load()
+      ]);
     }
   });
 
   onDestroy(() => {
     if (browser) {
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
       observationsHandler.cleanup();
     }
   });
@@ -288,7 +336,9 @@
       <DateSelector
         bind:selectedPeriod={pageStore.filterState.selectedPeriod}
         bind:showAllTransactions={pageStore.filterState.showAllTransactions}
-        bind:showHiddenTransactions={pageStore.filterState.showHiddenTransactions}
+        bind:showHiddenTransactions={
+          pageStore.filterState.showHiddenTransactions
+        }
         bind:dateRangeMode={pageStore.filterState.dateRangeMode}
         bind:customStartDate={pageStore.filterState.customStartDate}
         bind:customEndDate={pageStore.filterState.customEndDate}
@@ -308,14 +358,14 @@
       <SearchBar
         value={pageStore.filterState.searchQuery}
         onInput={(value) => pageStore.setSearchQuery(value)}
-        onClear={() => pageStore.setSearchQuery('')}
+        onClear={() => pageStore.setSearchQuery("")}
       />
 
       <!-- Action buttons -->
       <div class="toolbar-actions">
         {#if pageStore.selectionState.isSelectionMode}
           <button class="toolbar-btn" onclick={selectAll}>
-            {$t('transactions.select_all')}
+            {$t("transactions.select_all")}
           </button>
           <button class="toolbar-btn danger" onclick={deleteSelected}>
             <Trash2 size={14} />
@@ -324,17 +374,24 @@
             <EyeOff size={14} />
           </button>
           <button class="toolbar-btn" onclick={clearSelection}>
-            {$t('transactions.cancel')}
+            {$t("transactions.cancel")}
           </button>
         {:else}
           {#if groupedTransactions.length > 1}
             <button
               class="toolbar-btn icon-only"
               onclick={pageStore.groupingState.allExpanded
-                ? () => pageStore.collapseAll(groupedTransactions.map(g => g.date))
+                ? () =>
+                    pageStore.collapseAll(
+                      groupedTransactions.map((g) => g.date),
+                    )
                 : () => pageStore.expandAll()}
-              title={pageStore.groupingState.allExpanded ? 'Colapsar todo' : 'Expandir todo'}
-              aria-label={pageStore.groupingState.allExpanded ? 'Colapsar grupos' : 'Expandir grupos'}
+              title={pageStore.groupingState.allExpanded
+                ? "Colapsar todo"
+                : "Expandir todo"}
+              aria-label={pageStore.groupingState.allExpanded
+                ? "Colapsar grupos"
+                : "Expandir grupos"}
             >
               {#if pageStore.groupingState.allExpanded}
                 <Minimize2 size={14} />
@@ -348,28 +405,27 @@
           <button
             class="toolbar-btn"
             onclick={() => pageStore.toggleSelectionMode()}
-            aria-label={$t('accessibility.select_transactions')}
+            aria-label={$t("accessibility.select_transactions")}
           >
-            {$t('transactions.select')}
+            {$t("transactions.select")}
           </button>
           <button
             class="toolbar-btn"
             class:active={pageStore.modalState.showFilters}
-            class:has-filters={pageStore.filterState.selectedCategories.length > 0 ||
-                              pageStore.filterState.transactionTypeFilter !== 'all'}
+            class:has-filters={pageStore.filterState.selectedCategories.length >
+              0 || pageStore.filterState.transactionTypeFilter !== "all"}
             onclick={() => pageStore.toggleFilters()}
-            aria-label={$t('accessibility.show_filters')}
+            aria-label={$t("accessibility.show_filters")}
           >
             <Filter size={14} />
-            {#if pageStore.filterState.selectedCategories.length > 0 ||
-                 pageStore.filterState.transactionTypeFilter !== 'all'}
+            {#if pageStore.filterState.selectedCategories.length > 0 || pageStore.filterState.transactionTypeFilter !== "all"}
               <span class="filter-badge"></span>
             {/if}
           </button>
           <button
             class="toolbar-btn"
             onclick={downloadTransactionsCSV}
-            aria-label={$t('accessibility.export_transactions')}
+            aria-label={$t("accessibility.export_transactions")}
           >
             <Download size={14} />
           </button>
@@ -382,7 +438,8 @@
       transactionTypeFilter={pageStore.filterState.transactionTypeFilter}
       selectedCategories={pageStore.filterState.selectedCategories}
       categories={$apiCategories}
-      onTransactionTypeFilter={(type) => pageStore.setTransactionTypeFilter(type)}
+      onTransactionTypeFilter={(type) =>
+        pageStore.setTransactionTypeFilter(type)}
       onToggleCategory={(id) => pageStore.toggleCategory(id)}
       onClearFilters={() => pageStore.clearFilters()}
     />
@@ -405,10 +462,14 @@
         onCategorize={(transaction) => pageStore.openCategoryModal(transaction)}
         onToggleHide={(transaction) => toggleHideTransaction(transaction)}
         onDelete={(id) => deleteTransaction(id)}
-        onEditObservations={(transaction) => startEditingObservations(transaction)}
-        onUpdateObservationsText={(text) => pageStore.updateObservationsText(text)}
+        onEditObservations={(transaction) =>
+          startEditingObservations(transaction)}
+        onUpdateObservationsText={(text) =>
+          pageStore.updateObservationsText(text)}
         onSaveObservations={async () => {
-          const transaction = group.items.find(t => t.id === pageStore.observationsState.editingTransactionId);
+          const transaction = group.items.find(
+            (t) => t.id === pageStore.observationsState.editingTransactionId,
+          );
           if (transaction) await saveObservations(transaction);
         }}
         onCancelObservations={cancelEditingObservations}
@@ -444,10 +505,12 @@
 
 <ConfirmModal
   bind:isOpen={pageStore.modalState.showDeleteSelectedModal}
-  title={$t('transactions.delete_selected_title')}
-  message={$t('transactions.delete_selected_message', { count: $apiSelectedTransactions.size })}
-  confirmText={$t('transactions.delete_all')}
-  cancelText={$t('common.cancel')}
+  title={$t("transactions.delete_selected_title")}
+  message={$t("transactions.delete_selected_message", {
+    count: $apiSelectedTransactions.size,
+  })}
+  confirmText={$t("transactions.delete_all")}
+  cancelText={$t("common.cancel")}
   type="danger"
   onConfirm={confirmDeleteSelected}
   onCancel={() => pageStore.closeDeleteSelectedModal()}
@@ -455,10 +518,10 @@
 
 <ConfirmModal
   bind:isOpen={pageStore.modalState.showDeleteSingleModal}
-  title={$t('transactions.delete_single_title')}
-  message={$t('transactions.delete_single_message')}
-  confirmText={$t('common.delete')}
-  cancelText={$t('common.cancel')}
+  title={$t("transactions.delete_single_title")}
+  message={$t("transactions.delete_single_message")}
+  confirmText={$t("common.delete")}
+  cancelText={$t("common.cancel")}
   type="danger"
   onConfirm={confirmDeleteSingle}
   onCancel={() => pageStore.closeDeleteSingleModal()}
@@ -483,55 +546,5 @@
   .header-content {
     max-width: 1200px;
     margin: 0 auto;
-  }
-
-  /* Date selector styles */
-  .date-selector-section {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: white;
-    padding: 0.5rem;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-                0 1px 2px rgba(0, 0, 0, 0.03);
-    transition: all 0.3s ease;
-  }
-
-  .date-selector-section:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
-                0 2px 4px rgba(0, 0, 0, 0.03);
-  }
-
-  /* When showing all transactions, integrate the hidden button better */
-  .date-selector-section.show-all {
-    gap: 0.25rem;
-  }
-
-  .date-selector-section.show-all .all-toggle-btn {
-    margin-right: 0;
-  }
-
-  .date-selector-section.show-all .hidden-toggle-btn {
-    margin-left: 0.25rem;
-  }
-
-  /* Disabled state for date controls when showing all */
-  .date-selector-section.show-all .date-display,
-  .date-selector-section.show-all .date-nav-btn,
-  .date-selector-section.show-all .date-mode-btn,
-  .date-selector-section.show-all .custom-date-range {
-    opacity: 0.3;
-  }
-
-
-
-
-  /* Keep only date-selector responsive styles */
-  @media (max-width: 768px) {
-    .date-selector-section {
-      flex: 1;
-      min-width: 100%;
-    }
   }
 </style>
