@@ -5,11 +5,16 @@
   import AddTransactionModal from '$lib/components/organisms/AddTransactionModal.svelte';
   import SmartCategorizationModal from '$lib/components/organisms/SmartCategorizationModal.svelte';
   import CategorySelectionModal from '$lib/components/organisms/CategorySelectionModal.svelte';
+  import PeriodStats from '$lib/components/molecules/PeriodStats.svelte';
+  import DateSelector from '$lib/components/molecules/DateSelector.svelte';
+  import SearchBar from '$lib/components/molecules/SearchBar.svelte';
+  import TransactionRow from '$lib/components/organisms/TransactionRow.svelte';
+  import { calculatePeriodStats } from '$lib/modules/transactions/domain/services/PeriodStatsCalculator';
+  import { createDateNavigationService } from '$lib/modules/transactions/domain/services/DateNavigationService';
   import {
-    ChevronDown, ChevronUp, Search, Filter, Download, Plus, Calendar,
-    TrendingUp, TrendingDown, Check, X, Eye, EyeOff, Trash2,
-    Tag, MoreVertical, ChevronLeft, ChevronRight, Layers,
-    CalendarDays, CalendarRange, Minimize2, Maximize2
+    ChevronDown, ChevronUp, ChevronRight, Filter, Download, Plus,
+    TrendingUp, TrendingDown, Check, X, Trash2,
+    Tag, MoreVertical, Minimize2, Maximize2, EyeOff
   } from 'lucide-svelte';
 
   // Focus directive for auto-focusing input
@@ -106,25 +111,15 @@
   let showDeleteSingleModal = $state(false);
   let transactionToDelete = $state<string | null>(null);
   
-  // Period navigation
+  // Date navigation service
+  const dateNavigationService = createDateNavigationService();
+
   function previousPeriod() {
-    if (!selectedPeriod) {
-      selectedPeriod = new Date().toISOString().slice(0, 7);
-      return;
-    }
-    const date = new Date(selectedPeriod + '-01');
-    date.setMonth(date.getMonth() - 1);
-    selectedPeriod = date.toISOString().slice(0, 7);
+    selectedPeriod = dateNavigationService.previousPeriod(selectedPeriod);
   }
 
   function nextPeriod() {
-    if (!selectedPeriod) {
-      selectedPeriod = new Date().toISOString().slice(0, 7);
-      return;
-    }
-    const date = new Date(selectedPeriod + '-01');
-    date.setMonth(date.getMonth() + 1);
-    selectedPeriod = date.toISOString().slice(0, 7);
+    selectedPeriod = dateNavigationService.nextPeriod(selectedPeriod);
   }
 
   function showAllPeriods() {
@@ -140,6 +135,7 @@
 
   // Computed
   let filteredTransactions = $derived(() => {
+    console.log('Filtering with searchQuery:', searchQuery, 'categories:', selectedCategories, 'type:', transactionTypeFilter);
     let filtered = $apiTransactions;
 
     // Period filter
@@ -217,6 +213,7 @@
 
   // Collapse/expand functions
   function toggleGroup(date: string) {
+    console.log('Toggle group:', date, 'Current:', collapsedGroups);
     const newCollapsed = new Set(collapsedGroups);
     if (newCollapsed.has(date)) {
       newCollapsed.delete(date);
@@ -225,6 +222,7 @@
     }
     collapsedGroups = newCollapsed;
     allExpanded = newCollapsed.size === 0;
+    console.log('After toggle:', collapsedGroups);
   }
 
   function collapseAll() {
@@ -267,80 +265,7 @@
   
   let periodStats = $derived(() => {
     const filtered = filteredTransactions();
-
-    // Exclude hidden transactions from statistics
-    const visibleTransactions = filtered.filter(t => !t.hidden);
-
-    // Filter out NO_COMPUTE transactions for financial metrics (similar to backend filtering)
-    const computedTransactions = visibleTransactions.filter(t => {
-      const category = getCategoryById(t.categoryId);
-      return !category || category.type !== 'no_compute';
-    });
-
-    const income = computedTransactions
-      .filter(t => t.amount > 0)
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const expenseTransactions = computedTransactions.filter(t => t.amount < 0);
-    const totalExpenses = expenseTransactions
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    // Separate essential and discretionary expenses
-    const essentialExpenses = expenseTransactions
-      .filter(t => {
-        const category = getCategoryById(t.categoryId);
-        return category?.type === 'essential';
-      })
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const discretionaryExpenses = expenseTransactions
-      .filter(t => {
-        const category = getCategoryById(t.categoryId);
-        return category?.type === 'discretionary';
-      })
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const investmentExpenses = expenseTransactions
-      .filter(t => {
-        const category = getCategoryById(t.categoryId);
-        return category?.type === 'investment';
-      })
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const uncategorizedExpenses = expenseTransactions
-      .filter(t => !t.categoryId)
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    // Calculate expenses excluding investments for breakdown section
-    const expensesWithoutInvestments = expenseTransactions
-      .filter(t => {
-        const category = getCategoryById(t.categoryId);
-        return !category || category.type !== 'investment';
-      })
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const uncategorizedExpensesOnly = expenseTransactions
-      .filter(t => {
-        if (!t.categoryId) return true;
-        const category = getCategoryById(t.categoryId);
-        return !category || category.type !== 'investment';
-      })
-      .filter(t => !t.categoryId)
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const balance = isNaN(income - totalExpenses) ? 0 : income - totalExpenses;
-
-    return {
-      income: isNaN(income) ? 0 : income,
-      expenses: isNaN(totalExpenses) ? 0 : totalExpenses,
-      essentialExpenses: isNaN(essentialExpenses) ? 0 : essentialExpenses,
-      discretionaryExpenses: isNaN(discretionaryExpenses) ? 0 : discretionaryExpenses,
-      investmentExpenses: isNaN(investmentExpenses) ? 0 : investmentExpenses,
-      uncategorizedExpenses: isNaN(uncategorizedExpenses) ? 0 : uncategorizedExpenses,
-      expensesWithoutInvestments: isNaN(expensesWithoutInvestments) ? 0 : expensesWithoutInvestments,
-      uncategorizedExpensesOnly: isNaN(uncategorizedExpensesOnly) ? 0 : uncategorizedExpensesOnly,
-      balance
-    };
+    return calculatePeriodStats(filtered, $apiCategories);
   });
   
   // Actions
@@ -753,80 +678,7 @@
   <header class="transactions-header">
     <div class="header-content">
       <!-- Stats -->
-      <div class="period-stats">
-        <!-- Main Balance -->
-        <div class="balance-display">
-          <div class="balance-label">{$t('transactions.period.balance')}</div>
-          <div class="balance-value" class:positive={periodStats().balance >= 0} class:negative={periodStats().balance < 0}>
-            {formatAmount(periodStats().balance)}
-          </div>
-        </div>
-
-        <!-- Income & Expenses Overview -->
-        <div class="stats-overview">
-          <div class="stat-row">
-            <span class="stat-label">{$t('transactions.period.income')}</span>
-            <span class="stat-value income">{formatAmount(periodStats().income)}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">{$t('dashboard.metrics.investments')}</span>
-            <span class="stat-value investment">{formatAmount(periodStats().investmentExpenses)}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">{$t('transactions.period.total_expenses')}</span>
-            <span class="stat-value expense">{formatAmount(periodStats().expensesWithoutInvestments)}</span>
-          </div>
-        </div>
-
-        <!-- Expense Breakdown -->
-        <div class="expense-breakdown">
-          <div class="breakdown-header">
-            <span class="breakdown-title">{$t('transactions.period.expense_distribution')}</span>
-          </div>
-
-          <div class="breakdown-content">
-            <div class="breakdown-row">
-              <div class="breakdown-item">
-                <div class="breakdown-dot essential"></div>
-                <span class="breakdown-label">{$t('transactions.period.essential')}</span>
-              </div>
-              <span class="breakdown-value">{formatAmount(periodStats().essentialExpenses)}</span>
-            </div>
-
-            <div class="breakdown-row">
-              <div class="breakdown-item">
-                <div class="breakdown-dot discretionary"></div>
-                <span class="breakdown-label">{$t('transactions.period.discretionary')}</span>
-              </div>
-              <span class="breakdown-value">{formatAmount(periodStats().discretionaryExpenses)}</span>
-            </div>
-
-            <div class="breakdown-row uncategorized">
-              <div class="breakdown-item">
-                <div class="breakdown-dot uncategorized"></div>
-                <span class="breakdown-label">{$t('transactions.period.uncategorized')}</span>
-              </div>
-              <span class="breakdown-value">{formatAmount(periodStats().uncategorizedExpensesOnly)}</span>
-            </div>
-          </div>
-
-          <!-- Visual bar -->
-          <div class="visual-bar">
-            <div
-              class="bar-segment essential"
-              style="width: {periodStats().expensesWithoutInvestments > 0 ? (periodStats().essentialExpenses / periodStats().expensesWithoutInvestments * 100) : 0}%"
-            ></div>
-            <div
-              class="bar-segment discretionary"
-              style="width: {periodStats().expensesWithoutInvestments > 0 ? (periodStats().discretionaryExpenses / periodStats().expensesWithoutInvestments * 100) : 0}%"
-            ></div>
-            <div
-              class="bar-segment uncategorized"
-              style="width: {periodStats().expensesWithoutInvestments > 0 ? (periodStats().uncategorizedExpensesOnly / periodStats().expensesWithoutInvestments * 100) : 0}%"
-            ></div>
-          </div>
-        </div>
-      </div>
+      <PeriodStats stats={periodStats()} />
     </div>
   </header>
   
@@ -834,105 +686,31 @@
   <div class="toolbar">
     <div class="toolbar-content">
       <!-- Date selector section -->
-      <div class="date-selector-section" class:show-all={showAllTransactions}>
-        <!-- All transactions toggle - always first -->
-        <button
-          class="all-toggle-btn"
-          class:active={showAllTransactions}
-          onclick={() => showAllTransactions = !showAllTransactions}
-          title={showAllTransactions ? 'Mostrar período seleccionado' : 'Mostrar todas las transacciones'}
-          aria-label={showAllTransactions ? $t('accessibility.show_period') : $t('accessibility.show_all')}
-        >
-          <Layers size={14} />
-        </button>
-
-        <!-- Date controls - always shown but disabled when showing all transactions -->
-        {#if dateRangeMode === 'month'}
-          <button
-            class="date-nav-btn"
-            class:disabled={showAllTransactions}
-            onclick={showAllTransactions ? null : previousPeriod}
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <button
-            class="date-display"
-            class:disabled={showAllTransactions}
-            onclick={showAllTransactions ? null : () => showDatePicker = !showDatePicker}
-          >
-            <CalendarDays size={14} />
-            <span>{showAllTransactions ? '----' : (selectedPeriod ? new Date(selectedPeriod + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 'Seleccionar mes')}</span>
-            <ChevronDown size={14} />
-          </button>
-          <button
-            class="date-nav-btn"
-            class:disabled={showAllTransactions}
-            onclick={showAllTransactions ? null : nextPeriod}
-          >
-            <ChevronRight size={14} />
-          </button>
-        {:else}
-          <div class="custom-date-range" class:disabled={showAllTransactions}>
-            <input
-              type="date"
-              class="date-input"
-              bind:value={customStartDate}
-              placeholder={$t('accessibility.date_from')}
-              disabled={showAllTransactions}
-            />
-            <span class="date-separator">-</span>
-            <input
-              type="date"
-              class="date-input"
-              bind:value={customEndDate}
-              placeholder={$t('accessibility.date_to')}
-              disabled={showAllTransactions}
-            />
-          </div>
-        {/if}
-
-        <button
-          class="date-mode-btn"
-          class:disabled={showAllTransactions}
-          onclick={showAllTransactions ? null : () => dateRangeMode = dateRangeMode === 'month' ? 'custom' : 'month'}
-          title={showAllTransactions ? 'Deshabilitado al mostrar todas las transacciones' : (dateRangeMode === 'month' ? 'Cambiar a rango personalizado' : 'Cambiar a selección de mes')}
-        >
-          <CalendarRange size={14} />
-        </button>
-
-        <!-- Hidden transactions toggle - always last -->
-        <button
-          class="hidden-toggle-btn"
-          class:active={showHiddenTransactions}
-          onclick={() => showHiddenTransactions = !showHiddenTransactions}
-          title={showHiddenTransactions ? 'Ocultar gastos excluidos' : 'Mostrar gastos excluidos'}
-        >
-          {#if showHiddenTransactions}
-            <EyeOff size={14} />
-          {:else}
-            <Eye size={14} />
-          {/if}
-        </button>
-      </div>
+      <DateSelector
+        bind:selectedPeriod
+        bind:showAllTransactions
+        bind:showHiddenTransactions
+        bind:dateRangeMode
+        bind:customStartDate
+        bind:customEndDate
+        bind:showDatePicker
+        onPreviousPeriod={previousPeriod}
+        onNextPeriod={nextPeriod}
+        onToggleAllTransactions={() => showAllTransactions = !showAllTransactions}
+        onToggleHiddenTransactions={() => showHiddenTransactions = !showHiddenTransactions}
+        onToggleDateRangeMode={() => dateRangeMode = dateRangeMode === 'month' ? 'custom' : 'month'}
+        onToggleDatePicker={() => showDatePicker = !showDatePicker}
+        onUpdatePeriod={(period) => selectedPeriod = period}
+        onUpdateCustomStartDate={(date) => customStartDate = date}
+        onUpdateCustomEndDate={(date) => customEndDate = date}
+      />
 
       <!-- Search bar -->
-      <div class="search-bar" class:searching={searchQuery.length > 0}>
-        <Search size={14} class="search-icon" />
-        <input
-          type="text"
-          placeholder={$t('transactions.search_placeholder')}
-          bind:value={searchQuery}
-        />
-        {#if searchQuery.length > 0}
-          <button
-            class="clear-search"
-            onclick={() => searchQuery = ''}
-            aria-label={$t('common.reset')}
-          >
-            <X size={12} />
-          </button>
-        {/if}
-      </div>
+      <SearchBar
+        value={searchQuery}
+        onInput={(value) => searchQuery = value}
+        onClear={() => searchQuery = ''}
+      />
 
       <!-- Action buttons -->
       <div class="toolbar-actions">
@@ -998,40 +776,6 @@
       </div>
     </div>
 
-    {#if showDatePicker && dateRangeMode === 'month' && !showAllTransactions}
-      <div class="month-picker-dropdown">
-        <div class="month-picker-header">
-          <button class="year-nav-btn" onclick={() => {
-            const [year] = selectedPeriod.split('-');
-            selectedPeriod = `${parseInt(year) - 1}-${selectedPeriod.split('-')[1]}`;
-          }}>
-            <ChevronLeft size={14} />
-          </button>
-          <span class="year-label">{selectedPeriod.split('-')[0]}</span>
-          <button class="year-nav-btn" onclick={() => {
-            const [year] = selectedPeriod.split('-');
-            selectedPeriod = `${parseInt(year) + 1}-${selectedPeriod.split('-')[1]}`;
-          }}>
-            <ChevronRight size={14} />
-          </button>
-        </div>
-        <div class="month-grid">
-          {#each ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'] as month}
-            {@const monthDate = `${selectedPeriod.split('-')[0]}-${month}`}
-            <button
-              class="month-option"
-              class:selected={selectedPeriod === monthDate}
-              onclick={() => {
-                selectedPeriod = monthDate;
-                showDatePicker = false;
-              }}
-            >
-              {new Date(`${monthDate}-01`).toLocaleDateString('es-ES', { month: 'short' })}
-            </button>
-          {/each}
-        </div>
-      </div>
-    {/if}
     
     {#if showFilters}
       <div class="filters-bento" class:visible={showFilters}>
@@ -1243,124 +987,28 @@
 
         {#if !collapsedGroups.has(group.date)}
           {#each group.items as transaction}
-          {@const category = getCategoryById(transaction.categoryId)}
-          <div
-            class="transaction-card"
-            class:selected={$apiSelectedTransactions.has(transaction.id)}
-            class:hidden={transaction.hidden}
-            data-testid="transaction-item"
-            data-transaction-id={transaction.id}
-            onclick={() => openCategoryModal(transaction)}
-          >
-            {#if isSelectionMode}
-              <input 
-                type="checkbox"
-                checked={$apiSelectedTransactions.has(transaction.id)}
-                onchange={() => toggleSelection(transaction.id)}
-              />
-            {/if}
-
-            <div class="transaction-details">
-              <div class="transaction-main">
-                <div>
-                  <div class="transaction-description">{transaction.description}</div>
-                  {#if editingObservations === transaction.id}
-                    <div class="observations-editor">
-                      <input
-                        type="text"
-                        class="observations-input"
-                        bind:value={editingObservationsText}
-                        placeholder={$t('transactions.observations_placeholder')}
-                        maxlength="500"
-                        oninput={() => saveObservationsDebounced(transaction)}
-                        onkeydown={async (e) => {
-                          if (e.key === 'Enter') {
-                            await saveObservations(transaction);
-                            setTimeout(() => {
-                              cancelEditingObservations();
-                            }, 50);
-                          } else if (e.key === 'Escape') {
-                            cancelEditingObservations();
-                          }
-                        }}
-                        onblur={async () => {
-                          await saveObservations(transaction);
-                          // Small delay to ensure store update completes
-                          setTimeout(() => {
-                            cancelEditingObservations();
-                          }, 50);
-                        }}
-                        use:focus
-                      />
-                    </div>
-                  {:else}
-                    <div
-                      class="transaction-observations"
-                      class:empty={!transaction.observations}
-                      onclick={() => startEditingObservations(transaction)}
-                      title={$t('transactions.observations_edit_tooltip')}
-                    >
-                      {transaction.observations || $t('transactions.observations_placeholder')}
-                    </div>
-                  {/if}
-                  <div class="transaction-meta">
-                    <span>{transaction.merchant}</span>
-                    <span>•</span>
-                    <span>{transaction.time}</span>
-                  </div>
-                </div>
-                <div class="transaction-amount" class:income={transaction.amount > 0}>
-                  {formatAmount(transaction.amount)}
-                </div>
-              </div>
-              
-              <div class="category-selector">
-                <button
-                  class="category-btn"
-                  class:has-category={category}
-                  title={category ? `Categoría: ${category.name}` : 'Asignar categoría'}
-                  data-testid="transaction-category"
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    // Always open modal directly
-                    openCategoryModal(transaction);
-                  }}
-                >
-                  {#if category}
-                    <span class="category-icon-btn">{category.icon}</span>
-                    <span>{category.name}</span>
-                  {:else}
-                    <Tag size={14} />
-                    {$t('transactions.add_category')}
-                  {/if}
-                </button>
-
-              </div>
-            </div>
-            
-            <div class="transaction-actions">
-              <button
-                class="action-btn"
-                class:hidden={transaction.hidden}
-                title={transaction.hidden ? $t('transactions.show_transaction') : $t('transactions.hide_transaction')}
-                onclick={() => toggleHideTransaction(transaction)}
-              >
-                {#if transaction.hidden}
-                  <EyeOff size={14} />
-                {:else}
-                  <Eye size={14} />
-                {/if}
-              </button>
-              <button
-                class="action-btn delete-btn"
-                title={$t('transactions.delete_transaction')}
-                onclick={() => deleteTransaction(transaction.id)}
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          </div>
-        {/each}
+            {@const category = getCategoryById(transaction.categoryId)}
+            <TransactionRow
+              {transaction}
+              {category}
+              {isSelectionMode}
+              isSelected={$apiSelectedTransactions.has(transaction.id)}
+              isEditingObservations={editingObservations === transaction.id}
+              bind:editingObservationsText
+              onToggleSelection={() => toggleSelection(transaction.id)}
+              onOpenCategoryModal={() => openCategoryModal(transaction)}
+              onStartEditingObservations={() => startEditingObservations(transaction)}
+              onSaveObservations={() => saveObservations(transaction)}
+              onCancelEditingObservations={cancelEditingObservations}
+              onUpdateObservationsText={(text) => {
+                editingObservationsText = text;
+                saveObservationsDebounced(transaction);
+              }}
+              onToggleHide={() => toggleHideTransaction(transaction)}
+              onDelete={() => deleteTransaction(transaction.id)}
+              {formatAmount}
+            />
+          {/each}
         {/if}
       </div>
     {/each}
