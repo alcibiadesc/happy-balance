@@ -164,26 +164,32 @@
   }
 
   .filter-pill {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.875rem;
-    background: white;
-    border: 1px solid var(--gray-200);
-    border-radius: 2rem;
-    font-size: 0.8125rem;
-    color: var(--gray-600);
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    min-height: 2.5rem;
+    border: none;
+    border-radius: 0.625rem;
+    background: #FFF7ED;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #64748b;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    position: relative;
   }
 
   .filter-pill:hover:not(.disabled) {
-    background: var(--gray-50);
+    background: #FFF3E0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    color: #475569;
   }
 
   .filter-pill.active {
     color: white;
-    border-color: transparent;
   }
 
   .filter-pill.income.active {
@@ -195,12 +201,21 @@
   }
 
   .filter-pill.uncategorized.active {
-    background: var(--gray-500);
+    background: var(--gray-600);
   }
 
   .filter-pill.disabled {
-    opacity: 0.4;
+    opacity: 0.5;
     cursor: not-allowed;
+    background: var(--gray-50);
+    color: var(--text-muted);
+  }
+
+  .filter-pill.disabled:hover {
+    background: var(--gray-50);
+    transform: none;
+    box-shadow: none;
+    color: var(--text-muted);
   }
 
   .bento-header {
@@ -244,20 +259,27 @@
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.25rem;
-    padding: 0.375rem 0.625rem;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
     background: white;
-    border: 1px solid var(--gray-200);
-    border-radius: 0.5rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 2rem;
     font-size: 0.75rem;
-    color: var(--gray-600);
+    font-weight: 500;
+    color: var(--text-primary);
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: left;
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .category-chip:hover {
     background: var(--gray-50);
+    border-color: var(--gray-300);
+    transform: translateY(-1px);
   }
 
   .category-chip.active {
