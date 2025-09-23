@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Plus, Info } from 'lucide-svelte';
+  import { t } from '$lib/stores/i18n';
   import type { Category } from '$lib/types/transaction';
 
   interface Props {
@@ -39,7 +40,7 @@
           <button
             class="helper-button"
             onclick={onHelperClick}
-            aria-label="Más información"
+            aria-label={$t('categories.more_info')}
           >
             <Info size={14} strokeWidth={2} />
           </button>
@@ -49,7 +50,7 @@
     </div>
     <button class="add-button" onclick={onAddNew}>
       <Plus size={16} strokeWidth={2} />
-      Nueva categoría
+      {$t('categories.new_category')}
     </button>
   </div>
 

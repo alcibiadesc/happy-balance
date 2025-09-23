@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Edit2, Trash2 } from 'lucide-svelte';
+  import { t } from '$lib/stores/i18n';
   import type { Category } from '$lib/types/transaction';
 
   interface Props {
@@ -29,11 +30,11 @@
     <span class="category-name">{category.name}</span>
     {#if category.annualBudget}
       <span class="category-budget">
-        {formatCurrency(category.annualBudget)} / año
+        {formatCurrency(category.annualBudget)} {$t('categories.per_year')}
       </span>
     {:else}
       <span class="category-budget no-budget">
-        Sin presupuesto
+        {$t('categories.no_budget')}
       </span>
     {/if}
   </div>
@@ -42,14 +43,14 @@
     <button
       class="action-btn"
       onclick={() => onEdit(category)}
-      title="Editar"
+      title={$t('common.edit')}
     >
       <Edit2 size={14} />
     </button>
     <button
       class="action-btn delete"
       onclick={() => onDelete(category)}
-      title="Eliminar"
+      title={$t('common.delete')}
     >
       <Trash2 size={14} />
     </button>

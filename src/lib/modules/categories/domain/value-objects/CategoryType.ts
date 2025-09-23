@@ -66,6 +66,15 @@ export class CategoryType {
     return iconClasses[this.value];
   }
 
+  getTitleKey(): string {
+    return `categories.types.${this.value}`;
+  }
+
+  getDescriptionKey(): string {
+    return `categories.descriptions.${this.value}`;
+  }
+
+  // Legacy methods for backwards compatibility
   getTitle(): string {
     const titles: Record<CategoryTypeValue, string> = {
       income: 'Ingresos',

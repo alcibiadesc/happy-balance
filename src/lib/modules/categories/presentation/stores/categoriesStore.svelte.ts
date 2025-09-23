@@ -34,6 +34,13 @@ export function createCategoriesStore() {
     annualBudget: 0,
     type: 'essential'
   });
+  let newCategoryForm = $state<EditForm>({
+    name: '',
+    icon: '',
+    color: '',
+    annualBudget: 0,
+    type: 'essential'
+  });
 
   // UI State
   let showDeleteModal = $state(false);
@@ -114,6 +121,13 @@ export function createCategoriesStore() {
   // Category CRUD operations
   function startNewCategory(type: CategoryTypeValue) {
     selectedType = type;
+    newCategoryForm = {
+      name: '',
+      icon: '🏷️',
+      color: availableColors[0],
+      type: type,
+      annualBudget: 0
+    };
     newCategory = {
       name: '',
       icon: '🏷️',
@@ -124,14 +138,14 @@ export function createCategoriesStore() {
   }
 
   async function saveNewCategory() {
-    if (!newCategory || !newCategory.name) return;
+    if (!newCategoryForm.name) return;
 
     const category = {
-      name: newCategory.name,
-      icon: newCategory.icon || '🏷️',
-      color: newCategory.color || availableColors[0],
-      type: newCategory.type || 'essential',
-      annualBudget: newCategory.annualBudget || 0
+      name: newCategoryForm.name,
+      icon: newCategoryForm.icon,
+      color: newCategoryForm.color,
+      type: newCategoryForm.type,
+      annualBudget: newCategoryForm.annualBudget
     };
 
     await apiCategories.add(category);
@@ -225,8 +239,8 @@ export function createCategoriesStore() {
 
   // Icon Picker
   function selectIcon(icon: string) {
-    if (showIconPickerNew && newCategory) {
-      newCategory.icon = icon;
+    if (showIconPickerNew) {
+      newCategoryForm.icon = icon;
       showIconPickerNew = false;
     } else if (showIconPickerEdit) {
       editForm.icon = icon;
@@ -319,6 +333,8 @@ export function createCategoriesStore() {
     get selectedType() { return selectedType; },
     get editForm() { return editForm; },
     set editForm(value: EditForm) { editForm = value; },
+    get newCategoryForm() { return newCategoryForm; },
+    set newCategoryForm(value: EditForm) { newCategoryForm = value; },
 
     // UI State
     get showDeleteModal() { return showDeleteModal; },

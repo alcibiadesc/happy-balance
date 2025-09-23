@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Check, X } from 'lucide-svelte';
+  import { t } from '$lib/stores/i18n';
 
   interface EditForm {
     name: string;
@@ -49,13 +50,13 @@
     <input
       type="text"
       class="category-name-input"
-      placeholder="Nombre de la categoría"
+      placeholder={$t('categories.name_placeholder')}
       bind:value={editForm.name}
       onkeydown={(e) => e.key === 'Enter' && onSave()}
     />
 
     <div class="budget-section">
-      <label class="budget-label">Presupuesto anual</label>
+      <label class="budget-label">{$t('categories.budget_label')}</label>
       <div class="budget-input-group">
         <span class="currency-symbol">{getCurrencySymbol()}</span>
         <input
@@ -64,7 +65,7 @@
           placeholder="0"
           bind:value={editForm.annualBudget}
         />
-        <span class="budget-period">/ año</span>
+        <span class="budget-period">{$t('categories.per_year')}</span>
       </div>
     </div>
 
@@ -81,10 +82,10 @@
   </div>
 
   <div class="category-actions">
-    <button class="save-btn" onclick={onSave} title="Guardar">
+    <button class="save-btn" onclick={onSave} title={$t('common.save')}>
       <Check size={14} />
     </button>
-    <button class="cancel-btn" onclick={onCancel} title="Cancelar">
+    <button class="cancel-btn" onclick={onCancel} title={$t('common.cancel')}>
       <X size={14} />
     </button>
   </div>

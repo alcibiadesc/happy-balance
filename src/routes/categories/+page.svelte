@@ -89,8 +89,8 @@
   <main class="categories-content">
     {#each store.categoryTypes as { value, type }}
       <CategorySection
-        title={type.getTitle()}
-        description={type.getDescription()}
+        title={$t(type.getTitleKey())}
+        description={$t(type.getDescriptionKey())}
         icon={value === 'income' ? TrendingUp :
               value === 'essential' ? Wallet :
               value === 'discretionary' ? Coins :
@@ -105,17 +105,13 @@
       >
         {#if store.newCategory && store.selectedType === value}
           <CategoryEditListItem
-            bind:editForm={store.newCategory}
+            bind:editForm={store.newCategoryForm}
             availableColors={store.availableColors}
             getCurrencySymbol={store.getCurrencySymbol}
             onSave={store.saveNewCategory}
             onCancel={store.cancelNewCategory}
             onIconClick={(e) => handleIconClick(e, true)}
-            onColorSelect={(color) => {
-              if (store.newCategory) {
-                store.newCategory.color = color;
-              }
-            }}
+            onColorSelect={(color) => store.newCategoryForm.color = color}
             showIconPicker={store.showIconPickerNew}
           />
         {/if}
@@ -168,8 +164,7 @@
   >
     <div class="tooltip-content">
       <p class="tooltip-text">
-        Las categorías "Sin Computar" son útiles para transferencias entre cuentas propias,
-        reembolsos o movimientos que no afectan tu balance real.
+        {$t('categories.helpers.no_compute')}
       </p>
     </div>
     <button
@@ -182,12 +177,12 @@
 <!-- Delete Confirmation Modal -->
 <ConfirmModal
   isOpen={store.showDeleteModal}
-  title="Eliminar categoría"
+  title={$t('categories.delete_category')}
   message={store.transactionsWithCategory > 0
-    ? `Esta categoría tiene ${store.transactionsWithCategory} transacciones asociadas. ¿Qué deseas hacer con ellas?`
-    : `¿Estás seguro de que deseas eliminar la categoría "${store.categoryToDelete?.getName()}"?`}
-  confirmText="Eliminar"
-  cancelText="Cancelar"
+    ? $t('categories.delete_with_transactions', { count: store.transactionsWithCategory })
+    : $t('categories.delete_confirmation', { name: store.categoryToDelete?.getName() })}
+  confirmText={$t('common.delete')}
+  cancelText={$t('common.cancel')}
   type="danger"
   onConfirm={store.confirmDelete}
   onCancel={() => store.showDeleteModal = false}
@@ -201,7 +196,7 @@
           value="remove"
           bind:group={store.recategorizeTarget}
         />
-        <span>Dejar sin categoría</span>
+        <span>{$t('categories.leave_uncategorized')}</span>
       </label>
       {#each store.categories as cat}
         {#if cat.getId() !== store.categoryToDelete?.getId()}
@@ -212,7 +207,7 @@
               value={cat.getId()}
               bind:group={store.recategorizeTarget}
             />
-            <span>Mover a: {cat.getName()}</span>
+            <span>{$t('categories.move_to', { name: cat.getName() })}</span>
           </label>
         {/if}
       {/each}
