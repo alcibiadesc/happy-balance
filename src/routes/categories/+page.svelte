@@ -6,8 +6,8 @@
   import { t } from '$lib/stores/i18n';
 
   // Components
-  import CategoryCard from '$lib/components/molecules/CategoryCard.svelte';
-  import CategoryEditCard from '$lib/components/molecules/CategoryEditCard.svelte';
+  import CategoryListItem from '$lib/components/molecules/CategoryListItem.svelte';
+  import CategoryEditListItem from '$lib/components/molecules/CategoryEditListItem.svelte';
   import CategorySection from '$lib/components/organisms/CategorySection.svelte';
   import CategoryIconPicker from '$lib/components/organisms/CategoryIconPicker.svelte';
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
@@ -104,7 +104,7 @@
         onHelperClick={handleHelperClick}
       >
         {#if store.newCategory && store.selectedType === value}
-          <CategoryEditCard
+          <CategoryEditListItem
             editForm={{
               name: store.newCategory.name || '',
               icon: store.newCategory.icon || '🏷️',
@@ -128,7 +128,7 @@
 
         {#each store.categoriesByType[value] as category}
           {#if store.editingCategory === category.getId()}
-            <CategoryEditCard
+            <CategoryEditListItem
               bind:editForm={store.editForm}
               availableColors={store.availableColors}
               getCurrencySymbol={store.getCurrencySymbol}
@@ -139,7 +139,7 @@
               showIconPicker={store.showIconPickerEdit === category.getId()}
             />
           {:else}
-            <CategoryCard
+            <CategoryListItem
               category={category.toJSON()}
               onEdit={() => store.startEdit(category)}
               onDelete={() => store.prepareDelete(category)}

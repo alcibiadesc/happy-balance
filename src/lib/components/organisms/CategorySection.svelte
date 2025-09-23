@@ -53,7 +53,7 @@
     </button>
   </div>
 
-  <div class="categories-grid">
+  <div class="categories-list">
     {@render children?.()}
   </div>
 </section>
@@ -177,10 +177,9 @@
     color: var(--acapulco);
   }
 
-  .categories-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 0.75rem;
+  .categories-list {
+    display: flex;
+    flex-direction: column;
   }
 
   @media (max-width: 768px) {
@@ -191,10 +190,6 @@
     .add-button {
       width: 100%;
       justify-content: center;
-    }
-
-    .categories-grid {
-      grid-template-columns: 1fr;
     }
   }
 </style>
