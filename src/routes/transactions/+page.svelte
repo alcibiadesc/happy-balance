@@ -535,7 +535,10 @@
 />
 
 <style>
-  /* Keep only page-specific styles not in the CSS module */
+  .transactions-page {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #FAFAFA 0%, #F5F5F5 100%);
+  }
 
   .transactions-header {
     background: var(--surface-elevated);
@@ -546,5 +549,11 @@
   .header-content {
     max-width: 1200px;
     margin: 0 auto;
+  }
+
+  .transactions-list {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem 3rem 1.5rem;
   }
 </style>
