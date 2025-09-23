@@ -180,6 +180,7 @@
   .categories-list {
     display: flex;
     flex-direction: column;
+    gap: var(--space-sm, 0.75rem);
   }
 
   @media (max-width: 768px) {
