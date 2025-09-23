@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
+
+  // Components
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
   import AddTransactionModal from '$lib/components/organisms/AddTransactionModal.svelte';
   import SmartCategorizationModal from '$lib/components/organisms/SmartCategorizationModal.svelte';
@@ -9,263 +11,188 @@
   import DateSelector from '$lib/components/molecules/DateSelector.svelte';
   import SearchBar from '$lib/components/molecules/SearchBar.svelte';
   import TransactionRow from '$lib/components/organisms/TransactionRow.svelte';
+
+  // Services and utilities
+  import { createTransactionsPageStore } from '$lib/modules/transactions/infrastructure/stores/transactionsPageStore.svelte';
   import { calculatePeriodStats } from '$lib/modules/transactions/domain/services/PeriodStatsCalculator';
   import { createDateNavigationService } from '$lib/modules/transactions/domain/services/DateNavigationService';
+  import { filterTransactions } from '$lib/modules/transactions/application/services/FilterService';
+  import { groupTransactionsByDate, formatDate } from '$lib/modules/transactions/application/services/GroupingService';
+  import { findMatchingTransactions, getCategoryById, formatAmount } from '$lib/modules/transactions/application/services/CategoryService';
+  import { createObservationsHandler } from '$lib/modules/transactions/application/services/ObservationsService';
+  import { TransactionOperationsService } from '$lib/modules/transactions/application/services/TransactionOperationsService';
+
+  // Icons
   import {
     ChevronDown, ChevronUp, ChevronRight, Filter, Download, Plus,
     TrendingUp, TrendingDown, Check, X, Trash2,
     Tag, MoreVertical, Minimize2, Maximize2, EyeOff
   } from 'lucide-svelte';
 
-  // Focus directive for auto-focusing input
-  function focus(node: HTMLElement) {
-    node.focus();
-  }
+  // Stores
   import {
     apiTransactions,
     apiCategories,
-    apiSelectedTransactions,
-    apiTransactionStats
+    apiSelectedTransactions
   } from '$lib/stores/api-transactions';
   import type { Transaction, Category } from '$lib/types/transaction';
   import { t } from '$lib/stores/i18n';
   import { exportTransactionsToCSV, downloadCSV, generateFilename } from '$lib/utils/csv-export';
-  
-  // State
-  let searchQuery = $state('');
-  let showFilters = $state(false);
-  let selectedPeriod = $state(new Date().toISOString().slice(0, 7)); // Current month by default
-  let selectedCategories = $state<string[]>([]);
-  let transactionTypeFilter = $state<'all' | 'income' | 'expenses' | 'uncategorized'>('all');
-  let showCategoryFilterDropdown = $state(false);
-  let isSelectionMode = $state(false);
-  let showCategoryModal = $state(false);
-  let categoryModalTransaction = $state<Transaction | null>(null);
-  let editingTransaction = $state<Transaction | null>(null);
-  let editingObservations = $state<string | null>(null); // Transaction ID being edited for observations
-  let editingObservationsText = $state(''); // Current text being edited
-  let showAddModal = $state(false);
-  let showCategoryDropdown = $state<string | null>(null); // Transaction ID showing category dropdown
-  let showAllTransactions = $state(
-    typeof window !== 'undefined'
-      ? localStorage.getItem('showAllTransactions') === 'true' || localStorage.getItem('showAllTransactions') === null
-      : true
-  ); // Toggle for showing all transactions
 
-  // Save preferences to localStorage when they change
-  $effect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('showAllTransactions', showAllTransactions.toString());
-    }
-  });
-
-  $effect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('showHiddenTransactions', showHiddenTransactions.toString());
-    }
-  });
-  let dateRangeMode = $state<'month' | 'custom'>('month');
-  let customStartDate = $state('');
-  let customEndDate = $state('');
-  let showDatePicker = $state(false);
-
-  // Smart categorization modal state
-  let showSmartCategorization = $state(false);
-  let smartCategorizationTransaction = $state<Transaction | null>(null);
-  let smartCategorizationCategory = $state<Category | null>(null);
-  let smartMatchingTransactions = $state<Transaction[]>([]);
-  let smartSuggestions = $state<Array<{
-    categoryId: string;
-    confidence: number;
-    reason: string;
-    potentialMatches: number;
-  }>>([]);
-
-  // Collapse/expand state
-  let collapsedGroups = $state<Set<string>>(new Set());
-  let allExpanded = $state(true);
-
-
-  // Click outside handler
-  function handleClickOutside(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-
-    // Close category filter dropdown
-    if (showCategoryFilterDropdown && !target.closest('.category-selector')) {
-      showCategoryFilterDropdown = false;
-    }
-
-    // Close category dropdown for transactions
-    if (showCategoryDropdown && !target.closest('.category-selector')) {
-      showCategoryDropdown = null;
-    }
-
-    // Close date picker
-    if (showDatePicker && !target.closest('.date-selector-section')) {
-      showDatePicker = false;
-    }
-  }
-
-  // Modal states
-  let showDeleteSelectedModal = $state(false);
-  let showDeleteSingleModal = $state(false);
-  let transactionToDelete = $state<string | null>(null);
-  
-  // Date navigation service
+  // Initialize page store
+  const pageStore = createTransactionsPageStore();
   const dateNavigationService = createDateNavigationService();
+  const transactionOps = new TransactionOperationsService(
+    apiTransactions,
+    (id) => getCategoryById($apiCategories, id)
+  );
+  const observationsHandler = createObservationsHandler(
+    (id, updates) => apiTransactions.update(id, updates)
+  );
 
+  // Reactive computations
+  let filteredTransactions = $derived(() => {
+    return filterTransactions(
+      $apiTransactions,
+      pageStore.filterState,
+      $apiCategories
+    );
+  });
+
+  let groupedTransactions = $derived(() => {
+    return groupTransactionsByDate(filteredTransactions());
+  });
+
+  let periodStats = $derived(() => {
+    return calculatePeriodStats(filteredTransactions(), $apiCategories);
+  });
+
+  // Period navigation
   function previousPeriod() {
-    selectedPeriod = dateNavigationService.previousPeriod(selectedPeriod);
+    pageStore.setPeriod(
+      dateNavigationService.previousPeriod(pageStore.filterState.selectedPeriod)
+    );
   }
 
   function nextPeriod() {
-    selectedPeriod = dateNavigationService.nextPeriod(selectedPeriod);
+    pageStore.setPeriod(
+      dateNavigationService.nextPeriod(pageStore.filterState.selectedPeriod)
+    );
   }
 
-  function showAllPeriods() {
-    selectedPeriod = '';
+  // Transaction operations
+  async function deleteSelected() {
+    const ids = Array.from($apiSelectedTransactions);
+    for (const id of ids) {
+      await apiTransactions.delete(id);
+    }
+    pageStore.clearSelection();
+    apiSelectedTransactions.set(new Set());
   }
-  
-  // State for showing/hiding hidden transactions - default to true on first visit
-  let showHiddenTransactions = $state(
-    typeof window !== 'undefined'
-      ? localStorage.getItem('showHiddenTransactions') === 'false' ? false : true
-      : true
-  );
 
-  // Computed
-  let filteredTransactions = $derived(() => {
-    let filtered = $apiTransactions;
+  async function confirmDeleteSelected() {
+    await deleteSelected();
+    pageStore.closeDeleteSelectedModal();
+  }
 
-    // Period filter
-    if (!showAllTransactions) {
-      if (dateRangeMode === 'month' && selectedPeriod) {
-        filtered = filtered.filter(t =>
-          t.date.startsWith(selectedPeriod)
-        );
-      } else if (dateRangeMode === 'custom' && customStartDate && customEndDate) {
-        filtered = filtered.filter(t => {
-          const transactionDate = new Date(t.date);
-          const startDate = new Date(customStartDate);
-          const endDate = new Date(customEndDate);
-          return transactionDate >= startDate && transactionDate <= endDate;
-        });
-      }
+  async function hideSelected() {
+    const ids = Array.from($apiSelectedTransactions);
+    await apiTransactions.bulkUpdate(ids, { hidden: true });
+    pageStore.clearSelection();
+    apiSelectedTransactions.set(new Set());
+  }
+
+  async function toggleHideTransaction(transaction: Transaction) {
+    await transactionOps.toggleHide(transaction);
+  }
+
+  async function deleteTransaction(id: string) {
+    pageStore.openDeleteSingleModal(id);
+  }
+
+  async function confirmDeleteSingle() {
+    const transactionId = pageStore.modalState.transactionToDelete;
+    if (!transactionId) return;
+    await apiTransactions.delete(transactionId);
+    pageStore.closeDeleteSingleModal();
+  }
+
+  async function addTransaction(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>) {
+    try {
+      await transactionOps.add(transaction);
+      pageStore.closeAddModal();
+    } catch (error) {
+      console.error('Failed to add transaction:', error);
     }
+  }
 
-    // Apply filters: categories take precedence over transaction type
-    if (selectedCategories.length > 0) {
-      // If specific categories are selected, only filter by categories
-      filtered = filtered.filter(t =>
-        t.categoryId && selectedCategories.includes(t.categoryId)
-      );
-    } else {
-      // If no categories selected, apply transaction type filter
-      if (transactionTypeFilter === 'income') {
-        filtered = filtered.filter(t => t.amount > 0);
-      } else if (transactionTypeFilter === 'expenses') {
-        filtered = filtered.filter(t => t.amount < 0);
-      } else if (transactionTypeFilter === 'uncategorized') {
-        filtered = filtered.filter(t => !t.categoryId);
+  // Category operations
+  async function handleCategorySelection(categoryId: string | null) {
+    const transaction = pageStore.modalState.categoryModalTransaction;
+    if (!transaction) return;
+
+    try {
+      if (!categoryId || categoryId === '') {
+        await transactionOps.categorize(transaction, null, false);
+        pageStore.closeCategoryModal();
+        return;
       }
-    }
 
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-
-      // Try to parse as a number for amount search
-      const numericQuery = parseFloat(searchQuery);
-      const isNumeric = !isNaN(numericQuery) && isFinite(numericQuery);
-
-      filtered = filtered.filter(t => {
-        // Text-based search (merchant and description)
-        const textMatch = t.merchant.toLowerCase().includes(query) ||
-                         t.description.toLowerCase().includes(query);
-
-        // Amount-based search
-        let amountMatch = false;
-        if (isNumeric) {
-          const transactionAmount = Math.abs(t.amount);
-          // Check for exact amount match or close match (within 0.01)
-          amountMatch = Math.abs(transactionAmount - numericQuery) < 0.01 ||
-                       // Check if amount contains the searched number (for partial matches)
-                       transactionAmount.toString().includes(numericQuery.toString());
+      const matchingTransactions = findMatchingTransactions(transaction, $apiTransactions);
+      if (matchingTransactions.length > 0) {
+        const category = getCategoryById($apiCategories, categoryId);
+        if (category) {
+          pageStore.openSmartCategorization(transaction, category, matchingTransactions);
         }
-
-        return textMatch || amountMatch;
-      });
-    }
-
-    // Hide hidden transactions unless explicitly showing them
-    if (!showHiddenTransactions) {
-      filtered = filtered.filter(t => !t.hidden);
-    }
-
-    return filtered;
-  });
-  
-  function clearAllFilters() {
-    selectedCategories = [];
-    transactionTypeFilter = 'all';
-  }
-
-  // Collapse/expand functions
-  function toggleGroup(date: string) {
-    const newCollapsed = new Set(collapsedGroups);
-    if (newCollapsed.has(date)) {
-      newCollapsed.delete(date);
-    } else {
-      newCollapsed.add(date);
-    }
-    collapsedGroups = newCollapsed;
-    allExpanded = newCollapsed.size === 0;
-  }
-
-  function collapseAll() {
-    const allDates = groupedTransactions().map(g => g.date);
-    collapsedGroups = new Set(allDates);
-    allExpanded = false;
-  }
-
-  function expandAll() {
-    collapsedGroups = new Set();
-    allExpanded = true;
-  }
-
-  let groupedTransactions = $derived(() => {
-    const filtered = filteredTransactions();
-
-    const groups = new Map<string, Transaction[]>();
-
-    filtered.forEach(transaction => {
-      const date = transaction.date;
-      if (!groups.has(date)) {
-        groups.set(date, []);
+      } else {
+        await transactionOps.categorize(transaction, categoryId, false);
       }
-      groups.get(date)!.push(transaction);
-    });
 
-    const result = Array.from(groups.entries())
-      .sort(([a], [b]) => b.localeCompare(a))
-      .map(([date, items]) => ({
-        date,
-        items: items.sort((a, b) => {
-          const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return bTime - aTime;
-        })
-      }));
+      pageStore.closeCategoryModal();
+    } catch (error) {
+      console.error('Failed to categorize transaction:', error);
+      pageStore.closeCategoryModal();
+    }
+  }
 
-    return result;
-  });
-  
-  let periodStats = $derived(() => {
-    const filtered = filteredTransactions();
-    return calculatePeriodStats(filtered, $apiCategories);
-  });
-  
-  // Actions
+  async function handleSmartCategorization(applyToAll: boolean) {
+    const transaction = pageStore.modalState.smartCategorizationTransaction;
+    const category = pageStore.modalState.smartCategorizationCategory;
+
+    if (!transaction || !category) return;
+
+    await transactionOps.categorize(transaction, category.id, applyToAll);
+    pageStore.closeSmartCategorization();
+  }
+
+  function handleSmartCategorizationCancel() {
+    pageStore.closeSmartCategorization();
+  }
+
+  // Observations operations
+  async function startEditingObservations(transaction: Transaction) {
+    pageStore.startEditingObservations(transaction);
+  }
+
+  async function saveObservations(transaction: Transaction) {
+    const text = pageStore.observationsState.editingText;
+    return await observationsHandler.saveObservations(transaction, text);
+  }
+
+  function saveObservationsDebounced(transaction: Transaction) {
+    const text = pageStore.observationsState.editingText;
+    observationsHandler.saveObservationsDebounced(
+      transaction,
+      text,
+      () => pageStore.cancelEditingObservations()
+    );
+  }
+
+  function cancelEditingObservations() {
+    pageStore.cancelEditingObservations();
+  }
+
+  // Selection operations
   function toggleSelection(id: string) {
     apiSelectedTransactions.update(s => {
       const newSet = new Set(s);
@@ -277,387 +204,60 @@
       return newSet;
     });
   }
-  
+
   function selectAll() {
     const allIds = filteredTransactions().map(t => t.id);
     apiSelectedTransactions.set(new Set(allIds));
   }
-  
+
   function clearSelection() {
     apiSelectedTransactions.set(new Set());
-    isSelectionMode = false;
-  }
-  
-  async function deleteSelected() {
-    showDeleteSelectedModal = true;
+    pageStore.toggleSelectionMode();
   }
 
-  async function confirmDeleteSelected() {
-    const ids = Array.from($apiSelectedTransactions);
-    for (const id of ids) {
-      await apiTransactions.delete(id);
-    }
-    clearSelection();
-  }
-  
-  async function hideSelected() {
-    const ids = Array.from($apiSelectedTransactions);
-    await apiTransactions.bulkUpdate(ids, { hidden: true });
-    clearSelection();
-  }
-
-  async function toggleHideTransaction(transaction: Transaction) {
-    const newHiddenState = !transaction.hidden;
-
-    try {
-      // Optimistic update happens immediately in the store
-      await apiTransactions.update(transaction.id, { hidden: newHiddenState });
-    } catch (error) {
-      console.error('Failed to toggle transaction visibility:', error);
-      // The store will handle rollback on error
-    }
-  }
-
-  async function deleteTransaction(id: string) {
-    transactionToDelete = id;
-    showDeleteSingleModal = true;
-  }
-
-  async function confirmDeleteSingle() {
-    if (!transactionToDelete) return;
-    await apiTransactions.delete(transactionToDelete);
-    transactionToDelete = null;
-  }
-
-  async function addTransaction(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>) {
-    try {
-      await apiTransactions.add(transaction);
-      showAddModal = false;
-    } catch (error) {
-      console.error('Failed to add transaction:', error);
-      // Could show error toast here
-    }
-  }
-  
-  function openCategoryModal(transaction: Transaction) {
-    categoryModalTransaction = transaction;
-    showCategoryModal = true;
-  }
-
-  function closeCategoryModal() {
-    showCategoryModal = false;
-    categoryModalTransaction = null;
-  }
-
-  async function handleCategorySelection(categoryId: string | null) {
-    if (!categoryModalTransaction) return;
-
-    try {
-      // If categoryId is null or empty, uncategorize directly
-      if (!categoryId || categoryId === '') {
-        console.log('🔄 Uncategorizing transaction:', categoryModalTransaction.id);
-        await categorizeTransaction(categoryModalTransaction, null, false);
-        closeCategoryModal();
-        return;
-      }
-
-      // Check for matching transactions and initialize smart categorization
-      await initSmartCategorization(categoryModalTransaction, categoryId);
-      closeCategoryModal();
-    } catch (error) {
-      console.error('❌ Failed to categorize transaction:', error);
-      closeCategoryModal();
-    }
-  }
-
-  async function categorizeTransaction(transaction: Transaction, categoryId: string | null, applyToAll = false) {
-    try {
-      // Save current scroll position
-      const scrollPosition = window.scrollY;
-
-      const selectedCategory = categoryId ? getCategoryById(categoryId) : null;
-
-      // Fix: Update transaction amount based on category type
-      let updates: Partial<Transaction> = {
-        categoryId: categoryId
-      };
-
-      console.log('📝 Categorizing transaction:', {
-        transactionId: transaction.id,
-        categoryId,
-        updates
-      });
-
-      // If changing from expense to income or vice versa
-      if (selectedCategory) {
-        if (selectedCategory.type === 'income' && transaction.amount < 0) {
-          // Converting expense to income
-          updates.amount = Math.abs(transaction.amount);
-        } else if ((selectedCategory.type === 'essential' || selectedCategory.type === 'discretionary' || selectedCategory.type === 'investment') && transaction.amount > 0) {
-          // Converting income to expense
-          updates.amount = -Math.abs(transaction.amount);
-        }
-      }
-
-      if (applyToAll) {
-        await apiTransactions.applyCategoryToPattern(transaction, categoryId);
-      } else {
-        await apiTransactions.update(transaction.id, updates);
-      }
-
-      console.log('✅ Transaction categorization completed successfully');
-
-      // Restore scroll position after DOM updates
-      requestAnimationFrame(() => {
-        window.scrollTo(0, scrollPosition);
-      });
-    } catch (error) {
-      console.error('❌ Failed to categorize transaction:', error);
-    }
-  }
-
-  async function initSmartCategorization(transaction: Transaction, categoryId: string) {
-    try {
-      const selectedCategory = getCategoryById(categoryId);
-      if (!selectedCategory) return;
-
-      // Set up the modal state
-      smartCategorizationTransaction = transaction;
-      smartCategorizationCategory = selectedCategory;
-
-      // Find potential matching transactions (should already be passed, but ensure consistency)
-      smartMatchingTransactions = await findMatchingTransactions(transaction);
-
-      // Only proceed if there are matching transactions
-      if (smartMatchingTransactions.length === 0) {
-        // Apply directly for single transaction
-        await categorizeTransaction(transaction, categoryId);
-        return;
-      }
-
-      // Generate smart suggestions
-      smartSuggestions = generateSmartSuggestions(transaction, smartMatchingTransactions);
-
-      // Show the modal only when there are matches
-      showSmartCategorization = true;
-      showCategoryDropdown = null; // Close category dropdown
-
-    } catch (error) {
-      console.error('❌ Failed to initialize smart categorization:', error);
-      // Fall back to simple categorization
-      await categorizeTransaction(transaction, categoryId);
-    }
-  }
-
-  async function findMatchingTransactions(sourceTransaction: Transaction): Promise<Transaction[]> {
-    const allTransactions = $apiTransactions || [];
-    const matchingTransactions: Transaction[] = [];
-
-    // Extract patterns from merchant name and description
-    const merchantPattern = normalizeText(sourceTransaction.merchant);
-    const descriptionPattern = normalizeText(sourceTransaction.description || '');
-
-    for (const transaction of allTransactions) {
-      if (transaction.id === sourceTransaction.id) continue;
-
-      const merchantMatch = normalizeText(transaction.merchant);
-      const descriptionMatch = normalizeText(transaction.description || '');
-
-      // Check for matches
-      if (merchantPattern && merchantMatch.includes(merchantPattern)) {
-        matchingTransactions.push(transaction);
-      } else if (descriptionPattern && descriptionMatch.includes(descriptionPattern)) {
-        matchingTransactions.push(transaction);
-      } else if (merchantPattern && descriptionMatch.includes(merchantPattern)) {
-        matchingTransactions.push(transaction);
-      }
-    }
-
-    return matchingTransactions;
-  }
-
-  function generateSmartSuggestions(transaction: Transaction, matchingTransactions: Transaction[]) {
-    if (matchingTransactions.length === 0) return [];
-
-    // Calculate the primary pattern
-    const merchantPattern = normalizeText(transaction.merchant);
-    const reason = `Transacciones similares con "${merchantPattern || transaction.merchant}"`;
-
-    return [{
-      categoryId: smartCategorizationCategory?.id || '',
-      confidence: Math.min(0.8 + (matchingTransactions.length * 0.1), 1.0),
-      reason,
-      potentialMatches: matchingTransactions.length
-    }];
-  }
-
-  function normalizeText(text: string): string {
-    return text?.toLowerCase()
-      .replace(/[^\w\s]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim() || '';
-  }
-
-  async function handleSmartCategorization(scope: 'single' | 'pattern' | 'all', applyToFuture: boolean) {
-    if (!smartCategorizationTransaction || !smartCategorizationCategory) return;
-
-    try {
-      const transaction = smartCategorizationTransaction;
-      const categoryId = smartCategorizationCategory.id;
-
-      if (scope === 'single') {
-        await categorizeTransaction(transaction, categoryId, false);
-      } else {
-        // Apply to pattern matches
-        await categorizeTransaction(transaction, categoryId, true);
-
-        // Apply to all matching transactions
-        for (const matchingTransaction of smartMatchingTransactions) {
-          await categorizeTransaction(matchingTransaction, categoryId, false);
-        }
-      }
-
-      if (applyToFuture && scope === 'pattern') {
-        // TODO: Create categorization rule for future transactions
-        console.log('Creating rule for future transactions with pattern:', transaction.merchant);
-      }
-
-      // Close modal and reset state
-      showSmartCategorization = false;
-      smartCategorizationTransaction = null;
-      smartCategorizationCategory = null;
-      smartMatchingTransactions = [];
-      smartSuggestions = [];
-
-    } catch (error) {
-      console.error('❌ Failed to apply smart categorization:', error);
-    }
-  }
-
-  function handleSmartCategorizationCancel() {
-    showSmartCategorization = false;
-    smartCategorizationTransaction = null;
-    smartCategorizationCategory = null;
-    smartMatchingTransactions = [];
-    smartSuggestions = [];
-  }
-
-  // Observations editing functions
-  function startEditingObservations(transaction: Transaction) {
-    editingObservations = transaction.id;
-    editingObservationsText = transaction.observations || '';
-  }
-
-  function cancelEditingObservations() {
-    editingObservations = null;
-    editingObservationsText = '';
-  }
-
-  let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-
-  async function saveObservationsDebounced(transaction: Transaction) {
-    if (saveTimeout) {
-      clearTimeout(saveTimeout);
-    }
-
-    saveTimeout = setTimeout(async () => {
-      await saveObservations(transaction);
-    }, 1000); // Auto-save after 1 second of no typing
-  }
-
-  async function saveObservations(transaction: Transaction) {
-    if (editingObservations !== transaction.id) return;
-
-    const observationValue = editingObservationsText.trim() || undefined;
-
-    try {
-      // Use the store's update method which handles optimistic updates
-      await apiTransactions.update(transaction.id, {
-        observations: observationValue
-      });
-      return true; // Success
-    } catch (error) {
-      console.error('Error updating observations:', error);
-      return false; // Failure
-    }
-  }
-
-  function formatAmount(amount: number): string {
-    if (isNaN(amount)) return '€0.00';
-    const abs = Math.abs(amount);
-    const formatted = abs.toLocaleString('es-ES', {
-      style: 'currency',
-      currency: 'EUR'
-    });
-    return amount >= 0 ? `+${formatted}` : `-${formatted}`;
-  }
-  
-  function formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (date.toDateString() === today.toDateString()) {
-      return $t('transactions.today');
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return $t('transactions.yesterday');
-    } else {
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'long',
-        month: 'short', 
-        day: 'numeric' 
-      });
-    }
-  }
-  
-  function getCategoryById(id?: string): Category | undefined {
-    if (!id) return undefined;
-    return $apiCategories.find(c => c.id === id);
-  }
-
+  // Export functionality
   function downloadTransactionsCSV() {
-    // Determine the date range based on current filters
     let dateRange: { start: string; end: string } | undefined;
 
-    if (!showAllTransactions) {
-      if (dateRangeMode === 'month' && selectedPeriod) {
-        const [year, month] = selectedPeriod.split('-');
-        const startDate = `${year}-${month}-01`;
-        const endDate = new Date(Number(year), Number(month), 0).toISOString().split('T')[0];
-        dateRange = { start: startDate, end: endDate };
-      } else if (dateRangeMode === 'custom' && customStartDate && customEndDate) {
-        dateRange = { start: customStartDate, end: customEndDate };
+    if (!pageStore.filterState.showAllTransactions) {
+      if (pageStore.filterState.dateRangeMode === 'month' && pageStore.filterState.selectedPeriod) {
+        const date = new Date(pageStore.filterState.selectedPeriod + '-01');
+        const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        dateRange = {
+          start: date.toISOString().split('T')[0],
+          end: lastDay.toISOString().split('T')[0]
+        };
+      } else if (pageStore.filterState.dateRangeMode === 'custom' &&
+                 pageStore.filterState.customStartDate &&
+                 pageStore.filterState.customEndDate) {
+        dateRange = {
+          start: pageStore.filterState.customStartDate,
+          end: pageStore.filterState.customEndDate
+        };
       }
     }
 
-    // Get the filtered transactions (applies current filters)
     const transactionsToExport = filteredTransactions();
-
-    // Generate CSV content
-    const csvContent = exportTransactionsToCSV(transactionsToExport, $apiCategories, {
-      includeHidden: showHiddenTransactions,
-      dateRange
-    });
-
-    // Generate filename
+    const csv = exportTransactionsToCSV(transactionsToExport, $apiCategories);
     const filename = generateFilename(dateRange);
-
-    // Download the file
-    downloadCSV(csvContent, filename);
+    downloadCSV(csv, filename);
   }
 
-  onMount(async () => {
-    // Only try to load data on the client side
-    if (browser) {
-      try {
-        await apiTransactions.load();
-        await apiCategories.load();
-      } catch (error) {
-        console.warn('Failed to load transactions or categories on mount:', error);
-        // Continue without failing the page
-      }
+  // Click outside handler
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+
+    if (pageStore.isShowingCategoryFilterDropdown && !target.closest('.category-selector')) {
+      pageStore.closeCategoryFilterDropdown();
     }
+
+    if (pageStore.isShowingDatePicker && !target.closest('.date-selector-section')) {
+      pageStore.closeDatePicker();
+    }
+  }
+
+  // Lifecycle
+  onMount(() => {
     if (browser) {
       document.addEventListener('click', handleClickOutside);
     }
@@ -666,52 +266,51 @@
   onDestroy(() => {
     if (browser) {
       document.removeEventListener('click', handleClickOutside);
+      observationsHandler.cleanup();
     }
   });
 </script>
 
 <div class="transactions-page">
-  <!-- Header -->
   <header class="transactions-header">
     <div class="header-content">
-      <!-- Stats -->
       <PeriodStats stats={periodStats()} />
     </div>
   </header>
-  
+
   <!-- Toolbar -->
   <div class="toolbar">
     <div class="toolbar-content">
       <!-- Date selector section -->
       <DateSelector
-        bind:selectedPeriod
-        bind:showAllTransactions
-        bind:showHiddenTransactions
-        bind:dateRangeMode
-        bind:customStartDate
-        bind:customEndDate
-        bind:showDatePicker
+        bind:selectedPeriod={pageStore.filterState.selectedPeriod}
+        bind:showAllTransactions={pageStore.filterState.showAllTransactions}
+        bind:showHiddenTransactions={pageStore.filterState.showHiddenTransactions}
+        bind:dateRangeMode={pageStore.filterState.dateRangeMode}
+        bind:customStartDate={pageStore.filterState.customStartDate}
+        bind:customEndDate={pageStore.filterState.customEndDate}
+        bind:showDatePicker={pageStore.showDatePicker}
         onPreviousPeriod={previousPeriod}
         onNextPeriod={nextPeriod}
-        onToggleAllTransactions={() => showAllTransactions = !showAllTransactions}
-        onToggleHiddenTransactions={() => showHiddenTransactions = !showHiddenTransactions}
-        onToggleDateRangeMode={() => dateRangeMode = dateRangeMode === 'month' ? 'custom' : 'month'}
-        onToggleDatePicker={() => showDatePicker = !showDatePicker}
-        onUpdatePeriod={(period) => selectedPeriod = period}
-        onUpdateCustomStartDate={(date) => customStartDate = date}
-        onUpdateCustomEndDate={(date) => customEndDate = date}
+        onToggleAllTransactions={() => pageStore.toggleAllTransactions()}
+        onToggleHiddenTransactions={() => pageStore.toggleHiddenTransactions()}
+        onToggleDateRangeMode={() => pageStore.toggleDateRangeMode()}
+        onToggleDatePicker={() => pageStore.toggleDatePicker()}
+        onUpdatePeriod={(period) => pageStore.setPeriod(period)}
+        onUpdateCustomStartDate={(date) => pageStore.setCustomStartDate(date)}
+        onUpdateCustomEndDate={(date) => pageStore.setCustomEndDate(date)}
       />
 
       <!-- Search bar -->
       <SearchBar
-        value={searchQuery}
-        onInput={(value) => searchQuery = value}
-        onClear={() => searchQuery = ''}
+        value={pageStore.filterState.searchQuery}
+        onInput={(value) => pageStore.setSearchQuery(value)}
+        onClear={() => pageStore.setSearchQuery('')}
       />
 
       <!-- Action buttons -->
       <div class="toolbar-actions">
-        {#if isSelectionMode}
+        {#if pageStore.selectionState.isSelectionMode}
           <button class="toolbar-btn" onclick={selectAll}>
             {$t('transactions.select_all')}
           </button>
@@ -725,15 +324,16 @@
             {$t('transactions.cancel')}
           </button>
         {:else}
-          <!-- Collapse/Expand toggle button -->
           {#if groupedTransactions().length > 1}
             <button
               class="toolbar-btn icon-only"
-              onclick={allExpanded ? collapseAll : expandAll}
-              title={allExpanded ? 'Colapsar todo' : 'Expandir todo'}
-              aria-label={allExpanded ? 'Colapsar grupos' : 'Expandir grupos'}
+              onclick={pageStore.groupingState.allExpanded
+                ? () => pageStore.collapseAll(groupedTransactions().map(g => g.date))
+                : () => pageStore.expandAll()}
+              title={pageStore.groupingState.allExpanded ? 'Colapsar todo' : 'Expandir todo'}
+              aria-label={pageStore.groupingState.allExpanded ? 'Colapsar grupos' : 'Expandir grupos'}
             >
-              {#if allExpanded}
+              {#if pageStore.groupingState.allExpanded}
                 <Minimize2 size={14} />
               {:else}
                 <Maximize2 size={14} />
@@ -744,21 +344,22 @@
 
           <button
             class="toolbar-btn"
-            class:pulse={isSelectionMode === false && filteredTransactions().length > 10}
-            onclick={() => isSelectionMode = true}
+            onclick={() => pageStore.toggleSelectionMode()}
             aria-label={$t('accessibility.select_transactions')}
           >
             {$t('transactions.select')}
           </button>
           <button
             class="toolbar-btn"
-            class:active={showFilters}
-            class:has-filters={selectedCategories.length > 0 || transactionTypeFilter !== 'all'}
-            onclick={() => showFilters = !showFilters}
+            class:active={pageStore.modalState.showFilters}
+            class:has-filters={pageStore.filterState.selectedCategories.length > 0 ||
+                              pageStore.filterState.transactionTypeFilter !== 'all'}
+            onclick={() => pageStore.toggleFilters()}
             aria-label={$t('accessibility.show_filters')}
           >
             <Filter size={14} />
-            {#if selectedCategories.length > 0 || transactionTypeFilter !== 'all'}
+            {#if pageStore.filterState.selectedCategories.length > 0 ||
+                 pageStore.filterState.transactionTypeFilter !== 'all'}
               <span class="filter-badge"></span>
             {/if}
           </button>
@@ -773,108 +374,98 @@
       </div>
     </div>
 
-    
-    {#if showFilters}
-      <div class="filters-bento" class:visible={showFilters}>
-        <!-- Filter Grid - Bento Box Layout -->
+    {#if pageStore.modalState.showFilters}
+      <div class="filters-bento" class:visible={pageStore.modalState.showFilters}>
         <div class="filter-grid">
-          <!-- Quick Type Filters -->
           <div class="bento-item quick-filters">
             <button
               class="filter-pill income"
-              class:active={transactionTypeFilter === 'income' && selectedCategories.length === 0}
-              class:disabled={selectedCategories.length > 0}
+              class:active={pageStore.filterState.transactionTypeFilter === 'income' &&
+                           pageStore.filterState.selectedCategories.length === 0}
+              class:disabled={pageStore.filterState.selectedCategories.length > 0}
               onclick={() => {
-                if (selectedCategories.length === 0) {
-                  transactionTypeFilter = transactionTypeFilter === 'income' ? 'all' : 'income'
+                if (pageStore.filterState.selectedCategories.length === 0) {
+                  pageStore.setTransactionTypeFilter(
+                    pageStore.filterState.transactionTypeFilter === 'income' ? 'all' : 'income'
+                  );
                 }
               }}
-              aria-pressed={transactionTypeFilter === 'income'}
             >
-              <TrendingUp size={12} class="pill-icon" />
-              <span>Ingresos</span>
-              {#if transactionTypeFilter === 'income' && selectedCategories.length === 0}
-                <span class="pill-indicator"></span>
+              <TrendingUp size={14} />
+              <span>{$t('transactions.income')}</span>
+              {#if pageStore.filterState.transactionTypeFilter === 'income' &&
+                   pageStore.filterState.selectedCategories.length === 0}
+                <Check size={12} />
               {/if}
             </button>
 
             <button
-              class="filter-pill expense"
-              class:active={transactionTypeFilter === 'expenses' && selectedCategories.length === 0}
-              class:disabled={selectedCategories.length > 0}
+              class="filter-pill expenses"
+              class:active={pageStore.filterState.transactionTypeFilter === 'expenses' &&
+                           pageStore.filterState.selectedCategories.length === 0}
+              class:disabled={pageStore.filterState.selectedCategories.length > 0}
               onclick={() => {
-                if (selectedCategories.length === 0) {
-                  transactionTypeFilter = transactionTypeFilter === 'expenses' ? 'all' : 'expenses'
+                if (pageStore.filterState.selectedCategories.length === 0) {
+                  pageStore.setTransactionTypeFilter(
+                    pageStore.filterState.transactionTypeFilter === 'expenses' ? 'all' : 'expenses'
+                  );
                 }
               }}
-              aria-pressed={transactionTypeFilter === 'expenses'}
             >
-              <TrendingDown size={12} class="pill-icon" />
-              <span>Gastos</span>
-              {#if transactionTypeFilter === 'expenses' && selectedCategories.length === 0}
-                <span class="pill-indicator"></span>
+              <TrendingDown size={14} />
+              <span>{$t('transactions.expenses')}</span>
+              {#if pageStore.filterState.transactionTypeFilter === 'expenses' &&
+                   pageStore.filterState.selectedCategories.length === 0}
+                <Check size={12} />
               {/if}
             </button>
 
             <button
               class="filter-pill uncategorized"
-              class:active={transactionTypeFilter === 'uncategorized' && selectedCategories.length === 0}
-              class:disabled={selectedCategories.length > 0}
+              class:active={pageStore.filterState.transactionTypeFilter === 'uncategorized' &&
+                           pageStore.filterState.selectedCategories.length === 0}
+              class:disabled={pageStore.filterState.selectedCategories.length > 0}
               onclick={() => {
-                if (selectedCategories.length === 0) {
-                  transactionTypeFilter = transactionTypeFilter === 'uncategorized' ? 'all' : 'uncategorized'
+                if (pageStore.filterState.selectedCategories.length === 0) {
+                  pageStore.setTransactionTypeFilter(
+                    pageStore.filterState.transactionTypeFilter === 'uncategorized' ? 'all' : 'uncategorized'
+                  );
                 }
               }}
-              aria-pressed={transactionTypeFilter === 'uncategorized'}
             >
-              <Tag size={12} class="pill-icon" style="opacity: 0.5" />
-              <span>{$t('transactions.period.uncategorized')}</span>
-              {#if transactionTypeFilter === 'uncategorized' && selectedCategories.length === 0}
-                <span class="pill-indicator"></span>
+              <Tag size={14} />
+              <span>{$t('transactions.uncategorized')}</span>
+              {#if pageStore.filterState.transactionTypeFilter === 'uncategorized' &&
+                   pageStore.filterState.selectedCategories.length === 0}
+                <Check size={12} />
               {/if}
             </button>
           </div>
 
-          <!-- Category Selector -->
           <div class="bento-item category-selector">
             <button
-              class="category-pill"
-              class:active={selectedCategories.length > 0}
-              class:open={showCategoryFilterDropdown}
-              onclick={(e) => {
-                e.stopPropagation();
-                showCategoryFilterDropdown = !showCategoryFilterDropdown;
-              }}
+              class="category-dropdown-trigger"
+              onclick={() => pageStore.toggleCategoryFilterDropdown()}
+              aria-expanded={pageStore.isShowingCategoryFilterDropdown}
             >
-              <Tag size={12} />
-              <span>
-                {selectedCategories.length > 0
-                  ? `${selectedCategories.length} categorías`
-                  : 'Categorías'}
-              </span>
-              <ChevronDown size={12} class="chevron {showCategoryFilterDropdown ? 'rotated' : ''}" />
+              <span>{$t('transactions.filter_by_category')}</span>
+              <ChevronDown size={14} />
             </button>
 
-            {#if showCategoryFilterDropdown}
+            {#if pageStore.isShowingCategoryFilterDropdown}
               <div class="category-dropdown-mini">
                 <div class="category-grid-compact">
                   {#each $apiCategories as category}
                     <button
-                      class="category-chip-mini"
-                      class:selected={selectedCategories.includes(category.id)}
-                      onclick={() => {
-                        if (selectedCategories.includes(category.id)) {
-                          selectedCategories = selectedCategories.filter(c => c !== category.id);
-                        } else {
-                          selectedCategories = [...selectedCategories, category.id];
-                        }
-                      }}
+                      class="category-chip"
+                      class:selected={pageStore.filterState.selectedCategories.includes(category.id)}
+                      onclick={() => pageStore.toggleCategory(category.id)}
                     >
-                      <span class="chip-emoji">{category.icon}</span>
-                      <span class="chip-name">{category.name}</span>
-                      {#if selectedCategories.includes(category.id)}
+                      <span class="category-icon">{category.icon}</span>
+                      <span class="category-name">{category.name}</span>
+                      {#if pageStore.filterState.selectedCategories.includes(category.id)}
                         <div class="chip-check">
-                          <Check size={8} />
+                          <Check size={10} />
                         </div>
                       {/if}
                     </button>
@@ -882,98 +473,81 @@
                 </div>
               </div>
             {/if}
+
+            {#if pageStore.filterState.selectedCategories.length > 0 ||
+                 pageStore.filterState.transactionTypeFilter !== 'all'}
+              <div class="bento-item clear-section">
+                <button
+                  class="clear-filters-btn"
+                  onclick={() => pageStore.clearFilters()}
+                >
+                  <X size={14} />
+                  <span>{$t('transactions.clear_filters')}</span>
+                </button>
+              </div>
+            {/if}
           </div>
 
-          <!-- Clear Button (when filters active) -->
-          {#if transactionTypeFilter !== 'all' || selectedCategories.length > 0}
-            <div class="bento-item clear-section">
-              <button class="clear-pill" onclick={clearAllFilters}>
-                <X size={12} />
-                <span>Limpiar</span>
-              </button>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Active Tags (minimal display) -->
-        {#if transactionTypeFilter !== 'all' || selectedCategories.length > 0}
           <div class="active-tags-mini">
-            {#if transactionTypeFilter === 'income'}
-              <button
-                class="tag-mini income-tag"
-                onclick={() => transactionTypeFilter = 'all'}
-                aria-label={$t('accessibility.remove_income_filter')}
-              >
-                <TrendingUp size={10} />
-                <span>Ingresos</span>
-                <X size={10} class="tag-close" />
-              </button>
-            {/if}
-
-            {#if transactionTypeFilter === 'expenses'}
-              <button
-                class="tag-mini expense-tag"
-                onclick={() => transactionTypeFilter = 'all'}
-                aria-label={$t('accessibility.remove_expense_filter')}
-              >
-                <TrendingDown size={10} />
-                <span>Gastos</span>
-                <X size={10} class="tag-close" />
-              </button>
-            {/if}
-
-            {#if transactionTypeFilter === 'uncategorized'}
-              <button
-                class="tag-mini uncategorized-tag"
-                onclick={() => transactionTypeFilter = 'all'}
-                aria-label={$t('accessibility.remove_filter')}
-              >
-                <Tag size={10} style="opacity: 0.5" />
-                <span>{$t('transactions.period.uncategorized')}</span>
-                <X size={10} class="tag-close" />
-              </button>
-            {/if}
-
-            {#each selectedCategories as categoryId}
-              {@const category = $apiCategories.find(c => c.id === categoryId)}
+            {#each pageStore.filterState.selectedCategories as categoryId}
+              {@const category = getCategoryById($apiCategories, categoryId)}
               {#if category}
-                <button
-                  class="tag-mini category-tag"
-                  style="--category-color: {category.color}"
-                  onclick={() => {
-                    selectedCategories = selectedCategories.filter(c => c !== categoryId);
-                  }}
-                  aria-label={$t('common.delete')}
-                >
-                  <span class="tag-emoji">{category.icon}</span>
-                  <span>{category.name}</span>
-                  <X size={10} class="tag-close" />
-                </button>
+                <span class="active-tag">
+                  {category.icon} {category.name}
+                  <button
+                    class="remove-tag"
+                    onclick={() => pageStore.toggleCategory(categoryId)}
+                    aria-label="Remove filter"
+                  >
+                    <X size={10} />
+                  </button>
+                </span>
               {/if}
             {/each}
+
+            {#if pageStore.filterState.transactionTypeFilter !== 'all' &&
+                 pageStore.filterState.selectedCategories.length === 0}
+              <span class="active-tag type-filter">
+                {#if pageStore.filterState.transactionTypeFilter === 'income'}
+                  <TrendingUp size={12} /> {$t('transactions.income')}
+                {:else if pageStore.filterState.transactionTypeFilter === 'expenses'}
+                  <TrendingDown size={12} /> {$t('transactions.expenses')}
+                {:else if pageStore.filterState.transactionTypeFilter === 'uncategorized'}
+                  <Tag size={12} /> {$t('transactions.uncategorized')}
+                {/if}
+                <button
+                  class="remove-tag"
+                  onclick={() => pageStore.setTransactionTypeFilter('all')}
+                  aria-label="Remove filter"
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            {/if}
           </div>
-        {/if}
+        </div>
       </div>
     {/if}
   </div>
-  
-  <!-- Transaction List -->
+
+  <!-- Transactions list -->
   <main class="transactions-list">
     {#each groupedTransactions() as group}
-      <div class="transaction-group" class:collapsed={collapsedGroups.has(group.date)}>
+      <div class="transaction-group"
+           class:collapsed={pageStore.groupingState.collapsedGroups.has(group.date)}>
         <button
           class="group-header"
-          onclick={() => toggleGroup(group.date)}
-          aria-expanded={!collapsedGroups.has(group.date)}
+          onclick={() => pageStore.toggleGroup(group.date)}
+          aria-expanded={!pageStore.groupingState.collapsedGroups.has(group.date)}
         >
           <div class="group-header-left">
-            {#if collapsedGroups.has(group.date)}
+            {#if pageStore.groupingState.collapsedGroups.has(group.date)}
               <ChevronRight size={16} class="group-chevron" />
             {:else}
               <ChevronDown size={16} class="group-chevron" />
             {/if}
             <span>{formatDate(group.date)}</span>
-            {#if collapsedGroups.has(group.date)}
+            {#if pageStore.groupingState.collapsedGroups.has(group.date)}
               <span class="group-count">({group.items.length} transacciones)</span>
             {/if}
           </div>
@@ -982,23 +556,23 @@
           </span>
         </button>
 
-        {#if !collapsedGroups.has(group.date)}
+        {#if !pageStore.groupingState.collapsedGroups.has(group.date)}
           {#each group.items as transaction}
-            {@const category = getCategoryById(transaction.categoryId)}
+            {@const category = getCategoryById($apiCategories, transaction.categoryId)}
             <TransactionRow
               {transaction}
               {category}
-              {isSelectionMode}
+              isSelectionMode={pageStore.selectionState.isSelectionMode}
               isSelected={$apiSelectedTransactions.has(transaction.id)}
-              isEditingObservations={editingObservations === transaction.id}
-              bind:editingObservationsText
+              isEditingObservations={pageStore.observationsState.editingTransactionId === transaction.id}
+              editingObservationsText={pageStore.observationsState.editingText}
               onToggleSelection={() => toggleSelection(transaction.id)}
-              onOpenCategoryModal={() => openCategoryModal(transaction)}
+              onOpenCategoryModal={() => pageStore.openCategoryModal(transaction)}
               onStartEditingObservations={() => startEditingObservations(transaction)}
               onSaveObservations={() => saveObservations(transaction)}
               onCancelEditingObservations={cancelEditingObservations}
               onUpdateObservationsText={(text) => {
-                editingObservationsText = text;
+                pageStore.updateObservationsText(text);
                 saveObservationsDebounced(transaction);
               }}
               onToggleHide={() => toggleHideTransaction(transaction)}
@@ -1010,64 +584,59 @@
       </div>
     {/each}
   </main>
-  
+
   <!-- FAB -->
-  <button class="fab" onclick={() => showAddModal = true}>
+  <button class="fab" onclick={() => pageStore.openAddModal()}>
     <Plus size={16} />
   </button>
 </div>
 
-<!-- Category Selection Modal -->
+<!-- Modals -->
 <CategorySelectionModal
-  isOpen={showCategoryModal}
-  transaction={categoryModalTransaction}
+  isOpen={pageStore.modalState.showCategoryModal}
+  transaction={pageStore.modalState.categoryModalTransaction}
   categories={$apiCategories}
   onSelect={handleCategorySelection}
-  onCancel={closeCategoryModal}
+  onCancel={() => pageStore.closeCategoryModal()}
 />
 
-<!-- Smart Categorization Modal -->
 <SmartCategorizationModal
-  isOpen={showSmartCategorization}
-  transaction={smartCategorizationTransaction}
-  selectedCategory={smartCategorizationCategory}
-  matchingTransactions={smartMatchingTransactions}
-  suggestions={smartSuggestions}
+  isOpen={pageStore.modalState.showSmartCategorization}
+  transaction={pageStore.modalState.smartCategorizationTransaction}
+  selectedCategory={pageStore.modalState.smartCategorizationCategory}
+  matchingTransactions={pageStore.modalState.smartMatchingTransactions}
+  suggestions={pageStore.modalState.smartSuggestions}
   onConfirm={handleSmartCategorization}
   onCancel={handleSmartCategorizationCancel}
 />
 
-
-<!-- Delete Selected Modal -->
 <ConfirmModal
-  bind:isOpen={showDeleteSelectedModal}
+  bind:isOpen={pageStore.modalState.showDeleteSelectedModal}
   title={$t('transactions.delete_selected_title')}
   message={$t('transactions.delete_selected_message', { count: $apiSelectedTransactions.size })}
   confirmText={$t('transactions.delete_all')}
   cancelText={$t('common.cancel')}
   type="danger"
   onConfirm={confirmDeleteSelected}
-  onCancel={() => {}}
+  onCancel={() => pageStore.closeDeleteSelectedModal()}
 />
 
-<!-- Delete Single Transaction Modal -->
 <ConfirmModal
-  bind:isOpen={showDeleteSingleModal}
+  bind:isOpen={pageStore.modalState.showDeleteSingleModal}
   title={$t('transactions.delete_single_title')}
   message={$t('transactions.delete_single_message')}
   confirmText={$t('common.delete')}
   cancelText={$t('common.cancel')}
   type="danger"
   onConfirm={confirmDeleteSingle}
-  onCancel={() => transactionToDelete = null}
+  onCancel={() => pageStore.closeDeleteSingleModal()}
 />
 
-<!-- Add Transaction Modal -->
 <AddTransactionModal
-  bind:isOpen={showAddModal}
+  bind:isOpen={pageStore.modalState.showAddModal}
   categories={$apiCategories}
   onSubmit={addTransaction}
-  onCancel={() => showAddModal = false}
+  onCancel={() => pageStore.closeAddModal()}
 />
 
 <style>
@@ -1075,7 +644,7 @@
     min-height: 100vh;
     background: linear-gradient(180deg, #FAFAFA 0%, #F5F5F5 100%);
   }
-  
+
   .transactions-header {
     background: var(--surface-elevated);
     border-bottom: 1px solid var(--gray-200);
@@ -1086,7 +655,7 @@
     max-width: 1200px;
     margin: 0 auto;
   }
-  
+
   /* Date selector styles */
   .date-selector-section {
     display: flex;
@@ -1118,470 +687,14 @@
     margin-left: 0.25rem;
   }
 
-  .date-nav-btn {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.625rem;
-    border: none;
-    background: #FFF7ED;
-    color: #64748b;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Disabled state for date controls when showing all */
+  .date-selector-section.show-all .date-display,
+  .date-selector-section.show-all .date-nav-btn,
+  .date-selector-section.show-all .date-mode-btn,
+  .date-selector-section.show-all .custom-date-range {
+    opacity: 0.3;
   }
 
-  .date-nav-btn:hover {
-    background: #FFF3E0;
-    transform: scale(1.08);
-  }
-
-  .date-nav-btn:active {
-    transform: scale(0.98);
-  }
-
-  .date-nav-btn.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background: #f8f9fa;
-    color: #9ca3af;
-  }
-
-  .date-nav-btn.disabled:hover {
-    background: #f8f9fa;
-    transform: none;
-    color: #9ca3af;
-  }
-
-  .date-display {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0 1.25rem;
-    height: 2.5rem;
-    background: #FFF7ED;
-    border: none;
-    border-radius: 0.625rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #475569;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    white-space: nowrap;
-  }
-
-  .date-display:hover {
-    background: #FFF3E0;
-    transform: translateY(-1px);
-  }
-
-  .date-display.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background: #f8f9fa;
-    color: #9ca3af;
-  }
-
-  .date-display.disabled:hover {
-    background: #f8f9fa;
-    transform: none;
-    color: #9ca3af;
-  }
-
-  .custom-date-range {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-  }
-
-  .date-input {
-    height: 1.75rem;
-    padding: 0 var(--space-xs);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    font-size: 0.8125rem;
-    color: var(--text-primary);
-    outline: none;
-    transition: all 0.15s ease;
-  }
-
-  .date-input:focus {
-    border-color: var(--acapulco);
-  }
-
-  .date-input:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background: #f8f9fa;
-    color: #9ca3af;
-  }
-
-  .custom-date-range.disabled {
-    opacity: 0.4;
-  }
-
-  .custom-date-range.disabled .date-separator {
-    color: #9ca3af;
-  }
-
-  .date-separator {
-    color: var(--text-muted);
-    font-size: 0.8125rem;
-  }
-
-  .date-mode-btn {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.625rem;
-    border: none;
-    background: #FFF7ED;
-    color: #64748b;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-left: 0.5rem;
-  }
-
-  .date-mode-btn:hover {
-    background: #FFF3E0;
-    transform: scale(1.08);
-    color: var(--acapulco);
-  }
-
-  .date-mode-btn:active {
-    transform: scale(0.98);
-  }
-
-  .date-mode-btn.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background: #f8f9fa;
-    color: #9ca3af;
-  }
-
-  .date-mode-btn.disabled:hover {
-    background: #f8f9fa;
-    transform: none;
-    color: #9ca3af;
-  }
-
-  .all-toggle-btn {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.625rem;
-    border: none;
-    background: #FFF7ED;
-    color: #64748b;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    flex-shrink: 0;
-  }
-
-  .all-toggle-btn:hover {
-    background: #FFF3E0;
-    transform: scale(1.08);
-  }
-
-  .all-toggle-btn:active {
-    transform: scale(0.98);
-  }
-
-  .all-toggle-btn.active {
-    background: var(--acapulco);
-    color: white;
-    box-shadow: 0 2px 8px rgba(122, 186, 165, 0.25);
-  }
-
-  .hidden-toggle-btn {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.625rem;
-    border: none;
-    background: #FFF7ED;
-    color: #64748b;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    flex-shrink: 0;
-  }
-
-  .hidden-toggle-btn:hover {
-    background: #FFF3E0;
-    transform: scale(1.08);
-  }
-
-  .hidden-toggle-btn:active {
-    transform: scale(0.98);
-  }
-
-  .hidden-toggle-btn.active {
-    background: #94a3b8;
-    color: white;
-    box-shadow: 0 2px 8px rgba(148, 163, 184, 0.25);
-  }
-
-  /* Month picker dropdown */
-  .month-picker-dropdown {
-    position: absolute;
-    top: calc(100% + var(--space-xs));
-    left: var(--space-lg);
-    background: var(--surface-elevated);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-md);
-    padding: var(--space-md);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    z-index: 25;
-    min-width: 240px;
-  }
-
-  .month-picker-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--space-md);
-    padding-bottom: var(--space-sm);
-    border-bottom: 1px solid var(--gray-200);
-  }
-
-  .year-nav-btn {
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: var(--radius-xs);
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s ease;
-  }
-
-  .year-nav-btn:hover {
-    background: var(--gray-100);
-    color: var(--text-primary);
-  }
-
-  .year-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-primary);
-  }
-
-  .month-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-xs);
-  }
-
-  .month-option {
-    padding: var(--space-xs) var(--space-sm);
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    text-align: center;
-  }
-
-  .month-option:hover {
-    background: var(--gray-50);
-    color: var(--text-primary);
-  }
-
-  .month-option.selected {
-    background: var(--acapulco);
-    color: white;
-    font-weight: 500;
-  }
-  
-  .period-stats {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xl);
-    max-width: 320px;
-    margin: 0 auto;
-  }
-
-  /* Balance Display - Featured */
-  .balance-display {
-    text-align: center;
-  }
-
-  .balance-label {
-    font-size: 0.875rem;
-    color: var(--text-muted);
-    margin-bottom: var(--space-xs);
-    font-weight: 300;
-  }
-
-  .balance-value {
-    font-size: 2.25rem;
-    font-weight: 300;
-    letter-spacing: -0.025em;
-    color: var(--text-primary);
-  }
-
-  .balance-value.positive {
-    color: var(--acapulco);
-  }
-
-  .balance-value.negative {
-    color: var(--froly);
-  }
-
-  /* Stats Overview - Clean rows */
-  .stats-overview {
-    border-top: 1px solid var(--gray-200);
-    border-bottom: 1px solid var(--gray-200);
-    padding: var(--space-lg) 0;
-  }
-
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-sm) 0;
-  }
-
-  .stat-label {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    font-weight: 400;
-  }
-
-  .stat-value {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-primary);
-  }
-
-  .stat-value.income {
-    color: var(--acapulco);
-  }
-
-  .stat-value.investment {
-    color: #8B5CF6;
-  }
-
-  .stat-value.expense {
-    color: var(--text-primary);
-  }
-
-  /* Expense Breakdown - Minimal */
-  .expense-breakdown {
-    padding-top: var(--space-md);
-  }
-
-  .breakdown-header {
-    margin-bottom: var(--space-md);
-  }
-
-  .breakdown-title {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .breakdown-content {
-    margin-bottom: var(--space-lg);
-  }
-
-  .breakdown-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-xs) 0;
-  }
-
-  .breakdown-row.uncategorized {
-    opacity: 0.7;
-    font-size: 0.8125rem;
-  }
-
-  .breakdown-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-  }
-
-  .breakdown-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .breakdown-dot.essential {
-    background: var(--froly);
-  }
-
-  .breakdown-dot.discretionary {
-    background: var(--acapulco);
-  }
-
-  .breakdown-dot.investment {
-    background: #8B5CF6;
-  }
-
-  .breakdown-dot.uncategorized {
-    background: var(--text-muted);
-  }
-
-  .breakdown-label {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-    font-weight: 400;
-  }
-
-  .breakdown-value {
-    font-size: 0.8125rem;
-    color: var(--text-primary);
-    font-weight: 500;
-  }
-
-  /* Visual Bar - Subtle */
-  .visual-bar {
-    display: flex;
-    height: 2px;
-    border-radius: 1px;
-    background: var(--gray-200);
-    overflow: hidden;
-  }
-
-  .bar-segment {
-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .bar-segment.essential {
-    background: var(--froly);
-  }
-
-  .bar-segment.discretionary {
-    background: var(--acapulco);
-  }
-
-  .bar-segment.investment {
-    background: #8B5CF6;
-  }
-
-  .bar-segment.uncategorized {
-    background: var(--text-muted);
-  }
-  
   .toolbar {
     background: transparent;
     position: sticky;
@@ -1593,848 +706,405 @@
   .toolbar-content {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 1.5rem;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+    padding: 0 2rem;
+    display: flex;
     gap: 1rem;
     align-items: center;
-  }
-
-  @media (min-width: 1024px) {
-    .toolbar-content {
-      grid-template-columns: minmax(240px, auto) 1fr minmax(200px, auto);
-      gap: 1.5rem;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .toolbar {
-      padding: 0.75rem 0;
-    }
-
-    .toolbar-content {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-      padding: 0 1rem;
-    }
-
-    .date-selector-section,
-    .toolbar-actions {
-      width: 100%;
-      justify-content: space-between;
-    }
-
-    .search-bar {
-      width: 100%;
-      order: -1;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .toolbar {
-      padding: 0.75rem 0;
-    }
-
-    .toolbar-content {
-      padding: 0 1rem;
-    }
-
-    .date-selector-section {
-      padding: 0.375rem;
-      gap: 0.375rem;
-    }
-
-    .date-selector-section.show-all {
-      gap: 0.25rem;
-    }
-
-    .toolbar-actions {
-      padding: 0.375rem;
-      gap: 0.375rem;
-    }
-
-    .filter-grid {
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
-    }
-
-    .filters-bento {
-      padding: 1rem;
-      margin: 0.5rem 1rem;
-      border-radius: 0.75rem;
-    }
-
-    .bento-item {
-      padding: 0.5rem;
-    }
-
-    .all-toggle-btn,
-    .hidden-toggle-btn,
-    .date-nav-btn,
-    .date-mode-btn {
-      width: 2.25rem;
-      height: 2.25rem;
-    }
-
-    .date-display {
-      font-size: 0.8125rem;
-      padding: 0 1rem;
-      height: 2.25rem;
-    }
-
-    .toolbar-btn {
-      padding: 0 1rem;
-      height: 2.25rem;
-      font-size: 0.8125rem;
-    }
-
-    .search-bar {
-      height: 2.75rem;
-      padding: 0.5rem 0.875rem;
-    }
-
-    .filter-pill,
-    .category-pill,
-    .clear-pill {
-      min-height: 2.25rem;
-      padding: 0.5rem 1rem;
-      font-size: 0.8125rem;
-    }
-
-    .transactions-header {
-      padding: var(--space-xl) var(--space-md);
-    }
-
-    .header-content {
-      padding: 0;
-    }
-
-    .period-stats {
-      gap: var(--space-lg);
-      max-width: 100%;
-    }
-
-    .balance-display {
-      padding-bottom: var(--space-md);
-    }
-
-    .stats-overview {
-      padding: var(--space-md) 0;
-    }
-
-    .expense-breakdown {
-      padding-top: var(--space-sm);
-    }
-
-    .transactions-list {
-      padding: 0 1rem 2rem 1rem;
-    }
-
-    .transaction-group {
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .transaction-card {
-      padding: 0.875rem;
-      min-height: 4rem;
-    }
-
-    .fab {
-      width: 3.5rem;
-      height: 3.5rem;
-      bottom: 1rem;
-      right: 1rem;
-    }
-  }
-
-  @media (min-width: 768px) {
-    .toolbar-content {
-      flex-wrap: nowrap;
-    }
-  }
-
-  .search-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.625rem 1rem;
-    height: 3rem;
-    background: white;
-    border: none;
-    border-radius: 0.75rem;
-    flex: 1;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-                0 1px 2px rgba(0, 0, 0, 0.03);
-  }
-
-  .search-bar:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
-                0 2px 4px rgba(0, 0, 0, 0.03);
-  }
-
-  .search-bar:focus-within {
-    box-shadow: 0 0 0 3px rgba(122, 186, 165, 0.1),
-                0 4px 6px rgba(0, 0, 0, 0.05);
-    transform: scale(1.01);
-  }
-
-  .search-bar input {
-    font-size: 0.875rem;
-  }
-
-  .search-bar.searching {
-    background: var(--surface);
-  }
-
-  .search-icon {
-    transition: color 0.15s ease;
-    color: var(--text-muted);
-  }
-
-  .search-bar:focus-within .search-icon {
-    color: var(--acapulco);
-  }
-
-  .search-bar input {
-    border: none;
-    background: none;
-    outline: none;
-    flex: 1;
-    font-size: 0.8125rem;
-    color: var(--text-primary);
-  }
-
-  .search-bar input::placeholder {
-    color: var(--text-muted);
-    transition: opacity 0.2s ease;
-  }
-
-  .search-bar:focus-within input::placeholder {
-    opacity: 0.4;
-  }
-
-  .clear-search {
-    position: absolute;
-    right: var(--space-xs);
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: none;
-    background: var(--gray-200);
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    animation: fadeIn 0.15s ease forwards;
-    transition: all 0.15s ease;
-  }
-
-  .clear-search:hover {
-    background: var(--gray-300);
-  }
-
-  @keyframes fadeIn {
-    to {
-      opacity: 1;
-    }
   }
 
   .toolbar-actions {
     display: flex;
     gap: 0.5rem;
     align-items: center;
-    background: white;
-    padding: 0.5rem;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-                0 1px 2px rgba(0, 0, 0, 0.03);
-  }
-
-  .toolbar-actions:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
-                0 2px 4px rgba(0, 0, 0, 0.03);
-  }
-
-  .toolbar-separator {
-    width: 1px;
-    height: 1.5rem;
-    background: rgba(148, 163, 184, 0.2);
-    margin: 0 0.25rem;
   }
 
   .toolbar-btn {
-    height: 2.5rem;
-    padding: 0 1.25rem;
-    border: none;
-    border-radius: 0.625rem;
-    background: #FFF7ED;
-    color: #64748b;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: white;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
     font-size: 0.875rem;
     font-weight: 500;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
     white-space: nowrap;
-    position: relative;
   }
 
   .toolbar-btn:hover {
-    background: #FFF3E0;
+    background: var(--gray-50);
+    border-color: var(--gray-400);
     transform: translateY(-1px);
   }
 
-  .toolbar-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  }
-
   .toolbar-btn.active {
-    background: var(--acapulco);
+    background: var(--cornflower);
     color: white;
-    box-shadow: 0 2px 8px rgba(122, 186, 165, 0.25);
-  }
-
-  .toolbar-btn.icon-only {
-    padding: 0;
-    width: 2.5rem;
-    justify-content: center;
+    border-color: var(--cornflower);
   }
 
   .toolbar-btn.has-filters {
-    background: rgba(122, 186, 165, 0.1);
-    color: var(--acapulco);
+    position: relative;
   }
 
   .filter-badge {
     position: absolute;
-    top: -2px;
-    right: -2px;
-    width: 6px;
-    height: 6px;
+    top: -4px;
+    right: -4px;
+    width: 8px;
+    height: 8px;
+    background: var(--froly);
     border-radius: 50%;
-    background: var(--acapulco);
+  }
+
+  .toolbar-btn.icon-only {
+    padding: 0.5rem;
   }
 
   .toolbar-btn.danger:hover {
-    background: rgba(239, 68, 68, 0.05);
-    border-color: rgba(239, 68, 68, 0.3);
-    color: rgb(239, 68, 68);
-    transform: translateY(-1px) scale(1.02);
+    background: var(--froly);
+    color: white;
+    border-color: var(--froly);
   }
-  
-  /* Bento Box Filters */
+
+  .toolbar-separator {
+    width: 1px;
+    height: 24px;
+    background: var(--gray-300);
+  }
+
+  /* Filters bento */
   .filters-bento {
-    background: white;
-    border: none;
-    padding: 1.5rem;
-    margin: 1rem auto 2rem auto;
     max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    margin-top: 1rem;
     opacity: 0;
-    transform: translateY(-8px);
-    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    position: relative;
-    border-radius: 1rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
-                0 2px 4px rgba(0, 0, 0, 0.03);
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
   }
 
-  .filters-bento:hover {
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05),
-                0 4px 6px rgba(0, 0, 0, 0.03);
+  .filters-bento.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
   }
 
-  @keyframes slideDown {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Bento Grid Layout */
   .filter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: auto 1fr;
     gap: 1rem;
-    align-items: center;
-  }
-
-  @media (min-width: 768px) {
-    .filter-grid {
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-    }
+    align-items: start;
   }
 
   .bento-item {
-    background: rgba(249, 250, 251, 0.5);
-    border: 1px solid rgba(229, 231, 235, 0.5);
-    border-radius: 0.625rem;
-    padding: 0.75rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
-  .bento-item:hover {
-    background: rgba(249, 250, 251, 0.8);
-    border-color: rgba(209, 213, 219, 0.5);
-    transform: translateY(-2px);
-  }
-
-  /* Quick Filters Pills */
   .quick-filters {
     display: flex;
-    gap: var(--space-xs);
+    gap: 0.5rem;
   }
 
   .filter-pill {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    min-height: 2.5rem;
-    border: none;
-    border-radius: 0.625rem;
-    background: #FFF7ED;
-    font-size: 0.875rem;
+    gap: 0.375rem;
+    padding: 0.5rem 0.875rem;
+    background: white;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 2rem;
+    font-size: 0.8125rem;
     font-weight: 500;
-    color: #64748b;
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
     white-space: nowrap;
-    position: relative;
   }
 
-  .filter-pill:hover {
-    background: #FFF3E0;
+  .filter-pill:hover:not(.disabled) {
+    border-color: var(--gray-400);
     transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-    color: #475569;
   }
 
-  .filter-pill:active {
-    background: var(--gray-100);
-  }
-
-  .pill-indicator {
-    display: none;
+  .filter-pill.active {
+    background: var(--cornflower);
+    color: white;
+    border-color: var(--cornflower);
   }
 
   .filter-pill.income.active {
     background: var(--acapulco);
-    color: white;
+    border-color: var(--acapulco);
   }
 
-  .filter-pill.expense.active {
+  .filter-pill.expenses.active {
     background: var(--froly);
-    color: white;
+    border-color: var(--froly);
   }
 
   .filter-pill.uncategorized.active {
-    background: var(--gray-600);
-    color: white;
+    background: var(--text-muted);
+    border-color: var(--text-muted);
   }
 
   .filter-pill.disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
-    background: var(--gray-50);
-    border-color: var(--gray-100);
-    color: var(--text-muted);
   }
 
-  .filter-pill.disabled:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-100);
-    color: var(--text-muted);
-  }
-
-  /* Category Selector */
   .category-selector {
     position: relative;
-    z-index: 30;
   }
 
-  .category-pill {
+  .category-dropdown-trigger {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    min-height: 2.5rem;
-    border: none;
-    border-radius: 0.625rem;
-    background: #FFF7ED;
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    background: white;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 0.5rem;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #64748b;
+    color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    justify-content: space-between;
-    min-width: 180px;
-    position: relative;
+    transition: all 0.2s ease;
   }
 
-  .category-pill:hover {
-    background: #FFF3E0;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-    color: #475569;
+  .category-dropdown-trigger:hover {
+    border-color: var(--gray-400);
+    background: var(--gray-50);
   }
 
-  .category-pill.active {
-    background: rgba(122, 186, 165, 0.1);
-    color: var(--acapulco);
-    box-shadow: 0 2px 8px rgba(122, 186, 165, 0.15);
-  }
-
-  .chevron {
-    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    opacity: 0.5;
-  }
-
-  .chevron.rotated {
-    transform: rotate(180deg);
-    opacity: 0.8;
-  }
-
-  /* Compact Category Dropdown */
   .category-dropdown-mini {
     position: absolute;
-    top: calc(100% + var(--space-xs));
+    top: calc(100% + 0.5rem);
     left: 0;
     right: 0;
-    background: var(--surface-elevated);
+    background: white;
     border: 1px solid var(--gray-200);
-    border-radius: var(--radius-md);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    z-index: 35;
-    max-height: 200px;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    max-height: 300px;
     overflow-y: auto;
-    min-width: 240px;
   }
 
   .category-grid-compact {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 1px;
-    padding: var(--space-xs);
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.5rem;
   }
 
-  .category-chip-mini {
+  .category-chip {
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-xs) var(--space-sm);
-    border: none;
-    border-radius: var(--radius-sm);
-    background: transparent;
+    gap: 0.375rem;
+    padding: 0.5rem 0.625rem;
+    background: white;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-primary);
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
-    font-size: 0.8125rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .category-chip-mini:hover {
-    background: var(--gray-50);
+  .category-chip:hover {
+    border-color: var(--cornflower);
+    background: var(--cornflower-alpha-5);
   }
 
-  .category-chip-mini.selected {
-    background: rgba(122, 186, 165, 0.1);
-    color: var(--acapulco);
+  .category-chip.selected {
+    background: var(--cornflower);
+    color: white;
+    border-color: var(--cornflower);
   }
 
-  .chip-emoji {
+  .category-icon {
     font-size: 0.875rem;
-    width: 16px;
-    text-align: center;
+    flex-shrink: 0;
   }
 
-  .chip-name {
-    flex: 1;
-    text-align: left;
-    font-weight: 500;
+  .category-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .chip-check {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--acapulco);
-    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.625rem;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    color: var(--cornflower);
+    flex-shrink: 0;
     margin-left: auto;
   }
 
-  /* Clear Button */
   .clear-section {
-    opacity: 0;
-    animation: slideInFade 0.25s ease forwards;
+    padding: 0.5rem;
+    margin-left: auto;
   }
 
-  @keyframes slideInFade {
-    from {
-      opacity: 0;
-      transform: translateX(-6px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  .clear-pill {
+  .clear-filters-btn {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    min-height: 2.5rem;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    background: var(--gray-100);
     border: none;
-    border-radius: 0.625rem;
-    background: #FEE2E2;
-    color: #EF4444;
-    font-size: 0.875rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
     font-weight: 500;
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
   }
 
-  .clear-pill:hover {
-    background: #FCA5A5;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.15);
+  .clear-filters-btn:hover {
+    background: var(--gray-200);
+    color: var(--text-primary);
   }
 
-  /* Active Tags */
   .active-tags-mini {
     display: flex;
+    gap: 0.375rem;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 1.5rem;
-    padding: 1rem;
-    background: rgba(249, 250, 251, 0.5);
-    border-radius: 0.75rem;
-    border: 1px dashed rgba(209, 213, 219, 0.5);
-    position: relative;
-    min-height: 3rem;
-    align-items: center;
+    margin-top: 0.5rem;
   }
 
-  .active-tags-mini:empty {
-    display: none;
-  }
-
-  .tag-mini {
+  .active-tag {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    min-height: 2rem;
-    border: none;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--cornflower-alpha-10);
+    border: 1px solid var(--cornflower-alpha-30);
     border-radius: 1rem;
-    background: #FFF7ED;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    line-height: 1;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-  }
-
-  .tag-mini:hover {
-    background: #FFF3E0;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-  }
-
-  .tag-emoji {
     font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--cornflower);
   }
 
-  .tag-close {
-    margin-left: 0.25rem;
-    opacity: 0.4;
-    transition: opacity 0.15s ease;
-  }
-
-  .tag-mini:hover .tag-close {
-    opacity: 0.7;
-  }
-
-  .tag-mini.income-tag {
-    background: #E6F7F2;
-    color: #10B981;
-  }
-
-  .tag-mini.expense-tag {
-    background: #FEE2E2;
-    color: #EF4444;
-  }
-
-  .tag-mini.uncategorized-tag {
+  .active-tag.type-filter {
     background: var(--gray-100);
-    color: var(--gray-600);
+    border-color: var(--gray-300);
+    color: var(--text-secondary);
   }
 
-  .tag-mini.category-tag {
-    background: #FFF7ED;
-    color: #64748b;
+  .remove-tag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    background: var(--cornflower-alpha-20);
+    border: none;
+    border-radius: 50%;
+    color: var(--cornflower);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 0.125rem;
   }
 
-  /* Responsive Bento Grid */
-  @media (max-width: 768px) {
-    .filters-bento {
-      padding: var(--space-md);
-    }
-
-    .filter-grid {
-      grid-template-columns: 1fr;
-      gap: var(--space-xs);
-    }
-
-    .bento-item {
-      width: 100%;
-    }
-
-    .quick-filters {
-      justify-content: center;
-    }
-
-    .filter-pill {
-      flex: 1;
-      justify-content: center;
-    }
-
-    .category-dropdown-mini {
-      min-width: auto;
-      left: 0;
-      right: 0;
-    }
+  .remove-tag:hover {
+    background: var(--cornflower);
+    color: white;
   }
 
-  @media (max-width: 480px) {
-    .filter-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .quick-filters {
-      flex-direction: column;
-    }
-
-    .filter-pill {
-      justify-content: center;
-      min-height: 32px;
-    }
-
-    .category-pill {
-      min-width: auto;
-      justify-content: center;
-    }
-
-    .category-dropdown-mini {
-      max-height: 150px;
-    }
-
-    .active-tags-mini {
-      justify-content: center;
-    }
+  .type-filter .remove-tag {
+    background: var(--gray-300);
+    color: var(--text-secondary);
   }
 
-  /* Ultra-compact for very small screens */
-  @media (max-width: 360px) {
-    .filters-bento {
-      padding: var(--space-sm);
-    }
-
-    .bento-item {
-      padding: var(--space-xs);
-    }
-
-    .filter-pill,
-    .category-pill,
-    .clear-pill {
-      padding: var(--space-xs);
-      font-size: 0.75rem;
-    }
-
-    .tag-mini {
-      font-size: 0.625rem;
-      padding: 1px var(--space-xs);
-    }
-
-    .category-dropdown-compact {
-      min-width: 200px;
-      max-width: 240px;
-      left: auto;
-      right: 0;
-    }
-
-    .category-grid-item {
-      width: 32px;
-      height: 32px;
-    }
+  .type-filter .remove-tag:hover {
+    background: var(--gray-400);
+    color: white;
   }
-  
+
+  /* Transactions list */
   .transactions-list {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 1.5rem 3rem 1.5rem;
+    padding: 2rem;
   }
-  
+
   .transaction-group {
-    margin-bottom: 2rem;
     background: white;
     border-radius: 1rem;
-    padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-                0 1px 2px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--gray-200);
+    padding: 0.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
   }
-  
+
+  .transaction-group:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
   .group-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 1rem;
     margin: -0.5rem -0.5rem 1rem -0.5rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    background: transparent;
+    background: var(--gray-50);
+    border-radius: 0.75rem;
     border: none;
     cursor: pointer;
-    transition: background-color 0.2s;
-    width: calc(100% + 1rem);
+    transition: all 0.2s ease;
+    width: 100%;
+    text-align: left;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
   }
 
   .group-header:hover {
-    background: rgba(229, 231, 235, 0.3);
+    background: var(--gray-100);
   }
 
   .group-header-left {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--text-primary);
   }
 
   .group-chevron {
-    transition: transform 0.2s;
-    color: var(--text-secondary);
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
   }
 
   .group-count {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    font-weight: 500;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .group-total {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
   }
 
   .transaction-group.collapsed {
@@ -2444,412 +1114,8 @@
   .transaction-group.collapsed .group-header {
     margin-bottom: 0;
   }
-  
-  .transaction-card {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background: rgba(249, 250, 251, 0.5);
-    border: 1px solid transparent;
-    border-radius: 0.75rem;
-    margin-bottom: 0.75rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    position: relative;
-    min-height: 4.5rem;
-    z-index: 1;
-  }
 
-  .transaction-card:hover {
-    background: white;
-    border-color: rgba(122, 186, 165, 0.2);
-    transform: translateX(4px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
-                0 2px 4px rgba(0, 0, 0, 0.03);
-    z-index: 2;
-  }
-
-  /* Keep elevated z-index when dropdown is open */
-  .transaction-card.has-dropdown-open {
-    z-index: 40;
-  }
-
-  .transaction-card:last-child {
-    margin-bottom: 0;
-  }
-  
-  .transaction-card.selected {
-    background: rgba(122, 186, 165, 0.1);
-    border-color: var(--acapulco);
-  }
-
-  .transaction-card.hidden {
-    position: relative;
-    opacity: 0.6;
-    background: repeating-linear-gradient(
-      45deg,
-      var(--surface-elevated),
-      var(--surface-elevated) 10px,
-      var(--gray-50) 10px,
-      var(--gray-50) 20px
-    );
-  }
-
-  .transaction-card.hidden::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: var(--radius-lg);
-    pointer-events: none;
-  }
-
-  .transaction-card.hidden:hover {
-    transform: none;
-    border-color: var(--gray-300);
-    opacity: 0.7;
-  }
-
-  .transaction-card.hidden .transaction-description,
-  .transaction-card.hidden .transaction-amount,
-  .transaction-card.hidden .transaction-meta {
-    color: var(--text-muted);
-  }
-  .transaction-details {
-    flex: 1;
-  }
-  
-  .transaction-main {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .transaction-description {
-    font-weight: 500;
-    color: var(--text-primary);
-  }
-
-  .transaction-observations {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    font-style: italic;
-    margin-top: 2px;
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 3px;
-    transition: background-color 0.2s ease;
-  }
-
-  .transaction-observations:hover {
-    background-color: var(--surface-hover);
-  }
-
-  .transaction-observations.empty {
-    color: var(--text-muted);
-    opacity: 0.7;
-  }
-
-  .observations-editor {
-    margin-top: 2px;
-  }
-
-  .observations-input {
-    width: 100%;
-    font-size: 0.8rem;
-    padding: 2px 6px;
-    border: 1px solid var(--border-color);
-    border-radius: 3px;
-    background: var(--surface-primary);
-    color: var(--text-primary);
-    font-style: italic;
-  }
-
-  .observations-input:focus {
-    outline: none;
-    border-color: var(--acapulco);
-    box-shadow: 0 0 0 1px var(--acapulco);
-  }
-
-  .transaction-meta {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-  
-  .transaction-amount {
-    font-weight: 600;
-    color: var(--froly);
-  }
-  
-  .transaction-amount.income {
-    color: var(--acapulco);
-  }
-  
-  .category-selector {
-    position: relative;
-    margin-top: var(--space-xs);
-    z-index: 30;
-  }
-  
-  .category-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: 4px var(--space-sm);
-    border: 1px dashed var(--acapulco);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--acapulco);
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .category-btn.has-category {
-    border: 1px solid var(--gray-200);
-    color: var(--text-primary);
-    background: var(--surface);
-  }
-
-  .category-btn:hover {
-    background: rgba(122, 186, 165, 0.1);
-  }
-
-  .category-btn.has-category:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-300);
-  }
-
-  .category-icon-btn {
-    font-size: 0.875rem;
-  }
-
-  .category-dropdown-compact {
-    position: absolute;
-    top: calc(100% + 0.5rem);
-    left: 0;
-    z-index: 35;
-    background: var(--surface-elevated);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 3px 10px rgba(0, 0, 0, 0.05);
-    padding: var(--space-lg);
-    min-width: 300px;
-    max-width: 360px;
-    animation: dropdownOpen 0.2s ease-out;
-  }
-
-  @keyframes dropdownOpen {
-    from {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .category-section {
-    margin-bottom: var(--space-lg);
-  }
-
-  .category-section:last-of-type {
-    margin-bottom: var(--space-md);
-  }
-
-  .category-section-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: var(--space-sm);
-    padding-bottom: var(--space-xs);
-    border-bottom: 1px solid var(--gray-100);
-  }
-
-  .category-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
-    gap: var(--space-sm);
-    padding: var(--space-xs) 0;
-  }
-
-  .category-grid-item {
-    aspect-ratio: 1;
-    min-height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid var(--gray-200);
-    border-radius: var(--radius-md);
-    background: var(--surface);
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-  }
-
-  .category-grid-item:hover {
-    transform: translateY(-2px) scale(1.08);
-    z-index: 2;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  .category-grid-item.income-cat {
-    background: linear-gradient(135deg, rgba(122, 186, 165, 0.08), rgba(122, 186, 165, 0.03));
-    border-color: rgba(122, 186, 165, 0.4);
-  }
-
-  .category-grid-item.income-cat:hover {
-    background: linear-gradient(135deg, rgba(122, 186, 165, 0.2), rgba(122, 186, 165, 0.1));
-    border-color: var(--acapulco);
-    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.3);
-  }
-
-  .category-grid-item.expense-cat {
-    background: linear-gradient(135deg, rgba(245, 121, 108, 0.08), rgba(245, 121, 108, 0.03));
-    border-color: rgba(245, 121, 108, 0.4);
-  }
-
-  .category-grid-item.expense-cat:hover {
-    background: linear-gradient(135deg, rgba(245, 121, 108, 0.2), rgba(245, 121, 108, 0.1));
-    border-color: var(--froly);
-    box-shadow: 0 4px 12px rgba(245, 121, 108, 0.3);
-  }
-
-  .category-grid-item:active {
-    transform: scale(0.95);
-  }
-
-  .category-emoji {
-    font-size: 1.25rem;
-    line-height: 1;
-    filter: saturate(1.1);
-  }
-
-  .category-close-btn {
-    width: 100%;
-    padding: var(--space-sm) var(--space-md);
-    margin-top: var(--space-xs);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-md);
-    background: var(--surface);
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .category-close-btn:hover {
-    background: var(--gray-200);
-    color: var(--text-secondary);
-  }
-
-  .category-actions-dropdown {
-    position: absolute;
-    top: calc(100% + 0.5rem);
-    left: 0;
-    z-index: 35;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 3px 10px rgba(0, 0, 0, 0.05);
-    padding: 8px;
-    min-width: 200px;
-    animation: dropdownOpen 0.2s ease-out;
-  }
-
-  .category-action-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    padding: 12px 16px;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: #374151;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
-  }
-
-  .category-action-btn:hover {
-    background: #f1f5f9;
-  }
-
-  .uncategorize-action:hover {
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-  }
-
-  .change-category-action:hover {
-    background: rgba(59, 130, 246, 0.1);
-    color: #2563eb;
-  }
-
-  .action-icon {
-    font-size: 16px;
-    line-height: 1;
-  }
-
-  .action-text {
-    font-size: 14px;
-    font-weight: 500;
-  }
-  
-  .transaction-actions {
-    display: flex;
-    gap: 0.25rem;
-    align-items: center;
-  }
-
-  .action-btn {
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: var(--radius-sm);
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    opacity: 0;
-  }
-
-  .transaction-card:hover .action-btn {
-    opacity: 1;
-  }
-
-  .action-btn:hover {
-    background: var(--surface);
-    color: var(--text);
-  }
-
-  .action-btn.hidden {
-    opacity: 0.5;
-  }
-
-  .delete-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
-    color: rgb(239, 68, 68);
-  }
-
-
-  
+  /* FAB */
   .fab {
     position: fixed;
     bottom: var(--space-xl);
@@ -2873,5 +1139,56 @@
   .fab:hover {
     border-color: var(--acapulco);
     color: var(--acapulco);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .toolbar-content {
+      flex-wrap: wrap;
+      padding: 0 1rem;
+      gap: 0.5rem;
+    }
+
+    .date-selector-section {
+      flex: 1;
+      min-width: 100%;
+    }
+
+    .search-bar {
+      flex: 1;
+      min-width: 100%;
+    }
+
+    .toolbar-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    .transactions-list {
+      padding: 1rem;
+    }
+
+    .transaction-group {
+      margin-bottom: 1rem;
+    }
+
+    .filter-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .quick-filters {
+      flex-wrap: wrap;
+    }
+
+    .category-grid-compact {
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    .fab {
+      width: 3.5rem;
+      height: 3.5rem;
+      bottom: 1rem;
+      right: 1rem;
+    }
   }
 </style>
