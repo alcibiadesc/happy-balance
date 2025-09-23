@@ -74,10 +74,19 @@
     margin: 0 auto;
     width: 100%;
   }
-  
+
+  .content-container:has(.full-width-page) {
+    padding: 0;
+    max-width: 100%;
+  }
+
   @media (min-width: 768px) {
     .content-container {
       padding: 2rem;
+    }
+
+    .content-container:has(.full-width-page) {
+      padding: 0;
     }
   }
 </style>

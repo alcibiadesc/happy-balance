@@ -80,13 +80,14 @@
   <title>{$t('categories.title')} - Happy Balance</title>
 </svelte:head>
 
-<div class="categories-container">
-  <header class="page-header">
-    <h1 class="page-title">{$t('categories.title')}</h1>
-    <p class="page-subtitle">{$t('categories.subtitle')}</p>
-  </header>
+<div class="categories-container full-width-page">
+  <div class="categories-wrapper">
+    <header class="page-header">
+      <h1 class="page-title">{$t('categories.title')}</h1>
+      <p class="page-subtitle">{$t('categories.subtitle')}</p>
+    </header>
 
-  <main class="categories-content">
+    <main class="categories-content">
     {#each store.categoryTypes as { value, type }}
       <CategorySection
         title={$t(type.getTitleKey())}
@@ -138,7 +139,8 @@
         {/each}
       </CategorySection>
     {/each}
-  </main>
+    </main>
+  </div>
 </div>
 
 <!-- Icon Picker Modal -->
@@ -218,11 +220,30 @@
   /* Main Container */
   .categories-container {
     width: 100%;
-    min-height: 100vh;
+    min-height: calc(100vh - 72px);
     background: var(--surface);
     box-sizing: border-box;
-    padding: 0 !important;
-    margin: 0 !important;
+    padding: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .categories-container {
+      min-height: 100vh;
+    }
+  }
+
+  /* Wrapper for content with max-width */
+  .categories-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+
+  @media (min-width: 768px) {
+    .categories-wrapper {
+      padding: 2rem;
+    }
   }
 
   /* Header */

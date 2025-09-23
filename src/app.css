@@ -191,17 +191,7 @@ html.dark ::selection {
   }
 }
 
-/* Sidebar responsive layout */
-@media (min-width: 1024px) {
-  main {
-    margin-left: 280px;
-    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  body.sidebar-collapsed main {
-    margin-left: 80px;
-  }
-}
+/* Sidebar responsive layout - Removed to avoid conflicts with .main-content */
 
 /* Import page specific adjustments */
 .import-page {
