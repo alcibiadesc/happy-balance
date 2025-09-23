@@ -126,17 +126,21 @@ export function createCategoriesStore() {
   async function saveNewCategory() {
     if (!newCategory || !newCategory.name) return;
 
-    const entity = CategoryEntity.createNew(
-      newCategory.name,
-      newCategory.icon || '🏷️',
-      newCategory.color || availableColors[0],
-      newCategory.type as CategoryTypeValue,
-      newCategory.annualBudget || 0
-    );
+    try {
+      const categoryData = {
+        name: newCategory.name,
+        icon: newCategory.icon || '🏷️',
+        color: newCategory.color || availableColors[0],
+        type: newCategory.type as CategoryTypeValue,
+        annualBudget: newCategory.annualBudget || 0
+      };
 
-    const newCat = await apiCategories.add(entity.toJSON() as Category);
-    await loadCategories(); // Reload to get the updated list
-    cancelNewCategory();
+      await apiCategories.add(categoryData);
+      await loadCategories(); // Reload to get the updated list
+      cancelNewCategory();
+    } catch (error) {
+      console.error('Error creating category:', error);
+    }
   }
 
   function cancelNewCategory() {
@@ -159,14 +163,21 @@ export function createCategoriesStore() {
   async function saveEdit() {
     if (!editingCategory || !editForm.name) return;
 
-    const index = categories.findIndex(c => c.getId() === editingCategory);
-    if (index === -1) return;
+    try {
+      const updateData = {
+        name: editForm.name,
+        icon: editForm.icon,
+        color: editForm.color,
+        type: editForm.type,
+        annualBudget: editForm.annualBudget
+      };
 
-    const updated = categories[index].update(editForm);
-    await apiCategories.update(editingCategory, updated.toJSON() as Category);
-    await loadCategories(); // Reload to get the updated list
-
-    cancelEdit();
+      await apiCategories.update(editingCategory, updateData);
+      await loadCategories(); // Reload to get the updated list
+      cancelEdit();
+    } catch (error) {
+      console.error('Error updating category:', error);
+    }
   }
 
   function cancelEdit() {
@@ -185,12 +196,17 @@ export function createCategoriesStore() {
   async function confirmDelete() {
     if (!categoryToDelete) return;
 
-    await apiCategories.delete(categoryToDelete.getId());
-    await loadCategories(); // Reload to get the updated list
+    try {
+      await apiCategories.delete(categoryToDelete.getId());
+      await loadCategories(); // Reload to get the updated list
 
-    showDeleteModal = false;
-    categoryToDelete = null;
-    recategorizeTarget = 'none';
+      showDeleteModal = false;
+      categoryToDelete = null;
+      recategorizeTarget = 'none';
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      showDeleteModal = false;
+    }
   }
 
   // Icon Picker
