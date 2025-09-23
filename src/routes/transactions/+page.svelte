@@ -135,7 +135,6 @@
 
   // Computed
   let filteredTransactions = $derived(() => {
-    console.log('Filtering with searchQuery:', searchQuery, 'categories:', selectedCategories, 'type:', transactionTypeFilter);
     let filtered = $apiTransactions;
 
     // Period filter
@@ -213,7 +212,6 @@
 
   // Collapse/expand functions
   function toggleGroup(date: string) {
-    console.log('Toggle group:', date, 'Current:', collapsedGroups);
     const newCollapsed = new Set(collapsedGroups);
     if (newCollapsed.has(date)) {
       newCollapsed.delete(date);
@@ -222,7 +220,6 @@
     }
     collapsedGroups = newCollapsed;
     allExpanded = newCollapsed.size === 0;
-    console.log('After toggle:', collapsedGroups);
   }
 
   function collapseAll() {
