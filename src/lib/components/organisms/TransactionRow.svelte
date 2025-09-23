@@ -65,7 +65,6 @@
   class:hidden={transaction.hidden}
   data-testid="transaction-item"
   data-transaction-id={transaction.id}
-  onclick={onOpenCategoryModal}
 >
   {#if isSelectionMode}
     <input
