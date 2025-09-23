@@ -217,24 +217,45 @@
   },
   "categories": {
     "title": "Categories",
+    "subtitle": "Organize your transactions with custom categories",
     "add_category": "Add Category",
+    "new_category": "New category",
     "edit_category": "Edit Category",
+    "delete_category": "Delete category",
     "name": "Name",
+    "name_placeholder": "Category name",
     "color": "Color",
     "icon": "Icon",
     "type": "Type",
+    "annual_budget": "Annual budget",
+    "no_budget": "No budget",
+    "per_year": "/ year",
+    "budget_label": "Annual budget",
     "no_categories": "No categories",
-    "delete_confirmation": "Are you sure you want to delete this category?",
+    "delete_confirmation": "Are you sure you want to delete the category \"{name}\"?",
+    "delete_with_transactions": "This category has {count} associated transactions. What would you like to do with them?",
+    "leave_uncategorized": "Leave uncategorized",
+    "move_to": "Move to: {name}",
+    "select_category": "Select category...",
+    "more_info": "More information",
     "types": {
       "income": "Income",
       "investment": "Investment",
-      "essential": "Essential Expense",
-      "discretionary": "Discretionary Expense",
+      "essential": "Essential",
+      "discretionary": "Discretionary",
       "debt_payment": "Debt Payment",
       "no_compute": "No Compute"
     },
+    "descriptions": {
+      "income": "Income and money inflow categories",
+      "investment": "Savings and investments",
+      "essential": "Necessary living expenses",
+      "discretionary": "Optional expenses and wants",
+      "debt_payment": "Debt payments and financial obligations",
+      "no_compute": "Categories that don't affect balance"
+    },
     "helpers": {
-      "no_compute": "'No Compute' categories are for account transfers (bank transfers, account movements, etc.) that shouldn't affect your financial metrics. They will appear in transactions but be excluded from expense and income analysis."
+      "no_compute": "\"No Compute\" categories are useful for transfers between your own accounts, refunds, or movements that don't affect your real balance."
     }
   },
   "settings": {

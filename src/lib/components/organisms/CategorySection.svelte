@@ -54,18 +54,19 @@
     </button>
   </div>
 
-  <div class="categories-list">
-    {@render children?.()}
-  </div>
+  <div class="categories-list">{@render children?.()}</div>
 </section>
 
 <style>
-  /* Category Section - Exact copy from categories page */
+  /* Category Section */
   .category-section {
     background: var(--surface-elevated);
     border-radius: 1rem;
     padding: 1.5rem;
     border: 1px solid var(--border-color);
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
   }
 
   .section-header {
@@ -182,6 +183,10 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-sm, 0.75rem);
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   @media (max-width: 768px) {

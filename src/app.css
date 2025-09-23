@@ -2,6 +2,11 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/* Global box-sizing reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 /* ==========================================================================
    Z-INDEX HIERARCHY SYSTEM
    ========================================================================== */

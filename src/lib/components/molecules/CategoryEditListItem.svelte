@@ -101,6 +101,9 @@
     border: 1px solid var(--gray-200, #e5e7eb);
     border-radius: var(--radius-md, 0.75rem);
     transition: all 0.2s ease;
+    width: 100%;
+    margin: 0 !important;
+    box-sizing: border-box;
   }
 
   .category-card.editing {

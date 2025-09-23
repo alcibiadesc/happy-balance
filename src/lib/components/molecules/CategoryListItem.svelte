@@ -67,11 +67,14 @@
     border: 1px solid var(--gray-200, #e5e7eb);
     border-radius: var(--radius-md, 0.75rem);
     transition: all 0.2s ease;
+    width: 100%;
+    margin: 0 !important;
+    box-sizing: border-box;
   }
 
   .category-card:hover {
     border-color: var(--gray-300, #d1d5db);
-    transform: translateX(2px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   .category-icon {

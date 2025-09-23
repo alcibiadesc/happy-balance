@@ -115,7 +115,6 @@
             showIconPicker={store.showIconPickerNew}
           />
         {/if}
-
         {#each store.categoriesByType[value] as category}
           {#if store.editingCategory === category.getId()}
             <CategoryEditListItem
@@ -218,11 +217,12 @@
 <style>
   /* Main Container */
   .categories-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
+    width: 100%;
     min-height: 100vh;
     background: var(--surface);
+    box-sizing: border-box;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   /* Header */
@@ -248,6 +248,8 @@
   .categories-content {
     display: grid;
     gap: 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   /* Helper Tooltip */
@@ -375,9 +377,6 @@
 
   /* Responsive */
   @media (max-width: 768px) {
-    .categories-container {
-      padding: 1rem;
-    }
 
     .page-title {
       font-size: 1.5rem;
