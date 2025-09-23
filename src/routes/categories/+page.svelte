@@ -105,13 +105,7 @@
       >
         {#if store.newCategory && store.selectedType === value}
           <CategoryEditListItem
-            editForm={{
-              name: store.newCategory.name || '',
-              icon: store.newCategory.icon || '🏷️',
-              color: store.newCategory.color || store.availableColors[0],
-              annualBudget: store.newCategory.annualBudget || 0,
-              type: value
-            }}
+            bind:editForm={store.newCategory}
             availableColors={store.availableColors}
             getCurrencySymbol={store.getCurrencySymbol}
             onSave={store.saveNewCategory}
@@ -204,30 +198,24 @@
         <input
           type="radio"
           name="recategorize"
-          value="none"
+          value="remove"
           bind:group={store.recategorizeTarget}
         />
         <span>Dejar sin categoría</span>
       </label>
-      <label class="radio-option">
-        <input
-          type="radio"
-          name="recategorize"
-          value="select"
-          bind:group={store.recategorizeTarget}
-        />
-        <span>Mover a otra categoría</span>
-      </label>
-      {#if store.recategorizeTarget === 'select'}
-        <select class="category-select">
-          <option value="">Seleccionar categoría...</option>
-          {#each store.categories as cat}
-            {#if cat.getId() !== store.categoryToDelete?.getId()}
-              <option value={cat.getId()}>{cat.getName()}</option>
-            {/if}
-          {/each}
-        </select>
-      {/if}
+      {#each store.categories as cat}
+        {#if cat.getId() !== store.categoryToDelete?.getId()}
+          <label class="radio-option">
+            <input
+              type="radio"
+              name="recategorize"
+              value={cat.getId()}
+              bind:group={store.recategorizeTarget}
+            />
+            <span>Mover a: {cat.getName()}</span>
+          </label>
+        {/if}
+      {/each}
     </div>
   {/if}
 </ConfirmModal>
@@ -320,26 +308,45 @@
   .recategorize-options {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid var(--border-color);
+    max-height: 300px;
+    overflow-y: auto;
   }
 
   .radio-option {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--surface);
     cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .radio-option:hover {
+    background: var(--surface-elevated);
+    border-color: var(--acapulco);
+  }
+
+  .radio-option:has(input:checked) {
+    background: rgba(122, 186, 165, 0.05);
+    border-color: var(--acapulco);
   }
 
   .radio-option input {
     cursor: pointer;
+    accent-color: var(--acapulco);
   }
 
   .radio-option span {
     font-size: 0.875rem;
     color: var(--text-primary);
+    flex: 1;
   }
 
   .category-select {

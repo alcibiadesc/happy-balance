@@ -1,6 +1,6 @@
 import { CategoryEntity, type CategoryData } from '../../domain/entities/CategoryEntity';
 import { CategoryType, type CategoryTypeValue } from '../../domain/value-objects/CategoryType';
-import { apiCategories } from '$lib/stores/api-transactions';
+import { apiCategories, apiTransactions } from '$lib/stores/api-transactions';
 import type { Category } from '$lib/types/transaction';
 import { get } from 'svelte/store';
 import { currentCurrency } from '$lib/stores/currency';
@@ -39,7 +39,7 @@ export function createCategoriesStore() {
   let showDeleteModal = $state(false);
   let categoryToDelete = $state<CategoryEntity | null>(null);
   let transactionsWithCategory = $state(0);
-  let recategorizeTarget = $state<string>('none');
+  let recategorizeTarget = $state<string>('remove');
 
   // Icon Picker State
   let showIconPickerNew = $state(false);
@@ -126,21 +126,19 @@ export function createCategoriesStore() {
   async function saveNewCategory() {
     if (!newCategory || !newCategory.name) return;
 
-    try {
-      const categoryData = {
-        name: newCategory.name,
-        icon: newCategory.icon || '🏷️',
-        color: newCategory.color || availableColors[0],
-        type: newCategory.type as CategoryTypeValue,
-        annualBudget: newCategory.annualBudget || 0
-      };
+    const category = {
+      name: newCategory.name,
+      icon: newCategory.icon || '🏷️',
+      color: newCategory.color || availableColors[0],
+      type: newCategory.type || 'essential',
+      annualBudget: newCategory.annualBudget || 0
+    };
 
-      await apiCategories.add(categoryData);
-      await loadCategories(); // Reload to get the updated list
-      cancelNewCategory();
-    } catch (error) {
-      console.error('Error creating category:', error);
-    }
+    await apiCategories.add(category);
+    await loadCategories(); // Reload categories after adding
+    newCategory = null;
+    selectedType = null;
+    showIconPickerNew = false;
   }
 
   function cancelNewCategory() {
@@ -187,9 +185,11 @@ export function createCategoriesStore() {
 
   async function prepareDelete(category: CategoryEntity) {
     categoryToDelete = category;
-    // Check if category has transactions
-    // This would normally call an API/service
-    transactionsWithCategory = 0; // TODO: Get actual count
+    // Count transactions with this category
+    await apiTransactions.load();
+    const transactions = get(apiTransactions);
+    transactionsWithCategory = transactions.filter(t => t.categoryId === category.getId()).length;
+    recategorizeTarget = 'remove';
     showDeleteModal = true;
   }
 
@@ -197,12 +197,26 @@ export function createCategoriesStore() {
     if (!categoryToDelete) return;
 
     try {
+      // Handle recategorization if there are transactions
+      if (transactionsWithCategory > 0) {
+        const transactions = get(apiTransactions);
+        const affectedTransactions = transactions.filter(t => t.categoryId === categoryToDelete.getId());
+
+        for (const transaction of affectedTransactions) {
+          await apiTransactions.update(transaction.id, {
+            categoryId: recategorizeTarget === 'remove' ? undefined : recategorizeTarget
+          });
+        }
+      }
+
+      // Delete the category
       await apiCategories.delete(categoryToDelete.getId());
       await loadCategories(); // Reload to get the updated list
 
       showDeleteModal = false;
       categoryToDelete = null;
-      recategorizeTarget = 'none';
+      recategorizeTarget = 'remove';
+      transactionsWithCategory = 0;
     } catch (error) {
       console.error('Error deleting category:', error);
       showDeleteModal = false;

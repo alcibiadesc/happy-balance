@@ -81,9 +81,9 @@ export class CategoryType {
   getDescription(): string {
     const descriptions: Record<CategoryTypeValue, string> = {
       income: 'Categorías de ingresos y entradas de dinero',
-      essential: 'Gastos necesarios para vivir (50% del ingreso)',
-      discretionary: 'Gastos opcionales y deseos (30% del ingreso)',
-      investment: 'Ahorros e inversiones (20% del ingreso)',
+      essential: 'Gastos necesarios para vivir',
+      discretionary: 'Gastos opcionales y deseos',
+      investment: 'Ahorros e inversiones',
       debt_payment: 'Pagos de deudas y obligaciones financieras',
       no_compute: 'Categorías que no afectan el balance'
     };
