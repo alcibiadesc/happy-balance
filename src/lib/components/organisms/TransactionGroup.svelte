@@ -118,25 +118,33 @@
 
 <style>
   .transaction-group {
-    margin-bottom: 1rem;
+    margin-bottom: 2rem;
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+                0 1px 2px rgba(0, 0, 0, 0.03);
   }
 
   .group-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
     padding: 0.75rem 1rem;
-    background: white;
-    border: 1px solid var(--gray-100);
-    border-radius: 0.75rem;
-    margin-bottom: 0.5rem;
+    margin: -0.5rem -0.5rem 1rem -0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s;
+    width: calc(100% + 1rem);
   }
 
   .group-header:hover {
-    background: var(--gray-50);
+    background: rgba(229, 231, 235, 0.3);
   }
 
   .group-info {
@@ -194,6 +202,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  .transaction-group.collapsed {
+    padding-bottom: 0.5rem;
   }
 
   .transaction-group.collapsed .group-header {

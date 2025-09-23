@@ -123,12 +123,13 @@
 
 <style>
   .filters-bento {
-    padding: 1rem;
+    max-width: 1200px;
+    margin: 1rem auto;
+    padding: 1.25rem 2rem;
     background: var(--surface);
-    border-radius: 0.75rem;
-    margin: 1rem 0;
+    border-radius: 1rem;
     opacity: 0;
-    animation: slideDown 0.3s ease forwards;
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   @keyframes slideDown {
@@ -151,8 +152,9 @@
   .bento-item {
     padding: 1rem;
     background: white;
-    border-radius: 0.625rem;
+    border-radius: 0.75rem;
     border: 1px solid var(--gray-100);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   }
 
   .quick-filters {
