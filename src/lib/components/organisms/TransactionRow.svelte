@@ -277,7 +277,7 @@
   .category-selector {
     position: relative;
     margin-top: var(--space-xs);
-    z-index: 30;
+    z-index: 1;
   }
 
   .category-btn {

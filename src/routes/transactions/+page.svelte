@@ -544,6 +544,8 @@
     background: var(--surface-elevated);
     border-bottom: 1px solid var(--gray-200);
     padding: var(--space-2xl) var(--space-lg);
+    position: relative;
+    z-index: 25;
   }
 
   .header-content {
