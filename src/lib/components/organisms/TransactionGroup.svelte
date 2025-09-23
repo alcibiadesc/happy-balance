@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { ChevronDown, ChevronUp, ChevronRight } from 'lucide-svelte';
+  import { ChevronDown, ChevronRight } from 'lucide-svelte';
   import TransactionRow from './TransactionRow.svelte';
   import type { Transaction, Category } from '$lib/types/transaction';
-  import { t } from '$lib/stores/i18n';
 
   interface Props {
     date: string;
@@ -47,72 +46,58 @@
   }: Props = $props();
 
   const groupTotal = $derived(
-    transactions
-      .filter(t => !t.hidden)
-      .reduce((sum, t) => sum + t.amount, 0)
+    transactions.reduce((sum, t) => sum + t.amount, 0)
   );
 
-  const incomeTotal = $derived(
-    transactions
-      .filter(t => !t.hidden && t.amount > 0)
-      .reduce((sum, t) => sum + t.amount, 0)
-  );
-
-  const expenseTotal = $derived(
-    transactions
-      .filter(t => !t.hidden && t.amount < 0)
-      .reduce((sum, t) => sum + t.amount, 0)
-  );
+  function getCategoryById(categoryId?: string): Category | undefined {
+    if (!categoryId) return undefined;
+    return categories.find(c => c.id === categoryId);
+  }
 </script>
 
 <div class="transaction-group" class:collapsed={!isExpanded}>
-  <button class="group-header" onclick={onToggleGroup}>
-    <div class="group-info">
-      <span class="group-icon">
-        {#if isExpanded}
-          <ChevronDown size={16} />
-        {:else}
-          <ChevronRight size={16} />
-        {/if}
-      </span>
-      <span class="group-date">{date}</span>
-      <span class="group-count">({transactions.length})</span>
-    </div>
-    <div class="group-totals">
-      {#if incomeTotal > 0}
-        <span class="amount income">{formatAmount(incomeTotal)}</span>
+  <button
+    class="group-header"
+    onclick={onToggleGroup}
+    aria-expanded={isExpanded}
+  >
+    <div class="group-header-left">
+      {#if !isExpanded}
+        <ChevronRight size={16} class="group-chevron" />
+      {:else}
+        <ChevronDown size={16} class="group-chevron" />
       {/if}
-      {#if expenseTotal < 0}
-        <span class="amount expense">{formatAmount(expenseTotal)}</span>
+      <span>{date}</span>
+      {#if !isExpanded}
+        <span class="group-count">({transactions.length} transacciones)</span>
       {/if}
-      <span class="amount total" class:positive={groupTotal > 0}>
-        {formatAmount(groupTotal)}
-      </span>
     </div>
+    <span class="group-total">
+      {formatAmount(groupTotal)}
+    </span>
   </button>
 
   {#if isExpanded}
-    <div class="transaction-list">
-      {#each transactions as transaction (transaction.id)}
-        <TransactionRow
-          {transaction}
-          {categories}
-          {isSelectionMode}
-          isSelected={selectedIds.has(transaction.id)}
-          isEditingObservations={editingObservationsId === transaction.id}
-          {observationsText}
-          onToggleSelection={() => onToggleSelection(transaction.id)}
-          onCategorize={() => onCategorize(transaction)}
-          onToggleHide={() => onToggleHide(transaction)}
-          onDelete={() => onDelete(transaction.id)}
-          onEditObservations={() => onEditObservations(transaction)}
-          onUpdateObservationsText={onUpdateObservationsText}
-          onSaveObservations={onSaveObservations}
-          onCancelObservations={onCancelObservations}
-          {formatAmount}
-        />
-      {/each}
-    </div>
+    {#each transactions as transaction}
+      {@const category = getCategoryById(transaction.categoryId)}
+      <TransactionRow
+        {transaction}
+        {category}
+        {isSelectionMode}
+        isSelected={selectedIds.has(transaction.id)}
+        isEditingObservations={editingObservationsId === transaction.id}
+        observationsText={editingObservationsId === transaction.id ? observationsText : ''}
+        onToggleSelection={() => onToggleSelection(transaction.id)}
+        onCategorize={() => onCategorize(transaction)}
+        onToggleHide={() => onToggleHide(transaction)}
+        onDelete={() => onDelete(transaction.id)}
+        onEditObservations={() => onEditObservations(transaction)}
+        onUpdateObservationsText={onUpdateObservationsText}
+        onSaveObservations={onSaveObservations}
+        onCancelObservations={onCancelObservations}
+        {formatAmount}
+      />
+    {/each}
   {/if}
 </div>
 
@@ -147,61 +132,22 @@
     background: rgba(229, 231, 235, 0.3);
   }
 
-  .group-info {
+  .group-header-left {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    color: var(--text-primary);
   }
 
-  .group-icon {
-    display: flex;
-    align-items: center;
-    color: var(--gray-400);
-  }
-
-  .group-date {
-    font-weight: 500;
-    color: var(--gray-700);
-    font-size: 0.875rem;
+  .group-chevron {
+    transition: transform 0.2s;
+    color: var(--text-secondary);
   }
 
   .group-count {
-    color: var(--gray-500);
-    font-size: 0.8125rem;
-  }
-
-  .group-totals {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .amount {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
     font-weight: 500;
-  }
-
-  .amount.income {
-    color: var(--acapulco);
-  }
-
-  .amount.expense {
-    color: var(--froly);
-  }
-
-  .amount.total {
-    color: var(--gray-700);
-    font-weight: 600;
-  }
-
-  .amount.total.positive {
-    color: var(--acapulco);
-  }
-
-  .transaction-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
   }
 
   .transaction-group.collapsed {
@@ -210,5 +156,10 @@
 
   .transaction-group.collapsed .group-header {
     margin-bottom: 0;
+  }
+
+  .group-total {
+    font-weight: 600;
+    color: var(--text-primary);
   }
 </style>
