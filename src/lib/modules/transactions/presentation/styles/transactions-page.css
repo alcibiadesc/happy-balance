@@ -155,11 +155,17 @@
   transition: all 0.2s ease;
   font-weight: 300;
   z-index: 60;
+  padding: 0;
 }
 
 .fab:hover {
   border-color: var(--acapulco);
   color: var(--acapulco);
+  transform: scale(1.05);
+}
+
+.fab svg {
+  display: block;
 }
 
 /* Responsive Design */

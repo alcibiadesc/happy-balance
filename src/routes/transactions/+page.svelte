@@ -241,7 +241,7 @@
   }
 
   function selectAll() {
-    const allIds = filteredTransactions().map((t) => t.id);
+    const allIds = filteredTransactions.map((t) => t.id);
     apiSelectedTransactions.set(new Set(allIds));
   }
 

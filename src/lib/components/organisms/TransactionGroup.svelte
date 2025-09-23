@@ -86,15 +86,15 @@
         {isSelectionMode}
         isSelected={selectedIds.has(transaction.id)}
         isEditingObservations={editingObservationsId === transaction.id}
-        observationsText={editingObservationsId === transaction.id ? observationsText : ''}
+        editingObservationsText={editingObservationsId === transaction.id ? observationsText : ''}
         onToggleSelection={() => onToggleSelection(transaction.id)}
-        onCategorize={() => onCategorize(transaction)}
+        onOpenCategoryModal={() => onCategorize(transaction)}
         onToggleHide={() => onToggleHide(transaction)}
         onDelete={() => onDelete(transaction.id)}
-        onEditObservations={() => onEditObservations(transaction)}
+        onStartEditingObservations={() => onEditObservations(transaction)}
         onUpdateObservationsText={onUpdateObservationsText}
         onSaveObservations={onSaveObservations}
-        onCancelObservations={onCancelObservations}
+        onCancelEditingObservations={onCancelObservations}
         {formatAmount}
       />
     {/each}
