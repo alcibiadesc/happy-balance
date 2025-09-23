@@ -2,32 +2,44 @@
   import { AlertTriangle, Check, X } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
 
-  // Props
-  export let isOpen = false;
-  export let title = '';
-  export let message = '';
-  export let confirmText = '';
-  export let cancelText = '';
-  export let type: 'warning' | 'danger' | 'info' = 'warning';
-  export let onConfirm: () => void = () => {};
-  export let onCancel: () => void = () => {};
+  interface Props {
+    isOpen: boolean;
+    title?: string;
+    message?: string;
+    confirmText?: string;
+    cancelText?: string;
+    type?: 'warning' | 'danger' | 'info';
+    onConfirm?: () => void;
+    onCancel?: () => void;
+    children?: any;
+  }
+
+  let {
+    isOpen = false,
+    title = '',
+    message = '',
+    confirmText = '',
+    cancelText = '',
+    type = 'warning',
+    onConfirm = () => {},
+    onCancel = () => {},
+    children
+  }: Props = $props();
 
   // Use i18n for default values
-  $: finalTitle = title || $t('modal.confirm_action');
-  $: finalMessage = message || $t('modal.are_you_sure');
-  $: finalConfirmText = confirmText || $t('common.confirm');
-  $: finalCancelText = cancelText || $t('common.cancel');
+  const finalTitle = $derived(title || $t('modal.confirm_action'));
+  const finalMessage = $derived(message || $t('modal.are_you_sure'));
+  const finalConfirmText = $derived(confirmText || $t('common.confirm'));
+  const finalCancelText = $derived(cancelText || $t('common.cancel'));
 
   // Close modal function
   function closeModal() {
-    isOpen = false;
     onCancel();
   }
 
   // Confirm action
   function confirm() {
     onConfirm();
-    isOpen = false;
   }
 
   // Handle backdrop click
@@ -45,14 +57,14 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
   <!-- DaisyUI Modal -->
-  <div class="modal modal-open" on:click={handleBackdropClick} role="dialog">
+  <div class="modal modal-open" onclick={handleBackdropClick} role="dialog">
     <div class="modal-box relative max-w-md">
       <!-- Close button -->
-      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" on:click={closeModal}>
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick={closeModal}>
         <X size={18} />
       </button>
 
@@ -75,14 +87,19 @@
       <!-- Message -->
       <p class="text-center text-base-content/80 mb-6">{finalMessage}</p>
 
+      <!-- Slot for additional content -->
+      {#if children}
+        {@render children?.()}
+      {/if}
+
       <!-- Action buttons -->
       <div class="modal-action flex gap-3 justify-center">
-        <button class="btn btn-outline" on:click={closeModal}>
+        <button class="btn btn-outline" onclick={closeModal}>
           {finalCancelText}
         </button>
         <button
           class="btn {type === 'danger' ? 'btn-error' : type === 'warning' ? 'btn-warning' : 'btn-primary'}"
-          on:click={confirm}
+          onclick={confirm}
         >
           {finalConfirmText}
         </button>
