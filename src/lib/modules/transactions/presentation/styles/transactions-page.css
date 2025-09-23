@@ -1,0 +1,212 @@
+/* Transactions Page Styles */
+
+/* Container */
+.page-container {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--gray-50);
+  padding-bottom: 5rem;
+}
+
+/* Header */
+.transactions-header {
+  background: white;
+  border-bottom: 1px solid var(--gray-100);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Toolbar */
+.toolbar {
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--gray-100);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.toolbar-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .toolbar-content {
+    grid-template-columns: minmax(240px, auto) 1fr minmax(200px, auto);
+    gap: 1.5rem;
+  }
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  background: white;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+              0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.toolbar-actions:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
+              0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.toolbar-btn {
+  height: 2.5rem;
+  padding: 0 1.25rem;
+  border: none;
+  border-radius: 0.625rem;
+  background: #FFF7ED;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  position: relative;
+}
+
+.toolbar-btn:hover {
+  background: #FFF3E0;
+  transform: translateY(-1px);
+}
+
+.toolbar-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.toolbar-btn.active {
+  background: var(--acapulco);
+  color: white;
+  box-shadow: 0 2px 8px rgba(122, 186, 165, 0.25);
+}
+
+.toolbar-btn.icon-only {
+  padding: 0;
+  width: 2.5rem;
+  justify-content: center;
+}
+
+.toolbar-btn.has-filters {
+  background: rgba(122, 186, 165, 0.1);
+  color: var(--acapulco);
+}
+
+.filter-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--acapulco);
+}
+
+.toolbar-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: rgb(239, 68, 68);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 1.5rem;
+  background: rgba(148, 163, 184, 0.2);
+  margin: 0 0.25rem;
+}
+
+/* Transactions List */
+.transactions-list {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* FAB Button */
+.fab {
+  position: fixed;
+  bottom: var(--space-xl);
+  right: var(--space-xl);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--gray-200);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  transition: all 0.2s ease;
+  font-weight: 300;
+  z-index: 60;
+  padding: 0;
+}
+
+.fab:hover {
+  border-color: var(--acapulco);
+  color: var(--acapulco);
+  transform: scale(1.05);
+}
+
+.fab svg {
+  display: block;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .toolbar {
+    padding: 0.75rem 0;
+  }
+
+  .toolbar-content {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+
+  .date-selector-section,
+  .toolbar-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .search-bar {
+    width: 100%;
+    order: -1;
+  }
+
+  .transactions-list {
+    padding: 1rem;
+  }
+
+  .fab {
+    width: 3.5rem;
+    height: 3.5rem;
+    bottom: 1rem;
+    right: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .toolbar-content {
+    flex-wrap: nowrap;
+  }
+}
