@@ -83,14 +83,18 @@ export class DashboardQuery {
 
       case "month":
         // Get start of current month and apply offset
+        // Handle year transitions properly
+        const targetDate = new Date(now);
+        targetDate.setMonth(now.getMonth() - this.periodOffset);
+
         startDate = new Date(
-          now.getFullYear(),
-          now.getMonth() - this.periodOffset,
+          targetDate.getFullYear(),
+          targetDate.getMonth(),
           1,
         );
         endDate = new Date(
-          now.getFullYear(),
-          now.getMonth() - this.periodOffset + 1,
+          targetDate.getFullYear(),
+          targetDate.getMonth() + 1,
           0,
         );
         endDate.setHours(23, 59, 59, 999);

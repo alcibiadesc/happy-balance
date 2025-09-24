@@ -89,6 +89,7 @@ export class MetricsController {
       const totalExpenses = data.periodBalance.expenses;
       const essentialPercentage = totalExpenses > 0 ? (data.expenseDistribution.essential / totalExpenses) * 100 : 0;
       const discretionaryPercentage = totalExpenses > 0 ? (data.expenseDistribution.discretionary / totalExpenses) * 100 : 0;
+      const debtPaymentPercentage = totalExpenses > 0 ? (data.periodBalance.debtPayments / totalExpenses) * 100 : 0;
       const uncategorizedPercentage = totalExpenses > 0 ? (data.expenseDistribution.uncategorized / totalExpenses) * 100 : 0;
 
       // Return only the summary data for fast loading
@@ -201,6 +202,7 @@ export class MetricsController {
       const totalExpenses = data.periodBalance.expenses;
       const essentialPercentage = totalExpenses > 0 ? (data.expenseDistribution.essential / totalExpenses) * 100 : 0;
       const discretionaryPercentage = totalExpenses > 0 ? (data.expenseDistribution.discretionary / totalExpenses) * 100 : 0;
+      const debtPaymentPercentage = totalExpenses > 0 ? (data.periodBalance.debtPayments / totalExpenses) * 100 : 0;
       const uncategorizedPercentage = totalExpenses > 0 ? (data.expenseDistribution.uncategorized / totalExpenses) * 100 : 0;
 
       // Transform trends data for charts
@@ -208,23 +210,58 @@ export class MetricsController {
         month: trend.month,
         income: trend.income,
         expenses: trend.expenses,
-        balance: trend.balance
+        balance: trend.balance,
+        investments: trend.investments || 0
       }));
 
-      // Transform monthly bar data for expense distribution charts
-      const monthlyBarData = data.monthlyTrend.map(trend => ({
-        month: trend.month,
-        income: trend.income,
-        essentialExpenses: data.expenseDistribution.essential / data.monthlyTrend.length, // Distribute evenly for now
-        discretionaryExpenses: data.expenseDistribution.discretionary / data.monthlyTrend.length,
-        debtPayments: trend.debtPayments,
-        investments: trend.investments
-      }));
+      // Calculate trends (percentage change from previous period)
+      let incomeTrend = 0;
+      let expenseTrend = 0;
+      let investmentTrend = 0;
+
+      if (data.monthlyTrend.length >= 2) {
+        const currentMonth = data.monthlyTrend[data.monthlyTrend.length - 1];
+        const previousMonth = data.monthlyTrend[data.monthlyTrend.length - 2];
+
+        if (previousMonth.income > 0) {
+          incomeTrend = ((currentMonth.income - previousMonth.income) / previousMonth.income) * 100;
+        }
+        if (previousMonth.expenses > 0) {
+          expenseTrend = ((currentMonth.expenses - previousMonth.expenses) / previousMonth.expenses) * 100;
+        }
+        if (previousMonth.investments > 0) {
+          investmentTrend = ((currentMonth.investments - previousMonth.investments) / previousMonth.investments) * 100;
+        }
+      }
+
+      // Transform monthly bar data for expense distribution charts with proper monthly ratios
+      const monthlyBarData = data.monthlyTrend.map((trend, index) => {
+        // Use actual monthly expenses for distribution calculation
+        const monthExpenses = trend.expenses || 0;
+        const totalPeriodExpenses = data.periodBalance.expenses || 1;
+
+        // Calculate proportional distribution for this month
+        const monthRatio = totalPeriodExpenses > 0 ? monthExpenses / totalPeriodExpenses : 0;
+
+        return {
+          month: trend.month,
+          income: trend.income,
+          essentialExpenses: data.expenseDistribution.essential * monthRatio,
+          discretionaryExpenses: data.expenseDistribution.discretionary * monthRatio,
+          debtPayments: trend.debtPayments || 0,
+          investments: trend.investments || 0
+        };
+      });
 
       // Return complete dashboard data
       res.json({
         success: true,
         data: {
+          trends: {
+            income: incomeTrend,
+            expenses: expenseTrend,
+            investments: investmentTrend
+          },
           summary: {
             totalIncome: {
               _amount: data.periodBalance.income,
@@ -269,12 +306,12 @@ export class MetricsController {
               _currency: data.expenseDistribution.currency,
             },
             debtPayments: {
-              _amount: 0,
+              _amount: data.periodBalance.debtPayments || 0,
               _currency: data.expenseDistribution.currency,
             },
             essentialPercentage: essentialPercentage,
             discretionaryPercentage: discretionaryPercentage,
-            debtPaymentPercentage: 0,
+            debtPaymentPercentage: debtPaymentPercentage,
           },
           categoryBreakdown: data.categoryBreakdown.map(category => ({
             categoryId: category.categoryId,

@@ -10,14 +10,18 @@ export class ApiDashboardRepository implements DashboardRepository {
   async getDashboardData(period: Period, currency: string): Promise<DashboardData> {
     const url = this.buildUrl(period, currency);
 
+    console.log('[Dashboard API] Fetching from:', url);
+
     try {
       const response = await fetch(url);
 
       if (!response.ok) {
+        console.error('[Dashboard API] Response not OK:', response.status);
         throw new Error(`API error: ${response.status}`);
       }
 
       const result = await response.json();
+      console.log('[Dashboard API] Response data:', JSON.stringify(result.data?.summary, null, 2));
 
       if (!result.success || !result.data) {
         throw new Error('Invalid API response');
@@ -44,29 +48,34 @@ export class ApiDashboardRepository implements DashboardRepository {
   }
 
   private mapToDomainModel(data: any, period: Period, currency: string): DashboardData {
-    // Map metrics
-    const income = Money.create(data.summary?.totalIncome?._amount || 0, currency);
-    const expenses = Money.create(
-      (data.summary?.totalExpenses?._amount || 0) +
-      (data.summary?.totalDebtPayments?._amount || 0),
-      currency
-    );
-    const investments = Money.create(data.summary?.totalInvestments?._amount || 0, currency);
+    // Map metrics - extract amounts from backend Money objects
+    const incomeAmount = this.extractAmount(data.summary?.totalIncome);
+    const expensesAmount = this.extractAmount(data.summary?.totalExpenses);
+    const investmentsAmount = this.extractAmount(data.summary?.totalInvestments);
+    const debtPaymentsAmount = this.extractAmount(data.summary?.totalDebtPayments);
+
+    const income = Money.create(incomeAmount, currency);
+    const expenses = Money.create(expensesAmount + debtPaymentsAmount, currency);
+    const investments = Money.create(investmentsAmount, currency);
 
     const metrics = DashboardMetrics.create(period, income, expenses, investments);
 
     // Map categories
     const categories = this.mapCategories(data.categoryBreakdown || [], currency, expenses);
 
-    // Map trends
-    const monthlyTrend = this.mapMonthlyTrend(data.monthlyTrend || []);
-    const monthlyBarData = this.mapMonthlyBarData(data.monthlyBarData || [], data);
+    // Map trends - use data.trends or data.monthlyTrend
+    const monthlyTrend = this.mapMonthlyTrend(data.trends || data.monthlyTrend || []);
 
-    // Map expense distribution
+    // Map monthly bar data - use actual data if available
+    const monthlyBarData = data.monthlyBarData && data.monthlyBarData.length > 0
+      ? this.mapMonthlyBarData(data.monthlyBarData, data)
+      : this.generateMonthlyBarData(monthlyTrend, data.expenseDistribution);
+
+    // Map expense distribution - extract amounts properly
     const expenseDistribution = {
-      essential: data.expenseDistribution?.essential?._amount || 0,
-      discretionary: data.expenseDistribution?.discretionary?._amount || 0,
-      debtPayments: data.expenseDistribution?.debtPayments?._amount || 0
+      essential: { _amount: this.extractAmount(data.expenseDistribution?.essential) },
+      discretionary: { _amount: this.extractAmount(data.expenseDistribution?.discretionary) },
+      debtPayments: { _amount: this.extractAmount(data.expenseDistribution?.debtPayments) }
     };
 
     return {
@@ -78,9 +87,18 @@ export class ApiDashboardRepository implements DashboardRepository {
     };
   }
 
+  private extractAmount(value: any): number {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'object' && value !== null) {
+      if ('_amount' in value) return value._amount || 0;
+      if ('amount' in value) return value.amount || 0;
+    }
+    return 0;
+  }
+
   private mapCategories(categoryData: any[], currency: string, totalExpenses: Money): Category[] {
     return categoryData.map(cat => {
-      const amount = Money.create(cat.amount?._amount || 0, currency);
+      const amount = Money.create(this.extractAmount(cat.amount), currency);
       const category = Category.create(
         cat.categoryId || cat.id || '',
         cat.categoryName || cat.category || 'Unknown',
@@ -104,23 +122,37 @@ export class ApiDashboardRepository implements DashboardRepository {
   }
 
   private mapMonthlyBarData(barData: any[], data: any): any[] {
-    if (barData.length > 0) return barData;
+    return barData.map(item => ({
+      month: item.month || item.period,
+      income: this.extractAmount(item.income),
+      essentialExpenses: this.extractAmount(item.essentialExpenses),
+      discretionaryExpenses: this.extractAmount(item.discretionaryExpenses),
+      debtPayments: this.extractAmount(item.debtPayments),
+      investments: this.extractAmount(item.investments)
+    }));
+  }
 
-    // Fallback calculation
-    const essentialRatio = data.expenseDistribution?.essentialPercentage
-      ? data.expenseDistribution.essentialPercentage / 100
+  private generateMonthlyBarData(monthlyTrend: any[], expenseDistribution: any): any[] {
+    if (!monthlyTrend || monthlyTrend.length === 0) return [];
+
+    // Calculate distribution ratios
+    const totalExpenses = this.extractAmount(expenseDistribution?.essential) +
+                         this.extractAmount(expenseDistribution?.discretionary);
+
+    const essentialRatio = totalExpenses > 0
+      ? this.extractAmount(expenseDistribution?.essential) / totalExpenses
       : 0.5;
-    const discretionaryRatio = data.expenseDistribution?.discretionaryPercentage
-      ? data.expenseDistribution.discretionaryPercentage / 100
-      : 0.33;
+    const discretionaryRatio = totalExpenses > 0
+      ? this.extractAmount(expenseDistribution?.discretionary) / totalExpenses
+      : 0.5;
 
-    return (data.monthlyTrend || []).map((trend: any) => ({
+    return monthlyTrend.map(trend => ({
       month: trend.month,
       income: trend.income || 0,
       essentialExpenses: (trend.expenses || 0) * essentialRatio,
       discretionaryExpenses: (trend.expenses || 0) * discretionaryRatio,
-      debtPayments: 0,
-      investments: 0
+      debtPayments: trend.debtPayments || 0,
+      investments: trend.investments || 0
     }));
   }
 
@@ -133,7 +165,11 @@ export class ApiDashboardRepository implements DashboardRepository {
       categories: [],
       monthlyTrend: [],
       monthlyBarData: [],
-      expenseDistribution: { essential: 0, discretionary: 0, debtPayments: 0 }
+      expenseDistribution: {
+        essential: { _amount: 0 },
+        discretionary: { _amount: 0 },
+        debtPayments: { _amount: 0 }
+      }
     };
   }
 }

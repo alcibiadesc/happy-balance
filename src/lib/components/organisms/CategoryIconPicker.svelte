@@ -104,6 +104,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    box-sizing: border-box;
   }
 
   /* Animation variants based on position */
@@ -156,15 +157,17 @@
   /* Scrollable content area */
   .emoji-picker-content {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
     padding: var(--space-md);
     overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scroll */
     scroll-behavior: smooth;
     scrollbar-width: thin;
     scrollbar-color: var(--gray-300) transparent;
     flex: 1;
     min-height: 0; /* Important for flex child scrolling */
+    box-sizing: border-box;
   }
 
   .emoji-picker-content::-webkit-scrollbar {
@@ -186,6 +189,7 @@
 
   .emoji-option {
     width: 100%;
+    min-width: 0; /* Allow shrinking */
     aspect-ratio: 1;
     border: none;
     background: none;
@@ -196,6 +200,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden; /* Prevent emoji overflow */
   }
 
   .emoji-option:hover {
