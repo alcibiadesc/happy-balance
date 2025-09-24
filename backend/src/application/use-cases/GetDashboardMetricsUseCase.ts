@@ -44,8 +44,7 @@ export class GetDashboardMetricsUseCase {
         await this.transactionRepository.findWithFilters({
           startDate: startDateResult.getValue(),
           endDate: endDateResult.getValue(),
-          currency: query.currency,
-          includeHidden: false, // Dashboard should only show visible transactions
+          includeHidden: false
         });
 
       if (transactionsResult.isFailure()) {
@@ -135,7 +134,7 @@ export class GetDashboardMetricsUseCase {
         currentWeekStart.setHours(0, 0, 0, 0);
 
         startDate = new Date(currentWeekStart);
-        startDate.setDate(currentWeekStart.getDate() - offset * 7);
+        startDate.setDate(currentWeekStart.getDate() + offset * 7);
 
         endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 6);
@@ -143,22 +142,22 @@ export class GetDashboardMetricsUseCase {
         break;
 
       case "month":
-        startDate = new Date(now.getFullYear(), now.getMonth() - offset, 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() - offset + 1, 0);
+        startDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
 
       case "quarter":
         const currentQuarter = Math.floor(now.getMonth() / 3);
-        const quarterStartMonth = currentQuarter * 3 - offset * 3;
+        const quarterStartMonth = currentQuarter * 3 + offset * 3;
         startDate = new Date(now.getFullYear(), quarterStartMonth, 1);
         endDate = new Date(now.getFullYear(), quarterStartMonth + 3, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
 
       case "year":
-        startDate = new Date(now.getFullYear() - offset, 0, 1);
-        endDate = new Date(now.getFullYear() - offset, 11, 31);
+        startDate = new Date(now.getFullYear() + offset, 0, 1);
+        endDate = new Date(now.getFullYear() + offset, 11, 31);
         endDate.setHours(23, 59, 59, 999);
         break;
 
@@ -202,7 +201,6 @@ export class GetDashboardMetricsUseCase {
       }
     }
 
-    console.log(`[DEBUG] Processing ${transactions.length} transactions`);
 
     for (const transaction of transactions) {
       const snapshot = transaction.toSnapshot();
@@ -215,14 +213,12 @@ export class GetDashboardMetricsUseCase {
 
         if (categoryType === CategoryType.INVESTMENT) {
           investments += snapshot.amount;
-          console.log(`[DEBUG] FOUND INVESTMENT: ${snapshot.amount} from ${snapshot.merchant || 'unknown'}`);
         } else {
           expenses += snapshot.amount;
         }
       }
     }
 
-    console.log(`[DEBUG] Final calculations: income=${income}, expenses=${expenses}, investments=${investments}`);
 
     return {
       income,
@@ -406,15 +402,20 @@ export class GetDashboardMetricsUseCase {
     const trends = [];
     const periodsToShow = 6;
 
+    // Parse the current period's start date to determine the base month
+    const currentStartDate = new Date(currentRange.startDate);
+
     for (let i = 0; i < periodsToShow; i++) {
-      // Calculate offset to go back in time from current period
-      // i=0 should be the oldest (5 months ago), i=5 should be current
-      const monthOffset = periodsToShow - 1 - i;
-      const trendQuery = {
-        ...query,
-        periodOffset: (query.periodOffset || 0) + monthOffset,
+      // Calculate each month going back from the current period
+      // i=0 should be 5 months ago, i=5 should be current month
+      const monthsBack = periodsToShow - 1 - i;
+      const trendDate = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() - monthsBack, 1);
+      const trendEndDate = new Date(trendDate.getFullYear(), trendDate.getMonth() + 1, 0);
+
+      const trendRange = {
+        startDate: this.formatDate(trendDate),
+        endDate: this.formatDate(trendEndDate)
       };
-      const trendRange = this.calculateDateRange(trendQuery);
 
       const startDateResult = TransactionDate.fromString(trendRange.startDate);
       const endDateResult = TransactionDate.fromString(trendRange.endDate);
@@ -424,7 +425,6 @@ export class GetDashboardMetricsUseCase {
           await this.transactionRepository.findWithFilters({
             startDate: startDateResult.getValue(),
             endDate: endDateResult.getValue(),
-            currency: query.currency,
             includeHidden: false,
           });
 
@@ -443,8 +443,15 @@ export class GetDashboardMetricsUseCase {
               categories,
             );
 
+            // Format the month label properly based on the trend date
+            const trendStartDate = new Date(trendRange.startDate);
+            const monthLabel = trendStartDate.toLocaleDateString('en-US', {
+              month: 'short',
+              year: 'numeric'
+            });
+
             trends.push({
-              month: this.formatPeriodLabel(trendRange.startDate, query.period),
+              month: monthLabel,
               income: periodBalance.income,
               expenses: periodBalance.expenses,
               investments: periodBalance.investments,
@@ -457,6 +464,13 @@ export class GetDashboardMetricsUseCase {
     }
 
     return trends;
+  }
+
+  private formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private formatPeriodLabel(dateString: string, period: string): string {
