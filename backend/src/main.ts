@@ -12,12 +12,15 @@ import { UserPreferencesController } from "@infrastructure/controllers/UserPrefe
 import { SeedController } from "@infrastructure/controllers/SeedController";
 import { CategoryController } from "@infrastructure/controllers/CategoryController";
 import { MetricsController } from "@infrastructure/controllers/MetricsController";
+import { DashboardController } from "@infrastructure/controllers/DashboardController";
+import { PrismaDashboardRepository } from "@infrastructure/repositories/PrismaDashboardRepository";
 import { createTransactionRoutes } from "@infrastructure/routes/transactionRoutes";
 import { createImportRoutes } from "@infrastructure/routes/importRoutes";
 import { createUserPreferencesRoutes } from "@infrastructure/routes/userPreferencesRoutes";
 import { createSeedRoutes } from "@infrastructure/routes/seedRoutes";
 import { createCategoryRoutes } from "@infrastructure/routes/categoryRoutes";
 import { createMetricsRoutes } from "@infrastructure/routes/metricsRoutes";
+import { createDashboardRoutes } from "@infrastructure/routes/dashboardRoutes";
 import { errorHandler } from "@infrastructure/middleware/errorHandler";
 import {
   apiLimiter,
@@ -54,6 +57,8 @@ class App {
   private seedController!: SeedController;
   private categoryController!: CategoryController;
   private metricsController!: MetricsController;
+  private dashboardController!: DashboardController;
+  private dashboardRepository!: PrismaDashboardRepository;
   private initialSetupService!: InitialSetupService;
 
   constructor() {
@@ -174,6 +179,13 @@ class App {
       getDashboardMetricsUseCase,
     );
 
+    this.dashboardRepository = new PrismaDashboardRepository(prisma);
+
+    this.dashboardController = new DashboardController(
+      getDashboardMetricsUseCase,
+      this.dashboardRepository,
+    );
+
     // Initialize setup service
     this.initialSetupService = new InitialSetupService(
       this.categoryRepository,
@@ -272,6 +284,10 @@ class App {
     this.app.use(
       "/api/metrics",
       createMetricsRoutes(this.metricsController),
+    );
+    this.app.use(
+      "/api/dashboard",
+      createDashboardRoutes(this.dashboardController),
     );
 
     // 404 handler

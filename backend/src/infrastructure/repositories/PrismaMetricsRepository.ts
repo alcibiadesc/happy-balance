@@ -82,7 +82,7 @@ export class PrismaMetricsRepository implements MetricsRepository {
           lte: period.endDate,
         },
         hidden: false,
-        type: 'expense', // Only expenses for category breakdown
+        type: 'EXPENSE', // Only expenses for category breakdown
       },
       include: {
         category: true,
@@ -123,7 +123,10 @@ export class PrismaMetricsRepository implements MetricsRepository {
     transactions.forEach((transaction) => {
       const amount = Math.abs(transaction.amount);
 
-      switch (transaction.type) {
+      // Handle both uppercase and lowercase transaction types
+      const transactionType = transaction.type?.toLowerCase();
+
+      switch (transactionType) {
         case 'income':
           totalIncome += amount;
           break;
