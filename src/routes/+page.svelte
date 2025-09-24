@@ -18,6 +18,7 @@
 
   // Initialize store with API configuration
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3004/api";
+  console.log('[Dashboard] Using API base:', API_BASE);
   const store = createDashboardStore(API_BASE);
 
   // Reactive bindings
