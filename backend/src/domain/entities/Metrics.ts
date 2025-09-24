@@ -114,19 +114,6 @@ export class Metrics {
       );
     }
 
-    // Validate category breakdown percentages
-    const totalPercentage = categoryBreakdown.reduce(
-      (sum, cat) => sum + cat.percentage,
-      0,
-    );
-    if (
-      categoryBreakdown.length > 0 &&
-      Math.abs(totalPercentage - 100) > tolerance
-    ) {
-      return Result.failWithMessage(
-        "Category breakdown percentages must sum to 100%",
-      );
-    }
 
     return Result.ok(
       new Metrics(

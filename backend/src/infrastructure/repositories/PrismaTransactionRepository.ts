@@ -381,8 +381,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
         date: {
           gte: startDate.value,
           lte: endDate.value,
-        },
-        currency,
+        }
       };
 
       const [income, expenses, investments, transactionCount] =
@@ -706,10 +705,6 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       }
     }
 
-    // Currency filter
-    if (filters.currency) {
-      where.currency = filters.currency;
-    }
 
     // Hidden transactions filter - optimize for common case
     const includeHidden = (filters as any).includeHidden;

@@ -121,6 +121,7 @@
       <button
         class="category-btn"
         class:has-category={category}
+        style={category ? `background-color: ${category.color}20; border-color: ${category.color}; color: ${category.color}` : ''}
         title={category ? `Categoría: ${category.name}` : 'Asignar categoría'}
         data-testid="transaction-category"
         onclick={(e) => {
@@ -295,15 +296,19 @@
   }
 
   .category-btn:hover {
+    transform: scale(1.02);
+    opacity: 0.9;
+  }
+
+  .category-btn:not(.has-category):hover {
     background: var(--acapulco-alpha-10);
     border-color: var(--acapulco);
-    transform: scale(1.02);
   }
 
   .category-btn.has-category {
-    border: 1px solid var(--gray-300);
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.5);
+    border-width: 1px;
+    border-style: solid;
+    font-weight: 500;
   }
 
   .category-icon-btn {

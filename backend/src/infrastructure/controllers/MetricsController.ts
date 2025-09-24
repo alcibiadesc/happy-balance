@@ -8,7 +8,7 @@ const PeriodStatsSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   currency: z.string().min(3).max(3).default("EUR"),
-  periodOffset: z.coerce.number().min(0).default(0),
+  periodOffset: z.coerce.number().default(0), // Allow negative offsets for previous periods
 });
 
 /**
@@ -77,8 +77,6 @@ export class MetricsController {
       }
 
       const data = result.getValue();
-
-      console.log("MetricsController - data structure:", JSON.stringify(data, null, 2));
 
       // Calculate savings rate
       const savingsRate = data.periodBalance.income > 0

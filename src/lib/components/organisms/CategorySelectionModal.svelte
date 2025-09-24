@@ -53,19 +53,16 @@
   }
 
   function closeModal() {
-    isOpen = false;
     onCancel();
   }
 
   function selectCategory(categoryId: string) {
     onSelect(categoryId);
-    closeModal();
   }
 
   function uncategorizeTransaction() {
     console.log('🔄 Uncategorize button clicked');
     onSelect(null); // Pass null instead of empty string
-    closeModal();
   }
 
   // Group categories by type and filter by search term
@@ -102,7 +99,7 @@
   };
 
   function navigateToCategories() {
-    closeModal();
+    onCancel();
     goto('/categories');
   }
 
@@ -206,6 +203,7 @@
                   {#each categoryList as category}
                     <button
                       class="category-option {type}-type"
+                      style="background-color: {category.color}20; border-color: {category.color};"
                       on:click={() => selectCategory(category.id)}
                     >
                       <span class="category-icon">{category.icon}</span>
@@ -225,6 +223,7 @@
                   {#each categoryList as category}
                     <button
                       class="category-option {type}-type"
+                      style="background-color: {category.color}20; border-color: {category.color};"
                       on:click={() => selectCategory(category.id)}
                     >
                       <span class="category-icon">{category.icon}</span>
@@ -498,7 +497,7 @@
 
   .category-option:hover {
     transform: translateY(-1px);
-    border-color: var(--border-color-hover);
+    opacity: 0.9;
   }
 
   .category-option:active {

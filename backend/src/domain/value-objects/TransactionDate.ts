@@ -20,11 +20,6 @@ export class TransactionDate {
       return Result.failWithMessage("Invalid date provided");
     }
 
-    // Business rule: transactions cannot be in the future
-    const now = new Date();
-    if (parsedDate > now) {
-      return Result.failWithMessage("Transaction date cannot be in the future");
-    }
 
     // Business rule: transactions cannot be older than 10 years
     const tenYearsAgo = new Date();

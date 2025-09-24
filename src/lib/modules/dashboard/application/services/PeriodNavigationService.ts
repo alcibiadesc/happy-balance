@@ -8,20 +8,75 @@ export interface NavigationOption {
 
 export class PeriodNavigationService {
   generateNavigationOptions(periodType: PeriodType): NavigationOption[] {
-    const options: NavigationOption[] = [];
-    const counts = { week: 12, month: 12, quarter: 8, year: 5, custom: 0 };
-    const count = counts[periodType];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
 
-    for (let i = 0; i < count; i++) {
-      const period = Period.create(periodType, i);
-      options.push({
-        offset: i,
-        label: i === 0 ? this.getCurrentLabel(periodType) : this.getOffsetLabel(periodType, i, period),
-        fullLabel: period.getLabel()
-      });
+    switch (periodType) {
+      case 'month':
+        // Generar los últimos 12 meses hasta el mes actual
+        return Array.from({ length: 12 }, (_, i) => {
+          const offset = -i; // Comenzar desde el mes actual (0) y retroceder
+          const targetDate = new Date(currentYear, currentMonth + offset, 1);
+          const period = Period.create(periodType, offset);
+
+          return {
+            offset,
+            label: offset === 0
+              ? 'Este mes'
+              : targetDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
+            fullLabel: period.getLabel()
+          };
+        });
+
+      case 'quarter':
+        // Generar los últimos 8 trimestres
+        return Array.from({ length: 8 }, (_, i) => {
+          const offset = -i;
+          const period = Period.create(periodType, offset);
+          const quarter = Math.floor(period.getStartDate().getMonth() / 3) + 1;
+
+          return {
+            offset,
+            label: offset === 0
+              ? 'Este trimestre'
+              : `Q${quarter} ${period.getStartDate().getFullYear()}`,
+            fullLabel: period.getLabel()
+          };
+        });
+
+      case 'year':
+        // Generar los últimos 5 años
+        return Array.from({ length: 5 }, (_, i) => {
+          const offset = -i;
+          const year = currentYear + offset;
+
+          return {
+            offset,
+            label: offset === 0 ? 'Este año' : year.toString(),
+            fullLabel: `${year}`
+          };
+        });
+
+      case 'week':
+        // Generar las últimas 12 semanas
+        return Array.from({ length: 12 }, (_, i) => {
+          const offset = -i;
+          const period = Period.create(periodType, offset);
+
+          return {
+            offset,
+            label: offset === 0 ? 'Esta semana' : `Semana ${-offset}`,
+            fullLabel: period.getLabel()
+          };
+        });
+
+      case 'custom':
+        return [{ offset: 0, label: 'Personalizado', fullLabel: 'Período personalizado' }];
+
+      default:
+        return [];
     }
-
-    return options;
   }
 
   private getCurrentLabel(periodType: PeriodType): string {

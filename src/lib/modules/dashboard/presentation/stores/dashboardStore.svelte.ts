@@ -1,5 +1,5 @@
 import { Period, type PeriodType } from '../../domain/value-objects/Period';
-import { ApiDashboardRepository } from '../../infrastructure/adapters/ApiDashboardRepository';
+import { ModernApiDashboardRepository } from '../../infrastructure/adapters/ModernApiDashboardRepository';
 import { LoadDashboardDataUseCase } from '../../application/use-cases/LoadDashboardDataUseCase';
 import { CalculateTrendsUseCase } from '../../application/use-cases/CalculateTrendsUseCase';
 import { PeriodNavigationService } from '../../application/services/PeriodNavigationService';
@@ -11,7 +11,7 @@ import { formatMoney, formatTrend, createCurrencyFormatter } from '../utils/form
 // Dashboard Store using Svelte 5 runes
 export function createDashboardStore(apiBase: string) {
   // Infrastructure
-  const repository = new ApiDashboardRepository(apiBase);
+  const repository = new ModernApiDashboardRepository(apiBase);
 
   // Use cases
   const loadDashboardDataUseCase = new LoadDashboardDataUseCase(repository);
