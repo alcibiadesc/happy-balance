@@ -1,5 +1,6 @@
 import type { Transaction, Category } from '$lib/types/transaction';
 import type { ApiTransactionsStore } from '$lib/stores/api-transactions';
+import { get } from 'svelte/store';
 
 export class TransactionOperationsService {
   constructor(
@@ -86,7 +87,7 @@ export class TransactionOperationsService {
     transaction: Transaction,
     categoryId: string
   ): Promise<void> {
-    const allTransactions = await this.apiTransactions.getAll();
+    const allTransactions = get(this.apiTransactions);
     const similar = this.findSimilarTransactions(transaction, allTransactions);
 
     for (const t of similar) {
