@@ -54,7 +54,7 @@ export function createCategoriesStore() {
   let pickerPosition = $state<PickerPosition>({
     top: 0,
     left: 0,
-    width: 160,
+    width: 220,
     position: 'bottom'
   });
 
@@ -256,7 +256,7 @@ export function createCategoriesStore() {
   // Positioning calculations
   function calculatePickerPosition(buttonElement: HTMLElement): PickerPosition {
     const rect = buttonElement.getBoundingClientRect();
-    const pickerWidth = 160;
+    const pickerWidth = 220; // Increased from 160 to 220 for better emoji spacing
     const pickerEstimatedHeight = 260;
     const spacing = 8;
     const viewportHeight = window.innerHeight;
