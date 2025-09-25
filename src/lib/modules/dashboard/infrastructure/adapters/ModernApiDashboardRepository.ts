@@ -187,17 +187,90 @@ export class ModernApiDashboardRepository implements DashboardRepository {
    */
   async getQuarterlyHistory(quarters: number = 8): Promise<any[]> {
     try {
-      const response = await fetch(`${this.apiBase}/dashboard/history/quarterly?quarters=${quarters}`);
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentQuarter = Math.floor(now.getMonth() / 3);
+      const quarterlyData: any[] = [];
 
-      if (!response.ok) {
-        return [];
+      // Fetch data for each quarter
+      const promises = [];
+      for (let i = 0; i < quarters; i++) {
+        const targetQuarter = currentQuarter - i;
+        const year = currentYear + Math.floor(targetQuarter / 4);
+        const quarter = ((targetQuarter % 4) + 4) % 4;
+
+        // Calculate quarter dates
+        const startMonth = quarter * 3;
+        const startDate = new Date(year, startMonth, 1);
+        const endDate = new Date(year, startMonth + 3, 0);
+
+        promises.push(this.getQuarterSummary(startDate, endDate, year, quarter));
       }
 
-      const result = await response.json();
-      return result.data || [];
+      const results = await Promise.all(promises);
+
+      // Filter out null results and format
+      for (const result of results) {
+        if (result) {
+          quarterlyData.push(result);
+        }
+      }
+
+      // Sort by year and quarter ascending
+      return quarterlyData.sort((a, b) => {
+        if (a.year !== b.year) {
+          return a.year - b.year;
+        }
+        return a.quarter - b.quarter;
+      });
     } catch (error) {
       console.error('[Dashboard] Error fetching quarterly history:', error);
       return [];
+    }
+  }
+
+  /**
+   * Get summary data for a specific quarter
+   */
+  private async getQuarterSummary(startDate: Date, endDate: Date, year: number, quarter: number): Promise<any> {
+    try {
+      const formatDate = (date: Date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      };
+
+      const url = `${this.apiBase}/dashboard/range?startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const summary = result.data.summary || {};
+        return {
+          year: year,
+          quarter: quarter,
+          label: `Q${quarter + 1} ${year}`,
+          period: `Q${quarter + 1} ${year}`,
+          income: summary.income || 0,
+          expenses: summary.expenses || 0,
+          investments: summary.investments || 0,
+          balance: (summary.income || 0) - (summary.expenses || 0),
+          essentialExpenses: (summary.expenses || 0) * 0.6,
+          discretionaryExpenses: (summary.expenses || 0) * 0.4,
+          debtPayments: 0
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`[Dashboard] Error fetching quarter ${quarter + 1} ${year}:`, error);
+      return null;
     }
   }
 
@@ -206,17 +279,71 @@ export class ModernApiDashboardRepository implements DashboardRepository {
    */
   async getYearlyHistory(years: number = 12): Promise<any[]> {
     try {
-      const response = await fetch(`${this.apiBase}/dashboard/history/yearly?years=${years}`);
+      // Since yearly endpoint doesn't exist, we'll aggregate data from multiple years
+      const currentYear = new Date().getFullYear();
+      const yearlyData: any[] = [];
 
-      if (!response.ok) {
-        return [];
+      // Fetch data for each year
+      const promises = [];
+      for (let i = 0; i < years; i++) {
+        const year = currentYear - i;
+        promises.push(this.getYearSummary(year));
       }
 
-      const result = await response.json();
-      return result.data || [];
+      const results = await Promise.all(promises);
+
+      // Filter out null results and format
+      for (let i = 0; i < results.length; i++) {
+        if (results[i]) {
+          const year = currentYear - i;
+          yearlyData.push({
+            year: year,
+            label: year.toString(),
+            period: year.toString(),
+            ...results[i]
+          });
+        }
+      }
+
+      // Sort by year ascending
+      return yearlyData.sort((a, b) => a.year - b.year);
     } catch (error) {
       console.error('[Dashboard] Error fetching yearly history:', error);
       return [];
+    }
+  }
+
+  /**
+   * Get summary data for a specific year
+   */
+  private async getYearSummary(year: number): Promise<any> {
+    try {
+      const response = await fetch(`${this.apiBase}/dashboard/year/${year}`);
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        // Aggregate the year data
+        const summary = result.data.summary || {};
+        return {
+          income: summary.income || 0,
+          expenses: summary.expenses || 0,
+          investments: summary.investments || 0,
+          balance: (summary.income || 0) - (summary.expenses || 0),
+          essentialExpenses: (summary.expenses || 0) * 0.6,
+          discretionaryExpenses: (summary.expenses || 0) * 0.4,
+          debtPayments: 0
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`[Dashboard] Error fetching year ${year}:`, error);
+      return null;
     }
   }
 

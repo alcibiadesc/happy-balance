@@ -102,6 +102,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
         // Load period-specific historical data for charts
         let historicalData: any[] = [];
+        let loadHistoricalData = false;
 
         if (selectedPeriodType === 'month') {
           const now = new Date();
@@ -119,18 +120,21 @@ export function createEnhancedDashboardStore(apiBase: string) {
           comparison = comparisonData;
           savingsMetrics = savings;
           historicalData = history;
+          loadHistoricalData = true;
         } else if (selectedPeriodType === 'quarter') {
           // Load quarterly aggregated data (last 8 quarters)
           historicalData = await repository.getQuarterlyHistory(8);
+          loadHistoricalData = true;
         } else if (selectedPeriodType === 'year') {
-          // Load yearly data (last 12 years)
+          // For year view, always load yearly history to show multiple years
           historicalData = await repository.getYearlyHistory(12);
+          loadHistoricalData = true;
         }
 
         // Update monthlyTrend with historical data if available
-        if (historicalData && historicalData.length > 0) {
+        if (loadHistoricalData && historicalData && historicalData.length > 0) {
           dashboardData.monthlyTrend = historicalData.map((item: any) => ({
-            month: item.label || item.month || item.period,
+            month: item.label || item.month || item.period || item.year?.toString() || 'Unknown',
             income: item.income || 0,
             expenses: item.expenses || 0,
             balance: item.balance || (item.income - item.expenses) || 0,
@@ -139,13 +143,17 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
           // Also update monthlyBarData based on historical data
           dashboardData.monthlyBarData = historicalData.map((item: any) => ({
-            month: item.label || item.month || item.period,
+            month: item.label || item.month || item.period || item.year?.toString() || 'Unknown',
             income: item.income || 0,
             essentialExpenses: item.essentialExpenses || (item.expenses * 0.6) || 0,
             discretionaryExpenses: item.discretionaryExpenses || (item.expenses * 0.4) || 0,
             debtPayments: item.debtPayments || 0,
             investments: item.investments || 0
           }));
+        } else if (selectedPeriodType === 'year' && !loadHistoricalData) {
+          // If no historical data available for year, use the data from the year endpoint
+          // but this should map monthly data within the year
+          console.log('[Dashboard] Using year endpoint data for charts');
         }
       } else {
         console.error('[Dashboard] No data received');
