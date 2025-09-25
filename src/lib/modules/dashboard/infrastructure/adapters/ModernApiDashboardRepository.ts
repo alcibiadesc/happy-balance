@@ -78,6 +78,7 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
       console.log('[Dashboard] Categories in response:', result.data.categoryBreakdown?.length || result.data.categories?.length || 0);
       console.log('[Dashboard] First category:', result.data.categoryBreakdown?.[0] || result.data.categories?.[0]);
+      console.log('[Dashboard] Raw API response categoryBreakdown:', result.data.categoryBreakdown);
 
       return this.mapToDomainModel(result.data, period, currency);
     } catch (error) {
@@ -249,7 +250,8 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       categories,
       monthlyTrend,
       monthlyBarData,
-      expenseDistribution
+      expenseDistribution,
+      categoryBreakdown: categoryData // Pass raw category data with budgets
     };
   }
 
@@ -306,7 +308,8 @@ export class ModernApiDashboardRepository implements DashboardRepository {
         essential: { amount: 0 },
         discretionary: { amount: 0 },
         debtPayments: { amount: 0 }
-      }
+      },
+      categoryBreakdown: []
     };
   }
 }

@@ -30,6 +30,10 @@
     percentage: number;
     transactionCount?: number;
     color?: string;
+    monthlyBudget?: number | null;
+    quarterlyBudget?: number | null;
+    budgetUsage?: number | null;
+    annualBudget?: number | null;
   }
 
   interface Props {
@@ -61,6 +65,7 @@
     formatTrend,
     getTrendColor
   }: Props = $props();
+
 </script>
 
 <section class="metrics-section">

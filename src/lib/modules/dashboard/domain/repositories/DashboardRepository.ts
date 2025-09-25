@@ -30,6 +30,7 @@ export interface DashboardData {
   monthlyTrend: MonthlyTrendData[];
   monthlyBarData: MonthlyBarData[];
   expenseDistribution: ExpenseDistribution;
+  categoryBreakdown?: any[]; // Raw category data with budget information
 }
 
 // Repository Interface (Port)

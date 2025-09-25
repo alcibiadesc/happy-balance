@@ -93,10 +93,11 @@ export function createEnhancedDashboardStore(apiBase: string) {
         });
 
         // El endpoint enhanced ya incluye el categoryBreakdown
-        categoryBreakdown = data.categoryBreakdown || data.categories || [];
+        categoryBreakdown = data.categoryBreakdown || [];
         console.log('[Store] Category breakdown loaded:', categoryBreakdown.length, 'categories');
+        console.log('[Store] Raw categoryBreakdown data:', categoryBreakdown);
         if (categoryBreakdown.length > 0) {
-          console.log('[Store] Sample categories:', categoryBreakdown.slice(0, 3));
+          console.log('[Store] First category in breakdown:', categoryBreakdown[0]);
         }
 
         // Cargar comparación si estamos en vista mensual
@@ -221,7 +222,21 @@ export function createEnhancedDashboardStore(apiBase: string) {
     get expenseDistribution() { return expenseDistribution; },
     get comparison() { return comparison; },
     get savingsMetrics() { return savingsMetrics; },
-    get categoryBreakdown() { return categoryBreakdown; },
+    get categoryBreakdown() {
+      console.log('[Store] Getting categoryBreakdown, raw data:', categoryBreakdown);
+      // Convert Category objects to plain objects if needed
+      const result = categoryBreakdown.map((cat: any) => {
+        if (typeof cat.toJSON === 'function') {
+          const json = cat.toJSON();
+          console.log('[Store] Converting category to JSON:', cat.name, json);
+          return json;
+        }
+        console.log('[Store] Category already plain:', cat);
+        return cat;
+      });
+      console.log('[Store] Final categoryBreakdown result:', result);
+      return result;
+    },
 
     // Methods
     changePeriod,

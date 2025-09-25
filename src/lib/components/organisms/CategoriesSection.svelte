@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CategoryCard from '../atoms/CategoryCard.svelte';
+  import CategoryCard from "../atoms/CategoryCard.svelte";
 
   interface Category {
     name: string;
@@ -7,6 +7,8 @@
     percentage: number;
     color?: string;
     icon?: string;
+    monthlyBudget?: number | null;
+    budgetUsage?: number | null;
   }
 
   interface Props {
@@ -15,11 +17,7 @@
     formatCurrency: (amount: number) => string;
   }
 
-  let {
-    title,
-    categories,
-    formatCurrency
-  }: Props = $props();
+  let { title, categories, formatCurrency }: Props = $props();
 </script>
 
 <section class="categories-section">
@@ -31,7 +29,9 @@
         amount={formatCurrency(category.amount)}
         percentage={category.percentage}
         color={category.color}
-        icon={category.icon || '📊'}
+        icon={category.icon || "📊"}
+        monthlyBudget={category.monthlyBudget ? formatCurrency(category.monthlyBudget) : null}
+        budgetUsage={category.budgetUsage}
       />
     {/each}
   </div>

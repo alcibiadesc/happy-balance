@@ -18,7 +18,7 @@
   import { createEnhancedDashboardStore } from "$lib/modules/dashboard/presentation/stores/enhancedDashboardStore.svelte.ts";
 
   // Initialize store with API configuration
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3006/api";
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3005/api";
   console.log('[Dashboard] Using API base:', API_BASE);
   const store = createEnhancedDashboardStore(API_BASE);
 
@@ -97,7 +97,9 @@
       amount: cat.getAmount().getValue(),
       percentage: cat.getPercentage(),
       color: cat.getColor(),
-      icon: cat.getIcon()
+      icon: cat.getIcon(),
+      monthlyBudget: cat.getMonthlyBudget(),
+      budgetUsage: cat.getBudgetUsage()
     }))
   );
 

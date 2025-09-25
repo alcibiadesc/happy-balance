@@ -5,34 +5,53 @@
     percentage: number;
     color?: string;
     icon?: string;
+    monthlyBudget?: string | null;
+    budgetUsage?: number | null;
   }
 
   let {
     name,
     amount,
     percentage,
-    color = 'var(--primary)',
-    icon = '📊'
+    color = "var(--primary)",
+    icon = "📊",
+    monthlyBudget = null,
+    budgetUsage = null,
   }: Props = $props();
 </script>
 
 <div class="category-card">
   <div class="category-header">
     <div class="category-info">
-      <span class="category-icon" style="background-color: {color}20; color: {color}">
+      <span
+        class="category-icon"
+        style="background-color: {color}20; color: {color}"
+      >
         {icon}
       </span>
       <span class="category-name">{name}</span>
     </div>
-    <span class="category-amount">{amount}</span>
+    <div class="category-amount-section">
+      <span class="category-amount">{amount}</span>
+      {#if monthlyBudget}
+        <span class="category-budget">/ {monthlyBudget}</span>
+      {/if}
+    </div>
   </div>
   <div class="category-bar">
     <div
       class="category-progress"
-      style="width: {percentage}%; background-color: {color}"
+      style="width: {budgetUsage !== null ? Math.min(budgetUsage, 100) : percentage}%; background-color: {budgetUsage !== null && budgetUsage > 100 ? 'var(--accent)' : color}"
     ></div>
   </div>
-  <span class="category-percentage">{percentage}%</span>
+  <div class="category-footer">
+    <span class="category-percentage">{percentage}% del total</span>
+    {#if budgetUsage !== null}
+      <span class="budget-usage" class:over-budget={budgetUsage > 100}>
+        {Math.round(budgetUsage)}% del presupuesto
+      </span>
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -79,10 +98,22 @@
     font-weight: 500;
   }
 
+  .category-amount-section {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+  }
+
   .category-amount {
     font-size: 0.875rem;
     color: var(--text-primary);
     font-weight: 600;
+  }
+
+  .category-budget {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
   }
 
   .category-bar {
@@ -100,8 +131,26 @@
     transition: width 0.6s ease;
   }
 
+  .category-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .category-percentage {
     font-size: 0.75rem;
     color: var(--text-muted);
+  }
+
+  .budget-usage {
+    font-size: 0.75rem;
+    color: var(--success);
+    font-weight: 500;
+  }
+
+  .budget-usage.over-budget {
+    color: var(--accent);
+    font-weight: 600;
   }
 </style>

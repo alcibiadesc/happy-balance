@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { TrendingDown, ChevronDown, ChevronUp } from 'lucide-svelte';
-  import { t } from '$lib/stores/i18n';
-  
+  import { TrendingDown, ChevronDown, ChevronUp } from "lucide-svelte";
+  import { t } from "$lib/stores/i18n";
+
   interface CategoryData {
     id: string;
     name: string;
@@ -38,11 +38,21 @@
     loading = false,
     formatCurrency,
     formatTrend,
-    getTrendColor
+    getTrendColor,
   }: Props = $props();
-  
+
+  $effect(() => {
+    console.log(
+      "[ExpensesCard] Props received, categoryBreakdown:",
+      categoryBreakdown,
+    );
+    if (categoryBreakdown.length > 0) {
+      console.log("[ExpensesCard] First category:", categoryBreakdown[0]);
+    }
+  });
+
   let expanded = $state(false);
-  
+
   function toggleExpanded() {
     expanded = !expanded;
   }
@@ -53,9 +63,9 @@
     <div class="metric-icon expenses">
       <TrendingDown size={18} strokeWidth={2} />
     </div>
-    <span class="metric-label">{$t('dashboard.metrics.expenses')}</span>
-    <button 
-      class="expand-button" 
+    <span class="metric-label">{$t("dashboard.metrics.expenses")}</span>
+    <button
+      class="expand-button"
       onclick={toggleExpanded}
       aria-label={expanded ? "Contraer desglose" : "Ver desglose"}
     >
@@ -66,7 +76,7 @@
       {/if}
     </button>
   </div>
-  
+
   <div class="metric-body">
     <div class="metric-value">
       {#if loading}
@@ -84,49 +94,73 @@
       </div>
     {/if}
   </div>
-  
+
   {#if expanded && totalExpenses > 0}
     <div class="expenses-breakdown">
       {#if categoryBreakdown.length > 0}
         {#each categoryBreakdown.slice(0, 5) as category}
+          {@const categoryAmount =
+            typeof category.amount === "object"
+              ? category.amount.amount
+              : category.amount}
+          {@const hasMonthlyBudget =
+            category.monthlyBudget !== null &&
+            category.monthlyBudget !== undefined &&
+            category.monthlyBudget > 0}
           <div class="breakdown-item">
             <div class="breakdown-info">
               {#if category.color}
-                <div class="category-indicator" style="background-color: {category.color}"></div>
+                <div
+                  class="category-indicator"
+                  style="background-color: {category.color}"
+                ></div>
               {/if}
               <div>
                 <span class="breakdown-label">{category.name}</span>
                 <div class="breakdown-amounts">
-                  <span class="breakdown-amount">{formatCurrency(category.amount)}</span>
-                  {#if category.monthlyBudget}
-                    <span class="breakdown-budget">de {formatCurrency(category.monthlyBudget)}</span>
-                  {/if}
+                  <span class="breakdown-amount">
+                    {formatCurrency(categoryAmount)}
+                    {#if hasMonthlyBudget}
+                      / {formatCurrency(category.monthlyBudget)}
+                      {#if category.budgetUsage !== null && category.budgetUsage !== undefined}
+                        <span
+                          class="budget-usage-inline"
+                          class:over-budget={category.budgetUsage > 100}
+                        >
+                          ({Math.round(category.budgetUsage)}%)
+                        </span>
+                      {/if}
+                    {/if}
+                  </span>
                 </div>
               </div>
             </div>
             <div class="breakdown-stats">
               <div class="breakdown-percentage">
-                {Math.round(category.percentage)}%
+                {Math.round(
+                  category.percentage || (categoryAmount / totalExpenses) * 100,
+                )}%
               </div>
-              {#if category.budgetUsage !== null && category.budgetUsage !== undefined}
-                <div class="budget-usage" class:over-budget={category.budgetUsage > 100}>
-                  {Math.round(category.budgetUsage)}%
-                </div>
-              {/if}
             </div>
           </div>
         {/each}
         {#if categoryBreakdown.length > 5}
           <div class="breakdown-item more-categories">
-            <span class="breakdown-label">+{categoryBreakdown.length - 5} categorías más</span>
+            <span class="breakdown-label"
+              >+{categoryBreakdown.length - 5} categorías más</span
+            >
           </div>
         {/if}
       {:else}
         <!-- Fallback to old display if no category data -->
         <div class="breakdown-item">
           <div class="breakdown-info">
-            <span class="breakdown-label">{$t('dashboard.metrics.essential_expenses')}</span>
-            <span class="breakdown-amount">{formatCurrency(essentialExpenses)}</span>
+            <span class="breakdown-label"
+              >{$t("dashboard.metrics.essential_expenses")}</span
+            >
+            <span class="breakdown-amount"
+              >{formatCurrency(essentialExpenses)}</span
+            >
           </div>
           <div class="breakdown-percentage">
             {Math.round((essentialExpenses / totalExpenses) * 100)}%
@@ -135,8 +169,12 @@
 
         <div class="breakdown-item">
           <div class="breakdown-info">
-            <span class="breakdown-label">{$t('dashboard.metrics.discretionary_expenses')}</span>
-            <span class="breakdown-amount">{formatCurrency(discretionaryExpenses)}</span>
+            <span class="breakdown-label"
+              >{$t("dashboard.metrics.discretionary_expenses")}</span
+            >
+            <span class="breakdown-amount"
+              >{formatCurrency(discretionaryExpenses)}</span
+            >
           </div>
           <div class="breakdown-percentage">
             {Math.round((discretionaryExpenses / totalExpenses) * 100)}%
@@ -145,7 +183,9 @@
 
         <div class="breakdown-item">
           <div class="breakdown-info">
-            <span class="breakdown-label">{$t('dashboard.metrics.debt_payments')}</span>
+            <span class="breakdown-label"
+              >{$t("dashboard.metrics.debt_payments")}</span
+            >
             <span class="breakdown-amount">{formatCurrency(debtPayments)}</span>
           </div>
           <div class="breakdown-percentage">
@@ -171,12 +211,12 @@
     transition: all 0.2s ease;
     border: 1px solid var(--border-color, transparent);
   }
-  
+
   .expenses-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
-  
+
   .metric-header {
     display: flex;
     align-items: center;
@@ -184,7 +224,7 @@
     margin-bottom: 1rem;
     position: relative;
   }
-  
+
   .metric-icon {
     width: 36px;
     height: 36px;
@@ -193,12 +233,12 @@
     align-items: center;
     justify-content: center;
   }
-  
+
   .metric-icon.expenses {
     background: rgba(245, 121, 108, 0.1);
     color: var(--accent);
   }
-  
+
   .metric-label {
     font-size: 0.875rem;
     color: var(--text-secondary);
@@ -207,7 +247,7 @@
     letter-spacing: 0.05em;
     flex: 1;
   }
-  
+
   .expand-button {
     border: none;
     background: transparent;
@@ -220,30 +260,30 @@
     justify-content: center;
     transition: all 0.2s ease;
   }
-  
+
   .expand-button:hover {
     color: var(--text-primary);
     background: var(--surface-muted);
   }
-  
+
   .metric-body {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
   }
-  
+
   .metric-value {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.025em;
   }
-  
+
   .metric-trend {
     font-size: 0.875rem;
     font-weight: 600;
   }
-  
+
   .expenses-breakdown {
     margin-top: 1rem;
     padding-top: 1rem;
@@ -252,13 +292,13 @@
     flex-direction: column;
     gap: 0.75rem;
   }
-  
+
   .breakdown-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  
+
   .breakdown-info {
     display: flex;
     align-items: center;
@@ -277,19 +317,19 @@
     border-radius: 50%;
     flex-shrink: 0;
   }
-  
+
   .breakdown-label {
     font-size: 0.8125rem;
     color: var(--text-secondary);
     font-weight: 500;
   }
-  
+
   .breakdown-amount {
     font-size: 0.9375rem;
     color: var(--text-primary);
     font-weight: 600;
   }
-  
+
   .breakdown-amounts {
     display: flex;
     align-items: baseline;
@@ -299,6 +339,17 @@
   .breakdown-budget {
     font-size: 0.75rem;
     color: var(--text-muted);
+  }
+
+  .budget-usage-inline {
+    font-size: 0.875rem;
+    color: var(--success);
+    font-weight: 600;
+    margin-left: 0.25rem;
+  }
+
+  .budget-usage-inline.over-budget {
+    color: var(--accent);
   }
 
   .breakdown-stats {
@@ -317,32 +368,27 @@
     border-radius: 12px;
   }
 
-  .budget-usage {
-    font-size: 0.75rem;
-    color: var(--success);
-    font-weight: 600;
-    padding: 0.125rem 0.375rem;
-    background: rgba(34, 197, 94, 0.1);
-    border-radius: 8px;
-  }
-
-  .budget-usage.over-budget {
-    color: var(--accent);
-    background: rgba(245, 121, 108, 0.1);
-  }
-
   .metric-skeleton {
     width: 80%;
     height: 1.5rem;
-    background: linear-gradient(90deg, var(--surface-muted) 25%, var(--surface-elevated) 50%, var(--surface-muted) 75%);
+    background: linear-gradient(
+      90deg,
+      var(--surface-muted) 25%,
+      var(--surface-elevated) 50%,
+      var(--surface-muted) 75%
+    );
     background-size: 200% 100%;
     border-radius: 4px;
     animation: skeleton-loading 1.5s infinite;
   }
 
   @keyframes skeleton-loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 
   .no-expenses-message {
