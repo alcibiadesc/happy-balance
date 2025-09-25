@@ -252,6 +252,13 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
       if (result.success && result.data) {
         const summary = result.data.summary || {};
+        const distribution = result.data.expenseDistribution || result.data.distribution || {};
+
+        // Use actual distribution data if available, otherwise use estimates
+        const essential = distribution.essential || (summary.expenses || 0) * 0.6;
+        const discretionary = distribution.discretionary || (summary.expenses || 0) * 0.4;
+        const debtPayments = distribution.debtPayments || 0;
+
         return {
           year: year,
           quarter: quarter,
@@ -261,9 +268,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
           expenses: summary.expenses || 0,
           investments: summary.investments || 0,
           balance: (summary.income || 0) - (summary.expenses || 0),
-          essentialExpenses: (summary.expenses || 0) * 0.6,
-          discretionaryExpenses: (summary.expenses || 0) * 0.4,
-          debtPayments: 0
+          essentialExpenses: essential,
+          discretionaryExpenses: discretionary,
+          debtPayments: debtPayments
         };
       }
 
@@ -329,14 +336,21 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       if (result.success && result.data) {
         // Aggregate the year data
         const summary = result.data.summary || {};
+        const distribution = result.data.expenseDistribution || result.data.distribution || {};
+
+        // Use actual distribution data if available, otherwise use estimates
+        const essential = distribution.essential || (summary.expenses || 0) * 0.6;
+        const discretionary = distribution.discretionary || (summary.expenses || 0) * 0.4;
+        const debtPayments = distribution.debtPayments || 0;
+
         return {
           income: summary.income || 0,
           expenses: summary.expenses || 0,
           investments: summary.investments || 0,
           balance: (summary.income || 0) - (summary.expenses || 0),
-          essentialExpenses: (summary.expenses || 0) * 0.6,
-          discretionaryExpenses: (summary.expenses || 0) * 0.4,
-          debtPayments: 0
+          essentialExpenses: essential,
+          discretionaryExpenses: discretionary,
+          debtPayments: debtPayments
         };
       }
 
