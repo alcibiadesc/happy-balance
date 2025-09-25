@@ -66,16 +66,13 @@ export function createEnhancedDashboardStore(apiBase: string) {
       const periods = await repository.getAvailablePeriods();
       availablePeriods = periods;
 
-      // Siempre empezar mostrando el mes actual (offset 0)
-      // La UI indicará si no hay datos
+      // Start at current month (September 2025)
       periodOffset = 0;
 
-      console.log('[Dashboard] Períodos disponibles:', periods.length);
-      if (periods.length > 0) {
-        console.log('[Dashboard] Período más reciente con datos:', periods[0].label);
-      }
+      console.log('[Dashboard] Available periods:', periods.length);
     } catch (error) {
-      console.error('[Dashboard] Error detectando períodos:', error);
+      console.error('[Dashboard] Error loading periods:', error);
+      availablePeriods = [];
       periodOffset = 0;
     }
   }
@@ -124,14 +121,33 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
   // Navigation methods
   async function changePeriod(type: PeriodType) {
-    selectedPeriodType = type;
-    periodOffset = 0;
-    await loadDashboardData();
+    // Validate period type
+    if (['month', 'quarter', 'year', 'week'].includes(type)) {
+      selectedPeriodType = type;
+      periodOffset = 0;
+      await loadDashboardData();
+    }
   }
 
-  async function navigatePeriod(offset: number) {
-    periodOffset = offset;
-    await loadDashboardData();
+  async function navigatePeriod(newOffset: number) {
+    // Clamp offset to valid range
+    // 0 = current period (September 2025)
+    // -1 = one period back (August 2025)
+    // etc.
+
+    const maxFuture = 0; // Can't go beyond current period
+    const maxPast = selectedPeriodType === 'month' ? -24 :
+                    selectedPeriodType === 'quarter' ? -12 :
+                    selectedPeriodType === 'year' ? -5 : -24;
+
+    // Apply limits
+    newOffset = Math.min(maxFuture, Math.max(maxPast, newOffset));
+
+    // Only update if changed
+    if (newOffset !== periodOffset) {
+      periodOffset = newOffset;
+      await loadDashboardData();
+    }
   }
 
   function resetToToday() {
@@ -221,6 +237,24 @@ export function createEnhancedDashboardStore(apiBase: string) {
         return monthName.charAt(0).toUpperCase() + monthName.slice(1);
       }
       return currentPeriod.getLabel();
+    },
+
+    // Check if we can navigate forward
+    canNavigateForward(): boolean {
+      return periodOffset < 0;
+    },
+
+    // Check if we can navigate backward
+    canNavigateBackward(): boolean {
+      // Different limits based on period type
+      const limits: Record<PeriodType, number> = {
+        month: -24,   // 2 years back
+        quarter: -12, // 3 years back
+        year: -5,     // 5 years back
+        week: -52,    // 1 year back
+        custom: 0
+      };
+      return periodOffset > (limits[selectedPeriodType] || -24);
     },
 
     // Método para verificar si hay datos en el período actual

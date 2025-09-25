@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
+import swaggerUi from "swagger-ui-express";
 import { prisma } from "@infrastructure/database/prisma";
 import { PrismaTransactionRepository } from "@infrastructure/repositories/PrismaTransactionRepository";
 import { PrismaUserPreferencesRepository } from "@infrastructure/repositories/PrismaUserPreferencesRepository";
@@ -22,6 +23,8 @@ import { createCategoryRoutes } from "@infrastructure/routes/categoryRoutes";
 import { createMetricsRoutes } from "@infrastructure/routes/metricsRoutes";
 import { createDashboardRoutes } from "@infrastructure/routes/dashboardRoutes";
 import { errorHandler } from "@infrastructure/middleware/errorHandler";
+import { swaggerSpec } from "@infrastructure/config/swagger";
+import "@infrastructure/routes/swaggerDocs"; // Import for JSDoc annotations
 import {
   apiLimiter,
   uploadLimiter,
@@ -261,6 +264,12 @@ class App {
       });
     });
 
+    // Swagger documentation
+    this.app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: "Expense Tracker API Documentation"
+    }));
+
     // API routes with specific rate limiters
     this.app.use("/api/transactions/dashboard", dashboardLimiter);
     this.app.post("/api/transactions", createTransactionLimiter);
@@ -325,6 +334,7 @@ class App {
         console.log(`📍 Port: ${actualPort}`);
         console.log(`🔗 Health check: http://localhost:${actualPort}/health`);
         console.log(`🚀 API Base: http://localhost:${actualPort}/api`);
+        console.log(`📚 API Docs: http://localhost:${actualPort}/api-docs`);
       });
 
       server.on("error", (error: any) => {
