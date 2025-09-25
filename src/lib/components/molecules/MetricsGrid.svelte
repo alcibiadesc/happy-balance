@@ -23,24 +23,10 @@
     debtPayments?: { _amount: number };
   }
 
-  interface CategoryData {
-    id: string;
-    name: string;
-    amount: number;
-    percentage: number;
-    transactionCount?: number;
-    color?: string;
-    monthlyBudget?: number | null;
-    quarterlyBudget?: number | null;
-    budgetUsage?: number | null;
-    annualBudget?: number | null;
-  }
-
   interface Props {
     metrics: FilteredMetrics;
     trends: Trends;
     expenseDistribution?: ExpenseDistribution;
-    categoryBreakdown?: CategoryData[];
     loading?: boolean;
     labels: {
       income: string;
@@ -58,7 +44,6 @@
     metrics,
     trends,
     expenseDistribution,
-    categoryBreakdown = [],
     loading = false,
     labels,
     formatCurrency,
@@ -87,7 +72,6 @@
       essentialExpenses={expenseDistribution?.essential?._amount || 0}
       discretionaryExpenses={expenseDistribution?.discretionary?._amount || 0}
       debtPayments={expenseDistribution?.debtPayments?._amount || 0}
-      {categoryBreakdown}
       trend={trends.expenses}
       {loading}
       {formatCurrency}

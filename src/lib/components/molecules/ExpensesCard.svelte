@@ -2,25 +2,11 @@
   import { TrendingDown, ChevronDown, ChevronUp } from "lucide-svelte";
   import { t } from "$lib/stores/i18n";
 
-  interface CategoryData {
-    id: string;
-    name: string;
-    amount: number;
-    percentage: number;
-    transactionCount?: number;
-    color?: string;
-    monthlyBudget?: number | null;
-    quarterlyBudget?: number | null;
-    budgetUsage?: number | null;
-    annualBudget?: number | null;
-  }
-
   interface Props {
     totalExpenses: number;
     essentialExpenses: number;
     discretionaryExpenses: number;
     debtPayments: number;
-    categoryBreakdown?: CategoryData[];
     trend: number;
     loading?: boolean;
     formatCurrency: (amount: number) => string;
@@ -33,23 +19,12 @@
     essentialExpenses,
     discretionaryExpenses,
     debtPayments,
-    categoryBreakdown = [],
     trend,
     loading = false,
     formatCurrency,
     formatTrend,
     getTrendColor,
   }: Props = $props();
-
-  $effect(() => {
-    console.log(
-      "[ExpensesCard] Props received, categoryBreakdown:",
-      categoryBreakdown,
-    );
-    if (categoryBreakdown.length > 0) {
-      console.log("[ExpensesCard] First category:", categoryBreakdown[0]);
-    }
-  });
 
   let expanded = $state(false);
 
@@ -97,64 +72,10 @@
 
   {#if expanded && totalExpenses > 0}
     <div class="expenses-breakdown">
-      {#if categoryBreakdown.length > 0}
-        {#each categoryBreakdown.slice(0, 5) as category}
-          {@const categoryAmount =
-            typeof category.amount === "object"
-              ? category.amount.amount
-              : category.amount}
-          {@const hasMonthlyBudget =
-            category.monthlyBudget !== null &&
-            category.monthlyBudget !== undefined &&
-            category.monthlyBudget > 0}
-          <div class="breakdown-item">
-            <div class="breakdown-info">
-              {#if category.color}
-                <div
-                  class="category-indicator"
-                  style="background-color: {category.color}"
-                ></div>
-              {/if}
-              <div>
-                <span class="breakdown-label">{category.name}</span>
-                <div class="breakdown-amounts">
-                  <span class="breakdown-amount">
-                    {formatCurrency(categoryAmount)}
-                    {#if hasMonthlyBudget}
-                      / {formatCurrency(category.monthlyBudget)}
-                      {#if category.budgetUsage !== null && category.budgetUsage !== undefined}
-                        <span
-                          class="budget-usage-inline"
-                          class:over-budget={category.budgetUsage > 100}
-                        >
-                          ({Math.round(category.budgetUsage)}%)
-                        </span>
-                      {/if}
-                    {/if}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="breakdown-stats">
-              <div class="breakdown-percentage">
-                {Math.round(
-                  category.percentage || (categoryAmount / totalExpenses) * 100,
-                )}%
-              </div>
-            </div>
-          </div>
-        {/each}
-        {#if categoryBreakdown.length > 5}
-          <div class="breakdown-item more-categories">
-            <span class="breakdown-label"
-              >+{categoryBreakdown.length - 5} categorías más</span
-            >
-          </div>
-        {/if}
-      {:else}
-        <!-- Fallback to old display if no category data -->
-        <div class="breakdown-item">
-          <div class="breakdown-info">
+      <div class="breakdown-item">
+        <div class="breakdown-info">
+          <div class="category-indicator essential"></div>
+          <div>
             <span class="breakdown-label"
               >{$t("dashboard.metrics.essential_expenses")}</span
             >
@@ -162,13 +83,16 @@
               >{formatCurrency(essentialExpenses)}</span
             >
           </div>
-          <div class="breakdown-percentage">
-            {Math.round((essentialExpenses / totalExpenses) * 100)}%
-          </div>
         </div>
+        <div class="breakdown-percentage">
+          {Math.round((essentialExpenses / totalExpenses) * 100)}%
+        </div>
+      </div>
 
-        <div class="breakdown-item">
-          <div class="breakdown-info">
+      <div class="breakdown-item">
+        <div class="breakdown-info">
+          <div class="category-indicator discretionary"></div>
+          <div>
             <span class="breakdown-label"
               >{$t("dashboard.metrics.discretionary_expenses")}</span
             >
@@ -176,17 +100,22 @@
               >{formatCurrency(discretionaryExpenses)}</span
             >
           </div>
-          <div class="breakdown-percentage">
-            {Math.round((discretionaryExpenses / totalExpenses) * 100)}%
-          </div>
         </div>
+        <div class="breakdown-percentage">
+          {Math.round((discretionaryExpenses / totalExpenses) * 100)}%
+        </div>
+      </div>
 
+      {#if debtPayments > 0}
         <div class="breakdown-item">
           <div class="breakdown-info">
-            <span class="breakdown-label"
-              >{$t("dashboard.metrics.debt_payments")}</span
-            >
-            <span class="breakdown-amount">{formatCurrency(debtPayments)}</span>
+            <div class="category-indicator debt"></div>
+            <div>
+              <span class="breakdown-label"
+                >{$t("dashboard.metrics.debt_payments")}</span
+              >
+              <span class="breakdown-amount">{formatCurrency(debtPayments)}</span>
+            </div>
           </div>
           <div class="breakdown-percentage">
             {Math.round((debtPayments / totalExpenses) * 100)}%
@@ -316,6 +245,18 @@
     height: 12px;
     border-radius: 50%;
     flex-shrink: 0;
+  }
+
+  .category-indicator.essential {
+    background-color: var(--primary);
+  }
+
+  .category-indicator.discretionary {
+    background-color: var(--warning);
+  }
+
+  .category-indicator.debt {
+    background-color: var(--accent);
   }
 
   .breakdown-label {

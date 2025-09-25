@@ -161,7 +161,6 @@
     metrics={metricsData}
     trends={trendsData}
     expenseDistribution={store.expenseDistribution}
-    categoryBreakdown={store.categoryBreakdown}
     loading={store.loading}
     labels={{
       income: $t("dashboard.metrics.income"),
