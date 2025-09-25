@@ -37,6 +37,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       icon: prismaCategory.icon || "💰",
       type: categoryType,
       isActive: prismaCategory.isActive,
+      annualBudget: prismaCategory.annualBudget ? Number(prismaCategory.annualBudget) : 0,
       createdAt: prismaCategory.createdAt.toISOString(),
     });
   }
@@ -49,6 +50,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       icon: category.icon,
       type: category.type,
       isActive: category.isActive,
+      annualBudget: category.annualBudget,
     };
   }
 

@@ -99,7 +99,7 @@ export class DashboardController {
 
   /**
    * GET /api/dashboard/month/:year/:month
-   * Obtiene las métricas de un mes específico
+   * Obtiene las métricas de un mes específico con breakdown de categorías real
    * Ejemplo: /api/dashboard/month/2025/1 (enero 2025)
    */
   async getMonthMetrics(req: Request, res: Response) {
@@ -118,14 +118,46 @@ export class DashboardController {
         0
       );
 
-      const result = await this.getDashboardMetricsUseCase.execute(query);
+      // Obtener métricas básicas y breakdown de categorías en paralelo
+      const [metricsResult, categoryBreakdown] = await Promise.all([
+        this.getDashboardMetricsUseCase.execute(query),
+        this.dashboardRepository.getCategoryDistribution(
+          new Date(year, month - 1, 1),
+          new Date(year, month, 0)
+        )
+      ]);
 
-      if (result.isFailure()) {
+      if (metricsResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: result.getError()
+          error: metricsResult.getError()
         });
       }
+
+      const dashboardData = this.formatDashboardResponse(metricsResult.getValue());
+
+      // Reemplazar las categorías con el breakdown real
+      const budgetDivisor = 12; // Vista mensual
+      dashboardData.categories = categoryBreakdown.map(cat => {
+        const periodBudget = cat.annualBudget ? Math.round(cat.annualBudget / budgetDivisor) : null;
+        const amount = Math.round(cat.amount);
+        const budgetUsage = periodBudget && periodBudget > 0
+          ? Math.round((amount / periodBudget) * 100)
+          : null;
+
+        return {
+          id: cat.categoryId,
+          name: cat.categoryName,
+          amount: amount,
+          percentage: Math.round((cat.amount / dashboardData.summary.expenses) * 100),
+          transactionCount: cat.count,
+          type: cat.type,
+          color: cat.color,
+          budget: periodBudget,
+          budgetUsage: budgetUsage,
+          annualBudget: cat.annualBudget ? Math.round(cat.annualBudget) : null
+        };
+      }).filter(cat => cat.amount > 0); // Filtrar categorías sin gastos
 
       return res.json({
         success: true,
@@ -136,7 +168,7 @@ export class DashboardController {
           startDate,
           endDate
         },
-        data: this.formatDashboardResponse(result.getValue())
+        data: dashboardData
       });
     } catch (error) {
       console.error("Error in getMonthMetrics:", error);
@@ -458,6 +490,216 @@ export class DashboardController {
         error: error instanceof Error ? error.message : "Unknown error"
       });
     }
+  }
+
+  /**
+   * GET /api/dashboard/enhanced/:year/:month
+   * Endpoint mejorado que combina todas las métricas necesarias para el dashboard
+   * Incluye: métricas básicas, breakdown de categorías real, comparación, tendencias y ahorros
+   */
+  async getEnhancedMonthMetrics(req: Request, res: Response) {
+    try {
+      const { year, month } = MonthYearSchema.parse(req.params);
+
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0);
+
+      // Calcular período anterior para comparación
+      const prevMonth = month === 1 ? 12 : month - 1;
+      const prevYear = month === 1 ? year - 1 : year;
+      const prevStart = new Date(prevYear, prevMonth - 1, 1);
+      const prevEnd = new Date(prevYear, prevMonth, 0);
+
+      // Obtener todos los datos en paralelo para mejor performance
+      const [
+        metricsResult,
+        categoryBreakdown,
+        comparisonData,
+        savingsMetrics,
+        monthlyHistory
+      ] = await Promise.all([
+        // Métricas básicas del período actual
+        this.getDashboardMetricsUseCase.execute(
+          new DashboardQuery("EUR", "custom", this.formatDate(startDate), this.formatDate(endDate), true, 0)
+        ),
+        // Breakdown de categorías real
+        this.dashboardRepository.getCategoryDistribution(startDate, endDate),
+        // Comparación con período anterior
+        this.dashboardRepository.getComparisonMetrics(startDate, endDate, prevStart, prevEnd),
+        // Métricas de ahorro
+        this.dashboardRepository.getSavingsMetrics(startDate, endDate),
+        // Histórico de los últimos 6 meses
+        this.dashboardRepository.getMonthlyHistory(
+          new Date(year, month - 7, 1), // 6 meses atrás
+          endDate
+        )
+      ]);
+
+      if (metricsResult.isFailure()) {
+        return res.status(500).json({
+          success: false,
+          error: metricsResult.getError()
+        });
+      }
+
+      const dashboardData = this.formatDashboardResponse(metricsResult.getValue());
+      const totalExpenses = dashboardData.summary.expenses || 1; // Evitar división por cero
+
+      // Calcular el divisor del presupuesto según el período (para mensual = 12)
+      const budgetDivisor = 12; // Por ahora solo soportamos vista mensual
+
+      // Enriquecer con breakdown de categorías real
+      const enrichedCategories = categoryBreakdown
+        .map(cat => {
+          // Calcular presupuestos para diferentes períodos
+          const monthlyBudget = cat.annualBudget ? Math.round(cat.annualBudget / 12) : null;
+          const quarterlyBudget = cat.annualBudget ? Math.round(cat.annualBudget / 4) : null;
+          const amount = Math.round(cat.amount);
+
+          // Calcular porcentaje de uso del presupuesto mensual
+          const budgetUsagePercentage = monthlyBudget && monthlyBudget > 0
+            ? Math.round((amount / monthlyBudget) * 100)
+            : null;
+
+          return {
+            id: cat.categoryId,
+            name: cat.categoryName,
+            amount: amount,
+            percentage: Math.round((cat.amount / totalExpenses) * 100),
+            transactionCount: cat.count,
+            type: cat.type,
+            color: cat.color || this.generateCategoryColor(cat.categoryName),
+            icon: this.getCategoryIcon(cat.type),
+            monthlyBudget: monthlyBudget,
+            quarterlyBudget: quarterlyBudget,
+            budgetUsage: budgetUsagePercentage,
+            annualBudget: cat.annualBudget ? Math.round(cat.annualBudget) : null
+          };
+        })
+        .filter(cat => cat.amount > 0)
+        .sort((a, b) => b.amount - a.amount);
+
+      // Calcular distribución de gastos (essential, discretionary, debt)
+      const expenseDistribution = this.calculateExpenseDistribution(enrichedCategories);
+
+      // Respuesta completa con todos los datos
+      return res.json({
+        success: true,
+        period: {
+          type: "month",
+          year,
+          month,
+          startDate: this.formatDate(startDate),
+          endDate: this.formatDate(endDate),
+          label: startDate.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
+        },
+        data: {
+          ...dashboardData,
+          categories: enrichedCategories,
+          categoryBreakdown: enrichedCategories, // Para compatibilidad
+          expenseDistribution,
+          comparison: {
+            current: {
+              income: Math.round(comparisonData.current.income * 100) / 100,
+              expenses: Math.round(comparisonData.current.expenses * 100) / 100,
+              balance: Math.round((comparisonData.current.income - comparisonData.current.expenses) * 100) / 100,
+            },
+            previous: {
+              income: Math.round(comparisonData.previous.income * 100) / 100,
+              expenses: Math.round(comparisonData.previous.expenses * 100) / 100,
+              balance: Math.round((comparisonData.previous.income - comparisonData.previous.expenses) * 100) / 100,
+            },
+            changes: {
+              income: Math.round(comparisonData.changes.income * 10) / 10,
+              expenses: Math.round(comparisonData.changes.expenses * 10) / 10,
+              balance: Math.round(comparisonData.changes.transactionCount * 10) / 10,
+            }
+          },
+          savings: {
+            totalSavings: Math.round(savingsMetrics.totalSavings * 100) / 100,
+            savingsRate: savingsMetrics.savingsRate,
+            expenseRatio: savingsMetrics.expenseRatio,
+            dailyAverageExpense: Math.round(savingsMetrics.dailyAverageExpense * 100) / 100,
+            projectedMonthlySavings: Math.round(savingsMetrics.projectedMonthlySavings * 100) / 100,
+            projectedYearlySavings: Math.round(savingsMetrics.projectedMonthlySavings * 12 * 100) / 100
+          },
+          monthlyTrend: monthlyHistory.map(h => ({
+            year: h.year,
+            month: h.month,
+            label: new Date(h.year, h.month - 1).toLocaleDateString("es-ES", { month: "short" }),
+            income: Math.round(h.income * 100) / 100,
+            expenses: Math.round(h.expenses * 100) / 100,
+            investments: Math.round(h.investments * 100) / 100,
+            balance: Math.round((h.income - h.expenses - h.investments) * 100) / 100
+          }))
+        }
+      });
+    } catch (error) {
+      console.error("Error in getEnhancedMonthMetrics:", error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch enhanced metrics"
+      });
+    }
+  }
+
+  /**
+   * Calcula la distribución de gastos en categorías principales
+   */
+  private calculateExpenseDistribution(categories: any[]) {
+    let essential = 0;
+    let discretionary = 0;
+    let debtPayments = 0;
+    let uncategorized = 0;
+
+    categories.forEach(cat => {
+      if (!cat.id || cat.name === "Uncategorized") {
+        uncategorized += cat.amount;
+      } else if (cat.type === "essential") {
+        essential += cat.amount;
+      } else if (cat.type === "discretionary") {
+        discretionary += cat.amount;
+      } else if (cat.type === "debt_payment") {
+        debtPayments += cat.amount;
+      } else {
+        // Categorías sin tipo definido van a discretionary
+        discretionary += cat.amount;
+      }
+    });
+
+    return {
+      essential: { _amount: Math.round(essential * 100) / 100 },
+      discretionary: { _amount: Math.round(discretionary * 100) / 100 },
+      debtPayments: { _amount: Math.round(debtPayments * 100) / 100 },
+      uncategorized: { _amount: Math.round(uncategorized * 100) / 100 }
+    };
+  }
+
+  /**
+   * Genera un color para categorías que no lo tienen
+   */
+  private generateCategoryColor(name: string): string {
+    const colors = [
+      "#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
+      "#EC4899", "#06B6D4", "#84CC16", "#F97316", "#6366F1"
+    ];
+    const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  }
+
+  /**
+   * Obtiene el icono según el tipo de categoría
+   */
+  private getCategoryIcon(type: string): string {
+    const icons: Record<string, string> = {
+      essential: "🏠",
+      discretionary: "🎮",
+      debt_payment: "💳",
+      income: "💰",
+      investment: "📈",
+      savings: "🏦"
+    };
+    return icons[type] || "📦";
   }
 
   /**

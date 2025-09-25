@@ -16,6 +16,8 @@ interface CategoryMetrics {
   amount: number;
   count: number;
   type: string;
+  color?: string;
+  annualBudget?: number | null;
 }
 
 interface AvailablePeriod {
@@ -101,28 +103,30 @@ export class PrismaDashboardRepository {
       SELECT
         t."categoryId",
         COALESCE(c.name, 'Uncategorized') as "categoryName",
-        c.type as categoryType,
+        c.type as "categoryType",
         c.color,
+        c."annualBudget"::float as "annualBudget",
         SUM(t.amount)::float as amount,
         COUNT(t.id)::int as count
       FROM transactions t
-      LEFT JOIN categories c ON t.categoryId = c.id
+      LEFT JOIN categories c ON t."categoryId" = c.id
       WHERE
         t.date >= ${startDate}
         AND t.date <= ${endDate}
         AND t.hidden = false
         AND t.type = 'EXPENSE'
-      GROUP BY t.categoryId, c.name, c.type, c.color
+      GROUP BY t."categoryId", c.name, c.type, c.color, c."annualBudget"
       ORDER BY amount DESC
     `;
 
     return result.map(row => ({
-      categoryId: row.categoryId || row.categoryid,
-      categoryName: row.categoryName || row.categoryname,
+      categoryId: row.categoryId,
+      categoryName: row.categoryName,
       amount: parseFloat(row.amount) || 0,
       count: parseInt(row.count) || 0,
-      type: row.categorytype || 'GENERAL',
+      type: row.categoryType || 'GENERAL',
       color: row.color,
+      annualBudget: row.annualBudget ? parseFloat(row.annualBudget) : null,
     }));
   }
 

@@ -28,6 +28,11 @@ export function createDashboardRoutes(
     dashboardController.getMonthMetrics(req, res)
   );
 
+  // Endpoint mejorado con todas las métricas y categorías reales
+  router.get("/enhanced/:year/:month", (req, res) =>
+    dashboardController.getEnhancedMonthMetrics(req, res)
+  );
+
   // Métricas de un año completo
   router.get("/year/:year", (req, res) =>
     dashboardController.getYearMetrics(req, res)

@@ -163,6 +163,11 @@ export class TransactionController {
 
       const transaction = transactionResult.getValue();
 
+      // Set categoryId if provided
+      if (data.categoryId) {
+        transaction.setCategoryId(data.categoryId);
+      }
+
       // Save transaction
       const saveResult = await this.transactionRepository.save(transaction);
       if (saveResult.isFailure()) {

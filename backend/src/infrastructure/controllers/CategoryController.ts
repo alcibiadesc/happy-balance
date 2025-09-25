@@ -209,6 +209,7 @@ export class CategoryController {
             color: validatedData.color || "#3B82F6",
             icon: validatedData.icon || "💰",
             isActive: true,
+            annualBudget: validatedData.annualBudget || 0,
             createdAt: new Date().toISOString(),
           }),
       );

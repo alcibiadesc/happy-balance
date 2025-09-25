@@ -456,7 +456,7 @@ function mapApiToCategory(apiCategory: any): Category {
     type: apiCategory.type,
     color: apiCategory.color || "#3B82F6",
     icon: apiCategory.icon || "💰",
-    annualBudget: 0, // API doesn't have annualBudget yet, keeping for frontend compatibility
+    annualBudget: apiCategory.annualBudget || 0, // Now properly mapping from API
   };
 }
 

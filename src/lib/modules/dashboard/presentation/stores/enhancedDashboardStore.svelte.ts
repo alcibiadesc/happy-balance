@@ -29,6 +29,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
   let availablePeriods = $state<any[]>([]);
   let comparison = $state<any>(null);
   let savingsMetrics = $state<any>(null);
+  let categoryBreakdown = $state<any[]>([]);
 
   // Computed values (usando $derived rune)
   const currentPeriod = $derived(
@@ -90,6 +91,13 @@ export function createEnhancedDashboardStore(apiBase: string) {
           categories: data.categories?.length || 0,
           period: currentPeriod.getLabel()
         });
+
+        // El endpoint enhanced ya incluye el categoryBreakdown
+        categoryBreakdown = data.categoryBreakdown || data.categories || [];
+        console.log('[Store] Category breakdown loaded:', categoryBreakdown.length, 'categories');
+        if (categoryBreakdown.length > 0) {
+          console.log('[Store] Sample categories:', categoryBreakdown.slice(0, 3));
+        }
 
         // Cargar comparación si estamos en vista mensual
         if (selectedPeriodType === 'month') {
@@ -213,6 +221,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
     get expenseDistribution() { return expenseDistribution; },
     get comparison() { return comparison; },
     get savingsMetrics() { return savingsMetrics; },
+    get categoryBreakdown() { return categoryBreakdown; },
 
     // Methods
     changePeriod,

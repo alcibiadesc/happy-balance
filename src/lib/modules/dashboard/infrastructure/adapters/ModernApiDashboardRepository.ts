@@ -76,6 +76,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
         return this.getEmptyDashboardData(period, currency);
       }
 
+      console.log('[Dashboard] Categories in response:', result.data.categoryBreakdown?.length || result.data.categories?.length || 0);
+      console.log('[Dashboard] First category:', result.data.categoryBreakdown?.[0] || result.data.categories?.[0]);
+
       return this.mapToDomainModel(result.data, period, currency);
     } catch (error) {
       console.error('[Dashboard] Network Error:', error);
@@ -191,7 +194,8 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
     switch (period.getType()) {
       case 'month':
-        return `${this.apiBase}/dashboard/month/${year}/${month}`;
+        // Usar el endpoint mejorado que incluye categorías reales
+        return `${this.apiBase}/dashboard/enhanced/${year}/${month}`;
       case 'year':
         return `${this.apiBase}/dashboard/year/${year}`;
       case 'custom':
@@ -211,28 +215,30 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
     const metrics = DashboardMetrics.create(period, income, expenses, investments);
 
-    // Mapear categorías
+    // Mapear categorías - usar categoryBreakdown si existe (del endpoint enhanced)
+    const categoryData = data.categoryBreakdown || data.categories || [];
     const categories = this.mapCategories(
-      data.categories || [],
+      categoryData,
       summary.currency || currency,
       expenses
     );
 
-    // Mapear tendencias
-    const monthlyTrend = (data.trends || []).map((trend: any) => ({
-      month: trend.month,
+    // Mapear tendencias - usar monthlyTrend si existe (del endpoint enhanced)
+    const trendData = data.monthlyTrend || data.trends || [];
+    const monthlyTrend = trendData.map((trend: any) => ({
+      month: trend.label || trend.month,
       income: trend.income || 0,
       expenses: trend.expenses || 0,
       balance: trend.balance || 0,
       investments: trend.investments || 0
     }));
 
-    // Mapear distribución de gastos (sin underscores)
-    const distribution = data.distribution || {};
+    // Mapear distribución de gastos - manejar formato del endpoint enhanced
+    const distribution = data.expenseDistribution || data.distribution || {};
     const expenseDistribution = {
-      essential: { amount: distribution.essential || 0 },
-      discretionary: { amount: distribution.discretionary || 0 },
-      debtPayments: { amount: distribution.debtPayments || 0 }
+      essential: { _amount: distribution.essential?._amount || distribution.essential || 0 },
+      discretionary: { _amount: distribution.discretionary?._amount || distribution.discretionary || 0 },
+      debtPayments: { _amount: distribution.debtPayments?._amount || distribution.debtPayments || 0 }
     };
 
     // Generar datos para gráficos de barras
@@ -247,17 +253,26 @@ export class ModernApiDashboardRepository implements DashboardRepository {
     };
   }
 
-  private mapCategories(categoryData: CategoryData[], currency: string, totalExpenses: Money): Category[] {
+  private mapCategories(categoryData: any[], currency: string, totalExpenses: Money): Category[] {
     return categoryData.map(cat => {
-      const amount = Money.create(cat.amount, currency);
-      const category = Category.create(
-        cat.id,
-        cat.name,
+      const amount = Money.create(cat.amount || 0, currency);
+
+      // Usar el porcentaje que viene del servidor (ya redondeado)
+      // y también incluir color, icono y presupuestos directamente
+      const category = Category.createWithPercentage(
+        cat.id || null,
+        cat.name || 'Unknown',
         amount,
-        totalExpenses
+        cat.percentage || 0,
+        cat.color,
+        cat.icon,
+        cat.monthlyBudget,
+        cat.quarterlyBudget,
+        cat.budgetUsage,
+        cat.annualBudget
       );
 
-      return cat.color ? category.withColor(cat.color) : category;
+      return category;
     });
   }
 

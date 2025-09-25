@@ -45,6 +45,7 @@ export class Category {
     private _icon: string,
     private readonly _type: CategoryType,
     private _isActive: boolean = true,
+    private _annualBudget: number = 0,
     private readonly _createdAt: Date = new Date(),
   ) {}
 
@@ -54,6 +55,7 @@ export class Category {
     icon: string,
     type: CategoryType,
     id?: CategoryId,
+    annualBudget: number = 0,
   ): Result<Category> {
     // Validate name
     if (!name || name.trim().length === 0) {
@@ -86,6 +88,8 @@ export class Category {
         color.toLowerCase(),
         icon.trim(),
         type,
+        true,
+        annualBudget,
       ),
     );
   }
@@ -117,6 +121,10 @@ export class Category {
 
   get createdAt(): Date {
     return new Date(this._createdAt.getTime());
+  }
+
+  get annualBudget(): number {
+    return this._annualBudget;
   }
 
   // Business methods
@@ -151,6 +159,15 @@ export class Category {
     }
 
     this._icon = newIcon.trim();
+    return Result.ok(undefined);
+  }
+
+  changeAnnualBudget(newBudget: number): Result<void> {
+    if (newBudget < 0) {
+      return Result.failWithMessage("Annual budget cannot be negative");
+    }
+
+    this._annualBudget = newBudget;
     return Result.ok(undefined);
   }
 
@@ -207,6 +224,7 @@ export class Category {
       icon: this._icon,
       type: this._type,
       isActive: this._isActive,
+      annualBudget: this._annualBudget,
       createdAt: this._createdAt.toISOString(),
     };
   }
@@ -229,6 +247,7 @@ export class Category {
       snapshot.icon,
       typeResult,
       snapshot.isActive,
+      snapshot.annualBudget || 0,
       new Date(snapshot.createdAt),
     );
 
@@ -243,5 +262,6 @@ export interface CategorySnapshot {
   icon: string;
   type: CategoryType;
   isActive: boolean;
+  annualBudget?: number;
   createdAt: string;
 }

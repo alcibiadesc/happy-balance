@@ -15,13 +15,13 @@ model Transaction {
   merchant     String    @db.VarChar(200)
   type         String    @db.VarChar(20)
   description  String    @default("")
-  observations String?   @db.VarChar(500)
   categoryId   String?   @db.VarChar(36)
   isSelected   Boolean   @default(true)
   hidden       Boolean   @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   hash         String?   @db.VarChar(50)
+  observations String?   @db.VarChar(500)
   category     Category? @relation(fields: [categoryId], references: [id])
 
   @@index([date])
@@ -45,10 +45,11 @@ model Category {
   parentId     String?           @db.VarChar(36)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
+  annualBudget Decimal?          @db.Decimal(15, 2)
   parent       Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children     Category[]        @relation("CategoryHierarchy")
-  transactions Transaction[]
   patterns     CategoryPattern[]
+  transactions Transaction[]
 
   @@unique([name, type])
   @@index([type])
@@ -102,17 +103,17 @@ model UserPreferences {
 }
 
 model CategoryPattern {
-  id               String   @id @db.VarChar(36)
-  categoryId       String   @db.VarChar(36)
-  pattern          String   @db.VarChar(200)
-  patternType      String   @db.VarChar(20) // 'merchant', 'description', 'combined'
-  isActive         Boolean  @default(true)
-  applyToFuture    Boolean  @default(true) // Apply to future transactions
-  priority         Int      @default(0) // Higher priority patterns are applied first
-  matchCount       Int      @default(0) // Number of transactions matched
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id            String   @id @db.VarChar(36)
+  pattern       String   @db.VarChar(200)
+  priority      Int      @default(0)
+  applyToFuture Boolean  @default(true)
+  categoryId    String   @db.VarChar(36)
+  createdAt     DateTime @default(now())
+  isActive      Boolean  @default(true)
+  matchCount    Int      @default(0)
+  patternType   String   @db.VarChar(20)
+  updatedAt     DateTime @updatedAt
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@index([categoryId])
   @@index([patternType])
