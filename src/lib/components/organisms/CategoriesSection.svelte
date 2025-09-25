@@ -25,6 +25,9 @@
   let cardsPerRow = $state(4);
   let isMobile = $state(false);
 
+  // Number of categories to show on mobile before expanding
+  const MOBILE_INITIAL_SHOW = 3;
+
   // Calculate how many cards fit in a row and detect mobile
   $effect(() => {
     if (containerRef) {
@@ -34,7 +37,7 @@
         isMobile = windowWidth <= 768;
 
         if (isMobile) {
-          cardsPerRow = categories.length; // Show all on mobile
+          cardsPerRow = MOBILE_INITIAL_SHOW; // Show limited cards on mobile initially
         } else {
           const minCardWidth = 200; // Minimum width per card in pixels
           const gap = 16; // Gap between cards in pixels
@@ -53,10 +56,10 @@
   });
 
   const visibleCategories = $derived(
-    isMobile || expanded ? categories : categories.slice(0, cardsPerRow)
+    expanded ? categories : categories.slice(0, cardsPerRow)
   );
   const hiddenCount = $derived(categories.length - cardsPerRow);
-  const hasHiddenCategories = $derived(!isMobile && categories.length > cardsPerRow);
+  const hasHiddenCategories = $derived(categories.length > cardsPerRow);
 </script>
 
 <section class="categories-section">
@@ -178,9 +181,12 @@
       grid-template-columns: 1fr;
     }
 
-    /* On mobile, always show all categories without expand button */
     .expand-button {
-      display: none;
+      width: 100%;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      font-size: 0.875rem;
+      margin-top: 1rem;
     }
   }
 </style>
