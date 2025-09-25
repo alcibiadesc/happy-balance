@@ -446,11 +446,28 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
     // Mapear distribución de gastos - manejar formato del endpoint enhanced
     const distribution = data.expenseDistribution || data.distribution || {};
+
+    // Si no hay distribución del API, calcular estimaciones basadas en el total
+    const totalExpensesValue = expenses.getValue();
+    const hasDistribution = distribution.essential || distribution.discretionary ||
+                           distribution.debtPayments || distribution.uncategorized;
+
     const expenseDistribution = {
-      essential: { _amount: distribution.essential?._amount || distribution.essential || 0 },
-      discretionary: { _amount: distribution.discretionary?._amount || distribution.discretionary || 0 },
-      debtPayments: { _amount: distribution.debtPayments?._amount || distribution.debtPayments || 0 },
-      uncategorized: { _amount: distribution.uncategorized?._amount || distribution.uncategorized || 0 }
+      essential: {
+        _amount: distribution.essential?._amount || distribution.essential ||
+                (hasDistribution ? 0 : totalExpensesValue * 0.6)
+      },
+      discretionary: {
+        _amount: distribution.discretionary?._amount || distribution.discretionary ||
+                (hasDistribution ? 0 : totalExpensesValue * 0.35)
+      },
+      debtPayments: {
+        _amount: distribution.debtPayments?._amount || distribution.debtPayments || 0
+      },
+      uncategorized: {
+        _amount: distribution.uncategorized?._amount || distribution.uncategorized ||
+                (hasDistribution ? 0 : totalExpensesValue * 0.05)
+      }
     };
 
     // Generar datos para gráficos de barras
