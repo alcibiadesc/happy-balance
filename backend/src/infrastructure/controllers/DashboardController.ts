@@ -187,36 +187,71 @@ export class DashboardController {
     try {
       const year = z.coerce.number().min(2020).max(2030).parse(req.params.year);
 
-      const startDate = this.formatDate(new Date(year, 0, 1));
-      const endDate = this.formatDate(new Date(year, 11, 31));
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31);
 
-      const query = new DashboardQuery(
-        "EUR",
-        "custom",
-        startDate,
-        endDate,
-        true,
-        0
-      );
+      // Get both regular metrics and category distribution
+      const [metricsResult, categoryBreakdown] = await Promise.all([
+        this.getDashboardMetricsUseCase.execute(
+          new DashboardQuery(
+            "EUR",
+            "custom",
+            this.formatDate(startDate),
+            this.formatDate(endDate),
+            true,
+            0
+          )
+        ),
+        // Get category distribution directly from repository (includes all categories)
+        this.dashboardRepository.getCategoryDistribution(startDate, endDate)
+      ]);
 
-      const result = await this.getDashboardMetricsUseCase.execute(query);
-
-      if (result.isFailure()) {
+      if (metricsResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: result.getError()
+          error: metricsResult.getError()
         });
       }
+
+      const dashboardData = metricsResult.getValue();
+      const totalExpenses = dashboardData.periodBalance?.expenses || 1;
+
+      // Format categories with all the data
+      const enrichedCategories = categoryBreakdown
+        .map(cat => ({
+          id: cat.categoryId,
+          name: cat.categoryName,
+          amount: Math.round(cat.amount),
+          percentage: Math.round((cat.amount / totalExpenses) * 100),
+          transactionCount: cat.count,
+          type: cat.type,
+          color: cat.color || this.generateCategoryColor(cat.categoryName),
+          icon: this.getCategoryIcon(cat.type),
+          monthlyBudget: cat.annualBudget ? Math.round(cat.annualBudget / 12) : null,
+          quarterlyBudget: cat.annualBudget ? Math.round(cat.annualBudget / 4) : null,
+          annualBudget: cat.annualBudget ? Math.round(cat.annualBudget) : null,
+          budgetUsage: cat.annualBudget && cat.annualBudget > 0
+            ? Math.round((cat.amount / cat.annualBudget) * 100)
+            : null
+        }))
+        .filter(cat => cat.amount > 0)
+        .sort((a, b) => b.amount - a.amount);
+
+      // Format the response
+      const formattedResponse = this.formatDashboardResponse(dashboardData);
+
+      // Override categories with enriched data
+      formattedResponse.categories = enrichedCategories;
 
       return res.json({
         success: true,
         period: {
           type: "year",
           year,
-          startDate,
-          endDate
+          startDate: this.formatDate(startDate),
+          endDate: this.formatDate(endDate)
         },
-        data: this.formatDashboardResponse(result.getValue())
+        data: formattedResponse
       });
     } catch (error) {
       console.error("Error in getYearMetrics:", error);
