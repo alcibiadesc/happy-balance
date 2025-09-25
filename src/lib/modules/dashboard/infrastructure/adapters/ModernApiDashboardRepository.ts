@@ -449,23 +449,30 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
     // Si no hay distribución del API, calcular estimaciones basadas en el total
     const totalExpensesValue = expenses.getValue();
-    const hasDistribution = distribution.essential || distribution.discretionary ||
-                           distribution.debtPayments || distribution.uncategorized;
+    // Check if we have ANY distribution data (including when essential is 0)
+    const hasDistribution = distribution.essential !== undefined ||
+                           distribution.discretionary !== undefined ||
+                           distribution.debtPayments !== undefined ||
+                           distribution.uncategorized !== undefined;
 
     const expenseDistribution = {
       essential: {
-        _amount: distribution.essential?._amount || distribution.essential ||
+        _amount: distribution.essential?._amount !== undefined ? distribution.essential._amount :
+                distribution.essential !== undefined ? distribution.essential :
                 (hasDistribution ? 0 : totalExpensesValue * 0.6)
       },
       discretionary: {
-        _amount: distribution.discretionary?._amount || distribution.discretionary ||
+        _amount: distribution.discretionary?._amount !== undefined ? distribution.discretionary._amount :
+                distribution.discretionary !== undefined ? distribution.discretionary :
                 (hasDistribution ? 0 : totalExpensesValue * 0.35)
       },
       debtPayments: {
-        _amount: distribution.debtPayments?._amount || distribution.debtPayments || 0
+        _amount: distribution.debtPayments?._amount !== undefined ? distribution.debtPayments._amount :
+                distribution.debtPayments !== undefined ? distribution.debtPayments : 0
       },
       uncategorized: {
-        _amount: distribution.uncategorized?._amount || distribution.uncategorized ||
+        _amount: distribution.uncategorized?._amount !== undefined ? distribution.uncategorized._amount :
+                distribution.uncategorized !== undefined ? distribution.uncategorized :
                 (hasDistribution ? 0 : totalExpensesValue * 0.05)
       }
     };
