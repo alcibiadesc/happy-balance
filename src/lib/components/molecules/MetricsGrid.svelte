@@ -21,6 +21,7 @@
     essential?: { _amount: number };
     discretionary?: { _amount: number };
     debtPayments?: { _amount: number };
+    uncategorized?: { _amount: number };
   }
 
   interface Props {
@@ -72,6 +73,7 @@
       essentialExpenses={expenseDistribution?.essential?._amount || 0}
       discretionaryExpenses={expenseDistribution?.discretionary?._amount || 0}
       debtPayments={expenseDistribution?.debtPayments?._amount || 0}
+      uncategorizedExpenses={expenseDistribution?.uncategorized?._amount || 0}
       trend={trends.expenses}
       {loading}
       {formatCurrency}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import CategoryCard from "../atoms/CategoryCard.svelte";
+  import { ChevronDown, ChevronUp } from "lucide-svelte";
 
   interface Category {
     name: string;
@@ -18,22 +19,86 @@
   }
 
   let { title, categories, formatCurrency }: Props = $props();
+
+  let expanded = $state(false);
+  let containerRef: HTMLDivElement;
+  let cardsPerRow = $state(4);
+  let isMobile = $state(false);
+
+  // Calculate how many cards fit in a row and detect mobile
+  $effect(() => {
+    if (containerRef) {
+      const updateCardsPerRow = () => {
+        const containerWidth = containerRef.clientWidth;
+        const windowWidth = window.innerWidth;
+        isMobile = windowWidth <= 768;
+
+        if (isMobile) {
+          cardsPerRow = categories.length; // Show all on mobile
+        } else {
+          const minCardWidth = 200; // Minimum width per card in pixels
+          const gap = 16; // Gap between cards in pixels
+          const calculatedCards = Math.floor((containerWidth + gap) / (minCardWidth + gap));
+          cardsPerRow = Math.max(1, calculatedCards);
+        }
+      };
+
+      updateCardsPerRow();
+      window.addEventListener('resize', updateCardsPerRow);
+
+      return () => {
+        window.removeEventListener('resize', updateCardsPerRow);
+      };
+    }
+  });
+
+  const visibleCategories = $derived(
+    isMobile || expanded ? categories : categories.slice(0, cardsPerRow)
+  );
+  const hiddenCount = $derived(categories.length - cardsPerRow);
+  const hasHiddenCategories = $derived(!isMobile && categories.length > cardsPerRow);
 </script>
 
 <section class="categories-section">
   <h2 class="section-title">{title}</h2>
-  <div class="categories-grid">
-    {#each categories as category}
-      <CategoryCard
-        name={category.name}
-        amount={formatCurrency(category.amount)}
-        percentage={category.percentage}
-        color={category.color}
-        icon={category.icon || "📊"}
-        monthlyBudget={category.monthlyBudget ? formatCurrency(category.monthlyBudget) : null}
-        budgetUsage={category.budgetUsage}
-      />
-    {/each}
+  <div class="categories-container" bind:this={containerRef}>
+    <div class="categories-grid">
+      {#each visibleCategories as category}
+        <CategoryCard
+          name={category.name}
+          amount={formatCurrency(category.amount)}
+          percentage={category.percentage}
+          color={category.color}
+          icon={category.icon || "📊"}
+          monthlyBudget={category.monthlyBudget ? formatCurrency(category.monthlyBudget) : null}
+          budgetUsage={category.budgetUsage}
+        />
+      {/each}
+    </div>
+
+    {#if hasHiddenCategories}
+      <button
+        class="expand-button"
+        onclick={() => expanded = !expanded}
+        aria-expanded={expanded}
+        aria-label={expanded ? "Mostrar menos categorías" : `Mostrar ${hiddenCount} categorías más`}
+      >
+        <span class="expand-text">
+          {#if expanded}
+            Mostrar menos
+          {:else}
+            +{hiddenCount} más
+          {/if}
+        </span>
+        <span class="expand-icon">
+          {#if expanded}
+            <ChevronUp size={16} />
+          {:else}
+            <ChevronDown size={16} />
+          {/if}
+        </span>
+      </button>
+    {/if}
   </div>
 </section>
 
@@ -55,16 +120,67 @@
     letter-spacing: 0.05em;
   }
 
+  .categories-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
   .categories-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1rem;
   }
 
-  /* Responsive */
+  .expand-button {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    color: var(--text-muted);
+    font-size: 0.813rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 0.5rem;
+  }
+
+  .expand-button:hover {
+    background: var(--surface-muted);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+  }
+
+  .expand-button:active {
+    transform: scale(0.98);
+  }
+
+  .expand-text {
+    display: flex;
+    align-items: center;
+  }
+
+  .expand-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+  }
+
+  /* Responsive - Show all cards in single column on mobile */
   @media (max-width: 768px) {
     .categories-grid {
       grid-template-columns: 1fr;
+    }
+
+    /* On mobile, always show all categories without expand button */
+    .expand-button {
+      display: none;
     }
   }
 </style>

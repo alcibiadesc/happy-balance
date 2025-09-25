@@ -7,6 +7,7 @@
     essentialExpenses: number;
     discretionaryExpenses: number;
     debtPayments: number;
+    uncategorizedExpenses?: number;
     trend: number;
     loading?: boolean;
     formatCurrency: (amount: number) => string;
@@ -19,6 +20,7 @@
     essentialExpenses,
     discretionaryExpenses,
     debtPayments,
+    uncategorizedExpenses = 0,
     trend,
     loading = false,
     formatCurrency,
@@ -27,6 +29,12 @@
   }: Props = $props();
 
   let expanded = $state(false);
+
+  // Use uncategorized from props, or calculate if not provided
+  const othersAmount = $derived(
+    uncategorizedExpenses ||
+    Math.max(0, totalExpenses - essentialExpenses - discretionaryExpenses - debtPayments)
+  );
 
   function toggleExpanded() {
     expanded = !expanded;
@@ -119,6 +127,21 @@
           </div>
           <div class="breakdown-percentage">
             {Math.round((debtPayments / totalExpenses) * 100)}%
+          </div>
+        </div>
+      {/if}
+
+      {#if othersAmount > 0}
+        <div class="breakdown-item">
+          <div class="breakdown-info">
+            <div class="category-indicator others"></div>
+            <div>
+              <span class="breakdown-label">Otros gastos</span>
+              <span class="breakdown-amount">{formatCurrency(othersAmount)}</span>
+            </div>
+          </div>
+          <div class="breakdown-percentage">
+            {Math.round((othersAmount / totalExpenses) * 100)}%
           </div>
         </div>
       {/if}
@@ -257,6 +280,10 @@
 
   .category-indicator.debt {
     background-color: var(--accent);
+  }
+
+  .category-indicator.others {
+    background-color: var(--text-muted);
   }
 
   .breakdown-label {
