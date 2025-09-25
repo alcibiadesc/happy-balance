@@ -52,18 +52,23 @@ export class Period {
         break;
 
       case 'month':
-        start.setMonth(now.getMonth() - offset, 1);
+        start.setMonth(now.getMonth() + offset, 1);
         end.setMonth(start.getMonth() + 1, 0);
         break;
 
       case 'quarter':
         const currentQuarter = Math.floor(now.getMonth() / 3);
-        start.setMonth((currentQuarter - offset) * 3, 1);
-        end.setMonth(start.getMonth() + 3, 0);
+        const targetQuarter = currentQuarter + offset;
+        const targetYear = now.getFullYear() + Math.floor(targetQuarter / 4);
+        const normalizedQuarter = ((targetQuarter % 4) + 4) % 4;
+        start.setFullYear(targetYear);
+        start.setMonth(normalizedQuarter * 3, 1);
+        end.setFullYear(targetYear);
+        end.setMonth(normalizedQuarter * 3 + 3, 0);
         break;
 
       case 'year':
-        start.setFullYear(now.getFullYear() - offset, 0, 1);
+        start.setFullYear(now.getFullYear() + offset, 0, 1);
         end.setFullYear(start.getFullYear(), 11, 31);
         break;
 
@@ -95,15 +100,20 @@ export class Period {
 
     switch (type) {
       case 'week':
-        return `S${offset + 1}`;
-      case 'month':
-        return startDate.toLocaleDateString('es-ES', {
+        const weekNum = Math.ceil((startDate.getDate() - startDate.getDay() + 1) / 7);
+        return `Semana ${weekNum} ${startDate.getFullYear()}`;
+      case 'month': {
+        const monthName = startDate.toLocaleDateString('es-ES', {
           month: 'long',
           year: 'numeric'
         });
-      case 'quarter':
+        // Capitalize first letter
+        return monthName.charAt(0).toUpperCase() + monthName.slice(1);
+      }
+      case 'quarter': {
         const quarter = Math.floor(startDate.getMonth() / 3) + 1;
         return `Q${quarter} ${startDate.getFullYear()}`;
+      }
       case 'year':
         return startDate.getFullYear().toString();
       default:

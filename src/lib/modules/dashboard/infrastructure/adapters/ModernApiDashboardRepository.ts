@@ -182,26 +182,95 @@ export class ModernApiDashboardRepository implements DashboardRepository {
     }
   }
 
+  /**
+   * Obtiene histórico de trimestres agregados
+   */
+  async getQuarterlyHistory(quarters: number = 8): Promise<any[]> {
+    try {
+      const response = await fetch(`${this.apiBase}/dashboard/history/quarterly?quarters=${quarters}`);
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const result = await response.json();
+      return result.data || [];
+    } catch (error) {
+      console.error('[Dashboard] Error fetching quarterly history:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtiene histórico anual
+   */
+  async getYearlyHistory(years: number = 12): Promise<any[]> {
+    try {
+      const response = await fetch(`${this.apiBase}/dashboard/history/yearly?years=${years}`);
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const result = await response.json();
+      return result.data || [];
+    } catch (error) {
+      console.error('[Dashboard] Error fetching yearly history:', error);
+      return [];
+    }
+  }
+
   // === Métodos privados ===
 
   private buildModernUrl(period: Period): string {
     const now = new Date();
     const offset = period.getOffset();
 
-    // Calcular año y mes basado en el offset
-    let targetDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);
-    const year = targetDate.getFullYear();
-    const month = targetDate.getMonth() + 1;
-
     switch (period.getType()) {
-      case 'month':
-        // Usar el endpoint mejorado que incluye categorías reales
+      case 'month': {
+        // Calcular año y mes basado en el offset
+        const targetDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+        const year = targetDate.getFullYear();
+        const month = targetDate.getMonth() + 1;
         return `${this.apiBase}/dashboard/enhanced/${year}/${month}`;
-      case 'year':
+      }
+
+      case 'quarter': {
+        // Calcular trimestre basado en el offset
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        const targetQuarter = currentQuarter + offset;
+
+        // Calcular año y trimestre real
+        const year = now.getFullYear() + Math.floor(targetQuarter / 4);
+        const quarter = ((targetQuarter % 4) + 4) % 4; // Normalizar trimestre (0-3)
+
+        // Calcular fechas del trimestre
+        const startMonth = quarter * 3;
+        const startDate = new Date(year, startMonth, 1);
+        const endDate = new Date(year, startMonth + 3, 0); // Último día del trimestre
+
+        // Formatear fechas para el API
+        const formatDate = (date: Date) => {
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, '0');
+          const d = String(date.getDate()).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        };
+
+        return `${this.apiBase}/dashboard/range?startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}`;
+      }
+
+      case 'year': {
+        const targetDate = new Date(now.getFullYear() + offset, 0, 1);
+        const year = targetDate.getFullYear();
         return `${this.apiBase}/dashboard/year/${year}`;
-      case 'custom':
+      }
+
+      case 'custom': {
         const params = period.toApiParams();
         return `${this.apiBase}/dashboard/range?startDate=${params.startDate}&endDate=${params.endDate}`;
+      }
+
       default:
         return `${this.apiBase}/dashboard/current?type=month`;
     }

@@ -100,21 +100,52 @@ export function createEnhancedDashboardStore(apiBase: string) {
           console.log('[Store] First category in breakdown:', categoryBreakdown[0]);
         }
 
-        // Cargar comparación si estamos en vista mensual
+        // Load period-specific historical data for charts
+        let historicalData: any[] = [];
+
         if (selectedPeriodType === 'month') {
           const now = new Date();
           const targetDate = new Date(now.getFullYear(), now.getMonth() + periodOffset, 1);
           const year = targetDate.getFullYear();
           const month = targetDate.getMonth() + 1;
 
-          // Cargar comparación y métricas de ahorro en paralelo
-          const [comparisonData, savings] = await Promise.all([
+          // Load comparison, savings metrics and 12-month history in parallel
+          const [comparisonData, savings, history] = await Promise.all([
             repository.getComparison(year, month),
-            repository.getSavingsMetrics(year, month)
+            repository.getSavingsMetrics(year, month),
+            repository.getHistory(12) // Last 12 months
           ]);
 
           comparison = comparisonData;
           savingsMetrics = savings;
+          historicalData = history;
+        } else if (selectedPeriodType === 'quarter') {
+          // Load quarterly aggregated data (last 8 quarters)
+          historicalData = await repository.getQuarterlyHistory(8);
+        } else if (selectedPeriodType === 'year') {
+          // Load yearly data (last 12 years)
+          historicalData = await repository.getYearlyHistory(12);
+        }
+
+        // Update monthlyTrend with historical data if available
+        if (historicalData && historicalData.length > 0) {
+          dashboardData.monthlyTrend = historicalData.map((item: any) => ({
+            month: item.label || item.month || item.period,
+            income: item.income || 0,
+            expenses: item.expenses || 0,
+            balance: item.balance || (item.income - item.expenses) || 0,
+            investments: item.investments || 0
+          }));
+
+          // Also update monthlyBarData based on historical data
+          dashboardData.monthlyBarData = historicalData.map((item: any) => ({
+            month: item.label || item.month || item.period,
+            income: item.income || 0,
+            essentialExpenses: item.essentialExpenses || (item.expenses * 0.6) || 0,
+            discretionaryExpenses: item.discretionaryExpenses || (item.expenses * 0.4) || 0,
+            debtPayments: item.debtPayments || 0,
+            investments: item.investments || 0
+          }));
         }
       } else {
         console.error('[Dashboard] No data received');
@@ -140,14 +171,15 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
   async function navigatePeriod(newOffset: number) {
     // Clamp offset to valid range
-    // 0 = current period (September 2025)
-    // -1 = one period back (August 2025)
+    // 0 = current period
+    // -1 = one period back
     // etc.
 
     const maxFuture = 0; // Can't go beyond current period
-    const maxPast = selectedPeriodType === 'month' ? -24 :
-                    selectedPeriodType === 'quarter' ? -12 :
-                    selectedPeriodType === 'year' ? -5 : -24;
+    const maxPast = selectedPeriodType === 'month' ? -24 :     // 2 years back
+                    selectedPeriodType === 'quarter' ? -8 :     // 2 years back (8 quarters)
+                    selectedPeriodType === 'year' ? -5 :        // 5 years back
+                    selectedPeriodType === 'week' ? -52 : -24;  // 1 year back
 
     // Apply limits
     newOffset = Math.min(maxFuture, Math.max(maxPast, newOffset));
@@ -250,17 +282,41 @@ export function createEnhancedDashboardStore(apiBase: string) {
     // Método para obtener el label del período actual
     getCurrentPeriodLabel(): string {
       const now = new Date();
-      const targetDate = new Date(now.getFullYear(), now.getMonth() + periodOffset, 1);
 
-      if (selectedPeriodType === 'month') {
-        const monthName = targetDate.toLocaleDateString('es-ES', {
-          month: 'long',
-          year: 'numeric'
-        });
-        // Capitalize first letter
-        return monthName.charAt(0).toUpperCase() + monthName.slice(1);
+      switch (selectedPeriodType) {
+        case 'month': {
+          const targetDate = new Date(now.getFullYear(), now.getMonth() + periodOffset, 1);
+          const monthName = targetDate.toLocaleDateString('es-ES', {
+            month: 'long',
+            year: 'numeric'
+          });
+          // Capitalize first letter
+          return monthName.charAt(0).toUpperCase() + monthName.slice(1);
+        }
+
+        case 'quarter': {
+          const currentQuarter = Math.floor(now.getMonth() / 3);
+          const targetQuarter = currentQuarter + periodOffset;
+          const targetYear = now.getFullYear() + Math.floor(targetQuarter / 4);
+          const normalizedQuarter = ((targetQuarter % 4) + 4) % 4;
+
+          if (periodOffset === 0) {
+            return 'Este trimestre';
+          }
+          return `Q${normalizedQuarter + 1} ${targetYear}`;
+        }
+
+        case 'year': {
+          const targetYear = now.getFullYear() + periodOffset;
+          if (periodOffset === 0) {
+            return 'Este año';
+          }
+          return targetYear.toString();
+        }
+
+        default:
+          return currentPeriod.getLabel();
       }
-      return currentPeriod.getLabel();
     },
 
     // Check if we can navigate forward
@@ -273,7 +329,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
       // Different limits based on period type
       const limits: Record<PeriodType, number> = {
         month: -24,   // 2 years back
-        quarter: -12, // 3 years back
+        quarter: -8,  // 2 years back (8 quarters)
         year: -5,     // 5 years back
         week: -52,    // 1 year back
         custom: 0
