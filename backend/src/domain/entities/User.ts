@@ -4,7 +4,6 @@ export class User {
   private constructor(
     private readonly _id: string,
     private readonly _username: string,
-    private readonly _displayName: string,
     private readonly _password: string,
     private readonly _role: UserRole,
     private readonly _isActive: boolean,
@@ -17,7 +16,6 @@ export class User {
   static create(props: {
     id: string;
     username: string;
-    displayName: string;
     password: string;
     role?: UserRole;
     isActive?: boolean;
@@ -29,7 +27,6 @@ export class User {
     return new User(
       props.id,
       props.username,
-      props.displayName,
       props.password,
       props.role || 'user',
       props.isActive ?? true,
@@ -49,7 +46,7 @@ export class User {
   }
 
   get displayName(): string {
-    return this._displayName;
+    return this._username; // Use username as display name
   }
 
   get password(): string {
@@ -112,7 +109,7 @@ export class User {
     return {
       id: this._id,
       username: this._username,
-      displayName: this._displayName,
+      displayName: this._username, // Use username as display name
       role: this._role,
       isActive: this._isActive,
       createdBy: this._createdBy,

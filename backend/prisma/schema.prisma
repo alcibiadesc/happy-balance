@@ -10,7 +10,6 @@ datasource db {
 model User {
   id           String    @id @default(cuid()) @db.VarChar(36)
   username     String    @unique @db.VarChar(50)
-  displayName  String    @db.VarChar(100)
   password     String    @db.VarChar(255)
   role         String    @default("user") @db.VarChar(20) // admin, user, viewer
   isActive     Boolean   @default(true)

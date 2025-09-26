@@ -13,7 +13,6 @@ const CreateUserSchema = z.object({
 });
 
 const UpdateUserSchema = z.object({
-  displayName: z.string().min(1).max(100).optional(),
   role: z.enum(['admin', 'user', 'viewer']).optional(),
   isActive: z.boolean().optional()
 });
@@ -101,7 +100,6 @@ export class UserManagementController {
       const newUser = User.create({
         id: randomUUID(),
         username,
-        displayName: username, // Use username as displayName for simplicity
         password: hashResult.getValue(),
         role: role as UserRole,
         isActive: true,
@@ -177,7 +175,6 @@ export class UserManagementController {
       // Update user
       const updatedUser = User.create({
         ...user.toDTO(),
-        displayName: updates.displayName || user.displayName,
         role: updates.role || user.role,
         isActive: updates.isActive !== undefined ? updates.isActive : user.isActive
       });

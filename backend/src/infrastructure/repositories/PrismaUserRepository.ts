@@ -20,7 +20,6 @@ export class PrismaUserRepository implements IUserRepository {
         User.create({
           id: user.id,
           username: user.username,
-          displayName: user.displayName,
           password: user.password,
           role: user.role as UserRole,
           isActive: user.isActive,
@@ -49,7 +48,6 @@ export class PrismaUserRepository implements IUserRepository {
         User.create({
           id: user.id,
           username: user.username,
-          displayName: user.displayName,
           password: user.password,
           role: user.role as UserRole,
           isActive: user.isActive,
@@ -74,7 +72,6 @@ export class PrismaUserRepository implements IUserRepository {
         User.create({
           id: user.id,
           username: user.username,
-          displayName: user.displayName,
           password: user.password,
           role: user.role as UserRole,
           isActive: user.isActive,
@@ -97,7 +94,6 @@ export class PrismaUserRepository implements IUserRepository {
         data: {
           id: user.id,
           username: user.username,
-          displayName: user.displayName,
           password: user.password,
           role: user.role,
           isActive: user.isActive,
@@ -129,7 +125,6 @@ export class PrismaUserRepository implements IUserRepository {
       const updated = await this.prisma.user.update({
         where: { id: user.id },
         data: {
-          displayName: user.displayName,
           role: user.role,
           isActive: user.isActive
         }
