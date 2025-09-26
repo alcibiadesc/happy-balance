@@ -135,10 +135,11 @@ export class DashboardController {
       }
 
       const dashboardData = this.formatDashboardResponse(metricsResult.getValue());
+      const totalExpenses = dashboardData.summary.expenses || 1;
 
       // Reemplazar las categorías con el breakdown real
       const budgetDivisor = 12; // Vista mensual
-      dashboardData.categories = categoryBreakdown.map(cat => {
+      const enrichedCategories = categoryBreakdown.map(cat => {
         const periodBudget = cat.annualBudget ? Math.round(cat.annualBudget / budgetDivisor) : null;
         const amount = Math.round(cat.amount);
         const budgetUsage = periodBudget && periodBudget > 0
@@ -149,15 +150,26 @@ export class DashboardController {
           id: cat.categoryId,
           name: cat.categoryName,
           amount: amount,
-          percentage: Math.round((cat.amount / dashboardData.summary.expenses) * 100),
+          percentage: Math.round((cat.amount / totalExpenses) * 100),
           transactionCount: cat.count,
           type: cat.type,
-          color: cat.color,
+          color: cat.color || this.generateCategoryColor(cat.categoryName),
+          icon: this.getCategoryIcon(cat.type),
           budget: periodBudget,
           budgetUsage: budgetUsage,
           annualBudget: cat.annualBudget ? Math.round(cat.annualBudget) : null
         };
       }).filter(cat => cat.amount > 0); // Filtrar categorías sin gastos
+
+      // Calculate expense distribution from enriched categories
+      const expenseDistribution = this.calculateExpenseDistribution(enrichedCategories);
+
+      // Override categories and distribution
+      dashboardData.categories = enrichedCategories;
+      dashboardData.distribution = {
+        ...expenseDistribution,
+        currency: "EUR"
+      };
 
       return res.json({
         success: true,
@@ -237,11 +249,20 @@ export class DashboardController {
         .filter(cat => cat.amount > 0)
         .sort((a, b) => b.amount - a.amount);
 
+      // Calculate expense distribution from enriched categories
+      const expenseDistribution = this.calculateExpenseDistribution(enrichedCategories);
+
       // Format the response
       const formattedResponse = this.formatDashboardResponse(dashboardData);
 
       // Override categories with enriched data
       formattedResponse.categories = enrichedCategories;
+
+      // Override expense distribution with calculated values
+      formattedResponse.distribution = {
+        ...expenseDistribution,
+        currency: "EUR"
+      };
 
       return res.json({
         success: true,
@@ -323,11 +344,20 @@ export class DashboardController {
         .filter(cat => cat.amount > 0)
         .sort((a, b) => b.amount - a.amount);
 
+      // Calculate expense distribution from enriched categories
+      const expenseDistribution = this.calculateExpenseDistribution(enrichedCategories);
+
       // Format the response
       const formattedResponse = this.formatDashboardResponse(dashboardData);
 
       // Override categories with enriched data
       formattedResponse.categories = enrichedCategories;
+
+      // Override expense distribution with calculated values
+      formattedResponse.distribution = {
+        ...expenseDistribution,
+        currency: "EUR"
+      };
 
       return res.json({
         success: true,
@@ -773,6 +803,8 @@ export class DashboardController {
     let discretionary = 0;
     let debtPayments = 0;
     let uncategorized = 0;
+    let investments = 0;
+    let noCompute = 0;
 
     categories.forEach(cat => {
       if (!cat.id || cat.name === "Uncategorized") {
@@ -783,17 +815,23 @@ export class DashboardController {
         discretionary += cat.amount;
       } else if (cat.type === "debt_payment") {
         debtPayments += cat.amount;
+      } else if (cat.type === "investment") {
+        investments += cat.amount;
+      } else if (cat.type === "no_compute") {
+        noCompute += cat.amount;
       } else {
-        // Categorías sin tipo definido van a discretionary
-        discretionary += cat.amount;
+        // Categorías sin tipo definido van a uncategorized
+        uncategorized += cat.amount;
       }
     });
 
     return {
-      essential: { _amount: Math.round(essential * 100) / 100 },
-      discretionary: { _amount: Math.round(discretionary * 100) / 100 },
-      debtPayments: { _amount: Math.round(debtPayments * 100) / 100 },
-      uncategorized: { _amount: Math.round(uncategorized * 100) / 100 }
+      essential: Math.round(essential * 100) / 100,
+      discretionary: Math.round(discretionary * 100) / 100,
+      debtPayments: Math.round(debtPayments * 100) / 100,
+      uncategorized: Math.round(uncategorized * 100) / 100,
+      investments: Math.round(investments * 100) / 100,
+      noCompute: Math.round(noCompute * 100) / 100
     };
   }
 
