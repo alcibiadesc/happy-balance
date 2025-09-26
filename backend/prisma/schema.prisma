@@ -8,15 +8,17 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid()) @db.VarChar(36)
-  username     String    @unique @db.VarChar(50)
-  password     String    @db.VarChar(255)
-  role         String    @default("user") @db.VarChar(20) // admin, user, viewer
-  isActive     Boolean   @default(true)
-  createdBy    String?   @db.VarChar(36)
-  lastLogin    DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                    String    @id @default(cuid()) @db.VarChar(36)
+  username              String    @unique @db.VarChar(50)
+  password              String    @db.VarChar(255)
+  role                  String    @default("user") @db.VarChar(20) // admin, user, viewer
+  isActive              Boolean   @default(true)
+  mustChangePassword    Boolean   @default(false) // Force password change on next login
+  passwordResetAt       DateTime? // When password was last reset by admin
+  createdBy             String?   @db.VarChar(36)
+  lastLogin             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   // Relations
   creator         User?            @relation("UserCreator", fields: [createdBy], references: [id])

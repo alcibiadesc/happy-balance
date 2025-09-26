@@ -7,6 +7,8 @@ export class User {
     private readonly _password: string,
     private readonly _role: UserRole,
     private readonly _isActive: boolean,
+    private readonly _mustChangePassword: boolean,
+    private readonly _passwordResetAt?: Date,
     private readonly _createdBy?: string,
     private _lastLogin?: Date,
     private readonly _createdAt?: Date,
@@ -19,6 +21,8 @@ export class User {
     password: string;
     role?: UserRole;
     isActive?: boolean;
+    mustChangePassword?: boolean;
+    passwordResetAt?: Date;
     createdBy?: string;
     lastLogin?: Date;
     createdAt?: Date;
@@ -30,6 +34,8 @@ export class User {
       props.password,
       props.role || 'user',
       props.isActive ?? true,
+      props.mustChangePassword ?? false,
+      props.passwordResetAt,
       props.createdBy,
       props.lastLogin,
       props.createdAt,
@@ -77,6 +83,14 @@ export class User {
     return this._updatedAt;
   }
 
+  get mustChangePassword(): boolean {
+    return this._mustChangePassword;
+  }
+
+  get passwordResetAt(): Date | undefined {
+    return this._passwordResetAt;
+  }
+
   updateLastLogin(): void {
     this._lastLogin = new Date();
   }
@@ -112,6 +126,8 @@ export class User {
       displayName: this._username, // Use username as display name
       role: this._role,
       isActive: this._isActive,
+      mustChangePassword: this._mustChangePassword,
+      passwordResetAt: this._passwordResetAt,
       createdBy: this._createdBy,
       lastLogin: this._lastLogin,
       createdAt: this._createdAt,

@@ -23,6 +23,8 @@ export class PrismaUserRepository implements IUserRepository {
           password: user.password,
           role: user.role as UserRole,
           isActive: user.isActive,
+          mustChangePassword: user.mustChangePassword,
+          passwordResetAt: user.passwordResetAt || undefined,
           createdBy: user.createdBy || undefined,
           lastLogin: user.lastLogin || undefined,
           createdAt: user.createdAt,
@@ -51,6 +53,8 @@ export class PrismaUserRepository implements IUserRepository {
           password: user.password,
           role: user.role as UserRole,
           isActive: user.isActive,
+          mustChangePassword: user.mustChangePassword,
+          passwordResetAt: user.passwordResetAt || undefined,
           createdBy: user.createdBy || undefined,
           lastLogin: user.lastLogin || undefined,
           createdAt: user.createdAt,
@@ -75,6 +79,8 @@ export class PrismaUserRepository implements IUserRepository {
           password: user.password,
           role: user.role as UserRole,
           isActive: user.isActive,
+          mustChangePassword: user.mustChangePassword,
+          passwordResetAt: user.passwordResetAt || undefined,
           createdBy: user.createdBy || undefined,
           lastLogin: user.lastLogin || undefined,
           createdAt: user.createdAt,
@@ -97,6 +103,8 @@ export class PrismaUserRepository implements IUserRepository {
           password: user.password,
           role: user.role,
           isActive: user.isActive,
+          mustChangePassword: user.mustChangePassword,
+          passwordResetAt: user.passwordResetAt,
           createdBy: user.createdBy
         }
       });
@@ -105,10 +113,11 @@ export class PrismaUserRepository implements IUserRepository {
         User.create({
           id: created.id,
           username: created.username,
-          displayName: created.displayName,
           password: created.password,
           role: created.role as UserRole,
           isActive: created.isActive,
+          mustChangePassword: created.mustChangePassword,
+          passwordResetAt: created.passwordResetAt || undefined,
           createdBy: created.createdBy || undefined,
           lastLogin: created.lastLogin || undefined,
           createdAt: created.createdAt,
@@ -125,8 +134,11 @@ export class PrismaUserRepository implements IUserRepository {
       const updated = await this.prisma.user.update({
         where: { id: user.id },
         data: {
+          password: user.password,
           role: user.role,
-          isActive: user.isActive
+          isActive: user.isActive,
+          mustChangePassword: user.mustChangePassword,
+          passwordResetAt: user.passwordResetAt
         }
       });
 

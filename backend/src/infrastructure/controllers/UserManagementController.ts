@@ -103,6 +103,7 @@ export class UserManagementController {
         password: hashResult.getValue(),
         role: role as UserRole,
         isActive: true,
+        mustChangePassword: true,
         createdBy: req.user?.userId
       });
 
@@ -292,10 +293,12 @@ export class UserManagementController {
         });
       }
 
-      // Update user with new password
+      // Update user with new password and mark for password change
       const updatedUser = User.create({
         ...user.toDTO(),
-        password: hashResult.getValue()
+        password: hashResult.getValue(),
+        mustChangePassword: true,
+        passwordResetAt: new Date()
       });
 
       const updateResult = await this.userRepository.update(updatedUser);

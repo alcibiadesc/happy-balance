@@ -19,6 +19,12 @@ const ChangePasswordSchema = z.object({
   newPassword: z.string().min(6).max(100)
 });
 
+const ResetPasswordChangeSchema = z.object({
+  userId: z.string(),
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(6).max(100)
+});
+
 export class AuthController {
   private authService: AuthenticationService;
 
@@ -70,6 +76,19 @@ export class AuthController {
         return res.status(401).json({
           success: false,
           error: 'Invalid credentials'
+        });
+      }
+
+      // Check if user must change password
+      if (user.mustChangePassword) {
+        return res.status(200).json({
+          success: true,
+          requiresPasswordChange: true,
+          message: 'Password change required',
+          data: {
+            userId: user.id,
+            username: user.username
+          }
         });
       }
 
@@ -220,10 +239,12 @@ export class AuthController {
         });
       }
 
-      // Update user with new password
+      // Update user with new password and clear password change requirement
       const updatedUser = User.create({
         ...user.toDTO(),
-        password: hashResult.getValue()
+        password: hashResult.getValue(),
+        mustChangePassword: false,
+        passwordResetAt: undefined
       });
 
       const updateResult = await this.userRepository.update(updatedUser);
@@ -240,6 +261,103 @@ export class AuthController {
       });
     } catch (error) {
       console.error('Change password error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  async resetPasswordChange(req: Request, res: Response) {
+    try {
+      const validationResult = ResetPasswordChangeSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid request data',
+          details: validationResult.error.errors
+        });
+      }
+
+      const { userId, currentPassword, newPassword } = validationResult.data;
+
+      // Get user
+      const userResult = await this.userRepository.findById(userId);
+      if (userResult.isFailure() || !userResult.getValue()) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      const user = userResult.getValue()!;
+
+      // Verify user must change password
+      if (!user.mustChangePassword) {
+        return res.status(400).json({
+          success: false,
+          error: 'Password change not required'
+        });
+      }
+
+      // Verify current password (temporary password)
+      const passwordResult = await this.authService.verifyPassword(currentPassword, user.password);
+      if (passwordResult.isFailure() || !passwordResult.getValue()) {
+        return res.status(401).json({
+          success: false,
+          error: 'Current password is incorrect'
+        });
+      }
+
+      // Hash new password
+      const hashResult = await this.authService.hashPassword(newPassword);
+      if (hashResult.isFailure()) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to update password'
+        });
+      }
+
+      // Update user with new password and clear password change requirement
+      const updatedUser = User.create({
+        ...user.toDTO(),
+        password: hashResult.getValue(),
+        mustChangePassword: false,
+        passwordResetAt: undefined
+      });
+
+      const updateResult = await this.userRepository.update(updatedUser);
+      if (updateResult.isFailure()) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to update password'
+        });
+      }
+
+      // Generate tokens for successful login
+      const tokensResult = this.authService.generateTokens(updatedUser);
+      if (tokensResult.isFailure()) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to generate tokens'
+        });
+      }
+
+      // Update last login
+      await this.userRepository.updateLastLogin(updatedUser.id);
+
+      const tokens = tokensResult.getValue();
+      res.json({
+        success: true,
+        message: 'Password changed successfully',
+        data: {
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          user: updatedUser.toDTO()
+        }
+      });
+    } catch (error) {
+      console.error('Reset password change error:', error);
       res.status(500).json({
         success: false,
         error: 'Internal server error'

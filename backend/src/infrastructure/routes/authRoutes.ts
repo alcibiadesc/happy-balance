@@ -114,6 +114,35 @@ export function createAuthRoutes(authController: AuthController): Router {
 
   /**
    * @swagger
+   * /api/auth/reset-password-change:
+   *   post:
+   *     tags: [Auth]
+   *     summary: Change password after reset (for users with mustChangePassword flag)
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - userId
+   *               - currentPassword
+   *               - newPassword
+   *             properties:
+   *               userId:
+   *                 type: string
+   *               currentPassword:
+   *                 type: string
+   *               newPassword:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Password changed successfully and user logged in
+   */
+  router.post('/reset-password-change', (req, res) => authController.resetPasswordChange(req, res));
+
+  /**
+   * @swagger
    * /api/auth/me:
    *   get:
    *     tags: [Auth]
