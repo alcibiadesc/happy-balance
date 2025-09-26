@@ -6,10 +6,10 @@ import { Request, Response } from "express";
  * Following security best practices for API protection
  */
 
-// General API rate limiter
+// General API rate limiter - Very relaxed for NAS usage
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 10000, // Very high limit for NAS usage
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -31,10 +31,10 @@ export const authLimiter = rateLimit({
   skipSuccessfulRequests: true, // Don't count successful requests
 });
 
-// Rate limiter for file uploads (CSV import)
+// Rate limiter for file uploads (CSV import) - Very relaxed for NAS
 export const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // Limit each IP to 20 uploads per hour
+  max: 1000, // Very high limit for NAS usage
   message: "Too many file uploads, please try again later.",
   handler: (req: Request, res: Response) => {
     res.status(429).json({
@@ -47,10 +47,10 @@ export const uploadLimiter = rateLimit({
   },
 });
 
-// Rate limiter for expensive operations (dashboard calculations)
+// Rate limiter for expensive operations (dashboard calculations) - Very relaxed for NAS
 export const dashboardLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 30, // Limit each IP to 30 dashboard requests per minute
+  max: 1000, // Very high limit for NAS usage
   message: "Too many dashboard requests, please try again later.",
   handler: (req: Request, res: Response) => {
     res.status(429).json({
@@ -63,10 +63,10 @@ export const dashboardLimiter = rateLimit({
   },
 });
 
-// Create transaction rate limiter
+// Create transaction rate limiter - Very relaxed for NAS
 export const createTransactionLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 20, // Limit each IP to 20 transaction creations per minute
+  max: 500, // Very high limit for NAS usage
   message: "Too many transactions created, please slow down.",
   handler: (req: Request, res: Response) => {
     res.status(429).json({

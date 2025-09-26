@@ -58,5 +58,48 @@ export const createDashboardRoutesV2 = (
     await controller.getYearData(req, res);
   });
 
+  router.get("/history", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || 'default';
+    const controller = controllerFactory.createDashboardController(userId);
+    await controller.getHistory(req, res);
+  });
+
+  // Parameterized routes from legacy dashboard
+  router.get("/year/:year", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || 'default';
+    const controller = controllerFactory.createDashboardController(userId);
+    await controller.getYearMetrics(req, res);
+  });
+
+  router.get("/month/:year/:month", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || 'default';
+    const controller = controllerFactory.createDashboardController(userId);
+    await controller.getMonthMetrics(req, res);
+  });
+
+  router.get("/quarter/:year/:quarter", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || 'default';
+    const controller = controllerFactory.createDashboardController(userId);
+    await controller.getQuarterMetrics(req, res);
+  });
+
+  router.get("/enhanced/:year/:month", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || 'default';
+    const controller = controllerFactory.createDashboardController(userId);
+    await controller.getEnhancedMonthMetrics(req, res);
+  });
+
+  router.get("/current", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || 'default';
+    const controller = controllerFactory.createDashboardController(userId);
+    await controller.getCurrentPeriod(req, res);
+  });
+
+  router.get("/range", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || 'default';
+    const controller = controllerFactory.createDashboardController(userId);
+    await controller.getDateRange(req, res);
+  });
+
   return router;
 };
