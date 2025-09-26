@@ -6,7 +6,6 @@
   import { setLanguage } from "$lib/stores/i18n";
   import { setCurrency } from "$lib/stores/currency";
   import { setTheme, applyTheme } from "$lib/stores/theme";
-  import { transactions, categories } from "$lib/stores/transactions";
   import { sidebarCollapsed } from "$lib/stores/sidebar";
   import { userPreferences } from "$lib/stores/user-preferences";
   import { authStore } from "$lib/modules/auth/presentation/stores/authStore.svelte";
@@ -38,11 +37,7 @@
       applyTheme(prefs.theme);
     });
 
-    // Load transaction data only once if authenticated
-    if (authStore.isAuthenticated && typeof window !== "undefined" && !window.__transactions_loaded__) {
-      transactions.load();
-      window.__transactions_loaded__ = true;
-    }
+    // Transaction data is now loaded by individual page stores as needed
   });
 </script>
 
