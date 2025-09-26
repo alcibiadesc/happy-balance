@@ -3,9 +3,26 @@ import { DashboardMetrics } from '../../domain/entities/DashboardMetrics';
 import { Category } from '../../domain/entities/Category';
 import { Money } from '../../domain/value-objects/Money';
 import { Period } from '../../domain/value-objects/Period';
+import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
 
 export class ApiDashboardRepository implements DashboardRepository {
   constructor(private readonly apiBase: string) {}
+
+  /**
+   * Helper method to create authenticated headers
+   */
+  private getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    const token = authStore.getAccessToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    return headers;
+  }
 
   async getDashboardData(period: Period, currency: string): Promise<DashboardData> {
     const url = this.buildUrl(period, currency);
@@ -13,7 +30,9 @@ export class ApiDashboardRepository implements DashboardRepository {
     console.log('[Dashboard API] Fetching from:', url);
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: this.getAuthHeaders(),
+      });
 
       if (!response.ok) {
         console.error('[Dashboard API] Response not OK:', response.status);

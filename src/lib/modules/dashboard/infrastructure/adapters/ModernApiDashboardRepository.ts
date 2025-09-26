@@ -3,6 +3,7 @@ import { DashboardMetrics } from '../../domain/entities/DashboardMetrics';
 import { Category } from '../../domain/entities/Category';
 import { Money } from '../../domain/value-objects/Money';
 import { Period } from '../../domain/value-objects/Period';
+import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -55,6 +56,22 @@ export class ModernApiDashboardRepository implements DashboardRepository {
   constructor(private readonly apiBase: string) {}
 
   /**
+   * Helper method to create authenticated headers
+   */
+  private getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    const token = authStore.getAccessToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    return headers;
+  }
+
+  /**
    * Obtiene datos del dashboard para un período específico
    */
   async getDashboardData(period: Period, currency: string): Promise<DashboardData> {
@@ -62,7 +79,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       const url = this.buildModernUrl(period);
       console.log('[Modern Dashboard API] Fetching:', url);
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: this.getAuthHeaders(),
+      });
 
       if (!response.ok) {
         console.error('[Dashboard] HTTP Error:', response.status);
@@ -92,7 +111,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
    */
   async getAvailablePeriods(): Promise<AvailablePeriod[]> {
     try {
-      const response = await fetch(`${this.apiBase}/dashboard/available-periods?limit=24`);
+      const response = await fetch(`${this.apiBase}/dashboard/available-periods?limit=24`, {
+        headers: this.getAuthHeaders(),
+      });
 
       if (!response.ok) {
         return [];
@@ -111,7 +132,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
    */
   async getComparison(year: number, month: number): Promise<any> {
     try {
-      const response = await fetch(`${this.apiBase}/dashboard/comparison/${year}/${month}`);
+      const response = await fetch(`${this.apiBase}/dashboard/comparison/${year}/${month}`, {
+        headers: this.getAuthHeaders(),
+      });
 
       if (!response.ok) {
         return null;
@@ -130,7 +153,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
    */
   async getCategoryBreakdown(year: number, month: number): Promise<CategoryData[]> {
     try {
-      const response = await fetch(`${this.apiBase}/dashboard/categories/${year}/${month}?limit=10`);
+      const response = await fetch(`${this.apiBase}/dashboard/categories/${year}/${month}?limit=10`, {
+        headers: this.getAuthHeaders(),
+      });
 
       if (!response.ok) {
         return [];
@@ -149,7 +174,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
    */
   async getSavingsMetrics(year: number, month: number): Promise<any> {
     try {
-      const response = await fetch(`${this.apiBase}/dashboard/savings/${year}/${month}`);
+      const response = await fetch(`${this.apiBase}/dashboard/savings/${year}/${month}`, {
+        headers: this.getAuthHeaders(),
+      });
 
       if (!response.ok) {
         return null;
@@ -168,7 +195,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
    */
   async getHistory(months: number = 6): Promise<any[]> {
     try {
-      const response = await fetch(`${this.apiBase}/dashboard/history?months=${months}`);
+      const response = await fetch(`${this.apiBase}/dashboard/history?months=${months}`, {
+        headers: this.getAuthHeaders(),
+      });
 
       if (!response.ok) {
         return [];
@@ -242,7 +271,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       };
 
       const url = `${this.apiBase}/dashboard/range?startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}`;
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: this.getAuthHeaders(),
+      });
 
       if (!response.ok) {
         return null;
@@ -325,7 +356,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
    */
   private async getYearSummary(year: number): Promise<any> {
     try {
-      const response = await fetch(`${this.apiBase}/dashboard/year/${year}`);
+      const response = await fetch(`${this.apiBase}/dashboard/year/${year}`, {
+        headers: this.getAuthHeaders(),
+      });
 
       if (!response.ok) {
         return null;

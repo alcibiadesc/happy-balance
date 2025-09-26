@@ -1,7 +1,22 @@
 import { writable, derived } from 'svelte/store';
 import type { Transaction } from '$lib/types/transaction';
+import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3004/api';
+
+// Helper function to create authenticated headers
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  const token = authStore.getAccessToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
 
 export interface PaginatedQuery {
   page: number;
@@ -153,7 +168,9 @@ function createPaginatedTransactionStore() {
         }
       });
 
-      const response = await fetch(`${API_BASE}/transactions/paginated?${params}`);
+      const response = await fetch(`${API_BASE}/transactions/paginated?${params}`, {
+        headers: getAuthHeaders(),
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to load transactions: ${response.status}`);
@@ -195,9 +212,7 @@ function createPaginatedTransactionStore() {
 
         const response = await fetch(`${API_BASE}/transactions/${id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify(payload),
         });
 
@@ -237,6 +252,7 @@ function createPaginatedTransactionStore() {
       try {
         const response = await fetch(`${API_BASE}/transactions/${id}`, {
           method: 'DELETE',
+          headers: getAuthHeaders(),
         });
 
         if (!response.ok) {

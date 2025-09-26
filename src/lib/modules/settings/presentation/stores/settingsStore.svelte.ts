@@ -8,6 +8,7 @@ import { currentCurrency, currencies, setCurrency } from '$lib/stores/currency';
 import { theme as themeStore, setTheme, effectiveTheme } from '$lib/stores/theme';
 import { userPreferences } from '$lib/stores/user-preferences';
 import { get } from 'svelte/store';
+import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
 
 export interface ImportData {
   transactions?: any[];
@@ -21,6 +22,20 @@ export interface ImportData {
 }
 
 export function createSettingsStore(apiBase: string) {
+  // Helper function to create authenticated headers
+  function getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    const token = authStore.getAccessToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    return headers;
+  }
+
   // Store values
   let currentTheme = $state(get(effectiveTheme));
   let currentLangCode = $state(get(currentLanguage));
@@ -214,9 +229,7 @@ export function createSettingsStore(apiBase: string) {
       try {
         const response = await fetch(`${apiBase}/seed`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers: getAuthHeaders()
         });
 
         if (!response.ok) {
