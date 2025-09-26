@@ -1,5 +1,6 @@
 import { writable, derived } from "svelte/store";
 import { browser } from "$app/environment";
+import { authStore } from "$lib/modules/auth/presentation/stores/authStore.svelte";
 
 export interface UserPreferences {
   id?: string;
@@ -11,7 +12,21 @@ export interface UserPreferences {
   updatedAt?: Date;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3004/api";
+
+// Helper function to create authenticated headers
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  const token = authStore.getAccessToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
 
 // Default preferences
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -35,7 +50,9 @@ function createUserPreferencesStore() {
 
       try {
         // Try to load from database first
-        const response = await fetch(`${API_BASE}/preferences/default`);
+        const response = await fetch(`${API_BASE}/preferences/default`, {
+          headers: getAuthHeaders(),
+        });
         if (response.ok) {
           const preferences = await response.json();
           set(preferences);
@@ -73,8 +90,7 @@ function createUserPreferencesStore() {
         // Update database
         const response = await fetch(`${API_BASE}/preferences/default`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
+          headers: getAuthHeaders(),
           },
           body: JSON.stringify(preferences),
         });

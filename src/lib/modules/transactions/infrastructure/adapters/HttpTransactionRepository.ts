@@ -24,7 +24,7 @@ export class HttpTransactionRepository implements ITransactionRepository {
     baseUrl = (typeof window !== "undefined" &&
       (window as any).ENV?.VITE_API_URL) ||
       (import.meta as any).env?.VITE_API_URL ||
-      "http://localhost:3000/api",
+      "http://localhost:3004/api",
   ) {
     this.baseUrl = baseUrl;
   }

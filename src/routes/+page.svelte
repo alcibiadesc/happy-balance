@@ -18,7 +18,7 @@
   import { createEnhancedDashboardStore } from "$lib/modules/dashboard/presentation/stores/enhancedDashboardStore.svelte.ts";
 
   // Initialize store with API configuration
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3005/api";
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3004/api";
   console.log('[Dashboard] Using API base:', API_BASE);
   const store = createEnhancedDashboardStore(API_BASE);
 
