@@ -91,7 +91,6 @@ function createUserPreferencesStore() {
         const response = await fetch(`${API_BASE}/preferences/default`, {
           method: "PUT",
           headers: getAuthHeaders(),
-          },
           body: JSON.stringify(preferences),
         });
 
