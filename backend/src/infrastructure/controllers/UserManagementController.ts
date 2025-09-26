@@ -9,7 +9,7 @@ import { AuthRequest } from '@infrastructure/middleware/auth';
 const CreateUserSchema = z.object({
   username: z.string().min(3).max(50),
   role: z.enum(['admin', 'user', 'viewer']).default('user'),
-  tempPassword: z.string().min(6).max(100).optional()
+  tempPassword: z.string().min(4).max(100).optional()
 });
 
 const UpdateUserSchema = z.object({
@@ -19,7 +19,7 @@ const UpdateUserSchema = z.object({
 
 const ResetPasswordSchema = z.object({
   userId: z.string(),
-  tempPassword: z.string().min(6).max(100).optional()
+  tempPassword: z.string().min(4).max(100).optional()
 });
 
 export class UserManagementController {

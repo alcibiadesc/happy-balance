@@ -16,13 +16,13 @@ const RefreshTokenSchema = z.object({
 
 const ChangePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(6).max(100)
+  newPassword: z.string().min(4).max(100)
 });
 
 const ResetPasswordChangeSchema = z.object({
   userId: z.string(),
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(6).max(100)
+  newPassword: z.string().min(4).max(100)
 });
 
 export class AuthController {
