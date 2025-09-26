@@ -378,27 +378,29 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
       case 'quarter': {
         // Calcular trimestre basado en el offset
-        const currentQuarter = Math.floor(now.getMonth() / 3);
-        const targetQuarter = currentQuarter + offset;
+        const currentQuarter = Math.floor(now.getMonth() / 3); // 0-3
+        const currentYear = now.getFullYear();
 
-        // Calcular año y trimestre real
-        const year = now.getFullYear() + Math.floor(targetQuarter / 4);
-        const quarter = ((targetQuarter % 4) + 4) % 4; // Normalizar trimestre (0-3)
+        // Calcular el total de trimestres desde el año 0
+        const totalQuarters = (currentYear * 4) + currentQuarter + offset;
 
-        // Calcular fechas del trimestre
-        const startMonth = quarter * 3;
-        const startDate = new Date(year, startMonth, 1);
-        const endDate = new Date(year, startMonth + 3, 0); // Último día del trimestre
+        // Calcular año y trimestre final
+        const targetYear = Math.floor(totalQuarters / 4);
+        const targetQuarter = ((totalQuarters % 4) + 4) % 4;
 
-        // Formatear fechas para el API
-        const formatDate = (date: Date) => {
-          const y = date.getFullYear();
-          const m = String(date.getMonth() + 1).padStart(2, '0');
-          const d = String(date.getDate()).padStart(2, '0');
-          return `${y}-${m}-${d}`;
-        };
+        // Convertir a formato API (1-4)
+        const apiQuarter = targetQuarter + 1;
 
-        return `${this.apiBase}/dashboard/range?startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}`;
+        console.log('[Quarter Calculation]', {
+          offset,
+          currentQuarter,
+          currentYear,
+          targetYear,
+          apiQuarter
+        });
+
+        // Usar el endpoint quarter específico
+        return `${this.apiBase}/dashboard/quarter/${targetYear}/${apiQuarter}`;
       }
 
       case 'year': {
