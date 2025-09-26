@@ -52,13 +52,11 @@ import { FinancialCalculationService } from "@domain/services/FinancialCalculati
 import { SmartCategorizationService } from "@domain/services/SmartCategorizationService";
 import { InitialSetupService } from "@domain/services/InitialSetupService";
 import { TransactionFactory } from "./domain/factories/TransactionFactory";
-import { CategoryPatternRepository } from "@infrastructure/repositories/CategoryPatternRepository";
 
 class App {
   private app: express.Application;
   // Shared repositories (don't need userId)
   private userRepository: PrismaUserRepository;
-  private categoryPatternRepository: CategoryPatternRepository;
   private controllerFactory: ControllerFactory;
   private authController!: AuthController;
   private userManagementController!: UserManagementController;
@@ -70,7 +68,6 @@ class App {
     this.app = express();
     // Initialize shared repositories
     this.userRepository = new PrismaUserRepository(prisma);
-    this.categoryPatternRepository = new CategoryPatternRepository(prisma);
     this.controllerFactory = new ControllerFactory(prisma);
     this.initializeServices();
     this.initializeMiddleware();

@@ -30,6 +30,18 @@ export class PrismaUserPreferencesRepository
     data: CreateUserPreferencesData,
   ): Promise<Result<UserPreferences>> {
     try {
+      // Validate that the user exists first
+      if (data.userId && data.userId !== "default") {
+        const userExists = await this.prisma.user.findUnique({
+          where: { id: data.userId },
+          select: { id: true }
+        });
+
+        if (!userExists) {
+          return Result.failWithMessage(`User with id ${data.userId} does not exist`);
+        }
+      }
+
       const preferences = await this.prisma.userPreferences.create({
         data: {
           userId: data.userId || "default",
