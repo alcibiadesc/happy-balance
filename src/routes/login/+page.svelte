@@ -1,5 +1,6 @@
 <script lang="ts">
   import LoginForm from '$lib/components/organisms/LoginForm.svelte';
+  import PasswordChangeForm from '$lib/components/organisms/PasswordChangeForm.svelte';
   import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
@@ -35,21 +36,29 @@
     <div class="login-container" in:fly={{ y: 30, duration: 600, delay: 200 }}>
       <div class="logo-wrapper" in:fade={{ duration: 400 }}>
         <div class="logo">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 2v20M2 12h20"/>
-            <path d="M7 7l10 10M17 7L7 17"/>
-          </svg>
+          <img src="/logo/happy-balance-logo-without-text.png" alt="Happy Balance" class="logo-image" />
         </div>
       </div>
 
       <div class="login-content" in:fade={{ duration: 400, delay: 100 }}>
-        <h1 class="login-title">Welcome Back</h1>
-        <p class="login-subtitle">Track your expenses with elegance</p>
+        {#if authStore.requiresPasswordChange}
+          <h1 class="login-title">Security Required</h1>
+          <p class="login-subtitle">Complete your account setup</p>
+        {:else}
+          <h1 class="login-title">Welcome Back</h1>
+          <p class="login-subtitle">Track your expenses with elegance</p>
+        {/if}
       </div>
 
       <div in:fade={{ duration: 400, delay: 300 }}>
-        <LoginForm />
+        {#if authStore.requiresPasswordChange}
+          <PasswordChangeForm
+            userId={authStore.requiresPasswordChange.userId}
+            username={authStore.requiresPasswordChange.username}
+          />
+        {:else}
+          <LoginForm />
+        {/if}
       </div>
 
       <div class="login-footer" in:fade={{ duration: 400, delay: 400 }}>
@@ -116,19 +125,18 @@
   .logo {
     width: 80px;
     height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    color: white;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(var(--primary-rgb), 0.3);
-    transform: rotate(45deg);
+    border-radius: 50%;
+    box-shadow: 0 10px 40px rgba(var(--evening-sea-rgb), 0.15);
+    border: 2px solid var(--border-color);
+    overflow: hidden;
     position: relative;
   }
 
-  .logo svg {
-    transform: rotate(-45deg);
+  .logo-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
   }
 
   .login-content {

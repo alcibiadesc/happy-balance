@@ -1,7 +1,22 @@
 import { writable, derived } from "svelte/store";
 import type { Transaction, Category } from "$lib/types/transaction";
+import { authStore } from "$lib/modules/auth/presentation/stores/authStore.svelte";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3004/api";
+
+// Helper function to create authenticated headers
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  const token = authStore.getAccessToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
 
 // Transaction Store using Backend APIs
 function createApiTransactionStore() {
@@ -37,6 +52,9 @@ function createApiTransactionStore() {
         // The frontend will handle filtering based on user preference
         const response = await fetch(
           `${API_BASE}/transactions?includeHidden=true`,
+          {
+            headers: getAuthHeaders(),
+          }
         );
         if (!response.ok) {
           throw new Error(`Failed to load transactions: ${response.status}`);
@@ -64,9 +82,7 @@ function createApiTransactionStore() {
       try {
         const response = await fetch(`${API_BASE}/transactions`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             amount: Math.abs(transaction.amount),
             currency: "EUR", // Default currency
@@ -136,9 +152,7 @@ function createApiTransactionStore() {
 
         const response = await fetch(`${API_BASE}/transactions/${id}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify(payload),
         });
 
@@ -182,6 +196,7 @@ function createApiTransactionStore() {
       try {
         const response = await fetch(`${API_BASE}/transactions/${id}`, {
           method: "DELETE",
+          headers: getAuthHeaders(),
         });
 
         if (!response.ok) {
@@ -225,9 +240,7 @@ function createApiTransactionStore() {
           `${API_BASE}/transactions/${transactionId}/categorize`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify({
               categoryId,
               applyToAll: options.applyToAll || false,
@@ -290,8 +303,13 @@ function createApiTransactionStore() {
           String(options.autoCategorizationEnabled ?? true),
         );
 
+        const authHeaders = getAuthHeaders();
+        // Remove Content-Type for FormData - browser will set it automatically with boundary
+        delete authHeaders["Content-Type"];
+
         const response = await fetch(`${API_BASE}/import/csv`, {
           method: "POST",
+          headers: authHeaders,
           body: formData,
         });
 
@@ -324,9 +342,7 @@ function createApiTransactionStore() {
       try {
         const response = await fetch(`${API_BASE}/import/generate-hashes`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ transactions }),
         });
 
@@ -349,9 +365,7 @@ function createApiTransactionStore() {
       try {
         const response = await fetch(`${API_BASE}/import/check-duplicates`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ hashes }),
         });
 
@@ -392,9 +406,7 @@ function createApiTransactionStore() {
 
         const response = await fetch(`${API_BASE}/import/selected`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify(requestBody),
         });
 
@@ -428,6 +440,9 @@ function createApiTransactionStore() {
 
         const response = await fetch(
           `${API_BASE}/transactions/statistics?${params}`,
+          {
+            headers: getAuthHeaders(),
+          }
         );
         if (!response.ok) {
           throw new Error("Failed to get statistics");
@@ -498,7 +513,9 @@ function createApiCategoryStore() {
 
     async load() {
       try {
-        const response = await fetch(`${API_BASE}/categories`);
+        const response = await fetch(`${API_BASE}/categories`, {
+          headers: getAuthHeaders(),
+        });
         if (!response.ok) {
           throw new Error(`Failed to load categories: ${response.status}`);
         }
@@ -522,9 +539,7 @@ function createApiCategoryStore() {
       try {
         const response = await fetch(`${API_BASE}/categories`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             name: category.name,
             type: category.type,
@@ -555,9 +570,7 @@ function createApiCategoryStore() {
       try {
         const response = await fetch(`${API_BASE}/categories/${id}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify(updates),
         });
 
@@ -583,6 +596,7 @@ function createApiCategoryStore() {
       try {
         const response = await fetch(`${API_BASE}/categories/${id}`, {
           method: "DELETE",
+          headers: getAuthHeaders(),
         });
 
         if (!response.ok) {
@@ -601,6 +615,7 @@ function createApiCategoryStore() {
       try {
         const response = await fetch(`${API_BASE}/categories`, {
           method: "DELETE",
+          headers: getAuthHeaders(),
         });
 
         if (!response.ok) {

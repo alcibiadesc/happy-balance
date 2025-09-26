@@ -92,6 +92,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 hash: snapshot.hash,
                 hidden: false,
                 createdAt: new Date(snapshot.createdAt),
+                userId: this.userId || 'default', // Ensure user isolation
               },
             });
             savedCount++;
@@ -143,6 +144,9 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   async findAll(): Promise<Result<Transaction[]>> {
     try {
       const prismaTransactions = await this.prisma.transaction.findMany({
+        where: {
+          userId: this.userId || 'default'
+        },
         orderBy: { date: "desc" },
       });
 
@@ -772,6 +776,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     try {
       const prismaTransactions = await this.prisma.transaction.findMany({
         where: {
+          userId: this.userId || 'default',
           OR: [
             {
               merchant: {

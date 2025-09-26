@@ -5,6 +5,8 @@
   import { clickOutside } from '$lib/utils/clickOutside';
 
   let isMenuOpen = $state(false);
+  let menuButton: HTMLButtonElement;
+  let dropdownStyle = $state('');
 
   async function handleLogout() {
     await authStore.logout();
@@ -13,6 +15,29 @@
 
   function toggleMenu() {
     isMenuOpen = !isMenuOpen;
+
+    if (isMenuOpen && menuButton) {
+      const rect = menuButton.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      // If there's not enough space below (less than 300px), show above
+      if (spaceBelow < 300 && spaceAbove > 300) {
+        dropdownStyle = `
+          position: fixed;
+          bottom: ${window.innerHeight - rect.top + 8}px;
+          right: ${window.innerWidth - rect.right}px;
+          z-index: 9999;
+        `;
+      } else {
+        dropdownStyle = `
+          position: fixed;
+          top: ${rect.bottom + 8}px;
+          right: ${window.innerWidth - rect.right}px;
+          z-index: 9999;
+        `;
+      }
+    }
   }
 
   function closeMenu() {
@@ -52,7 +77,7 @@
           bg: 'var(--surface-muted)',
           border: 'var(--border-color)',
           icon: 'user',
-          label: 'Guest'
+          label: 'User'
         };
     }
   }
@@ -63,6 +88,7 @@
 {#if authStore.currentUser}
   <div class="user-menu-container" use:clickOutside={closeMenu}>
     <button
+      bind:this={menuButton}
       onclick={toggleMenu}
       class="user-menu-trigger"
       aria-label="User menu"
@@ -90,26 +116,14 @@
     {#if isMenuOpen}
       <div
         class="user-menu-dropdown"
+        style={dropdownStyle}
         in:fly={{ y: -10, duration: 200 }}
         out:fade={{ duration: 150 }}
       >
         <div class="menu-header">
           <div class="user-info">
             <span class="user-display-name">{authStore.currentUser.displayName}</span>
-            <span class="user-username">@{authStore.currentUser.username}</span>
           </div>
-          {#if roleConfig}
-            <span
-              class="role-badge"
-              style="
-                background: {roleConfig.bg};
-                color: {roleConfig.color};
-                border-color: {roleConfig.border};
-              "
-            >
-              {roleConfig.label}
-            </span>
-          {/if}
         </div>
 
         <div class="menu-divider"></div>
@@ -189,14 +203,14 @@
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    color: white;
+    background: var(--evening-sea);
+    color: var(--bridesmaid);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
     font-size: 0.875rem;
-    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.2);
+    box-shadow: 0 2px 8px rgba(var(--evening-sea-rgb), 0.15);
   }
 
   .chevron {
@@ -209,16 +223,12 @@
   }
 
   .user-menu-dropdown {
-    position: absolute;
-    top: calc(100% + 0.5rem);
-    right: 0;
     width: 280px;
     background: var(--surface-elevated);
     border-radius: 16px;
     box-shadow: var(--shadow-xl);
     border: 1px solid var(--border-color);
     overflow: hidden;
-    z-index: 1000;
   }
 
   .menu-header {
@@ -229,7 +239,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    margin-bottom: 0.75rem;
   }
 
   .user-display-name {
@@ -239,24 +248,7 @@
     letter-spacing: -0.01em;
   }
 
-  .user-username {
-    font-size: 0.813rem;
-    color: var(--text-tertiary);
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-  }
 
-  .role-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 8px;
-    font-size: 0.688rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border: 1px solid;
-    transition: all 0.2s ease;
-  }
 
   .menu-divider {
     height: 1px;

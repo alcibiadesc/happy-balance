@@ -107,26 +107,6 @@
     {/if}
   </button>
 
-  <div class="demo-info">
-    <p class="demo-info-title">Demo Credentials</p>
-    <div class="demo-credentials">
-      <button type="button" class="credential-item" onclick={() => { username = 'admin'; password = 'admin123'; }}>
-        <span class="credential-label">Admin:</span>
-        <span class="credential-value">admin / admin123</span>
-        <span class="credential-badge">Full</span>
-      </button>
-      <button type="button" class="credential-item" onclick={() => { username = 'demo'; password = 'demo123'; }}>
-        <span class="credential-label">User:</span>
-        <span class="credential-value">demo / demo123</span>
-        <span class="credential-badge">Edit</span>
-      </button>
-      <button type="button" class="credential-item" onclick={() => { username = 'viewer'; password = 'demo123'; }}>
-        <span class="credential-label">Viewer:</span>
-        <span class="credential-value">viewer / demo123</span>
-        <span class="credential-badge">Read</span>
-      </button>
-    </div>
-  </div>
 </form>
 
 <style>
@@ -219,8 +199,8 @@
   .submit-button {
     width: 100%;
     padding: 0.875rem;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    color: white;
+    background: var(--evening-sea);
+    color: var(--bridesmaid);
     border: none;
     border-radius: 12px;
     font-size: 0.938rem;
@@ -237,7 +217,9 @@
 
   .submit-button:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(var(--primary-rgb), 0.35);
+    background: #2a6a5b;
+    box-shadow: 0 10px 30px rgba(47, 117, 99, 0.35);
+    filter: brightness(0.95);
   }
 
   .submit-button:active:not(:disabled) {
@@ -245,10 +227,10 @@
   }
 
   .submit-button:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
     background: var(--surface-muted);
-    color: var(--text-secondary);
+    color: var(--text-primary);
   }
 
   .loading-spinner {
@@ -266,74 +248,4 @@
     }
   }
 
-  .demo-info {
-    margin-top: 0.5rem;
-    padding: 1.25rem;
-    background: var(--surface);
-    border-radius: 16px;
-    border: 1px solid var(--border-color);
-  }
-
-  .demo-info-title {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-tertiary);
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    text-align: center;
-  }
-
-  .demo-credentials {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .credential-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 0.875rem;
-    background: var(--surface-elevated);
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    width: 100%;
-    text-align: left;
-  }
-
-  .credential-item:hover {
-    border-color: var(--primary-light);
-    background: var(--surface);
-    transform: translateX(4px);
-  }
-
-  .credential-label {
-    font-weight: 500;
-    color: var(--text-tertiary);
-    min-width: 60px;
-  }
-
-  .credential-value {
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-    color: var(--text-primary);
-    font-size: 0.813rem;
-  }
-
-  .credential-badge {
-    margin-left: auto;
-    padding: 3px 8px;
-    background: linear-gradient(135deg,
-      var(--primary-light) 0%,
-      var(--primary) 100%);
-    color: white;
-    border-radius: 6px;
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
 </style>

@@ -8,7 +8,10 @@ import { ICategoryPatternRepository } from "../../domain/services/SmartCategoriz
 import { Result } from "../../domain/shared/Result";
 
 export class CategoryPatternRepository implements ICategoryPatternRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly userId?: string
+  ) {}
 
   async findByCategory(categoryId: string): Promise<CategoryPattern[]> {
     try {
@@ -16,6 +19,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         where: {
           categoryId,
           isActive: true,
+          userId: this.userId || 'default',
         },
         orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
       });
@@ -34,6 +38,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
       const patterns = await this.prisma.categoryPattern.findMany({
         where: {
           isActive: true,
+          userId: this.userId || 'default',
         },
         orderBy: [{ priority: "desc" }, { matchCount: "desc" }],
       });
@@ -62,6 +67,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
           applyToFuture: snapshot.applyToFuture,
           priority: snapshot.priority,
           matchCount: snapshot.matchCount,
+          userId: this.userId || 'default',
         },
         update: {
           pattern: snapshot.pattern,

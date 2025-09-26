@@ -96,6 +96,10 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       const categories = await this.prisma.category.findMany({
         where: {
           isActive: true,
+          OR: [
+            { isGlobal: true },
+            { userId: this.userId || 'default' }
+          ]
         },
         orderBy: {
           name: "asc",

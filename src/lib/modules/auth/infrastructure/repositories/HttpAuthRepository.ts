@@ -25,7 +25,7 @@ export class HttpAuthRepository implements IAuthRepository {
     }
   }
 
-  async login(credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens }> {
+  async login(credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens } | { requiresPasswordChange: true; userId: string; username: string }> {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: {
@@ -43,6 +43,15 @@ export class HttpAuthRepository implements IAuthRepository {
     }
 
     const result = await response.json();
+
+    // Check if password change is required
+    if (result.requiresPasswordChange) {
+      return {
+        requiresPasswordChange: true,
+        userId: result.data.userId,
+        username: result.data.username
+      };
+    }
 
     // Store tokens
     this.accessToken = result.data.accessToken;
@@ -165,6 +174,41 @@ export class HttpAuthRepository implements IAuthRepository {
       const error = await response.json();
       throw new Error(error.error || 'Password change failed');
     }
+  }
+
+  async resetPasswordChange(userId: string, currentPassword: string, newPassword: string): Promise<{ user: User; tokens: AuthTokens }> {
+    const response = await fetch(`${API_BASE}/auth/reset-password-change`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userId, currentPassword, newPassword })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Password change failed');
+    }
+
+    const result = await response.json();
+
+    // Store tokens
+    this.accessToken = result.data.accessToken;
+    this.refreshTokenValue = result.data.refreshToken;
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('accessToken', result.data.accessToken);
+      localStorage.setItem('refreshToken', result.data.refreshToken);
+    }
+
+    // Map to domain entities
+    const user = this.mapToDomainUser(result.data.user);
+    const tokens = AuthTokens.create(
+      result.data.accessToken,
+      result.data.refreshToken
+    );
+
+    return { user, tokens };
   }
 
   getAccessToken(): string | null {

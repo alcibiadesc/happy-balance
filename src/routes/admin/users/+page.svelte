@@ -25,6 +25,12 @@
   let showCreateModal = $state(false);
   let editingUser = $state<UserDTO | null>(null);
   let successMessage = $state<string | null>(null);
+  let confirmAction = $state<{
+    show: boolean;
+    title: string;
+    message: string;
+    action: () => void;
+  }>({ show: false, title: '', message: '', action: () => {} });
 
   // Create user form
   let newUser = $state({
@@ -184,10 +190,15 @@
     }
   }
 
-  async function deleteUser(userId: string) {
-    if (!confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
+  async function deleteUser(userId: string, username: string) {
+    showConfirmation(
+      'Delete User',
+      `Are you sure you want to permanently delete user "${username}"? This action cannot be undone.`,
+      () => performDeleteUser(userId)
+    );
+  }
+
+  async function performDeleteUser(userId: string) {
 
     loading = true;
     error = null;
@@ -216,10 +227,15 @@
     }
   }
 
-  async function resetPassword(userId: string) {
-    if (!confirm('Are you sure you want to reset this user\'s password?')) {
-      return;
-    }
+  async function resetPassword(userId: string, username: string) {
+    showConfirmation(
+      'Reset Password',
+      `Are you sure you want to reset the password for user "${username}"?`,
+      () => performResetPassword(userId, username)
+    );
+  }
+
+  async function performResetPassword(userId: string, username: string) {
 
     loading = true;
     error = null;
@@ -241,7 +257,16 @@
       }
 
       const result = await response.json();
-      alert(`Password reset successful. New password: ${result.tempPassword}`);
+      console.log('Reset password response:', result);
+
+      // Handle different response formats
+      const tempPassword = result.data?.tempPassword || result.tempPassword;
+      successMessage = `Password reset for ${username}. New password: ${tempPassword}`;
+
+      // Auto-hide success message after 10 seconds
+      setTimeout(() => {
+        successMessage = null;
+      }, 10000);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to reset password';
       console.error('Error resetting password:', err);
@@ -273,6 +298,47 @@
     return new Date(dateString).toLocaleDateString();
   }
 
+  async function toggleUserStatus(user: UserDTO) {
+    loading = true;
+    error = null;
+
+    try {
+      const token = authStore.getAccessToken();
+      const newStatus = !user.isActive;
+
+      const response = await fetch(`http://localhost:3004/api/admin/users/${user.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          role: user.role,
+          isActive: newStatus
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update user status');
+      }
+
+      successMessage = `User ${user.username} ${newStatus ? 'activated' : 'deactivated'} successfully`;
+
+      // Auto-hide success message
+      setTimeout(() => {
+        successMessage = null;
+      }, 3000);
+
+      await loadUsers();
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Failed to update user status';
+      console.error('Error updating user status:', err);
+    } finally {
+      loading = false;
+    }
+  }
+
   function handleCreateUserClick() {
     console.log('Create User button clicked, current state:', showCreateModal);
     showCreateModal = true;
@@ -282,6 +348,24 @@
   function closeModal() {
     console.log('Closing modal');
     showCreateModal = false;
+  }
+
+  function showConfirmation(title: string, message: string, action: () => void) {
+    confirmAction = {
+      show: true,
+      title,
+      message,
+      action
+    };
+  }
+
+  function confirmYes() {
+    confirmAction.action();
+    confirmAction.show = false;
+  }
+
+  function confirmNo() {
+    confirmAction.show = false;
   }
 </script>
 
@@ -387,11 +471,29 @@
                     <Button variant="ghost" size="sm" onclick={() => editingUser = user}>
                       <Edit2 size={14} />
                     </Button>
-                    <Button variant="ghost" size="sm" onclick={() => resetPassword(user.id)}>
+                    <Button variant="ghost" size="sm" onclick={() => resetPassword(user.id, user.username)}>
                       <RefreshCw size={14} />
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onclick={() => toggleUserStatus(user)}
+                      title={user.isActive ? 'Deactivate user' : 'Activate user'}
+                    >
+                      {#if user.isActive}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M10 9V6a4 4 0 1 1 8 0v3"/>
+                          <rect x="2" y="9" width="20" height="12" rx="2" ry="2"/>
+                        </svg>
+                      {:else}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                      {/if}
+                    </Button>
                     {#if user.id !== authStore.currentUser?.id}
-                      <Button variant="ghost" size="sm" onclick={() => deleteUser(user.id)}>
+                      <Button variant="ghost" size="sm" onclick={() => deleteUser(user.id, user.username)}>
                         <Trash2 size={14} />
                       </Button>
                     {/if}
@@ -487,14 +589,14 @@
 
             <div style="margin-bottom: 1.25rem;">
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem;">
-                Password * (6-100 characters)
+                Password * (4-100 characters)
               </label>
               <input
                 type="password"
                 bind:value={newUser.password}
-                placeholder="Enter password (min 6 chars)"
+                placeholder="Enter password (min 4 chars)"
                 required
-                minlength="6"
+                minlength="4"
                 maxlength="100"
                 style="
                   width: 100%;
@@ -505,9 +607,9 @@
                   transition: border-color 0.2s;
                 "
               />
-              {#if newUser.password && newUser.password.length < 6}
+              {#if newUser.password && newUser.password.length < 4}
                 <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #dc2626;">
-                  Password must be at least 6 characters
+                  Password must be at least 4 characters
                 </p>
               {/if}
             </div>
@@ -553,7 +655,7 @@
               </button>
               <button
                 type="submit"
-                disabled={loading || !newUser.username || !newUser.password || newUser.username.length < 3 || newUser.password.length < 6}
+                disabled={loading || !newUser.username || !newUser.password || newUser.username.length < 3 || newUser.password.length < 4}
                 style="
                   padding: 0.75rem 1.5rem;
                   background: #059669;
@@ -563,13 +665,35 @@
                   cursor: pointer;
                   font-weight: 500;
                   transition: all 0.2s;
-                  opacity: {loading || !newUser.username || !newUser.password || newUser.username.length < 3 || newUser.password.length < 6 ? '0.5' : '1'};
+                  opacity: {loading || !newUser.username || !newUser.password || newUser.username.length < 3 || newUser.password.length < 4 ? '0.5' : '1'};
                 "
               >
 {loading ? 'Creating...' : 'Create User'}
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    {/if}
+
+    <!-- Confirmation Modal -->
+    {#if confirmAction.show}
+      <div class="modal-overlay" onclick={confirmNo}>
+        <div class="modal-content confirm-modal" onclick={(e) => e.stopPropagation()}>
+          <div class="modal-header">
+            <h2 class="modal-title">{confirmAction.title}</h2>
+          </div>
+          <div class="confirm-content">
+            <p>{confirmAction.message}</p>
+          </div>
+          <div class="modal-actions">
+            <Button variant="ghost" onclick={confirmNo}>
+              Cancel
+            </Button>
+            <Button variant="danger" onclick={confirmYes}>
+              Confirm
+            </Button>
+          </div>
         </div>
       </div>
     {/if}
@@ -926,6 +1050,21 @@
     to { opacity: 1; }
   }
 
+  .confirm-modal {
+    max-width: 400px;
+  }
+
+  .confirm-content {
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .confirm-content p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .page {
@@ -943,20 +1082,88 @@
     }
 
     .user-card {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.75rem;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto auto;
+      grid-template-areas:
+        "avatar name"
+        "avatar details"
+        "actions actions";
+      gap: 0.5rem 1rem;
+      padding: 1rem;
+      align-items: start;
+    }
+
+    .user-avatar {
+      grid-area: avatar;
+      align-self: center;
+    }
+
+    .user-info {
+      grid-area: name;
+      align-self: center;
+      min-width: 0;
     }
 
     .user-details {
-      flex-direction: column;
-      align-items: flex-start;
+      grid-area: details;
+      display: flex;
+      flex-wrap: wrap;
       gap: 0.5rem;
+      align-items: center;
+      min-width: 0;
     }
 
     .user-actions {
-      align-self: stretch;
-      justify-content: flex-end;
+      grid-area: actions;
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .user-actions :global(button) {
+      flex: 1;
+      min-width: 44px;
+    }
+
+    .modal-content {
+      margin: 1rem;
+      max-width: calc(100vw - 2rem);
+    }
+
+    .confirm-modal {
+      max-width: calc(100vw - 2rem);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .page {
+      padding: 0.5rem;
+    }
+
+    .user-card {
+      padding: 0.75rem;
+    }
+
+    .user-avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 0.75rem;
+    }
+
+    .user-name {
+      font-size: 0.875rem;
+    }
+
+    .username {
+      font-size: 0.75rem;
+    }
+
+    .user-actions :global(button) {
+      min-width: 40px;
+      padding: 0.5rem;
     }
   }
 </style>

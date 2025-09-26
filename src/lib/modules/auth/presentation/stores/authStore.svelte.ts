@@ -15,6 +15,7 @@ class AuthStore {
   isAuthenticated = $state(false);
   isLoading = $state(false);
   error = $state<string | null>(null);
+  requiresPasswordChange = $state<{ userId: string; username: string } | null>(null);
 
   // Repository and use cases
   private authRepository: HttpAuthRepository;
@@ -50,14 +51,45 @@ class AuthStore {
   async login(username: string, password: string) {
     this.isLoading = true;
     this.error = null;
+    this.requiresPasswordChange = null;
 
     try {
-      const result = await this.loginUseCase.execute({ username, password });
+      const result = await this.authRepository.login({
+        username: { value: username },
+        password
+      });
+
+      if ('requiresPasswordChange' in result) {
+        this.requiresPasswordChange = {
+          userId: result.userId,
+          username: result.username
+        };
+        return result;
+      }
+
       this.currentUser = result.user;
       this.isAuthenticated = true;
       return result;
     } catch (error) {
       this.error = error instanceof Error ? error.message : 'Login failed';
+      throw error;
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async resetPasswordChange(userId: string, currentPassword: string, newPassword: string) {
+    this.isLoading = true;
+    this.error = null;
+
+    try {
+      const result = await this.authRepository.resetPasswordChange(userId, currentPassword, newPassword);
+      this.currentUser = result.user;
+      this.isAuthenticated = true;
+      this.requiresPasswordChange = null;
+      return result;
+    } catch (error) {
+      this.error = error instanceof Error ? error.message : 'Password change failed';
       throw error;
     } finally {
       this.isLoading = false;
@@ -70,6 +102,7 @@ class AuthStore {
       await this.logoutUseCase.execute();
       this.currentUser = null;
       this.isAuthenticated = false;
+      this.requiresPasswordChange = null;
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

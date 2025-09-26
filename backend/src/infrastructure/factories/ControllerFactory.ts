@@ -29,11 +29,9 @@ import { TransactionFactory } from '@domain/factories/TransactionFactory';
  */
 export class ControllerFactory {
   private prisma: PrismaClient;
-  private categoryPatternRepository: CategoryPatternRepository;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
-    this.categoryPatternRepository = new CategoryPatternRepository(prisma);
   }
 
   /**
@@ -43,11 +41,12 @@ export class ControllerFactory {
     // Create repositories with userId
     const transactionRepository = new PrismaTransactionRepository(this.prisma, userId);
     const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
+    const categoryPatternRepository = new CategoryPatternRepository(this.prisma, userId);
 
     // Domain services
     const financialCalculationService = new FinancialCalculationService();
     const smartCategorizationService = new SmartCategorizationService(
-      this.categoryPatternRepository,
+      categoryPatternRepository,
       transactionRepository as any,
     );
 
