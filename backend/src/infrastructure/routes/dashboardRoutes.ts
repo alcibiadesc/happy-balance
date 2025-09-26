@@ -38,6 +38,11 @@ export function createDashboardRoutes(
     dashboardController.getYearMetrics(req, res)
   );
 
+  // Métricas de un trimestre específico
+  router.get("/quarter/:year/:quarter", (req, res) =>
+    dashboardController.getQuarterMetrics(req, res)
+  );
+
   // Rango de fechas personalizado
   router.get("/range", (req, res) =>
     dashboardController.getDateRange(req, res)
