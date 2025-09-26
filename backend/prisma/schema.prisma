@@ -7,6 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String    @id @default(cuid()) @db.VarChar(36)
+  username     String    @unique @db.VarChar(50)
+  displayName  String    @db.VarChar(100)
+  password     String    @db.VarChar(255)
+  role         String    @default("user") @db.VarChar(20) // admin, user, viewer
+  isActive     Boolean   @default(true)
+  createdBy    String?   @db.VarChar(36)
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  creator         User?            @relation("UserCreator", fields: [createdBy], references: [id])
+  createdUsers    User[]           @relation("UserCreator")
+  transactions    Transaction[]
+  categories      Category[]
+  importLogs      ImportLog[]
+  userPreferences UserPreferences?
+
+  @@index([username])
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
 model Transaction {
   id           String    @id @db.VarChar(36)
   amount       Decimal   @db.Decimal(15, 2)
@@ -22,7 +48,10 @@ model Transaction {
   updatedAt    DateTime  @updatedAt
   hash         String?   @db.VarChar(50)
   observations String?   @db.VarChar(500)
+  userId       String    @db.VarChar(36)
+
   category     Category? @relation(fields: [categoryId], references: [id])
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([date])
   @@index([merchant])
@@ -32,6 +61,8 @@ model Transaction {
   @@index([createdAt])
   @@index([hash])
   @@index([hidden])
+  @@index([userId])
+  @@index([userId, date])
   @@map("transactions")
 }
 
@@ -46,15 +77,21 @@ model Category {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   annualBudget Decimal?          @db.Decimal(15, 2)
+  isGlobal     Boolean           @default(false) // Categories shared by all users
+  userId       String?           @db.VarChar(36) // null for global categories
+
   parent       Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children     Category[]        @relation("CategoryHierarchy")
   patterns     CategoryPattern[]
   transactions Transaction[]
+  user         User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([name, type])
+  @@unique([name, type, userId])
   @@index([type])
   @@index([isActive])
   @@index([parentId])
+  @@index([userId])
+  @@index([isGlobal])
   @@map("categories")
 }
 
@@ -73,9 +110,13 @@ model ImportLog {
   completedAt       DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  userId            String    @db.VarChar(36)
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status])
   @@index([startedAt])
+  @@index([userId])
   @@map("import_logs")
 }
 
@@ -92,12 +133,14 @@ model AppSettings {
 
 model UserPreferences {
   id        String   @id @default(cuid()) @db.VarChar(36)
-  userId    String   @unique @default("default") @db.VarChar(36)
+  userId    String   @unique @db.VarChar(36)
   currency  String   @default("EUR") @db.VarChar(3)
   language  String   @default("en") @db.VarChar(5)
   theme     String   @default("light") @db.VarChar(10)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_preferences")
 }

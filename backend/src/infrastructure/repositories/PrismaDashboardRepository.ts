@@ -33,7 +33,10 @@ interface AvailablePeriod {
  * Implementa consultas agregadas eficientes
  */
 export class PrismaDashboardRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly userId: string = 'default'
+  ) {}
 
   /**
    * Obtiene métricas agregadas para un período usando SQL nativo
@@ -53,6 +56,8 @@ export class PrismaDashboardRepository {
         date >= ${startDate}
         AND date <= ${endDate}
         AND hidden = false
+        AND "userId" = ${this.userId}
+        AND "userId" = ${this.userId}
       GROUP BY type
     `;
 
@@ -114,6 +119,7 @@ export class PrismaDashboardRepository {
         t.date >= ${startDate}
         AND t.date <= ${endDate}
         AND t.hidden = false
+        AND t."userId" = ${this.userId}
         AND t.type = 'EXPENSE'
       GROUP BY t."categoryId", c.name, c.type, c.color, c."annualBudget"
       ORDER BY amount DESC
@@ -146,6 +152,7 @@ export class PrismaDashboardRepository {
         date >= ${startDate}
         AND date <= ${endDate}
         AND hidden = false
+        AND "userId" = ${this.userId}
       GROUP BY
         EXTRACT(YEAR FROM date),
         EXTRACT(MONTH FROM date),
@@ -201,6 +208,7 @@ export class PrismaDashboardRepository {
         SUM(amount)::float as total_amount
       FROM transactions
       WHERE hidden = false
+        AND "userId" = ${this.userId}
       GROUP BY
         EXTRACT(YEAR FROM date),
         EXTRACT(MONTH FROM date)
@@ -233,6 +241,7 @@ export class PrismaDashboardRepository {
         date >= ${startDate}
         AND date <= ${endDate}
         AND hidden = false
+        AND "userId" = ${this.userId}
       GROUP BY type, DATE_TRUNC('week', date)
       ORDER BY week DESC
     `;

@@ -18,7 +18,10 @@ import {
  * Adapter pattern - implements domain repository interface using Prisma client
  */
 export class PrismaTransactionRepository implements ITransactionRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly userId?: string
+  ) {}
 
   async save(transaction: Transaction): Promise<Result<void>> {
     try {
@@ -53,6 +56,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           hash: snapshot.hash,
           hidden: (transaction as any).hidden || false,
           createdAt: new Date(snapshot.createdAt),
+          userId: this.userId || 'default', // Use provided userId or default
         },
       });
 
@@ -116,8 +120,11 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
   async findById(id: TransactionId): Promise<Result<Transaction | null>> {
     try {
-      const prismaTransaction = await this.prisma.transaction.findUnique({
-        where: { id: id.value },
+      const prismaTransaction = await this.prisma.transaction.findFirst({
+        where: {
+          id: id.value,
+          userId: this.userId || 'default'
+        },
       });
 
       if (!prismaTransaction) {
@@ -241,7 +248,10 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   async findByHash(hash: string): Promise<Result<Transaction[]>> {
     try {
       const prismaTransactions = await this.prisma.transaction.findMany({
-        where: { hash },
+        where: {
+          hash,
+          userId: this.userId || 'default'
+        },
       });
 
       const transactions: Transaction[] = [];
@@ -281,8 +291,11 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       // IMPORTANT: Only update date if it has actually changed
       // We need to preserve the original date to avoid timezone issues
-      const existingTransaction = await this.prisma.transaction.findUnique({
-        where: { id: snapshot.id },
+      const existingTransaction = await this.prisma.transaction.findFirst({
+        where: {
+          id: snapshot.id,
+          userId: this.userId || 'default'
+        },
       });
 
       if (existingTransaction) {
@@ -298,7 +311,9 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       }
 
       await this.prisma.transaction.update({
-        where: { id: snapshot.id },
+        where: {
+          id: snapshot.id
+        },
         data: updateData,
       });
 
@@ -313,7 +328,10 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   async delete(id: TransactionId): Promise<Result<void>> {
     try {
       await this.prisma.transaction.delete({
-        where: { id: id.value },
+        where: {
+          id: id.value,
+          userId: this.userId || 'default'
+        },
       });
 
       return Result.ok(undefined);
@@ -327,7 +345,10 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   async deleteMany(ids: TransactionId[]): Promise<Result<number>> {
     try {
       const result = await this.prisma.transaction.deleteMany({
-        where: { id: { in: ids.map((id) => id.value) } },
+        where: {
+          id: { in: ids.map((id) => id.value) },
+          userId: this.userId || 'default'
+        },
       });
 
       return Result.ok(result.count);
@@ -341,7 +362,10 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   async exists(id: TransactionId): Promise<Result<boolean>> {
     try {
       const count = await this.prisma.transaction.count({
-        where: { id: id.value },
+        where: {
+          id: id.value,
+          userId: this.userId || 'default'
+        },
       });
 
       return Result.ok(count > 0);
@@ -378,6 +402,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   > {
     try {
       const where = {
+        userId: this.userId || 'default',
         date: {
           gte: startDate.value,
           lte: endDate.value,
@@ -623,12 +648,13 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   }
 
   private buildWhereClause(filters?: TransactionFilters) {
-    if (!filters) {
-      // Default: show all transactions (no filter)
-      return {};
-    }
+    const where: any = {
+      userId: this.userId || 'default' // Always filter by userId
+    };
 
-    const where: any = {};
+    if (!filters) {
+      return where;
+    }
 
     // Date range filters - optimize with proper date handling
     if (filters.startDate || filters.endDate) {

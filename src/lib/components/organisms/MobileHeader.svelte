@@ -2,6 +2,7 @@
   import { Menu } from 'lucide-svelte';
   import Brand from '../atoms/Brand.svelte';
   import ThemeToggle from '../atoms/ThemeToggle.svelte';
+  import UserMenu from '../molecules/UserMenu.svelte';
 
   interface Props {
     onMenuToggle: () => void;
@@ -27,6 +28,7 @@
 
     <div class="mobile-header-end">
       <ThemeToggle size="sm" />
+      <UserMenu />
     </div>
   </div>
 </header>

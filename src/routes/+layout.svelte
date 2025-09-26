@@ -9,8 +9,21 @@
   import { transactions, categories } from "$lib/stores/transactions";
   import { sidebarCollapsed } from "$lib/stores/sidebar";
   import { userPreferences } from "$lib/stores/user-preferences";
+  import { authStore } from "$lib/modules/auth/presentation/stores/authStore.svelte";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
 
   let { children } = $props();
+
+  // Check authentication status for protected routes
+  $effect(() => {
+    const publicRoutes = ['/login', '/health'];
+    const isPublicRoute = publicRoutes.some(route => $page.url.pathname.startsWith(route));
+
+    if (!isPublicRoute && !authStore.isAuthenticated && !authStore.isLoading) {
+      goto('/login');
+    }
+  });
 
   // Initialize stores and apply theme on mount
   onMount(async () => {
@@ -25,8 +38,8 @@
       applyTheme(prefs.theme);
     });
 
-    // Load transaction data only once
-    if (typeof window !== "undefined" && !window.__transactions_loaded__) {
+    // Load transaction data only once if authenticated
+    if (authStore.isAuthenticated && typeof window !== "undefined" && !window.__transactions_loaded__) {
       transactions.load();
       window.__transactions_loaded__ = true;
     }
@@ -34,9 +47,11 @@
 </script>
 
 <div class="app-shell">
-  <NewNavbar />
+  {#if authStore.isAuthenticated}
+    <NewNavbar />
+  {/if}
 
-  <main class="main-content" class:main-content--collapsed={$sidebarCollapsed}>
+  <main class="main-content" class:main-content--collapsed={$sidebarCollapsed && authStore.isAuthenticated}>
     <div class="content-container">
       {@render children?.()}
     </div>

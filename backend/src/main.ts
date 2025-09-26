@@ -7,6 +7,7 @@ import { prisma } from "@infrastructure/database/prisma";
 import { PrismaTransactionRepository } from "@infrastructure/repositories/PrismaTransactionRepository";
 import { PrismaUserPreferencesRepository } from "@infrastructure/repositories/PrismaUserPreferencesRepository";
 import { PrismaCategoryRepository } from "@infrastructure/repositories/PrismaCategoryRepository";
+import { PrismaUserRepository } from "@infrastructure/repositories/PrismaUserRepository";
 import { TransactionController } from "@infrastructure/controllers/TransactionController";
 import { ImportController } from "@infrastructure/controllers/ImportController";
 import { UserPreferencesController } from "@infrastructure/controllers/UserPreferencesController";
@@ -14,14 +15,19 @@ import { SeedController } from "@infrastructure/controllers/SeedController";
 import { CategoryController } from "@infrastructure/controllers/CategoryController";
 import { MetricsController } from "@infrastructure/controllers/MetricsController";
 import { DashboardController } from "@infrastructure/controllers/DashboardController";
+import { AuthController } from "@infrastructure/controllers/AuthController";
+import { UserManagementController } from "@infrastructure/controllers/UserManagementController";
 import { PrismaDashboardRepository } from "@infrastructure/repositories/PrismaDashboardRepository";
-import { createTransactionRoutes } from "@infrastructure/routes/transactionRoutes";
-import { createImportRoutes } from "@infrastructure/routes/importRoutes";
+import { createTransactionRoutesV2 } from "@infrastructure/routes/transactionRoutesV2";
+import { createCategoryRoutesV2 } from "@infrastructure/routes/categoryRoutesV2";
+import { createDashboardRoutesV2 } from "@infrastructure/routes/dashboardRoutesV2";
+import { createImportRoutesV2 } from "@infrastructure/routes/importRoutesV2";
+import { createMetricsRoutesV2 } from "@infrastructure/routes/metricsRoutesV2";
 import { createUserPreferencesRoutes } from "@infrastructure/routes/userPreferencesRoutes";
 import { createSeedRoutes } from "@infrastructure/routes/seedRoutes";
-import { createCategoryRoutes } from "@infrastructure/routes/categoryRoutes";
-import { createMetricsRoutes } from "@infrastructure/routes/metricsRoutes";
-import { createDashboardRoutes } from "@infrastructure/routes/dashboardRoutes";
+import { ControllerFactory } from "@infrastructure/factories/ControllerFactory";
+import { createAuthRoutes } from "@infrastructure/routes/authRoutes";
+import { createUserManagementRoutes } from "@infrastructure/routes/userManagementRoutes";
 import { errorHandler } from "@infrastructure/middleware/errorHandler";
 import { swaggerSpec } from "@infrastructure/config/swagger";
 import "@infrastructure/routes/swaggerDocs"; // Import for JSDoc annotations
@@ -50,28 +56,22 @@ import { CategoryPatternRepository } from "@infrastructure/repositories/Category
 
 class App {
   private app: express.Application;
-  private transactionRepository: PrismaTransactionRepository;
-  private categoryRepository: PrismaCategoryRepository;
-  private userPreferencesRepository: PrismaUserPreferencesRepository;
+  // Shared repositories (don't need userId)
+  private userRepository: PrismaUserRepository;
   private categoryPatternRepository: CategoryPatternRepository;
-  private transactionController!: TransactionController;
-  private importController!: ImportController;
+  private controllerFactory: ControllerFactory;
+  private authController!: AuthController;
+  private userManagementController!: UserManagementController;
   private userPreferencesController!: UserPreferencesController;
   private seedController!: SeedController;
-  private categoryController!: CategoryController;
-  private metricsController!: MetricsController;
-  private dashboardController!: DashboardController;
-  private dashboardRepository!: PrismaDashboardRepository;
   private initialSetupService!: InitialSetupService;
 
   constructor() {
     this.app = express();
-    this.transactionRepository = new PrismaTransactionRepository(prisma);
-    this.categoryRepository = new PrismaCategoryRepository(prisma);
-    this.userPreferencesRepository = new PrismaUserPreferencesRepository(
-      prisma,
-    );
+    // Initialize shared repositories
+    this.userRepository = new PrismaUserRepository(prisma);
     this.categoryPatternRepository = new CategoryPatternRepository(prisma);
+    this.controllerFactory = new ControllerFactory(prisma);
     this.initializeServices();
     this.initializeMiddleware();
     this.initializeRoutes();
@@ -79,122 +79,22 @@ class App {
   }
 
   private initializeServices() {
-    // Domain services
-    const duplicateDetectionService = new DuplicateDetectionService();
-    const categorizationService = new CategorizationService();
-    const financialCalculationService = new FinancialCalculationService();
-    const transactionFactory = new TransactionFactory();
-    const smartCategorizationService = new SmartCategorizationService(
-      this.categoryPatternRepository,
-      this.transactionRepository as any,
-    );
+    // Initialize auth controller (doesn't need userId)
+    this.authController = new AuthController(this.userRepository);
+    this.userManagementController = new UserManagementController(this.userRepository);
 
-    // Application services / Use cases
-    const getDashboardDataUseCase = new GetDashboardDataUseCase(
-      this.transactionRepository,
-      this.categoryRepository,
-      financialCalculationService,
-    );
+    // Initialize user preferences controller
+    const userPreferencesRepository = new PrismaUserPreferencesRepository(prisma);
+    this.userPreferencesController = new UserPreferencesController(userPreferencesRepository);
 
-    const importTransactionsUseCase = new ImportTransactionsUseCase(
-      this.transactionRepository,
-      this.categoryRepository,
-      duplicateDetectionService,
-      categorizationService,
-    );
-
-    const checkDuplicateHashesUseCase = new CheckDuplicateHashesUseCase(
-      this.transactionRepository,
-      duplicateDetectionService,
-    );
-
-    const importSelectedTransactionsUseCase =
-      new ImportSelectedTransactionsUseCase(
-        this.transactionRepository,
-        duplicateDetectionService,
-        transactionFactory,
-      );
-
-    // Smart categorization use case
-    const smartCategorizeUseCase = new SmartCategorizeTransactionUseCase(
-      {
-        getTransaction: async (id) => {
-          const result = await this.transactionRepository.findById({
-            value: id,
-          } as any);
-          return result.isSuccess() ? result.getValue() : null;
-        },
-        getCategory: async (id) => {
-          const result = await this.categoryRepository.findById({
-            value: id,
-          } as any);
-          return result.isSuccess() ? result.getValue() : null;
-        },
-        saveTransaction: async (t) => {
-          await this.transactionRepository.update(t);
-        },
-        saveTransactions: async (ts) => {
-          for (const t of ts) {
-            await this.transactionRepository.update(t);
-          }
-        },
-      },
-      smartCategorizationService,
-    );
-
-    // Find similar transactions use case
-    const findSimilarTransactionsUseCase = new FindSimilarTransactionsUseCase(
-      this.transactionRepository,
-    );
-
-    // Dashboard metrics use case
-    const getDashboardMetricsUseCase = new GetDashboardMetricsUseCase(
-      this.transactionRepository,
-      this.categoryRepository,
-    );
-
-    // Controllers
-    this.transactionController = new TransactionController(
-      this.transactionRepository,
-      getDashboardDataUseCase,
-      smartCategorizeUseCase,
-      findSimilarTransactionsUseCase,
-      getDashboardMetricsUseCase,
-    );
-
-    this.importController = new ImportController(
-      importTransactionsUseCase,
-      checkDuplicateHashesUseCase,
-      importSelectedTransactionsUseCase,
-    );
-    this.userPreferencesController = new UserPreferencesController(
-      this.userPreferencesRepository,
-    );
-
+    // Initialize seed controller with default repositories for initial setup
+    const transactionRepository = new PrismaTransactionRepository(prisma, 'default');
+    const categoryRepository = new PrismaCategoryRepository(prisma, 'default');
     this.seedController = new SeedController(
-      this.categoryRepository,
-      this.userPreferencesRepository,
+      categoryRepository,
+      transactionRepository,
     );
 
-    this.categoryController = new CategoryController(this.categoryRepository);
-
-    this.metricsController = new MetricsController(
-      getDashboardMetricsUseCase,
-    );
-
-    this.dashboardRepository = new PrismaDashboardRepository(prisma);
-
-    this.dashboardController = new DashboardController(
-      getDashboardMetricsUseCase,
-      this.dashboardRepository,
-    );
-
-    // Initialize setup service
-    this.initialSetupService = new InitialSetupService(
-      this.categoryRepository,
-      this.transactionRepository,
-      this.seedController,
-    );
   }
 
   private initializeMiddleware() {
@@ -275,29 +175,45 @@ class App {
     this.app.post("/api/transactions", createTransactionLimiter);
     this.app.use("/api/import", uploadLimiter);
 
-    // API routes
+    // Auth routes (no auth required)
+    this.app.use("/api/auth", createAuthRoutes(this.authController));
+
+    // User management routes (admin only)
+    this.app.use(
+      "/api/admin/users",
+      createUserManagementRoutes(this.userManagementController),
+    );
+
+    // API routes (auth required for most)
+    // Use new V2 routes with controller factory
     this.app.use(
       "/api/transactions",
-      createTransactionRoutes(this.transactionController),
+      createTransactionRoutesV2(this.controllerFactory),
     );
-    this.app.use("/api/import", createImportRoutes(this.importController));
+    this.app.use(
+      "/api/categories",
+      createCategoryRoutesV2(this.controllerFactory),
+    );
+    this.app.use(
+      "/api/dashboard",
+      createDashboardRoutesV2(this.controllerFactory),
+    );
+    this.app.use(
+      "/api/import",
+      createImportRoutesV2(this.controllerFactory),
+    );
+    this.app.use(
+      "/api/metrics",
+      createMetricsRoutesV2(this.controllerFactory),
+    );
+
+    // These routes still need conversion
+    // TODO: Convert to factory pattern
     this.app.use(
       "/api/preferences",
       createUserPreferencesRoutes(this.userPreferencesController),
     );
     this.app.use("/api/seed", createSeedRoutes(this.seedController));
-    this.app.use(
-      "/api/categories",
-      createCategoryRoutes(this.categoryController),
-    );
-    this.app.use(
-      "/api/metrics",
-      createMetricsRoutes(this.metricsController),
-    );
-    this.app.use(
-      "/api/dashboard",
-      createDashboardRoutes(this.dashboardController),
-    );
 
     // 404 handler
     this.app.use("*", (req, res) => {
@@ -319,13 +235,8 @@ class App {
       // Test database connection
       await prisma.$connect();
 
-      // Perform initial setup if database is empty
-      const setupResult =
-        await this.initialSetupService.performInitialSetupIfNeeded();
-      if (setupResult.isFailure()) {
-        console.error("❌ Initial setup failed:", setupResult.getError());
-        process.exit(1);
-      }
+      // Initial setup is now handled differently with multi-user support
+      // Admin user is created via seed script
 
       // Start server with automatic port detection
       const server = this.app.listen(preferredPort, () => {

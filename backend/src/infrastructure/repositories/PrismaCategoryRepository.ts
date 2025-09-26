@@ -15,7 +15,10 @@ import {
 } from "@domain/entities/CategoryType";
 
 export class PrismaCategoryRepository implements ICategoryRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly userId?: string
+  ) {}
 
   private prismaToDomain(prismaCategory: PrismaCategory): Result<Category> {
     const categoryIdResult = CategoryId.create(prismaCategory.id);
@@ -42,7 +45,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     });
   }
 
-  private domainToPrisma(category: Category) {
+  private domainToPrisma(category: Category, forceUserId?: string) {
     return {
       id: category.id.value,
       name: category.name,
@@ -51,12 +54,21 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       type: category.type,
       isActive: category.isActive,
       annualBudget: category.annualBudget,
+      userId: forceUserId !== undefined ? forceUserId : (this.userId || 'default'),
+      isGlobal: false, // User-created categories are not global
     };
   }
 
   async findAll(): Promise<Result<Category[]>> {
     try {
+      // Get both global categories and user-specific categories
       const categories = await this.prisma.category.findMany({
+        where: {
+          OR: [
+            { isGlobal: true },
+            { userId: this.userId || 'default' }
+          ]
+        },
         orderBy: {
           name: "asc",
         },
@@ -162,7 +174,12 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     filters?: CategoryFilters,
   ): Promise<Result<Category[]>> {
     try {
-      const where: any = {};
+      const where: any = {
+        OR: [
+          { isGlobal: true },
+          { userId: this.userId || 'default' }
+        ]
+      };
 
       if (filters?.type) {
         where.type = filters.type;
@@ -213,7 +230,8 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async update(category: Category): Promise<Result<void>> {
     try {
-      const { id, ...updateData } = this.domainToPrisma(category);
+      const { id, userId, isGlobal, ...updateData } = this.domainToPrisma(category);
+      // Don't update userId or isGlobal - keep original values
       await this.prisma.category.update({
         where: {
           id: category.id.value,

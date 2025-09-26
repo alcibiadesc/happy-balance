@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Upload } from 'lucide-svelte';
   import { goto } from '$app/navigation';
+  import UserMenu from './UserMenu.svelte';
 
   interface Props {
     collapsed: boolean;
@@ -13,8 +14,8 @@
   }
 </script>
 
-{#if collapsed}
-  <footer class="sidebar-footer sidebar-footer--collapsed">
+<footer class="sidebar-footer" class:sidebar-footer--collapsed={collapsed}>
+  {#if collapsed}
     <button
       class="import-button import-button--icon"
       onclick={handleImportClick}
@@ -23,8 +24,24 @@
     >
       <Upload size={18} strokeWidth={2} />
     </button>
-  </footer>
-{/if}
+    <div class="user-menu-wrapper">
+      <UserMenu />
+    </div>
+  {:else}
+    <div class="footer-content">
+      <button
+        class="import-button import-button--full"
+        onclick={handleImportClick}
+      >
+        <Upload size={18} strokeWidth={2} />
+        <span>Import Transactions</span>
+      </button>
+      <div class="user-section">
+        <UserMenu />
+      </div>
+    </div>
+  {/if}
+</footer>
 
 <style>
   .sidebar-footer {
@@ -35,8 +52,28 @@
 
   .sidebar-footer--collapsed {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
     padding: var(--space-md);
+  }
+
+  .footer-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .user-section {
+    display: flex;
+    justify-content: flex-start;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--border-color);
+  }
+
+  .user-menu-wrapper {
+    display: flex;
+    justify-content: center;
   }
 
   .import-button {
@@ -59,6 +96,10 @@
     width: 40px;
     height: 40px;
     padding: 0;
+  }
+
+  .import-button--full {
+    width: 100%;
   }
 
   .import-button:hover {
