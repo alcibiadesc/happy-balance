@@ -6,6 +6,7 @@ import { DashboardController } from '../controllers/DashboardController';
 import { MetricsController } from '../controllers/MetricsController';
 import { ImportController } from '../controllers/ImportController';
 import { UserPreferencesController } from '../controllers/UserPreferencesController';
+import { SeedController } from '../controllers/SeedController';
 import { PrismaTransactionRepository } from '../repositories/PrismaTransactionRepository';
 import { PrismaCategoryRepository } from '../repositories/PrismaCategoryRepository';
 import { PrismaDashboardRepository } from '../repositories/PrismaDashboardRepository';
@@ -186,10 +187,20 @@ export class ControllerFactory {
   }
 
   /**
-   * Creates a UserPreferencesController
+   * Creates a UserPreferencesController with user-specific context
    */
-  createUserPreferencesController(): UserPreferencesController {
+  createUserPreferencesController(userId: string): UserPreferencesController {
     const userPreferencesRepository = new PrismaUserPreferencesRepository(this.prisma);
     return new UserPreferencesController(userPreferencesRepository);
+  }
+
+  /**
+   * Creates a SeedController with user-specific repositories
+   */
+  createSeedController(userId: string): SeedController {
+    const transactionRepository = new PrismaTransactionRepository(this.prisma, userId);
+    const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
+
+    return new SeedController(categoryRepository, transactionRepository);
   }
 }

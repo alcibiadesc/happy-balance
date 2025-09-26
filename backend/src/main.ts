@@ -4,27 +4,16 @@ import helmet from "helmet";
 import compression from "compression";
 import swaggerUi from "swagger-ui-express";
 import { prisma } from "@infrastructure/database/prisma";
-import { PrismaTransactionRepository } from "@infrastructure/repositories/PrismaTransactionRepository";
-import { PrismaUserPreferencesRepository } from "@infrastructure/repositories/PrismaUserPreferencesRepository";
-import { PrismaCategoryRepository } from "@infrastructure/repositories/PrismaCategoryRepository";
 import { PrismaUserRepository } from "@infrastructure/repositories/PrismaUserRepository";
-import { TransactionController } from "@infrastructure/controllers/TransactionController";
-import { ImportController } from "@infrastructure/controllers/ImportController";
-import { UserPreferencesController } from "@infrastructure/controllers/UserPreferencesController";
-import { SeedController } from "@infrastructure/controllers/SeedController";
-import { CategoryController } from "@infrastructure/controllers/CategoryController";
-import { MetricsController } from "@infrastructure/controllers/MetricsController";
-import { DashboardController } from "@infrastructure/controllers/DashboardController";
 import { AuthController } from "@infrastructure/controllers/AuthController";
 import { UserManagementController } from "@infrastructure/controllers/UserManagementController";
-import { PrismaDashboardRepository } from "@infrastructure/repositories/PrismaDashboardRepository";
 import { createTransactionRoutesV2 } from "@infrastructure/routes/transactionRoutesV2";
 import { createCategoryRoutesV2 } from "@infrastructure/routes/categoryRoutesV2";
 import { createDashboardRoutesV2 } from "@infrastructure/routes/dashboardRoutesV2";
 import { createImportRoutesV2 } from "@infrastructure/routes/importRoutesV2";
 import { createMetricsRoutesV2 } from "@infrastructure/routes/metricsRoutesV2";
-import { createUserPreferencesRoutes } from "@infrastructure/routes/userPreferencesRoutes";
-import { createSeedRoutes } from "@infrastructure/routes/seedRoutes";
+import { createUserPreferencesRoutesV2 } from "@infrastructure/routes/userPreferencesRoutesV2";
+import { createSeedRoutesV2 } from "@infrastructure/routes/seedRoutesV2";
 import { ControllerFactory } from "@infrastructure/factories/ControllerFactory";
 import { createAuthRoutes } from "@infrastructure/routes/authRoutes";
 import { createUserManagementRoutes } from "@infrastructure/routes/userManagementRoutes";
@@ -38,20 +27,6 @@ import {
   createTransactionLimiter,
 } from "@infrastructure/middleware/rateLimiter";
 
-// Import use cases and services
-import { GetDashboardDataUseCase } from "@application/use-cases/GetDashboardDataUseCase";
-import { ImportTransactionsUseCase } from "@application/use-cases/ImportTransactionsUseCase";
-import { CheckDuplicateHashesUseCase } from "@application/use-cases/CheckDuplicateHashesUseCase";
-import { ImportSelectedTransactionsUseCase } from "@application/use-cases/ImportSelectedTransactionsUseCase";
-import { SmartCategorizeTransactionUseCase } from "@application/use-cases/SmartCategorizeTransactionUseCase";
-import { FindSimilarTransactionsUseCase } from "@application/use-cases/FindSimilarTransactionsUseCase";
-import { GetDashboardMetricsUseCase } from "@application/use-cases/GetDashboardMetricsUseCase";
-import { DuplicateDetectionService } from "@domain/services/DuplicateDetectionService";
-import { CategorizationService } from "@domain/services/CategorizationService";
-import { FinancialCalculationService } from "@domain/services/FinancialCalculationService";
-import { SmartCategorizationService } from "@domain/services/SmartCategorizationService";
-import { InitialSetupService } from "@domain/services/InitialSetupService";
-import { TransactionFactory } from "./domain/factories/TransactionFactory";
 
 class App {
   private app: express.Application;
@@ -60,9 +35,6 @@ class App {
   private controllerFactory: ControllerFactory;
   private authController!: AuthController;
   private userManagementController!: UserManagementController;
-  private userPreferencesController!: UserPreferencesController;
-  private seedController!: SeedController;
-  private initialSetupService!: InitialSetupService;
 
   constructor() {
     this.app = express();
@@ -80,17 +52,6 @@ class App {
     this.authController = new AuthController(this.userRepository);
     this.userManagementController = new UserManagementController(this.userRepository);
 
-    // Initialize user preferences controller
-    const userPreferencesRepository = new PrismaUserPreferencesRepository(prisma);
-    this.userPreferencesController = new UserPreferencesController(userPreferencesRepository);
-
-    // Initialize seed controller with default repositories for initial setup
-    const transactionRepository = new PrismaTransactionRepository(prisma, 'default');
-    const categoryRepository = new PrismaCategoryRepository(prisma, 'default');
-    this.seedController = new SeedController(
-      categoryRepository,
-      transactionRepository,
-    );
 
   }
 
@@ -204,13 +165,12 @@ class App {
       createMetricsRoutesV2(this.controllerFactory),
     );
 
-    // These routes still need conversion
-    // TODO: Convert to factory pattern
+    // V2 routes using factory pattern for all functionality
     this.app.use(
       "/api/preferences",
-      createUserPreferencesRoutes(this.userPreferencesController),
+      createUserPreferencesRoutesV2(this.controllerFactory),
     );
-    this.app.use("/api/seed", createSeedRoutes(this.seedController));
+    this.app.use("/api/seed", createSeedRoutesV2(this.controllerFactory));
 
     // 404 handler
     this.app.use("*", (req, res) => {
