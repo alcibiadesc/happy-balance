@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { Tag, Eye, EyeOff, Trash2 } from 'lucide-svelte';
+  import { Tag, Eye, EyeOff, Trash2, MoreVertical } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
   import type { Transaction, Category } from '$lib/types/transaction';
+  import { clickOutside } from '$lib/utils/clickOutside';
 
   interface TransactionRowProps {
     transaction: Transaction;
@@ -39,9 +40,21 @@
     formatAmount
   }: TransactionRowProps = $props();
 
+  // State for actions menu
+  let showActionsMenu = $state(false);
+
   // Focus directive for auto-focusing input
   function focus(node: HTMLElement) {
     node.focus();
+  }
+
+  function toggleActionsMenu(e: Event) {
+    e.stopPropagation();
+    showActionsMenu = !showActionsMenu;
+  }
+
+  function closeActionsMenu() {
+    showActionsMenu = false;
   }
 
   async function handleObservationsKeydown(e: KeyboardEvent) {
@@ -140,7 +153,8 @@
     </div>
   </div>
 
-  <div class="transaction-actions">
+  <!-- Desktop: Individual action buttons -->
+  <div class="transaction-actions transaction-actions--desktop">
     <button
       class="action-btn"
       class:hidden={transaction.hidden}
@@ -167,6 +181,49 @@
       <Trash2 size={14} />
     </button>
   </div>
+
+  <!-- Mobile: Actions menu -->
+  <div class="transaction-actions transaction-actions--mobile" use:clickOutside={closeActionsMenu}>
+    <button
+      class="action-btn action-btn--menu"
+      onclick={toggleActionsMenu}
+      aria-label="Actions menu"
+    >
+      <MoreVertical size={16} />
+    </button>
+
+    {#if showActionsMenu}
+      <div class="actions-dropdown">
+        <button
+          class="dropdown-item"
+          onclick={(e) => {
+            e.stopPropagation();
+            onToggleHide();
+            closeActionsMenu();
+          }}
+        >
+          {#if transaction.hidden}
+            <EyeOff size={14} />
+            <span>Show</span>
+          {:else}
+            <Eye size={14} />
+            <span>Hide</span>
+          {/if}
+        </button>
+        <button
+          class="dropdown-item dropdown-item--danger"
+          onclick={(e) => {
+            e.stopPropagation();
+            onDelete();
+            closeActionsMenu();
+          }}
+        >
+          <Trash2 size={14} />
+          <span>Delete</span>
+        </button>
+      </div>
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -183,7 +240,7 @@
     cursor: pointer;
     position: relative;
     min-height: 4rem;
-    overflow: hidden;
+    overflow: visible; /* Changed to visible for dropdown */
   }
 
   .transaction-card:hover {
@@ -342,6 +399,17 @@
   .transaction-actions {
     display: flex;
     gap: 0.25rem;
+    position: relative;
+  }
+
+  /* Hide mobile menu on desktop */
+  .transaction-actions--mobile {
+    display: none;
+  }
+
+  /* Show desktop actions by default */
+  .transaction-actions--desktop {
+    display: flex;
   }
 
   .action-btn {
@@ -375,6 +443,65 @@
   input[type="checkbox"] {
     margin-right: 0.5rem;
     cursor: pointer;
+  }
+
+  /* Actions dropdown menu */
+  .actions-dropdown {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05);
+    min-width: 140px;
+    z-index: 1000;
+    overflow: hidden;
+    animation: dropdownSlide 0.15s ease-out;
+  }
+
+  @keyframes dropdownSlide {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    text-align: left;
+  }
+
+  .dropdown-item:hover {
+    background: var(--surface-muted);
+  }
+
+  .dropdown-item--danger {
+    color: var(--error);
+  }
+
+  .dropdown-item--danger:hover {
+    background: var(--error-bg);
+  }
+
+  .action-btn--menu {
+    padding: 0.25rem;
+    border-radius: 0.375rem;
   }
 
   /* Ultra-thin mobile design */
@@ -415,6 +542,7 @@
       font-size: 0.9375rem;
       font-weight: 600;
       margin-top: 0.125rem;
+      padding-right: 2rem; /* Space for menu button */
     }
 
     .transaction-meta {
@@ -439,22 +567,60 @@
       border-radius: 0.375rem;
     }
 
-    .transaction-actions {
+    /* Hide desktop actions on mobile */
+    .transaction-actions--desktop {
+      display: none;
+    }
+
+    /* Show mobile menu */
+    .transaction-actions--mobile {
+      display: flex;
       position: absolute;
-      top: 0.75rem;
-      right: 0.75rem;
-      gap: 0.125rem;
-      opacity: 0.7;
+      top: 0.5rem;
+      right: 0.5rem;
+    }
+
+    .transaction-actions {
+      opacity: 1;
     }
 
     .action-btn {
-      padding: 0.25rem;
+      padding: 0.375rem;
       border-radius: 0.375rem;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
 
-    .action-btn svg {
-      width: 12px;
-      height: 12px;
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
+    .action-btn--menu {
+      padding: 0.25rem;
+    }
+
+    .action-btn--menu svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Adjust dropdown position for mobile */
+    .actions-dropdown {
+      top: calc(100% + 0.375rem);
+      right: 0;
+      min-width: 120px;
+      font-size: 0.8125rem;
+    }
+
+    .dropdown-item {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8125rem;
+    }
+
+    .dropdown-item svg {
+      width: 14px;
+      height: 14px;
     }
 
     input[type="checkbox"] {
