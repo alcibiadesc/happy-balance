@@ -202,7 +202,7 @@ export function createSettingsStore(apiBase: string) {
       // Reset to defaults
       settings = Settings.default();
 
-      importStatus = t.get()('settings.delete_success');
+      importStatus = get(t)('settings.delete_success');
       importSuccess = true;
 
       setTimeout(() => {
@@ -243,7 +243,7 @@ export function createSettingsStore(apiBase: string) {
       localStorage.removeItem('categories');
       localStorage.removeItem('user-preferences');
 
-      importStatus = t.get()('settings.reset_success');
+      importStatus = get(t)('settings.reset_success');
       importSuccess = true;
 
       setTimeout(() => {
