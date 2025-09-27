@@ -42,19 +42,28 @@ export function setTheme(newTheme: Theme) {
   }
 }
 
-// Función para aplicar el tema al DOM
+// Función para aplicar el tema al DOM con optimizaciones
 export function applyTheme(theme: Theme) {
   if (!browser) return;
 
   const effectiveTheme = theme === "system" ? getSystemTheme() : theme;
 
-  if (effectiveTheme === "dark") {
-    document.documentElement.classList.add("dark");
-    document.documentElement.setAttribute("data-theme", "dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-    document.documentElement.setAttribute("data-theme", "light");
-  }
+  // Use requestAnimationFrame for smoother transition
+  requestAnimationFrame(() => {
+    const root = document.documentElement;
+
+    // Batch DOM operations
+    if (effectiveTheme === "dark") {
+      root.classList.add("dark");
+      root.setAttribute("data-theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      root.setAttribute("data-theme", "light");
+    }
+
+    // Force a single reflow/repaint
+    void root.offsetHeight;
+  });
 }
 
 // Escuchar cambios del sistema

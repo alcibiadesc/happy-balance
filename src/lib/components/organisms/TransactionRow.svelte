@@ -172,24 +172,25 @@
 <style>
   .transaction-card {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background: var(--surface-muted);
-    border: 1px solid transparent;
-    border-radius: 0.75rem;
-    margin-bottom: 0.75rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    align-items: stretch;
+    gap: 0.875rem;
+    padding: 0.875rem;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 0.875rem;
+    margin-bottom: 0.625rem;
+    transition: all 0.2s ease;
     cursor: pointer;
     position: relative;
-    min-height: 4.5rem;
+    min-height: 4rem;
+    overflow: hidden;
   }
 
   .transaction-card:hover {
     background: var(--surface-hover);
-    border-color: var(--border-color);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+    border-color: var(--border-color-hover);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px) scale(1.005);
   }
 
   .transaction-card.selected {
@@ -199,34 +200,52 @@
   }
 
   .transaction-card.hidden {
-    opacity: 0.5;
-    background: var(--surface-muted);
+    opacity: 0.6;
+    background: repeating-linear-gradient(
+      45deg,
+      var(--surface-muted),
+      var(--surface-muted) 10px,
+      var(--surface-elevated) 10px,
+      var(--surface-elevated) 20px
+    );
   }
 
   .transaction-details {
     flex: 1;
+    min-width: 0; /* Prevent text overflow */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   .transaction-main {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 1rem;
   }
 
   .transaction-description {
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 0.9375rem;
     color: var(--text-primary);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .transaction-observations {
-    font-size: 0.8rem;
+    font-size: 0.8125rem;
     color: var(--text-secondary);
-    font-style: italic;
-    margin-top: 2px;
+    font-style: normal;
+    margin-top: 0.25rem;
     cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 3px;
-    transition: all 0.2s ease;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    transition: all 0.15s ease;
+    background: var(--surface-muted);
+    display: inline-block;
   }
 
   .transaction-observations:hover {
@@ -261,13 +280,19 @@
     display: flex;
     gap: var(--space-xs);
     font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin-top: 4px;
+    color: var(--text-tertiary);
+    margin-top: 0.25rem;
+    opacity: 0.9;
   }
 
   .transaction-amount {
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1rem;
     color: var(--froly);
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: right;
+    min-width: fit-content;
   }
 
   .transaction-amount.income {
@@ -352,19 +377,90 @@
     cursor: pointer;
   }
 
+  /* Ultra-thin mobile design */
   @media (max-width: 768px) {
     .transaction-card {
-      padding: 0.875rem;
-      gap: 0.75rem;
+      padding: 0.75rem;
+      gap: 0.625rem;
+      margin-bottom: 0.5rem;
+      border-radius: 0.625rem;
+      min-height: unset;
+      border: none;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    .transaction-card:active {
+      transform: scale(0.99);
+      box-shadow: none;
     }
 
     .transaction-main {
-      flex-direction: column;
-      gap: 0.5rem;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .transaction-main > div:first-child {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .transaction-description {
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.125rem;
     }
 
     .transaction-amount {
       font-size: 0.9375rem;
+      font-weight: 600;
+      margin-top: 0.125rem;
+    }
+
+    .transaction-meta {
+      font-size: 0.6875rem;
+      margin-top: 0.125rem;
+      opacity: 0.8;
+    }
+
+    .transaction-observations {
+      font-size: 0.75rem;
+      margin-top: 0.125rem;
+      padding: 0.125rem 0.25rem;
+    }
+
+    .category-selector {
+      margin-top: 0.375rem;
+    }
+
+    .category-btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.6875rem;
+      border-radius: 0.375rem;
+    }
+
+    .transaction-actions {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      gap: 0.125rem;
+      opacity: 0.7;
+    }
+
+    .action-btn {
+      padding: 0.25rem;
+      border-radius: 0.375rem;
+    }
+
+    .action-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin-right: 0.375rem;
     }
   }
 </style>

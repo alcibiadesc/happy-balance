@@ -103,33 +103,33 @@
 
 <style>
   .transaction-group {
-    margin-bottom: 2rem;
-    background: var(--surface-elevated);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+    background: transparent;
+    border-radius: 0.875rem;
+    padding: 0;
   }
 
   .group-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 1rem;
-    margin: -0.5rem -0.5rem 1rem -0.5rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
+    padding: 0.625rem 0.875rem;
+    margin-bottom: 0.625rem;
+    border-radius: 0.625rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     color: var(--text-secondary);
-    background: transparent;
-    border: none;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-color);
     cursor: pointer;
-    transition: background-color 0.2s;
-    width: calc(100% + 1rem);
+    transition: all 0.15s ease;
+    width: 100%;
   }
 
   .group-header:hover {
-    background: var(--surface-muted);
+    background: var(--surface-hover);
+    border-color: var(--border-color-hover);
+    transform: translateY(-1px);
   }
 
   .group-header-left {
@@ -145,13 +145,10 @@
   }
 
   .group-count {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-  }
-
-  .transaction-group.collapsed {
-    padding-bottom: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    opacity: 0.9;
   }
 
   .transaction-group.collapsed .group-header {
@@ -159,7 +156,8 @@
   }
 
   .group-total {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-primary);
+    font-size: 0.9375rem;
   }
 </style>

@@ -100,14 +100,54 @@
 
 /* Dark mode disabled - using manual toggle only */
 
-/* Global theme transition for smooth switching */
-* {
-  transition: var(--transition-theme);
+/* Theme transition - only apply to specific elements that change color */
+html {
+  transition: none;
+}
+
+/* Apply transitions only to elements that actually change during theme switch */
+body,
+.transaction-card,
+.transaction-group,
+.toolbar,
+.sidebar,
+.filters-bento,
+.bento-item,
+.filter-pill,
+.toolbar-btn,
+.nav-link,
+.theme-toggle,
+.user-menu-dropdown,
+.category-btn,
+.fab,
+.modal-content,
+.card,
+.settings-card {
+  transition: background-color 0.15s ease,
+              color 0.15s ease,
+              border-color 0.15s ease,
+              box-shadow 0.15s ease;
 }
 
 /* Disable transitions on prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  body,
+  .transaction-card,
+  .transaction-group,
+  .toolbar,
+  .sidebar,
+  .filters-bento,
+  .bento-item,
+  .filter-pill,
+  .toolbar-btn,
+  .nav-link,
+  .theme-toggle,
+  .user-menu-dropdown,
+  .category-btn,
+  .fab,
+  .modal-content,
+  .card,
+  .settings-card {
     transition: none !important;
   }
 }
