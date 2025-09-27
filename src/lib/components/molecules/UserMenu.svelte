@@ -20,20 +20,38 @@
       const rect = menuButton.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
+      const spaceRight = window.innerWidth - rect.right;
 
-      // If there's not enough space below (less than 300px), show above
+      // Check if sidebar is collapsed (button is close to left edge)
+      const isCollapsed = rect.left < 100;
+
+      // Position dropdown appropriately
+      let horizontalPosition = '';
+
+      if (isCollapsed) {
+        // When sidebar is collapsed, show dropdown to the right of the button
+        horizontalPosition = `left: ${rect.right + 8}px;`;
+      } else if (spaceRight < 300) {
+        // If not enough space on the right, align to right edge of button
+        horizontalPosition = `right: ${window.innerWidth - rect.right}px;`;
+      } else {
+        // Default: align to left edge of button
+        horizontalPosition = `left: ${rect.left}px;`;
+      }
+
+      // Vertical positioning
       if (spaceBelow < 300 && spaceAbove > 300) {
         dropdownStyle = `
           position: fixed;
           bottom: ${window.innerHeight - rect.top + 8}px;
-          right: ${window.innerWidth - rect.right}px;
+          ${horizontalPosition}
           z-index: 9999;
         `;
       } else {
         dropdownStyle = `
           position: fixed;
           top: ${rect.bottom + 8}px;
-          right: ${window.innerWidth - rect.right}px;
+          ${horizontalPosition}
           z-index: 9999;
         `;
       }

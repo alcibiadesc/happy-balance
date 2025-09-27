@@ -104,11 +104,11 @@
 <style>
   .transaction-group {
     margin-bottom: 2rem;
-    background: white;
+    background: var(--surface-elevated);
     border-radius: 1rem;
     padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-                0 1px 2px rgba(0, 0, 0, 0.03);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
   }
 
   .group-header {
@@ -129,7 +129,7 @@
   }
 
   .group-header:hover {
-    background: rgba(229, 231, 235, 0.3);
+    background: var(--surface-muted);
   }
 
   .group-header-left {

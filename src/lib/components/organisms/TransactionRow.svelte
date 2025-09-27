@@ -175,7 +175,7 @@
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: rgba(249, 250, 251, 0.5);
+    background: var(--surface-muted);
     border: 1px solid transparent;
     border-radius: 0.75rem;
     margin-bottom: 0.75rem;
@@ -186,10 +186,9 @@
   }
 
   .transaction-card:hover {
-    background: rgba(249, 250, 251, 0.9);
-    border-color: var(--gray-200);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05),
-                0 1px 3px rgba(0, 0, 0, 0.03);
+    background: var(--surface-hover);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-md);
     transform: translateY(-1px);
   }
 
@@ -201,7 +200,7 @@
 
   .transaction-card.hidden {
     opacity: 0.5;
-    background: var(--gray-50);
+    background: var(--surface-muted);
   }
 
   .transaction-details {
@@ -231,7 +230,7 @@
   }
 
   .transaction-observations:hover {
-    background: rgba(0, 0, 0, 0.03);
+    background: var(--surface-muted);
   }
 
   .transaction-observations.empty {
@@ -248,7 +247,7 @@
     font-size: 0.8125rem;
     border: 1px solid var(--primary);
     border-radius: 4px;
-    background: white;
+    background: var(--surface-elevated);
     color: var(--text-primary);
     outline: none;
     transition: all 0.2s ease;

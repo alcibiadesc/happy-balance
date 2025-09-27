@@ -14,6 +14,8 @@
   --primary: var(--evening-sea);
   --primary-hover: #034a57;
   --primary-light: #e6f0f2;
+  --primary-foreground: #ffffff;
+  --primary-rgb: 2, 60, 70;
 
   --accent: var(--froly);
   --accent-hover: #f46456;
@@ -22,6 +24,7 @@
   --surface: var(--bridesmaid);
   --surface-elevated: #ffffff;
   --surface-muted: #f9f1e8;
+  --surface-hover: #f5ebe0;
 
   --success: var(--acapulco);
   --success-hover: #6ba696;
@@ -109,6 +112,53 @@
   }
 }
 
+/* Additional semantic colors */
+:root {
+  --error: #ef4444;
+  --error-bg: #fee;
+  --error-border: #fcc;
+  --error-alpha-10: rgba(239, 68, 68, 0.1);
+  --info: #3b82f6;
+  --info-bg: #eff6ff;
+  --info-border: #dbeafe;
+  --warning-bg: #fffbeb;
+  --warning-border: #fde68a;
+  --text-tertiary: var(--gray-400);
+  --evening-sea-rgb: 2, 60, 70;
+
+  /* Cornflower blue for selections */
+  --cornflower: #6495ed;
+  --cornflower-alpha-10: rgba(100, 149, 237, 0.1);
+  --cornflower-alpha-20: rgba(100, 149, 237, 0.2);
+
+  /* Alpha variations */
+  --acapulco-alpha-10: rgba(122, 186, 165, 0.1);
+  --primary-alpha-10: rgba(2, 60, 70, 0.1);
+}
+
+html.dark {
+  --error: #f87171;
+  --error-bg: rgba(239, 68, 68, 0.1);
+  --error-border: rgba(239, 68, 68, 0.3);
+  --error-alpha-10: rgba(248, 113, 113, 0.1);
+  --info: #60a5fa;
+  --info-bg: rgba(59, 130, 246, 0.1);
+  --info-border: rgba(59, 130, 246, 0.3);
+  --warning-bg: rgba(251, 191, 36, 0.1);
+  --warning-border: rgba(251, 191, 36, 0.3);
+  --text-tertiary: var(--gray-500);
+  --evening-sea-rgb: 122, 186, 165;
+
+  /* Cornflower blue for selections - adjusted for dark mode */
+  --cornflower: #7ba7f5;
+  --cornflower-alpha-10: rgba(123, 167, 245, 0.15);
+  --cornflower-alpha-20: rgba(123, 167, 245, 0.25);
+
+  /* Alpha variations for dark mode */
+  --acapulco-alpha-10: rgba(122, 186, 165, 0.15);
+  --primary-alpha-10: rgba(122, 186, 165, 0.15);
+}
+
 /* Utility classes */
 .text-light {
   font-weight: 300;
@@ -132,6 +182,7 @@ html.dark {
   --surface: var(--gray-900);
   --surface-elevated: var(--gray-800);
   --surface-muted: var(--gray-700);
+  --surface-hover: var(--gray-600);
 
   /* Text colors for dark mode */
   --text-primary: var(--bridesmaid);
@@ -143,6 +194,8 @@ html.dark {
   --primary: var(--acapulco);
   --primary-hover: #8fc4af;
   --primary-light: rgba(122, 186, 165, 0.1);
+  --primary-foreground: var(--gray-900);
+  --primary-rgb: 122, 186, 165;
 
   /* Accent colors adjusted for dark mode */
   --accent-light: rgba(245, 121, 108, 0.1);

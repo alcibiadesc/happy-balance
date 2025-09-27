@@ -62,18 +62,18 @@
   }
 
   .card-icon.appearance {
-    background: rgba(245, 121, 108, 0.1);
-    color: #f5796c;
+    background: var(--accent-light);
+    color: var(--accent);
   }
 
   .card-icon.localization {
-    background: rgba(122, 186, 165, 0.1);
+    background: var(--acapulco-alpha-10);
     color: var(--acapulco);
   }
 
   .card-icon.data {
-    background: rgba(254, 205, 44, 0.1);
-    color: #fecd2c;
+    background: var(--warning-light);
+    color: var(--warning);
   }
 
   .card-title {

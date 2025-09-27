@@ -4,29 +4,29 @@
 .page-container {
   width: 100%;
   min-height: 100vh;
-  background: var(--gray-50);
+  background: var(--surface);
   padding-bottom: 5rem;
 }
 
 /* Header */
 .transactions-header {
-  background: white;
-  border-bottom: 1px solid var(--gray-100);
+  background: var(--surface-elevated);
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 30;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Toolbar */
 .toolbar {
-  background: white;
+  background: var(--surface-elevated);
   position: sticky;
   top: 0;
   z-index: 20;
   padding: 1rem 0;
-  border-bottom: 1px solid var(--gray-100);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
 }
 
 .toolbar-content {
@@ -50,16 +50,14 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  background: white;
+  background: var(--surface);
   padding: 0.5rem;
   border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-              0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-sm);
 }
 
 .toolbar-actions:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
-              0 2px 4px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-md);
 }
 
 .toolbar-btn {
@@ -67,8 +65,8 @@
   padding: 0 1.25rem;
   border: none;
   border-radius: 0.625rem;
-  background: #FFF7ED;
-  color: #64748b;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -81,19 +79,20 @@
 }
 
 .toolbar-btn:hover {
-  background: #FFF3E0;
+  background: var(--surface-hover);
+  color: var(--text-primary);
   transform: translateY(-1px);
 }
 
 .toolbar-btn:active {
   transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-sm);
 }
 
 .toolbar-btn.active {
-  background: var(--acapulco);
-  color: white;
-  box-shadow: 0 2px 8px rgba(122, 186, 165, 0.25);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.25);
 }
 
 .toolbar-btn.icon-only {
@@ -103,7 +102,7 @@
 }
 
 .toolbar-btn.has-filters {
-  background: rgba(122, 186, 165, 0.1);
+  background: var(--acapulco-alpha-10);
   color: var(--acapulco);
 }
 
@@ -118,17 +117,18 @@
 }
 
 .toolbar-btn.danger:hover {
-  background: rgba(239, 68, 68, 0.05);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: rgb(239, 68, 68);
+  background: var(--error-alpha-10);
+  border-color: var(--error-border);
+  color: var(--error);
   transform: translateY(-1px) scale(1.02);
 }
 
 .toolbar-separator {
   width: 1px;
   height: 1.5rem;
-  background: rgba(148, 163, 184, 0.2);
+  background: var(--border-color);
   margin: 0 0.25rem;
+  opacity: 0.5;
 }
 
 /* Transactions List */
@@ -148,7 +148,7 @@
   border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--text-secondary);
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--border-color);
   cursor: pointer;
   display: flex;
   align-items: center;

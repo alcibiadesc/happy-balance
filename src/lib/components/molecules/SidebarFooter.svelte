@@ -74,6 +74,15 @@
   .user-menu-wrapper {
     display: flex;
     justify-content: center;
+    width: 100%;
+  }
+
+  .sidebar-footer--collapsed .user-menu-wrapper :global(.user-menu-trigger) {
+    padding: 0.25rem;
+  }
+
+  .sidebar-footer--collapsed .user-menu-wrapper :global(.chevron) {
+    display: none;
   }
 
   .import-button {

@@ -203,7 +203,7 @@
 <style>
   /* Bento Box Filters */
   .filters-bento {
-    background: white;
+    background: var(--surface-elevated);
     border: none;
     padding: 1.5rem;
     margin: 1rem auto 2rem auto;
@@ -213,13 +213,11 @@
     animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     position: relative;
     border-radius: 1rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
-                0 2px 4px rgba(0, 0, 0, 0.03);
+    box-shadow: var(--shadow-md);
   }
 
   .filters-bento:hover {
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05),
-                0 4px 6px rgba(0, 0, 0, 0.03);
+    box-shadow: var(--shadow-lg);
   }
 
   @keyframes slideDown {
@@ -245,16 +243,16 @@
   }
 
   .bento-item {
-    background: rgba(249, 250, 251, 0.5);
-    border: 1px solid rgba(229, 231, 235, 0.5);
+    background: var(--surface-muted);
+    border: 1px solid var(--border-color);
     border-radius: 0.625rem;
     padding: 0.75rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .bento-item:hover {
-    background: rgba(249, 250, 251, 0.8);
-    border-color: rgba(209, 213, 219, 0.5);
+    background: var(--surface-hover);
+    border-color: var(--border-color-hover);
     transform: translateY(-2px);
   }
 
@@ -272,10 +270,10 @@
     min-height: 2.5rem;
     border: none;
     border-radius: 0.625rem;
-    background: #FFF7ED;
+    background: var(--surface-muted);
     font-size: 0.875rem;
     font-weight: 500;
-    color: #64748b;
+    color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
@@ -283,10 +281,10 @@
   }
 
   .filter-pill:hover {
-    background: #FFF3E0;
+    background: var(--surface-hover);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-    color: #475569;
+    color: var(--text-primary);
   }
 
   .filter-pill:active {
@@ -342,10 +340,10 @@
     min-height: 2.5rem;
     border: none;
     border-radius: 0.625rem;
-    background: #FFF7ED;
+    background: var(--surface-muted);
     font-size: 0.875rem;
     font-weight: 500;
-    color: #64748b;
+    color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     justify-content: space-between;
@@ -354,16 +352,16 @@
   }
 
   .category-pill:hover {
-    background: #FFF3E0;
+    background: var(--surface-hover);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-    color: #475569;
+    color: var(--text-primary);
   }
 
   .category-pill.active {
-    background: rgba(122, 186, 165, 0.1);
+    background: var(--acapulco-alpha-10);
     color: var(--acapulco);
-    box-shadow: 0 2px 8px rgba(122, 186, 165, 0.15);
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.15);
   }
 
   .chevron {
@@ -420,7 +418,7 @@
   }
 
   .category-chip-mini.selected {
-    background: rgba(122, 186, 165, 0.1);
+    background: var(--acapulco-alpha-10);
     color: var(--acapulco);
   }
 
@@ -474,7 +472,7 @@
     min-height: 2.5rem;
     border: none;
     border-radius: 0.625rem;
-    background: #FEE2E2;
+    background: var(--error-bg);
     color: #EF4444;
     font-size: 0.875rem;
     font-weight: 500;
@@ -483,7 +481,7 @@
   }
 
   .clear-pill:hover {
-    background: #FCA5A5;
+    background: var(--error);
     color: white;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(239, 68, 68, 0.15);
@@ -496,7 +494,7 @@
     gap: 0.5rem;
     margin-top: 1.5rem;
     padding: 1rem;
-    background: rgba(249, 250, 251, 0.5);
+    background: var(--surface-muted);
     border-radius: 0.75rem;
     border: 1px dashed rgba(209, 213, 219, 0.5);
     position: relative;
@@ -516,7 +514,7 @@
     min-height: 2rem;
     border: none;
     border-radius: 1rem;
-    background: #FFF7ED;
+    background: var(--surface-muted);
     font-size: 0.8125rem;
     font-weight: 500;
     line-height: 1;
@@ -526,7 +524,7 @@
   }
 
   .tag-mini:hover {
-    background: #FFF3E0;
+    background: var(--surface-hover);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
   }
@@ -546,12 +544,12 @@
   }
 
   .tag-mini.income-tag {
-    background: #E6F7F2;
+    background: var(--success-light);
     color: #10B981;
   }
 
   .tag-mini.expense-tag {
-    background: #FEE2E2;
+    background: var(--error-bg);
     color: #EF4444;
   }
 
@@ -561,8 +559,8 @@
   }
 
   .tag-mini.category-tag {
-    background: #FFF7ED;
-    color: #64748b;
+    background: var(--surface-muted);
+    color: var(--text-secondary);
   }
 
   /* Responsive Bento Grid */

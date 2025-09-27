@@ -537,12 +537,12 @@
 <style>
   .transactions-page {
     min-height: 100vh;
-    background: linear-gradient(180deg, #FAFAFA 0%, #F5F5F5 100%);
+    background: var(--surface);
   }
 
   .transactions-header {
     background: var(--surface-elevated);
-    border-bottom: 1px solid var(--gray-200);
+    border-bottom: 1px solid var(--border-color);
     padding: var(--space-2xl) var(--space-lg);
     position: relative;
     z-index: 25;
