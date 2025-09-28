@@ -11,8 +11,8 @@
 
 #### 1. Clone the Repository
 ```bash
-git clone https://github.com/alcibiadesc/expense-tracker.git
-cd expense-tracker
+git clone https://github.com/alcibiadesc/happy-balance.git
+cd happy-balance
 ```
 
 #### 2. Configure Environment Variables
@@ -50,13 +50,13 @@ docker-compose down -v
 
 2. **Create a New Stack**
    - Go to **Stacks** → **Add stack**
-   - Name your stack: `expense-tracker`
+   - Name your stack: `happy-balance`
 
 3. **Configure the Stack**
 
    **Option A: Git Repository (Recommended)**
    - Select **Git Repository**
-   - Repository URL: `https://github.com/alcibiadesc/expense-tracker.git`
+   - Repository URL: `https://github.com/alcibiadesc/happy-balance.git`
    - Reference: `main` (or your preferred branch)
    - Compose path: `docker-compose.yml`
 
@@ -105,14 +105,14 @@ If you prefer to manage containers individually:
 
 1. **Create Network**
    - Go to **Networks** → **Add network**
-   - Name: `expense-tracker`
+   - Name: `happy-balance`
    - Driver: `bridge`
 
 2. **Deploy PostgreSQL**
    - Go to **Containers** → **Add container**
    - Image: `postgres:17-alpine`
-   - Name: `expense-tracker-db`
-   - Network: `expense-tracker`
+   - Name: `happy-balance-db`
+   - Network: `happy-balance`
    - Environment variables:
      ```
      POSTGRES_USER=postgres
@@ -126,12 +126,12 @@ If you prefer to manage containers individually:
    - Build the image first (if not using pre-built):
      ```bash
      cd backend
-     docker build -t expense-tracker-backend .
+     docker build -t happy-balance-backend .
      ```
    - In Portainer, go to **Containers** → **Add container**
-   - Image: `expense-tracker-backend`
-   - Name: `expense-tracker-backend`
-   - Network: `expense-tracker`
+   - Image: `happy-balance-backend`
+   - Name: `happy-balance-backend`
+   - Network: `happy-balance`
    - Port mapping: `3004:3004`
    - Environment variables (as listed above)
    - Restart policy: `unless-stopped`
@@ -139,7 +139,7 @@ If you prefer to manage containers individually:
 4. **Deploy Frontend**
    - Build the image first:
      ```bash
-     docker build -t expense-tracker-frontend .
+     docker build -t happy-balance-frontend .
      ```
    - Deploy similarly to backend
    - Port mapping: `5173:5173`
@@ -150,7 +150,7 @@ If you prefer to manage containers individually:
 The PostgreSQL data is stored in a Docker volume. To backup:
 ```bash
 # Backup database
-docker exec expense-tracker-db pg_dump -U postgres happy_balance > backup.sql
+docker exec happy-balance-db pg_dump -U postgres happy_balance > backup.sql
 
 # Restore database
 docker exec -i expense-tracker-db psql -U postgres happy_balance < backup.sql
@@ -281,9 +281,9 @@ Save this as a Portainer template for easy deployment:
       "note": "Remember to change all passwords and secrets!",
       "categories": ["finance", "productivity"],
       "platform": "linux",
-      "logo": "https://raw.githubusercontent.com/alcibiadesc/expense-tracker/main/static/logo/happy-balance-logo.png",
+      "logo": "https://raw.githubusercontent.com/alcibiadesc/happy-balance/main/static/logo/happy-balance-logo.png",
       "repository": {
-        "url": "https://github.com/alcibiadesc/expense-tracker",
+        "url": "https://github.com/alcibiadesc/happy-balance",
         "stackfile": "docker-compose.yml"
       },
       "env": [
@@ -313,7 +313,7 @@ Save this as a Portainer template for easy deployment:
 
 ## 📞 Support
 
-- **GitHub Issues**: [https://github.com/alcibiadesc/expense-tracker/issues](https://github.com/alcibiadesc/expense-tracker/issues)
+- **GitHub Issues**: [https://github.com/alcibiadesc/happy-balance/issues](https://github.com/alcibiadesc/happy-balance/issues)
 - **Documentation**: Check the `/docs` folder in the repository
 
 ---

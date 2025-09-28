@@ -4,12 +4,12 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Expense Tracker API',
+      title: 'Happy Balance API',
       version: '1.0.0',
-      description: 'Complete API documentation for Expense Tracker application',
+      description: 'Complete API documentation for Happy Balance application',
       contact: {
         name: 'API Support',
-        email: 'support@expense-tracker.com'
+        email: 'support@happy-balance.com'
       }
     },
     servers: [

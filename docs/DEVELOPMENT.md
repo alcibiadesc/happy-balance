@@ -80,10 +80,10 @@ pnpm run dev:clean
 
 ```bash
 # Create a new worktree for a feature
-git worktree add ../expense-tracker-feature-x feature/new-feature
+git worktree add ../happy-balance-feature-x feature/new-feature
 
 # Navigate to the worktree
-cd ../expense-tracker-feature-x
+cd ../happy-balance-feature-x
 
 # Install dependencies
 pnpm install
@@ -164,10 +164,10 @@ lsof -ti:3000 | xargs kill -9
 docker ps
 
 # Check specific workspace database
-docker ps | grep expense-tracker-db-[workspace-id]
+docker ps | grep happy-balance-db-[workspace-id]
 
 # View database logs
-docker logs expense-tracker-db-[workspace-id]
+docker logs happy-balance-db-[workspace-id]
 ```
 
 ### Reset Everything
@@ -176,11 +176,11 @@ docker logs expense-tracker-db-[workspace-id]
 # Stop all Docker containers
 docker stop $(docker ps -q)
 
-# Remove all expense-tracker containers
-docker rm $(docker ps -a | grep expense-tracker | awk '{print $1}')
+# Remove all happy-balance containers
+docker rm $(docker ps -a | grep happy-balance | awk '{print $1}')
 
-# Remove all expense-tracker volumes
-docker volume rm $(docker volume ls | grep expense-tracker | awk '{print $2}')
+# Remove all happy-balance volumes
+docker volume rm $(docker volume ls | grep happy-balance | awk '{print $2}')
 ```
 
 ## Legacy Mode
@@ -214,13 +214,13 @@ This uses a single shared database and fixed ports (not recommended for worktree
 
 ```bash
 # View all workspace databases
-docker ps | grep expense-tracker-db
+docker ps | grep happy-balance-db
 
 # Connect to a specific database
-docker exec -it expense-tracker-db-[workspace-id] psql -U postgres -d happy_balance_[workspace_id]
+docker exec -it happy-balance-db-[workspace-id] psql -U postgres -d happy_balance_[workspace_id]
 
 # View Docker volumes
-docker volume ls | grep expense-tracker
+docker volume ls | grep happy-balance
 
 # Check which ports are in use
 lsof -i -P | grep LISTEN

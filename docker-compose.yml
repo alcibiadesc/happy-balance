@@ -4,7 +4,7 @@ services:
   # Database
   postgres:
     image: postgres:17-alpine
-    container_name: expense-tracker-db
+    container_name: happy-balance-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -21,14 +21,14 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - expense-tracker
+      - happy-balance
 
   # Backend API
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: expense-tracker-backend
+    container_name: happy-balance-backend
     restart: unless-stopped
     environment:
       # Database
@@ -60,7 +60,7 @@ services:
     volumes:
       - backend_uploads:/app/uploads
     networks:
-      - expense-tracker
+      - happy-balance
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${BACKEND_PORT:-3004}/health"]
       interval: 30s
@@ -73,7 +73,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: expense-tracker-frontend
+    container_name: happy-balance-frontend
     restart: unless-stopped
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:3004/api}
@@ -83,7 +83,7 @@ services:
       backend:
         condition: service_healthy
     networks:
-      - expense-tracker
+      - happy-balance
 
 volumes:
   postgres_data:
@@ -92,5 +92,5 @@ volumes:
     driver: local
 
 networks:
-  expense-tracker:
+  happy-balance:
     driver: bridge

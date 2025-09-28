@@ -7,7 +7,7 @@ services:
   # PostgreSQL Database - Shared instance with multiple databases
   postgres:
     image: postgres:17-alpine
-    container_name: expense-tracker-db
+    container_name: happy-balance-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -25,5 +25,5 @@ services:
 
 volumes:
   postgres_data:
-    name: expense-tracker-db
+    name: happy-balance-db
     driver: local

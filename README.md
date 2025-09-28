@@ -8,9 +8,11 @@
 ![SvelteKit](https://img.shields.io/badge/SvelteKit-2.0-orange)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)
 
-**⚠️ EXPERIMENTAL PROJECT - NOT PRODUCTION READY ⚠️**
+**🔒 The Private, Self-Hosted Alternative to Fintonic, Mint & YNAB**
 
-_A minimalist, privacy-focused personal finance management application_
+_Take control of your financial data. No cloud, no tracking, no compromises._
+
+**⚠️ EXPERIMENTAL PROJECT - NOT PRODUCTION READY ⚠️**
 
 [Features](#-features) • [Screenshots](#-screenshots) • [Quick Start](#-quick-start) • [Docker](#-docker) • [Development](#-development) • [License](#-license)
 
@@ -18,7 +20,20 @@ _A minimalist, privacy-focused personal finance management application_
 
 ---
 
-## 🎯 Overview
+## 🎯 Why Happy Balance?
+
+Unlike Fintonic, Mint, or other cloud-based finance apps that monetize your data, Happy Balance runs entirely on your own infrastructure. Your financial data never leaves your control.
+
+### 📊 Compare with Popular Apps
+
+| Feature | Happy Balance | Fintonic | Mint | YNAB |
+|---------|--------------|----------|------|------|
+| 🔒 Self-Hosted | ✅ | ❌ | ❌ | ❌ |
+| 🕵️ Zero Tracking | ✅ | ❌ | ❌ | ❌ |
+| 💰 Free Forever | ✅ | Freemium | Ads | Paid |
+| 🌐 Open Source | ✅ | ❌ | ❌ | ❌ |
+| 🏠 Data Ownership | 100% Yours | Their Servers | Their Servers | Their Servers |
+| 🚫 No Ads | ✅ | ❌ | ❌ | ✅ |
 
 Happy Balance is an open-source personal finance tracker designed with simplicity and privacy in mind. Track expenses, manage budgets, and gain insights into your financial habits without compromising your data privacy.
 
@@ -53,7 +68,37 @@ Happy Balance is an open-source personal finance tracker designed with simplicit
 ## 📸 Screenshots
 
 <div align="center">
-<i>Screenshots coming soon...</i>
+
+### 💰 Dashboard Overview
+Track your income, expenses, and financial health at a glance
+
+![Dashboard](./static/screenshots/dashboard.png)
+
+### 📊 Transaction Management
+Categorize and track every expense with powerful filtering
+
+![Transactions](./static/screenshots/transactions.png)
+
+### 🏷️ Smart Categories
+Organize your expenses with customizable categories
+
+![Categories](./static/screenshots/categories.png)
+
+### 🌙 Dark Mode Support
+Easy on the eyes during late-night budget reviews
+
+![Dark Mode](./static/screenshots/dark-mode.png)
+
+### 📱 Mobile Responsive
+Manage your finances on the go
+
+<img src="./static/screenshots/mobile-dashboard.png" alt="Mobile View" width="375">
+
+### ⚙️ User Settings
+Customize your experience with comprehensive settings
+
+![Settings](./static/screenshots/settings.png)
+
 </div>
 
 ## 🚀 Quick Start
