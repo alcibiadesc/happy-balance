@@ -10,7 +10,7 @@
 
 **⚠️ EXPERIMENTAL PROJECT - NOT PRODUCTION READY ⚠️**
 
-*A minimalist, privacy-focused personal finance management application*
+_A minimalist, privacy-focused personal finance management application_
 
 [Features](#-features) • [Screenshots](#-screenshots) • [Quick Start](#-quick-start) • [Docker](#-docker) • [Development](#-development) • [License](#-license)
 
@@ -23,6 +23,7 @@
 Happy Balance is an open-source personal finance tracker designed with simplicity and privacy in mind. Track expenses, manage budgets, and gain insights into your financial habits without compromising your data privacy.
 
 ### 🌟 Key Principles
+
 - **Privacy First**: Your data stays yours - self-hosted solution
 - **Minimalist Design**: Clean, distraction-free interface
 - **No Tracking**: Zero telemetry, zero external analytics
@@ -31,6 +32,7 @@ Happy Balance is an open-source personal finance tracker designed with simplicit
 ## ✨ Features
 
 ### Core Functionality
+
 - 📊 **Expense Tracking** - Categorize and track all your expenses
 - 📈 **Visual Analytics** - Beautiful charts and insights
 - 🏷️ **Smart Categorization** - AI-powered transaction categorization
@@ -40,6 +42,7 @@ Happy Balance is an open-source personal finance tracker designed with simplicit
 - 📱 **Responsive** - Works on desktop, tablet, and mobile
 
 ### Technical Features
+
 - 🔐 **JWT Authentication** - Secure user sessions
 - 👥 **Multi-User Support** - Role-based access control (Admin, User, Viewer)
 - 📁 **CSV Import** - Import transactions from your bank
@@ -56,6 +59,7 @@ Happy Balance is an open-source personal finance tracker designed with simplicit
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 20+ and pnpm
 - PostgreSQL 15+
 - Or just Docker 🐳
@@ -101,6 +105,7 @@ cd backend && pnpm dev # Backend on :3004
 ```
 
 ### Default Credentials
+
 - Username: `admin`
 - Password: `admin123`
 
@@ -111,7 +116,7 @@ cd backend && pnpm dev # Backend on :3004
 ### Using Docker Compose
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -151,12 +156,14 @@ services:
 ### Tech Stack
 
 **Frontend:**
+
 - SvelteKit 2.0
 - TypeScript 5.0
 - Vite
 - TailwindCSS (via custom CSS variables)
 
 **Backend:**
+
 - Node.js + Express
 - Prisma ORM
 - PostgreSQL
@@ -236,6 +243,7 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE](LICENSE) file for details.
 
 ### What this means:
+
 - ✅ You can use this software for personal and commercial purposes
 - ✅ You can modify and distribute the software
 - ⚠️ Any modifications must be released under GPLv3
@@ -285,7 +293,7 @@ This is an **experimental project** under active development. It may contain bug
 
 <div align="center">
 
-**Made with ❤️ for the open-source community**
+**Made for the open-source community**
 
 [⬆ Back to top](#-happy-balance---personal-finance-tracker)
 
