@@ -47,32 +47,21 @@ Happy Balance is an open-source personal finance tracker designed with simplicit
 - **No Tracking**: Zero telemetry, zero external analytics
 - **Open Source**: Transparent, auditable, and community-driven
 
-## 🚀 Quick Start
-
-### Opción 1: Docker (Recomendado)
+## 🚀 Quick Start with Docker
 
 ```bash
-# Clonar repositorio
+# Clone
 git clone https://github.com/alcibiadesc/happy-balance.git
 cd happy-balance
 
-# Configurar variables de entorno
-cp .env.example .env
+# Build and run
+docker-compose up -d --build
 
-# Iniciar con Docker
-docker-compose up -d
+# Access
+http://localhost:3000
 ```
 
-Accede a http://localhost:3000 (usuario: `admin`, contraseña: `admin123`)
-
-### Opción 2: Portainer
-
-1. En Portainer, crear nuevo Stack
-2. Pegar el contenido de `docker-compose.yml`
-3. Configurar variables de entorno
-4. Deploy
-
-Ver [DOCKER_INSTALL.md](./DOCKER_INSTALL.md) para instrucciones detalladas.
+See [DOCKER.md](./DOCKER.md) for details.
 
 ## ✨ Features
 
