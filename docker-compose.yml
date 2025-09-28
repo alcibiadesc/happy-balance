@@ -1,8 +1,7 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:17-alpine
+    container_name: happy-balance-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -13,11 +12,14 @@ services:
       - "5432:5432"
 
   backend:
-    build: ./backend
+    image: alcibiadesc/happy-balance-backend:latest
+    container_name: happy-balance-backend
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/happy_balance
       JWT_ACCESS_SECRET: your-secret-key-change-this
       JWT_REFRESH_SECRET: your-refresh-key-change-this
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
       NODE_ENV: production
       PORT: 3004
     ports:
@@ -26,10 +28,10 @@ services:
       - postgres
 
   frontend:
-    build: .
+    image: alcibiadesc/happy-balance-frontend:latest
+    container_name: happy-balance-frontend
     environment:
       VITE_API_URL: http://localhost:3004/api
-      NODE_ENV: production
     ports:
       - "3000:3000"
     depends_on:

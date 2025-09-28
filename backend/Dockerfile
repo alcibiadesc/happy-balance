@@ -6,7 +6,7 @@ WORKDIR /app
 # Dependencies
 COPY package*.json ./
 COPY prisma ./prisma
-RUN npm ci && npx prisma generate
+RUN npm install && npx prisma generate
 
 # Source
 COPY . .
