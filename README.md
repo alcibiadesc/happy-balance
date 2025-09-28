@@ -95,11 +95,6 @@ Organize your expenses with customizable categories
 
 ![Categories](./static/screenshots/categories.png)
 
-### 🌙 Dark Mode Support
-Easy on the eyes during late-night budget reviews
-
-![Dark Mode](./static/screenshots/dark-mode.png)
-
 ### 📱 Mobile Responsive
 Manage your finances on the go
 
