@@ -580,7 +580,16 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
   async clear(): Promise<Result<void>> {
     try {
-      await this.prisma.transaction.deleteMany();
+      // CRITICAL: Only delete transactions for the specific user
+      if (!this.userId) {
+        return Result.failWithMessage("User ID is required to delete transactions");
+      }
+
+      await this.prisma.transaction.deleteMany({
+        where: {
+          userId: this.userId
+        }
+      });
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(

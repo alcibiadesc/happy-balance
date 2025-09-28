@@ -276,6 +276,8 @@
     "reset_data": "Reset to Defaults",
     "reset_data_confirmation": "This will restore all default categories and settings. Your transactions will be preserved but categories will be reset to defaults.",
     "export_success": "Data exported successfully",
+    "delete_success": "All data has been successfully deleted",
+    "reset_success": "Settings reset to defaults",
     "import_success": "Successfully imported {count} transactions",
     "import_invalid_file": "Please select a valid JSON file",
     "import_file_too_large": "File size must be less than 10MB",

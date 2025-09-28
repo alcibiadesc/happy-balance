@@ -146,10 +146,11 @@ export class PrismaUserRepository implements IUserRepository {
         User.create({
           id: updated.id,
           username: updated.username,
-          displayName: updated.displayName,
           password: updated.password,
           role: updated.role as UserRole,
           isActive: updated.isActive,
+          mustChangePassword: updated.mustChangePassword,
+          passwordResetAt: updated.passwordResetAt || undefined,
           createdBy: updated.createdBy || undefined,
           lastLogin: updated.lastLogin || undefined,
           createdAt: updated.createdAt,

@@ -39,11 +39,8 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *             type: object
    *             required:
    *               - username
-   *               - displayName
    *             properties:
    *               username:
-   *                 type: string
-   *               displayName:
    *                 type: string
    *               role:
    *                 type: string
@@ -79,8 +76,6 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *           schema:
    *             type: object
    *             properties:
-   *               displayName:
-   *                 type: string
    *               role:
    *                 type: string
    *                 enum: [admin, user, viewer]

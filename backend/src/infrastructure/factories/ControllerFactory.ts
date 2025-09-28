@@ -198,9 +198,9 @@ export class ControllerFactory {
    * Creates a SeedController with user-specific repositories
    */
   createSeedController(userId: string): SeedController {
-    const transactionRepository = new PrismaTransactionRepository(this.prisma, userId);
     const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
+    const userPreferencesRepository = new PrismaUserPreferencesRepository(this.prisma);
 
-    return new SeedController(categoryRepository, transactionRepository);
+    return new SeedController(categoryRepository, userPreferencesRepository, userId);
   }
 }

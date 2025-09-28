@@ -398,7 +398,16 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async clear(): Promise<Result<void>> {
     try {
-      await this.prisma.category.deleteMany({});
+      // CRITICAL: Only delete categories for the specific user
+      if (!this.userId) {
+        return Result.failWithMessage("User ID is required to delete categories");
+      }
+
+      await this.prisma.category.deleteMany({
+        where: {
+          userId: this.userId
+        }
+      });
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(

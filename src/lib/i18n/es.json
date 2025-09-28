@@ -276,6 +276,8 @@
     "reset_data": "Restablecer a Defaults",
     "reset_data_confirmation": "Esto restaurará todas las categorías y configuraciones por defecto. Tus transacciones se conservarán pero las categorías se restablecerán a las predeterminadas.",
     "export_success": "Datos exportados exitosamente",
+    "delete_success": "Todos los datos han sido eliminados exitosamente",
+    "reset_success": "Configuración restablecida a valores predeterminados",
     "import_success": "Se importaron exitosamente {count} transacciones",
     "import_invalid_file": "Por favor selecciona un archivo JSON válido",
     "import_file_too_large": "El archivo debe ser menor a 10MB",

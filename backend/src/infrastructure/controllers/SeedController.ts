@@ -2,17 +2,21 @@ import { Request, Response } from "express";
 import { PrismaCategoryRepository } from "@infrastructure/repositories/PrismaCategoryRepository";
 import { PrismaUserPreferencesRepository } from "@infrastructure/repositories/PrismaUserPreferencesRepository";
 import { prisma } from "@infrastructure/database/prisma";
+import { randomUUID } from "crypto";
 
 export class SeedController {
   private categoryRepository: PrismaCategoryRepository;
   private userPreferencesRepository: PrismaUserPreferencesRepository;
+  private userId: string;
 
   constructor(
     categoryRepository: PrismaCategoryRepository,
     userPreferencesRepository: PrismaUserPreferencesRepository,
+    userId: string = 'default',
   ) {
     this.categoryRepository = categoryRepository;
     this.userPreferencesRepository = userPreferencesRepository;
+    this.userId = userId;
   }
 
   /**
@@ -229,17 +233,21 @@ export class SeedController {
       },
     ];
 
-    // Reset categories using upsert to avoid conflicts
+    // First, delete all existing categories for this user
+    await prisma.category.deleteMany({
+      where: { userId: this.userId }
+    });
+
+    // Reset categories for specific user
     for (const category of defaultCategories) {
-      await prisma.category.upsert({
-        where: { id: category.id },
-        update: {
-          name: category.name,
-          type: category.type,
-          color: category.color,
-          icon: category.icon,
+      // Generate unique ID for each user's categories
+      const { id, ...categoryData } = category;
+      await prisma.category.create({
+        data: {
+          ...categoryData,
+          id: randomUUID(), // Generate unique ID
+          userId: this.userId,  // Associate with specific user
         },
-        create: category,
       });
     }
 
@@ -255,16 +263,16 @@ export class SeedController {
       });
     }
 
-    // Reset default user preferences
+    // Reset user preferences for specific user
     await prisma.userPreferences.upsert({
-      where: { userId: "default" },
+      where: { userId: this.userId },
       update: {
         currency: "EUR",
         language: "en",
         theme: "light",
       },
       create: {
-        userId: "default",
+        userId: this.userId,
         currency: "EUR",
         language: "en",
         theme: "light",

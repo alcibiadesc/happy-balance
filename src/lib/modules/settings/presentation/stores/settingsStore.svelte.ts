@@ -187,6 +187,24 @@ export function createSettingsStore(apiBase: string) {
 
   async function confirmDeleteAll() {
     try {
+      // Delete from database first
+      try {
+        // Delete all transactions for the authenticated user
+        const transactionsResponse = await fetch(`${apiBase}/transactions`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+
+        if (!transactionsResponse.ok) {
+          console.warn('Failed to delete transactions from database');
+        }
+
+        // Note: Categories are user-specific and stored locally
+        // They will be reset when localStorage is cleared below
+      } catch (apiError) {
+        console.warn('API delete operation failed, continuing with local cleanup:', apiError);
+      }
+
       // Clear localStorage
       const keysToDelete = [
         'transactions',
@@ -202,7 +220,7 @@ export function createSettingsStore(apiBase: string) {
       // Reset to defaults
       settings = Settings.default();
 
-      importStatus = t.get()('settings.delete_success');
+      importStatus = get(t)('settings.delete_success');
       importSuccess = true;
 
       setTimeout(() => {
@@ -225,27 +243,31 @@ export function createSettingsStore(apiBase: string) {
 
   async function confirmReset() {
     try {
-      // Try to reset via API
-      try {
-        const response = await fetch(`${apiBase}/seed`, {
-          method: 'POST',
-          headers: getAuthHeaders()
-        });
+      // Reset to default categories via seed endpoint
+      const seedResponse = await fetch(`${apiBase}/seed`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
 
-        if (!response.ok) {
-          console.warn('Failed to reset data from database');
-        }
-      } catch (apiError) {
-        console.warn('API not available');
+      if (!seedResponse.ok) {
+        const errorData = await seedResponse.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to reset data');
       }
 
-      // Reset localStorage categories
+      const result = await seedResponse.json();
+      console.log('Reset successful:', result);
+
+      // Clear local storage to ensure fresh state
       localStorage.removeItem('categories');
       localStorage.removeItem('user-preferences');
+      localStorage.removeItem('transactions');
+      localStorage.removeItem('transaction-hashes');
 
-      importStatus = t.get()('settings.reset_success');
+      // Show success message
+      importStatus = get(t)('settings.reset_success') || 'Data reset to defaults successfully';
       importSuccess = true;
 
+      // Reload after a short delay
       setTimeout(() => {
         importStatus = '';
         importSuccess = false;
@@ -253,7 +275,8 @@ export function createSettingsStore(apiBase: string) {
       }, 2000);
     } catch (error) {
       console.error('Error resetting data:', error);
-      importError = 'Failed to reset data';
+      importError = error instanceof Error ? error.message : 'Failed to reset data';
+      importSuccess = false;
     } finally {
       showResetModal = false;
     }
