@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: happy-balance-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: happy_balance
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - happy-balance
+
+  # Backend API
+  backend:
+    image: alcibiadesc/happy-balance-backend:latest
+    container_name: happy-balance-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/happy_balance
+      PORT: 3004
+      NODE_ENV: production
+      CORS_ORIGIN: http://localhost:5173
+      JWT_ACCESS_SECRET: your-super-secret-access-key-change-this-in-production
+      JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-this-in-production
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+    ports:
+      - "3004:3004"
+    depends_on:
+      - postgres
+    networks:
+      - happy-balance
+
+  # Frontend
+  frontend:
+    image: alcibiadesc/happy-balance-frontend:latest
+    container_name: happy-balance-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3004/api
+    ports:
+      - "5173:3000"
+    depends_on:
+      - backend
+    networks:
+      - happy-balance
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  happy-balance:
+    driver: bridge
