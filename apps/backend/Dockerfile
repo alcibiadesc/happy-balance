@@ -7,7 +7,7 @@ RUN npm install -g pnpm
 WORKDIR /app
 
 # Copy workspace configuration
-COPY pnpm-workspace.yaml package*.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/backend/package.json ./apps/backend/
 
 # Install all dependencies (including workspace dependencies)
@@ -24,7 +24,7 @@ WORKDIR /app
 # Copy workspace files and dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/backend/package.json ./apps/backend/
-COPY pnpm-workspace.yaml package*.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 
 # Copy backend source code
 COPY apps/backend ./apps/backend
@@ -43,7 +43,7 @@ RUN npm install -g pnpm && \
 WORKDIR /app
 
 # Copy workspace configuration
-COPY pnpm-workspace.yaml package*.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/backend/package.json ./apps/backend/
 
 # Install only production dependencies

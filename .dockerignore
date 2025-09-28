@@ -26,7 +26,6 @@ coverage
 .next
 .nuxt
 .svelte-kit
-pnpm-lock.yaml
 package-lock.json
 yarn.lock
 playwright-report
