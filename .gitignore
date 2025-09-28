@@ -41,3 +41,7 @@ test-import.csv
 test_wt*
 .ports.*.json
 .docker-compose.*.yml
+
+# Database data
+data/
+/data
