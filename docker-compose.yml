@@ -12,6 +12,7 @@ services:
       - "5432:5432"
 
   backend:
+    image: alcibiadesc/happy-balance:backend
     build: ./backend
     container_name: happy-balance-backend
     environment:
@@ -29,6 +30,7 @@ services:
       - postgres
 
   frontend:
+    image: alcibiadesc/happy-balance:frontend
     build: .
     container_name: happy-balance-frontend
     environment:

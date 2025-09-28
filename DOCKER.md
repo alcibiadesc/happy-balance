@@ -1,74 +1,38 @@
-# Docker Setup
+# Docker
 
-## Quick Start (Build locally)
+## Instalación
 
 ```bash
-# Clone and run
+# Opción 1: Con el código (construye local)
 git clone https://github.com/alcibiadesc/happy-balance.git
 cd happy-balance
 docker-compose up -d --build
+
+# Opción 2: Sin el código (usa Docker Hub)
+curl -O https://raw.githubusercontent.com/alcibiadesc/happy-balance/main/docker-compose.yml
+docker-compose up -d
 ```
 
-Access:
+## Acceso
+
 - Frontend: http://localhost:3000
 - Backend: http://localhost:3004
 - Login: admin / admin123
 
-## Using Pre-built Images
-
-```bash
-# Use production compose file
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-## Files
-
-- `docker-compose.yml` - Builds from source code (recommended)
-- `docker-compose.prod.yml` - Uses pre-built images from Docker Hub
-- `Dockerfile` - Frontend build
-- `backend/Dockerfile` - Backend build
-
-## Important Variables
+## Variables importantes
 
 ```yaml
-# Database
-POSTGRES_USER: postgres
-POSTGRES_PASSWORD: postgres  # CHANGE IN PRODUCTION!
-
-# Backend
-JWT_ACCESS_SECRET: your-secret-key  # CHANGE IN PRODUCTION!
-JWT_REFRESH_SECRET: your-refresh-key  # CHANGE IN PRODUCTION!
-ADMIN_USERNAME: admin
-ADMIN_PASSWORD: admin123  # CHANGE IN PRODUCTION!
-CORS_ORIGIN: http://localhost:3000,http://localhost:5173
-
-# Frontend
-VITE_API_URL: http://localhost:3004/api
+POSTGRES_PASSWORD: postgres         # Cambiar en producción
+JWT_ACCESS_SECRET: your-secret-key  # Cambiar en producción
+JWT_REFRESH_SECRET: your-refresh-key # Cambiar en producción
+ADMIN_PASSWORD: admin123            # Cambiar en producción
 ```
 
-## Commands
+## Comandos
 
 ```bash
-# Start
-docker-compose up -d --build
-
-# Stop
-docker-compose down
-
-# Clean everything
-docker-compose down -v
-
-# View logs
-docker-compose logs -f [service]
-
-# Rebuild specific service
-docker-compose build --no-cache [service]
+docker-compose up -d      # Iniciar
+docker-compose down       # Parar
+docker-compose down -v    # Borrar todo
+docker-compose logs -f    # Ver logs
 ```
-
-## Production Notes
-
-1. Change ALL passwords and secrets
-2. Use environment variables or .env file
-3. Don't expose PostgreSQL port (remove ports from postgres service)
-4. Use reverse proxy (nginx/traefik) for SSL
-5. Set up backup strategy for postgres_data volume
