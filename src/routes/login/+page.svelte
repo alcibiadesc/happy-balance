@@ -98,8 +98,8 @@
   .login-container {
     position: relative;
     width: 100%;
-    max-width: 540px;
-    padding: 4rem 4rem;
+    max-width: 600px;
+    padding: 4.5rem 5rem;
     background: var(--surface-elevated);
     border-radius: 20px;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
