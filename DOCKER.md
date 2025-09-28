@@ -1,6 +1,6 @@
-# Docker Setup for Expense Tracker
+# Docker Setup for Happy Balance
 
-This guide explains how to run the Expense Tracker application using Docker with proper environment variable configuration.
+This guide explains how to run the Happy Balance application using Docker with proper environment variable configuration.
 
 ## Quick Start
 
@@ -159,7 +159,7 @@ docker-compose logs -f postgres
 docker-compose down
 
 # Remove database volume
-docker volume rm expense-tracker_postgres_data
+docker volume rm happy-balance_postgres_data
 
 # Restart and reinitialize
 docker-compose up -d

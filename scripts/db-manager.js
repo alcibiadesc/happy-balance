@@ -24,7 +24,7 @@ const DB_CONFIG = {
 async function isPostgresRunning() {
   try {
     await execAsync(
-      `docker ps --format "table {{.Names}}" | grep -q expense-tracker-db`,
+      `docker ps --format "table {{.Names}}" | grep -q happy-balance-db`,
     );
     return true;
   } catch {
@@ -38,12 +38,12 @@ async function isPostgresRunning() {
 async function startPostgres() {
   const dockerCommand = `
     docker run -d \
-      --name expense-tracker-db \
+      --name happy-balance-db \
       -e POSTGRES_USER=${DB_CONFIG.user} \
       -e POSTGRES_PASSWORD=${DB_CONFIG.password} \
       -e POSTGRES_DB=${DB_CONFIG.mainDb} \
       -p ${DB_CONFIG.port}:5432 \
-      -v expense-tracker-db:/var/lib/postgresql/data \
+      -v happy-balance-db:/var/lib/postgresql/data \
       postgres:17-alpine
   `.trim();
 
@@ -67,7 +67,7 @@ async function waitForDatabase(maxAttempts = 30) {
   for (let i = 0; i < maxAttempts; i++) {
     try {
       await execAsync(
-        `docker exec expense-tracker-db pg_isready -U ${DB_CONFIG.user}`,
+        `docker exec happy-balance-db pg_isready -U ${DB_CONFIG.user}`,
       );
       return;
     } catch {
@@ -87,7 +87,7 @@ async function createWorkspaceDatabase(workspaceName) {
       : `${DB_CONFIG.mainDb}_${workspaceName.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
 
   try {
-    const createDbCommand = `docker exec expense-tracker-db psql -U ${DB_CONFIG.user} -c "CREATE DATABASE ${dbName};"`;
+    const createDbCommand = `docker exec happy-balance-db psql -U ${DB_CONFIG.user} -c "CREATE DATABASE ${dbName};"`;
     await execAsync(createDbCommand);
   } catch (error) {
     if (error.message.includes("already exists")) {
@@ -104,8 +104,8 @@ async function createWorkspaceDatabase(workspaceName) {
  */
 async function stopPostgres() {
   try {
-    await execAsync("docker stop expense-tracker-db");
-    await execAsync("docker rm expense-tracker-db");
+    await execAsync("docker stop happy-balance-db");
+    await execAsync("docker rm happy-balance-db");
   } catch (error) {}
 }
 
@@ -114,8 +114,8 @@ async function stopPostgres() {
  */
 async function resetDatabase(dbName) {
   try {
-    const dropCommand = `docker exec expense-tracker-db psql -U ${DB_CONFIG.user} -c "DROP DATABASE IF EXISTS ${dbName};"`;
-    const createCommand = `docker exec expense-tracker-db psql -U ${DB_CONFIG.user} -c "CREATE DATABASE ${dbName};"`;
+    const dropCommand = `docker exec happy-balance-db psql -U ${DB_CONFIG.user} -c "DROP DATABASE IF EXISTS ${dbName};"`;
+    const createCommand = `docker exec happy-balance-db psql -U ${DB_CONFIG.user} -c "CREATE DATABASE ${dbName};"`;
 
     await execAsync(dropCommand);
     await execAsync(createCommand);

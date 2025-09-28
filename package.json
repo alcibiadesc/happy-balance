@@ -69,7 +69,7 @@
   },
   "packageManager": "pnpm@9.0.0",
   "keywords": [
-    "expense-tracker",
+    "happy-balance",
     "finance",
     "svelte",
     "sveltekit",
@@ -82,6 +82,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/expense-tracker.git"
+    "url": "https://github.com/alcibiadesc/happy-balance.git"
   }
 }
