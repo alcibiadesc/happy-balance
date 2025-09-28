@@ -51,8 +51,10 @@
     <NewNavbar />
   {/if}
 
-  <main class="main-content" class:main-content--collapsed={$sidebarCollapsed && authStore.isAuthenticated}>
-    <div class="content-container">
+  <main class="main-content"
+        class:main-content--collapsed={$sidebarCollapsed && authStore.isAuthenticated}
+        class:main-content--no-auth={!authStore.isAuthenticated}>
+    <div class="content-container" class:content-container--no-auth={!authStore.isAuthenticated}>
       {@render children?.()}
     </div>
   </main>
@@ -72,6 +74,15 @@
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* When not authenticated (login page, etc) */
+  .main-content--no-auth {
+    padding-top: 0;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   @media (min-width: 1024px) {
     .main-content {
       margin-left: 280px;
@@ -80,6 +91,11 @@
 
     .main-content--collapsed {
       margin-left: 80px;
+    }
+
+    /* Override margin for no-auth pages */
+    .main-content--no-auth {
+      margin-left: 0;
     }
   }
 
@@ -90,9 +106,24 @@
     width: 100%;
   }
 
+  /* Remove padding for no-auth pages */
+  .content-container--no-auth {
+    padding: 0;
+    max-width: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
   @media (min-width: 768px) {
     .content-container {
       padding: 2rem;
+    }
+
+    /* Keep no padding for no-auth pages */
+    .content-container--no-auth {
+      padding: 0;
     }
   }
 </style>

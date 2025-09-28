@@ -113,20 +113,21 @@
   .login-form {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.5rem;
   }
 
   .form-field {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.625rem;
   }
 
   .form-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    letter-spacing: 0.025em;
+    font-size: 0.813rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
   }
 
   .input-wrapper {
@@ -134,19 +135,21 @@
     display: flex;
     align-items: center;
     background: var(--surface);
-    border: 2px solid var(--border-color);
-    border-radius: 12px;
-    transition: all 0.2s ease;
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
   }
 
   .input-wrapper:hover {
     border-color: var(--border-color-hover);
+    background: var(--surface-elevated);
   }
 
   .input-wrapper.focused {
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.05);
+    background: var(--surface-elevated);
   }
 
   .input-icon {
@@ -163,17 +166,19 @@
 
   .form-input {
     flex: 1;
-    padding: 0.875rem 1rem 0.875rem 3rem;
+    padding: 1rem 1.25rem 1rem 3.25rem;
     background: transparent;
     border: none;
     outline: none;
     font-size: 0.938rem;
     color: var(--text-primary);
     width: 100%;
+    font-weight: 500;
   }
 
   .form-input::placeholder {
     color: var(--text-tertiary);
+    font-weight: 400;
   }
 
   .form-input:disabled {
@@ -198,11 +203,11 @@
 
   .submit-button {
     width: 100%;
-    padding: 0.875rem;
+    padding: 1rem;
     background: var(--evening-sea);
     color: var(--bridesmaid);
     border: none;
-    border-radius: 12px;
+    border-radius: 14px;
     font-size: 0.938rem;
     font-weight: 600;
     cursor: pointer;
@@ -213,24 +218,23 @@
     justify-content: center;
     gap: 0.5rem;
     letter-spacing: 0.025em;
+    margin-top: 0.5rem;
   }
 
   .submit-button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    background: #2a6a5b;
-    box-shadow: 0 10px 30px rgba(47, 117, 99, 0.35);
-    filter: brightness(0.95);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(47, 117, 99, 0.15);
   }
 
   .submit-button:active:not(:disabled) {
     transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(47, 117, 99, 0.1);
   }
 
   .submit-button:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
-    background: var(--surface-muted);
-    color: var(--text-primary);
+    background: var(--text-tertiary);
   }
 
   .loading-spinner {

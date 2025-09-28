@@ -45,8 +45,8 @@
           <h1 class="login-title">Security Required</h1>
           <p class="login-subtitle">Complete your account setup</p>
         {:else}
-          <h1 class="login-title">Welcome Back</h1>
-          <p class="login-subtitle">Track your expenses with elegance</p>
+          <h1 class="login-title">Welcome back</h1>
+          <p class="login-subtitle">Sign in to your account</p>
         {/if}
       </div>
 
@@ -62,7 +62,7 @@
       </div>
 
       <div class="login-footer" in:fade={{ duration: 400, delay: 400 }}>
-        <p>Secure • Private • Minimal</p>
+        <p>Happy Balance</p>
       </div>
     </div>
   {/if}
@@ -82,36 +82,27 @@
   .background-gradient {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg,
-      hsl(var(--primary-hue) 40% 95%) 0%,
-      hsl(var(--primary-hue) 30% 90%) 50%,
-      hsl(var(--primary-hue) 20% 95%) 100%);
+    background: var(--surface);
   }
 
   :global(html.dark) .background-gradient {
-    background: linear-gradient(135deg,
-      hsl(var(--primary-hue) 20% 10%) 0%,
-      hsl(var(--primary-hue) 15% 8%) 50%,
-      hsl(var(--primary-hue) 10% 12%) 100%);
+    background: var(--surface);
   }
 
   .background-pattern {
     position: absolute;
     inset: 0;
-    opacity: 0.03;
-    background-image:
-      radial-gradient(circle at 25% 25%, var(--primary) 0%, transparent 50%),
-      radial-gradient(circle at 75% 75%, var(--primary) 0%, transparent 50%);
+    /* Removed background pattern for cleaner look */
   }
 
   .login-container {
     position: relative;
     width: 100%;
-    max-width: 420px;
-    padding: 3rem 2rem;
+    max-width: 540px;
+    padding: 4rem 4rem;
     background: var(--surface-elevated);
-    border-radius: 24px;
-    box-shadow: var(--shadow-xl);
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
     border: 1px solid var(--border-color);
     margin: 1rem;
   }
@@ -123,13 +114,14 @@
   }
 
   .logo {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    box-shadow: 0 10px 40px rgba(var(--evening-sea-rgb), 0.15);
-    border: 2px solid var(--border-color);
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
     overflow: hidden;
     position: relative;
+    background: var(--surface);
   }
 
   .logo-image {
@@ -145,16 +137,19 @@
   }
 
   .login-title {
-    font-size: 1.875rem;
-    font-weight: 700;
+    font-size: 2rem;
+    font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 0.5rem;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
   }
 
   .login-subtitle {
-    color: var(--text-secondary);
-    font-size: 0.938rem;
+    color: var(--text-tertiary);
+    font-size: 1rem;
+    font-weight: 400;
+    opacity: 0.8;
   }
 
   .login-footer {
@@ -166,24 +161,32 @@
 
   .login-footer p {
     color: var(--text-tertiary);
-    font-size: 0.813rem;
-    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    font-weight: 500;
+    opacity: 0.5;
   }
 
   @media (max-width: 640px) {
     .login-container {
-      padding: 2rem 1.5rem;
+      padding: 3rem 2rem;
       margin: 1rem;
+      max-width: 100%;
     }
 
     .logo {
       width: 64px;
       height: 64px;
+      border-radius: 18px;
     }
 
     .login-title {
-      font-size: 1.5rem;
+      font-size: 1.75rem;
+    }
+
+    .login-subtitle {
+      font-size: 0.938rem;
     }
   }
 </style>
