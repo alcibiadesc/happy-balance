@@ -221,7 +221,7 @@ RATE_LIMIT_MAX_REQUESTS=100
  */
 export function setupWorktreeDatabase(rootDir) {
   const gitInfo = getGitInfo(rootDir);
-  const backendEnvPath = resolve(rootDir, "backend", ".env");
+  const backendEnvPath = resolve(rootDir, "apps", "backend", ".env");
 
   log("\n🗄️  Database Configuration:", "bright");
 

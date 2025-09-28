@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:17-alpine
     container_name: happy-balance-db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -10,11 +11,19 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     image: alcibiadesc/happy-balance:backend
-    build: ./backend
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
     container_name: happy-balance-backend
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/happy_balance
       JWT_ACCESS_SECRET: your-secret-key-change-this-in-production-min-32-chars
@@ -23,23 +32,36 @@ services:
       ADMIN_PASSWORD: admin123
       NODE_ENV: production
       PORT: 3004
-      CORS_ORIGIN: http://localhost:3000,http://localhost:5173
+      CORS_ORIGIN: http://localhost:3000,http://frontend:3000
     ports:
       - "3004:3004"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    volumes:
+      - backend_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     image: alcibiadesc/happy-balance:frontend
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: happy-balance-frontend
+    restart: unless-stopped
     environment:
       VITE_API_URL: http://localhost:3004/api
       NODE_ENV: production
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  backend_uploads:

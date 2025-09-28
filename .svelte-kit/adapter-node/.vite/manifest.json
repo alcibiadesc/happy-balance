@@ -1,0 +1,342 @@
+{
+  ".svelte-kit/generated/server/internal.js": {
+    "file": "internal.js",
+    "name": "internal",
+    "src": ".svelte-kit/generated/server/internal.js",
+    "isEntry": true,
+    "imports": [
+      "_internal.js",
+      "_environment.js"
+    ]
+  },
+  "_ConfirmModal.BFG2MaYg.css": {
+    "file": "_app/immutable/assets/ConfirmModal.BFG2MaYg.css",
+    "src": "_ConfirmModal.BFG2MaYg.css"
+  },
+  "_ConfirmModal.js": {
+    "file": "chunks/ConfirmModal.js",
+    "name": "ConfirmModal",
+    "imports": [
+      "_index2.js",
+      "_i18n.js",
+      "_x.js",
+      "_check.js"
+    ],
+    "css": [
+      "_app/immutable/assets/ConfirmModal.BFG2MaYg.css"
+    ]
+  },
+  "_DateDisplay.BL8lseef.css": {
+    "file": "_app/immutable/assets/DateDisplay.BL8lseef.css",
+    "src": "_DateDisplay.BL8lseef.css"
+  },
+  "_DateDisplay.js": {
+    "file": "chunks/DateDisplay.js",
+    "name": "DateDisplay",
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/DateDisplay.BL8lseef.css"
+    ]
+  },
+  "_api-transactions.js": {
+    "file": "chunks/api-transactions.js",
+    "name": "api-transactions",
+    "imports": [
+      "_index.js"
+    ]
+  },
+  "_check.js": {
+    "file": "chunks/check.js",
+    "name": "check",
+    "imports": [
+      "_index2.js",
+      "_x.js"
+    ]
+  },
+  "_currency.js": {
+    "file": "chunks/currency.js",
+    "name": "currency",
+    "imports": [
+      "_index.js"
+    ]
+  },
+  "_environment.js": {
+    "file": "chunks/environment.js",
+    "name": "environment"
+  },
+  "_exports.js": {
+    "file": "chunks/exports.js",
+    "name": "exports"
+  },
+  "_false.js": {
+    "file": "chunks/false.js",
+    "name": "false"
+  },
+  "_i18n.js": {
+    "file": "chunks/i18n.js",
+    "name": "i18n",
+    "imports": [
+      "_index.js"
+    ]
+  },
+  "_index-server.js": {
+    "file": "chunks/index-server.js",
+    "name": "index-server",
+    "imports": [
+      "_index2.js"
+    ]
+  },
+  "_index.js": {
+    "file": "chunks/index.js",
+    "name": "index",
+    "imports": [
+      "_index2.js"
+    ]
+  },
+  "_index2.js": {
+    "file": "chunks/index2.js",
+    "name": "index",
+    "imports": [
+      "_false.js"
+    ]
+  },
+  "_internal.js": {
+    "file": "chunks/internal.js",
+    "name": "internal",
+    "imports": [
+      "_index2.js",
+      "_environment.js"
+    ]
+  },
+  "_plus.js": {
+    "file": "chunks/plus.js",
+    "name": "plus",
+    "imports": [
+      "_index2.js",
+      "_x.js"
+    ]
+  },
+  "_shared.js": {
+    "file": "chunks/shared.js",
+    "name": "shared",
+    "imports": [
+      "_utils.js"
+    ]
+  },
+  "_state.svelte.js": {
+    "file": "chunks/state.svelte.js",
+    "name": "state.svelte",
+    "imports": [
+      "_index2.js"
+    ]
+  },
+  "_trash-2.js": {
+    "file": "chunks/trash-2.js",
+    "name": "trash-2",
+    "imports": [
+      "_index2.js",
+      "_x.js"
+    ]
+  },
+  "_user-preferences.js": {
+    "file": "chunks/user-preferences.js",
+    "name": "user-preferences",
+    "imports": [
+      "_index2.js",
+      "_x.js",
+      "_index.js"
+    ]
+  },
+  "_utils.js": {
+    "file": "chunks/utils.js",
+    "name": "utils"
+  },
+  "_wallet.js": {
+    "file": "chunks/wallet.js",
+    "name": "wallet",
+    "imports": [
+      "_index2.js",
+      "_x.js"
+    ]
+  },
+  "_x.js": {
+    "file": "chunks/x.js",
+    "name": "x",
+    "imports": [
+      "_index2.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js": {
+    "file": "remote-entry.js",
+    "name": "remote-entry",
+    "src": "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js",
+    "isEntry": true,
+    "imports": [
+      "_shared.js",
+      "_false.js",
+      "_environment.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte": {
+    "file": "entries/fallbacks/error.svelte.js",
+    "name": "entries/fallbacks/error.svelte",
+    "src": "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_state.svelte.js",
+      "_exports.js",
+      "_utils.js",
+      "_index.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/server/index.js": {
+    "file": "index.js",
+    "name": "index",
+    "src": "node_modules/@sveltejs/kit/src/runtime/server/index.js",
+    "isEntry": true,
+    "imports": [
+      "_false.js",
+      "_environment.js",
+      "_exports.js",
+      "_utils.js",
+      "_index.js",
+      "_internal.js",
+      "_shared.js"
+    ]
+  },
+  "src/routes/+layout.svelte": {
+    "file": "entries/pages/_layout.svelte.js",
+    "name": "entries/pages/_layout.svelte",
+    "src": "src/routes/+layout.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_user-preferences.js",
+      "_x.js",
+      "_i18n.js",
+      "_exports.js",
+      "_utils.js",
+      "_state.svelte.js",
+      "_index.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_layout.8H_oAQlE.css"
+    ]
+  },
+  "src/routes/+page.svelte": {
+    "file": "entries/pages/_page.svelte.js",
+    "name": "entries/pages/_page.svelte",
+    "src": "src/routes/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_i18n.js",
+      "_currency.js",
+      "_wallet.js",
+      "_x.js",
+      "_index-server.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.Dle88aVJ.css"
+    ]
+  },
+  "src/routes/categories/+page.svelte": {
+    "file": "entries/pages/categories/_page.svelte.js",
+    "name": "entries/pages/categories/_page.svelte",
+    "src": "src/routes/categories/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_api-transactions.js",
+      "_i18n.js",
+      "_currency.js",
+      "_x.js",
+      "_plus.js",
+      "_check.js",
+      "_trash-2.js",
+      "_wallet.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.C9iwSNcq.css"
+    ]
+  },
+  "src/routes/import/+page.svelte": {
+    "file": "entries/pages/import/_page.svelte.js",
+    "name": "entries/pages/import/_page.svelte",
+    "src": "src/routes/import/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_exports.js",
+      "_utils.js",
+      "_state.svelte.js",
+      "_i18n.js",
+      "_api-transactions.js",
+      "_index-server.js",
+      "_DateDisplay.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.DypQ8d7S.css"
+    ]
+  },
+  "src/routes/settings/+page.svelte": {
+    "file": "entries/pages/settings/_page.svelte.js",
+    "name": "entries/pages/settings/_page.svelte",
+    "src": "src/routes/settings/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_i18n.js",
+      "_currency.js",
+      "_user-preferences.js",
+      "_api-transactions.js",
+      "_false.js",
+      "_ConfirmModal.js",
+      "_x.js",
+      "_trash-2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.CgWtPF11.css"
+    ]
+  },
+  "src/routes/transactions/+layout.svelte": {
+    "file": "entries/pages/transactions/_layout.svelte.js",
+    "name": "entries/pages/transactions/_layout.svelte",
+    "src": "src/routes/transactions/+layout.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_exports.js",
+      "_utils.js",
+      "_state.svelte.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_layout.B0ebF8M4.css"
+    ]
+  },
+  "src/routes/transactions/+page.svelte": {
+    "file": "entries/pages/transactions/_page.svelte.js",
+    "name": "entries/pages/transactions/_page.svelte",
+    "src": "src/routes/transactions/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_index-server.js",
+      "_DateDisplay.js",
+      "_ConfirmModal.js",
+      "_exports.js",
+      "_utils.js",
+      "_state.svelte.js",
+      "_i18n.js",
+      "_x.js",
+      "_plus.js",
+      "_api-transactions.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.1S9e7BsH.css"
+    ]
+  }
+}

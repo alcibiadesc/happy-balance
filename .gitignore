@@ -6,8 +6,9 @@ pnpm-lock.yaml
 .vercel
 .netlify
 .wrangler
-/.svelte-kit
-/build
+/apps/frontend/.svelte-kit
+/apps/frontend/build
+/apps/backend/dist
 
 # OS
 .DS_Store
@@ -18,7 +19,7 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
-backend/.env
+apps/backend/.env
 .env.local
 
 # Vite

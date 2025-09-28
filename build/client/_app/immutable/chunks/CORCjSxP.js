@@ -1,0 +1,1 @@
+import{h as u,a}from"./J53a5pXB.js";function d(e,t,i,n,r){u&&a();var s=t.$$slots?.[i],f=!1;s===!0&&(s=t[i==="default"?"children":i],f=!0),s===void 0?r!==null&&r(e):s(e,f?()=>n:n)}function o(e){const t={};e.children&&(t.default=!0);for(const i in e.$$slots)t[i]=!0;return t}export{o as a,d as s};

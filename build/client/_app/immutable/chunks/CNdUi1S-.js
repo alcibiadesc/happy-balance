@@ -1,0 +1,1 @@
+import{k,r as t,u as S,q as b,S as h}from"./J53a5pXB.js";function u(r,i){return r===i||r?.[h]===i}function c(r={},i,a,q){return k(()=>{var f,s;return t(()=>{f=s,s=[],S(()=>{r!==a(...s)&&(i(r,...s),f&&u(a(...f),r)&&i(null,...f))})}),()=>{b(()=>{s&&u(a(...s),r)&&i(null,...s)})}}),r}export{c as b};

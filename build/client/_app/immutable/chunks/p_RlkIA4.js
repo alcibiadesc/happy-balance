@@ -1,0 +1,1 @@
+import{K as n,j as r,L as i}from"./J53a5pXB.js";function b(s,a,e){var t=n(s,a);t&&t.set&&(s[a]=e,r(()=>{s[a]=null}))}function f(s,a){var e=s.$$events?.[a.type],t=i(e)?e.slice():e==null?[]:[e];for(var l of t)l.call(this,a)}export{b as a,f as b};

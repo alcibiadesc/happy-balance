@@ -38,7 +38,7 @@ VITE_PORT=${frontendPort}`;
 
 // Check and install dependencies if needed
 function checkAndInstallDependencies() {
-  const backendNodeModules = resolve(rootDir, "backend", "node_modules");
+  const backendNodeModules = resolve(rootDir, "apps", "backend", "node_modules");
   const frontendNodeModules = resolve(rootDir, "node_modules");
   let needsInstall = false;
 
@@ -71,7 +71,7 @@ function checkAndInstallDependencies() {
     needsInstall = true;
     try {
       execSync("pnpm install", {
-        cwd: resolve(rootDir, "backend"),
+        cwd: resolve(rootDir, "apps", "backend"),
         stdio: "inherit",
       });
       log("✅ Backend dependencies installed", "green");
@@ -86,7 +86,7 @@ function checkAndInstallDependencies() {
 
 // Setup and configure database
 function setupDatabase() {
-  const backendPath = resolve(rootDir, "backend");
+  const backendPath = resolve(rootDir, "apps", "backend");
 
   try {
     // Generate Prisma client
@@ -118,7 +118,7 @@ function setupDatabase() {
 
 // Start backend server with specific port
 function startBackend(port) {
-  const backendPath = resolve(rootDir, "backend");
+  const backendPath = resolve(rootDir, "apps", "backend");
   const mainTsPath = resolve(backendPath, "src", "main.ts");
 
   if (!existsSync(mainTsPath)) {
@@ -168,7 +168,7 @@ function startFrontend(frontendPort, backendPort) {
 
 // Create required directories
 function createRequiredDirs() {
-  const uploadDir = resolve(rootDir, "backend", "uploads");
+  const uploadDir = resolve(rootDir, "apps", "backend", "uploads");
   if (!existsSync(uploadDir)) {
     mkdirSync(uploadDir, { recursive: true });
     log("📁 Created backend/uploads directory", "green");
@@ -200,7 +200,7 @@ async function main() {
   createRequiredDirs();
 
   // Setup database (generate client and push schema)
-  if (installed || !existsSync(resolve(rootDir, "backend", ".prisma"))) {
+  if (installed || !existsSync(resolve(rootDir, "apps", "backend", ".prisma"))) {
     setupDatabase();
   }
 
@@ -216,7 +216,7 @@ async function main() {
   );
 
   // Update backend .env with the dynamic port
-  const backendEnvPath = resolve(rootDir, "backend", ".env");
+  const backendEnvPath = resolve(rootDir, "apps", "backend", ".env");
   if (existsSync(backendEnvPath)) {
     let envContent = readFileSync(backendEnvPath, "utf-8");
     envContent = envContent.replace(/^PORT=.*$/m, `PORT=${ports.backend}`);

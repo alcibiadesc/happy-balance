@@ -1,0 +1,51 @@
+{
+  "name": "happy-balance-frontend",
+  "version": "1.0.0",
+  "description": "Happy Balance Frontend - SvelteKit Application",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "lint": "prettier --check . && eslint .",
+    "lint:fix": "prettier --write . && eslint . --fix",
+    "typecheck": "svelte-kit sync && tsc --noEmit"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.0",
+    "lucide-svelte": "^0.542.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@sveltejs/adapter-node": "^5.3.2",
+    "@sveltejs/kit": "^2.39.1",
+    "@sveltejs/vite-plugin-svelte": "^6.2.0",
+    "@types/node": "^20.10.4",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "autoprefixer": "^10.4.16",
+    "daisyui": "^5.1.10",
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-svelte": "^3.12.3",
+    "jsdom": "^25.0.0",
+    "playwright": "^1.55.1",
+    "postcss": "^8.4.32",
+    "prettier": "^3.1.0",
+    "prettier-plugin-svelte": "^3.4.0",
+    "prettier-plugin-tailwindcss": "^0.5.7",
+    "svelte": "^5.38.10",
+    "svelte-check": "^4.3.1",
+    "tailwindcss": "^3.3.6",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3",
+    "vite": "^6.3.6",
+    "vitest": "^1.0.4"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

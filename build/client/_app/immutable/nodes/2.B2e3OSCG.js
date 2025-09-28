@@ -1,0 +1,1 @@
+import"../chunks/DsnmJJEf.js";import"../chunks/B6xteeIL.js";import{H as s,o as i,I as e,J as l}from"../chunks/J53a5pXB.js";import{s as m}from"../chunks/CORCjSxP.js";import"../chunks/qLTqb0RQ.js";var n=s('<div class="transactions-layout svelte-wo5qeh"><!></div>');function u(t,a){var o=n(),r=e(o);m(r,a,"default",{},null),l(o),i(t,o)}export{u as component};
