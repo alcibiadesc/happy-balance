@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="./static/logo/happy-balance-logo-with-text.png" alt="Happy Balance Logo" width="300">
+
 ![Status](https://img.shields.io/badge/Status-Experimental-orange)
 ![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
@@ -60,10 +62,19 @@ Happy Balance is an open-source personal finance tracker designed with simplicit
 
 - 🔐 **JWT Authentication** - Secure user sessions
 - 👥 **Multi-User Support** - Role-based access control (Admin, User, Viewer)
-- 📁 **CSV Import** - Import transactions from your bank
+- 📁 **CSV Import** - Import transactions from your bank (N26 compatible)
 - 🔄 **Real-time Updates** - Instant UI updates
 - 🐳 **Docker Ready** - Easy deployment with Docker Compose
 - 🚀 **High Performance** - Built with SvelteKit and TypeScript
+
+### 🏦 Bank Import Compatibility
+
+Happy Balance currently supports CSV import from:
+
+- **N26** - Full support for N26 CSV export format
+- **Generic CSV** - Customizable import for other banks
+
+Want support for your bank? [Create an issue](https://github.com/alcibiadesc/happy-balance/issues) with a sample CSV format (with dummy data) and we'll implement it!
 
 ## 📸 Screenshots
 
@@ -113,8 +124,8 @@ Customize your experience with comprehensive settings
 
 ```bash
 # Clone the repository
-git clone https://github.com/alcibiadesc/expense-tracker.git
-cd expense-tracker
+git clone https://github.com/alcibiadesc/happy-balance.git
+cd happy-balance
 
 # Run the setup wizard
 ./docker-init.sh
@@ -130,8 +141,8 @@ Access the application at `http://localhost:5173`
 
 ```bash
 # Clone the repository
-git clone https://github.com/alcibiadesc/expense-tracker.git
-cd expense-tracker
+git clone https://github.com/alcibiadesc/happy-balance.git
+cd happy-balance
 
 # Install frontend dependencies
 pnpm install
@@ -189,7 +200,7 @@ services:
 ### Using Portainer
 
 1. Create a new stack in Portainer
-2. Use the repository URL: `https://github.com/alcibiadesc/expense-tracker.git`
+2. Use the repository URL: `https://github.com/alcibiadesc/happy-balance.git`
 3. Set the compose path to `docker-compose.yml`
 4. Configure environment variables
 5. Deploy the stack
@@ -217,7 +228,7 @@ services:
 ### Project Structure
 
 ```
-expense-tracker/
+happy-balance/
 ├── src/                    # Frontend (SvelteKit)
 │   ├── lib/               # Components and utilities
 │   ├── routes/            # SvelteKit routes
@@ -304,18 +315,15 @@ This project is licensed under the **GNU General Public License v3.0** - see the
 - **CORS protection**
 - **SQL injection prevention (Prisma ORM)**
 
-Found a security issue? Please email security@[domain] (coming soon) or open an issue.
+Found a security issue? Please open a security issue on GitHub.
 
 ## 🗺️ Roadmap
 
-- [ ] Mobile app (React Native)
-- [ ] Budget planning features
-- [ ] Recurring transactions
-- [ ] Financial goals tracking
-- [ ] Export to PDF reports
-- [ ] Plaid/Bank API integration
-- [ ] Cryptocurrency tracking
-- [ ] Investment portfolio tracking
+- [ ] Enhanced transaction categorization
+- [ ] Advanced reporting and insights
+- [ ] Data export in multiple formats
+- [ ] Multi-workspace support
+- [ ] Advanced budgeting rules
 
 ## 🙏 Acknowledgments
 
@@ -326,9 +334,8 @@ Found a security issue? Please email security@[domain] (coming soon) or open an 
 
 ## 📞 Support
 
-- 📧 Email: (coming soon)
-- 🐛 [Issue Tracker](https://github.com/alcibiadesc/expense-tracker/issues)
-- 💬 [Discussions](https://github.com/alcibiadesc/expense-tracker/discussions)
+- 🐛 [Issue Tracker](https://github.com/alcibiadesc/happy-balance/issues)
+- 💬 [Discussions](https://github.com/alcibiadesc/happy-balance/discussions)
 
 ## ⚠️ Disclaimer
 

@@ -101,22 +101,20 @@ async function captureScreenshots() {
       fullPage: false
     });
 
-    // 6. Dark Mode
+    // 6. Dark Mode - Better approach
     console.log('📸 Capturing dark mode...');
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('http://localhost:5173/settings');
-    await page.waitForLoadState('networkidle');
 
-    // Toggle dark mode
-    const darkModeToggle = await page.$('button:has-text("Dark mode")');
-    if (darkModeToggle) {
-      await darkModeToggle.click();
-      await page.waitForTimeout(500);
-    }
+    // Add dark class to HTML element directly
+    await page.evaluate(() => {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    });
 
+    // Navigate to dashboard with dark mode active
     await page.goto('http://localhost:5173/');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
 
     await page.screenshot({
       path: join(__dirname, '..', 'static', 'screenshots', 'dark-mode.png'),
