@@ -1,0 +1,46 @@
+# Usar este archivo si no quieres compilar localmente
+# docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: happy-balance-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: happy_balance
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    image: alcibiadesc/happy-balance:latest
+    container_name: happy-balance-backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/happy_balance
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-this-secret-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-this-secret-in-production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      NODE_ENV: production
+      PORT: 3004
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:5173}
+    ports:
+      - "${BACKEND_PORT:-3004}:3004"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  frontend:
+    image: alcibiadesc/happy-balance:frontend
+    container_name: happy-balance-frontend
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3004/api}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: happy-balance-postgres
+    container_name: happy-balance-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -17,28 +17,19 @@ services:
       retries: 10
 
   backend:
-    image: alcibiadesc/happy-balance-backend:latest
+    build: ./backend
     container_name: happy-balance-backend
     environment:
-      # Base de datos
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/happy_balance
       DB_HOST: postgres
       DB_PORT: 5432
-
-      # JWT Secrets (IMPORTANTE: cambiar en producción)
       JWT_ACCESS_SECRET: your-secret-key-change-this-in-production-min-32-chars
       JWT_REFRESH_SECRET: your-refresh-key-change-this-in-production-min-32-chars
-
-      # Usuario Admin (se crea automáticamente)
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: admin123
-
-      # Configuración
       NODE_ENV: production
       PORT: 3004
-
-      # CORS - IMPORTANTE: incluir TODOS los orígenes permitidos
-      CORS_ORIGIN: http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173
+      CORS_ORIGIN: http://localhost:3000,http://localhost:5173
     ports:
       - "3004:3004"
     depends_on:
@@ -46,7 +37,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: alcibiadesc/happy-balance-frontend:latest
+    build: .
     container_name: happy-balance-frontend
     environment:
       VITE_API_URL: http://localhost:3004/api
