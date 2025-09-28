@@ -1,42 +1,86 @@
+version: '3.8'
+
 services:
   # Base de datos PostgreSQL
-  db:
+  postgres:
     image: postgres:17-alpine
+    container_name: happy-balance-db
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: happy_balance
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-happy_balance}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    networks:
+      - happy-balance-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Backend API
   backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     image: alcibiadesc/happy-balance-backend:latest
+    container_name: happy-balance-backend
+    restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/happy_balance
-      JWT_ACCESS_SECRET: your-secret-key-change-this-in-production-min-32-chars
-      JWT_REFRESH_SECRET: your-refresh-key-change-this-in-production-min-32-chars
-      ADMIN_USERNAME: admin
-      ADMIN_PASSWORD: admin123
+      # Base de datos
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-happy_balance}
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+      # JWT y seguridad
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-this-secret-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-this-refresh-secret-in-production}
+
+      # Usuario admin inicial
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+
+      # Configuración de la aplicación
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3004
-      NODE_ENV: production
-      CORS_ORIGIN: http://localhost:5173
-    ports:
-      - "3004:3004"
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:5173}
     depends_on:
-      - db
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-3004}:3004"
+    networks:
+      - happy-balance-network
+    volumes:
+      - backend_uploads:/app/uploads
 
   # Frontend
   frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: alcibiadesc/happy-balance-frontend:latest
+    container_name: happy-balance-frontend
+    restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:3004/api
-    ports:
-      - "5173:3000"
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3004/api}
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
     depends_on:
       - backend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - happy-balance-network
+
+networks:
+  happy-balance-network:
+    driver: bridge
 
 volumes:
   postgres_data:
+    driver: local
+  backend_uploads:
+    driver: local

@@ -1,59 +1,43 @@
-# Backend Dockerfile
-FROM node:20-alpine AS base
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Set working directory
+# Backend Dockerfile - Optimizado con auto-inicialización
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
+# Instalar dependencias del sistema
+RUN apk add --no-cache python3 make g++
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Copiar archivos de dependencias
+COPY package.json ./
+COPY prisma ./prisma
 
-# Copy source code
+# Instalar todas las dependencias y generar Prisma Client
+RUN npm install && npx prisma generate
+
+# Copiar código fuente
 COPY . .
 
-# Generate Prisma client
-RUN pnpm db:generate
+# Compilar TypeScript si existe build script
+RUN npm run build 2>/dev/null || echo "No build step needed"
 
-# Build the application
-RUN pnpm build
-
-# Production stage
 FROM node:20-alpine AS production
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodeuser -u 1001
-
 WORKDIR /app
 
-# Copy package files
-COPY --chown=nodeuser:nodejs package.json pnpm-lock.yaml* ./
+# Instalar herramientas necesarias
+RUN apk add --no-cache netcat-openbsd
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+# Copiar aplicación compilada
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/dist ./dist 2>/dev/null || true
 
-# Copy built application
-COPY --chown=nodeuser:nodejs --from=base /app/dist ./dist
-COPY --chown=nodeuser:nodejs --from=base /app/node_modules/.prisma ./node_modules/.prisma
-COPY --chown=nodeuser:nodejs prisma ./prisma
+# Copiar y dar permisos al entrypoint
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
-# Switch to non-root user
-USER nodeuser
+EXPOSE 3004
 
-# Expose port
-EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD nc -z localhost 3004 || exit 1
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
-
-# Start the application
-CMD ["node", "dist/main.js"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

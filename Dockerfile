@@ -1,53 +1,30 @@
-# Frontend Dockerfile
-FROM node:20-alpine AS base
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Set working directory
+# Frontend Dockerfile - Multi-stage build optimizado
+FROM node:20-alpine AS dependencies
 WORKDIR /app
-
-# Copy package files
 COPY package.json pnpm-lock.yaml* ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
-# Install dependencies
-RUN pnpm install --no-frozen-lockfile
-
-# Copy source code
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
+RUN npm install -g pnpm && pnpm build:frontend
 
-# Build the application (frontend only)
-RUN pnpm build:frontend
-
-# Production stage
 FROM node:20-alpine AS production
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodeuser -u 1001
-
+RUN addgroup -g 1001 -S nodejs && adduser -S nodeuser -u 1001
 WORKDIR /app
 
-# Copy built application and necessary files
-COPY --chown=nodeuser:nodejs --from=base /app/build ./build
-COPY --chown=nodeuser:nodejs --from=base /app/package.json ./
-COPY --chown=nodeuser:nodejs --from=base /app/node_modules/@sveltejs/adapter-node ./node_modules/@sveltejs/adapter-node
+# Solo copiar lo necesario para producción
+COPY --chown=nodeuser:nodejs --from=builder /app/build ./build
+COPY --chown=nodeuser:nodejs package.json ./
 
-# Install only production dependencies for the adapter
-RUN pnpm add --prod @sveltejs/adapter-node
+# Instalar solo el adaptador necesario
+RUN npm install --production @sveltejs/adapter-node
 
-# Switch to non-root user
 USER nodeuser
-
-# Expose port
 EXPOSE 3000
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
 
-# Start the application
 CMD ["node", "build"]
