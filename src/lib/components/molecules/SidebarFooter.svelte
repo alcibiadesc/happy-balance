@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { Upload } from 'lucide-svelte';
-  import { goto } from '$app/navigation';
-  import UserMenu from './UserMenu.svelte';
+  import { Upload } from "lucide-svelte";
+  import { goto } from "$app/navigation";
+  import UserMenu from "./UserMenu.svelte";
 
   interface Props {
     collapsed: boolean;
@@ -10,7 +10,7 @@
   let { collapsed }: Props = $props();
 
   function handleImportClick() {
-    goto('/import');
+    goto("/import");
   }
 </script>
 
@@ -28,18 +28,7 @@
       <UserMenu />
     </div>
   {:else}
-    <div class="footer-content">
-      <button
-        class="import-button import-button--full"
-        onclick={handleImportClick}
-      >
-        <Upload size={18} strokeWidth={2} />
-        <span>Import Transactions</span>
-      </button>
-      <div class="user-section">
-        <UserMenu />
-      </div>
-    </div>
+    <UserMenu />
   {/if}
 </footer>
 
