@@ -1,1 +1,0 @@
-SELECT t.id, t.amount, t.merchant, t.categoryId, c.name as category_name, c.type as category_type FROM transactions t LEFT JOIN categories c ON t.categoryId = c.id WHERE t.merchant LIKE '%MAPFRE%' OR t.amount = 125;

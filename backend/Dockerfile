@@ -1,59 +1,31 @@
-# Backend Dockerfile
-FROM node:20-alpine AS base
+# Backend Dockerfile - With auto-initialization
+FROM node:20-alpine
 
-# Install pnpm
-RUN npm install -g pnpm
+# Install tools including netcat for health checks
+RUN apk add --no-cache curl netcat-openbsd
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install ALL dependencies using npm
+RUN npm install
 
-# Copy source code
-COPY . .
+# Copy prisma schema
+COPY prisma ./prisma
 
 # Generate Prisma client
-RUN pnpm db:generate
+RUN npx prisma generate
 
-# Build the application
-RUN pnpm build
-
-# Production stage
-FROM node:20-alpine AS production
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodeuser -u 1001
-
-WORKDIR /app
-
-# Copy package files
-COPY --chown=nodeuser:nodejs package.json pnpm-lock.yaml* ./
-
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
-
-# Copy built application
-COPY --chown=nodeuser:nodejs --from=base /app/dist ./dist
-COPY --chown=nodeuser:nodejs --from=base /app/node_modules/.prisma ./node_modules/.prisma
-COPY --chown=nodeuser:nodejs prisma ./prisma
-
-# Switch to non-root user
-USER nodeuser
+# Copy source code and entrypoint
+COPY . .
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3004
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
-
-# Start the application
-CMD ["node", "dist/main.js"]
+# Use entrypoint for initialization
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

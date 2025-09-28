@@ -110,93 +110,40 @@ Customize your experience with comprehensive settings
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- Node.js 20+ and pnpm
-- PostgreSQL 15+
-- Or just Docker 🐳
-
-### Option 1: Docker Hub (Easiest) 🐳
+### Option 1: Docker (Easiest) 🐳
 
 ```bash
-# Pull and run the official image
-docker run -d \
-  --name happy-balance \
-  -p 5173:3000 \
-  -e VITE_API_URL=http://localhost:3004/api \
-  alcibiadesc/happy-balance:latest
-
-# Or use docker-compose with the image
-```
-
-### Option 2: Build from Source
-
-```bash
-# Clone the repository
+# Clone the repo
 git clone https://github.com/alcibiadesc/happy-balance.git
 cd happy-balance
 
-# Run the setup wizard
-./docker-init.sh
-
-# Or manually with docker-compose
-cp .env.docker .env
+# Start everything with one command
 docker-compose up -d
 ```
 
-Access the application at `http://localhost:5173`
+Access at: `http://localhost:5173`
+- Username: `admin`
+- Password: `admin123`
 
-### Option 3: Manual Installation
+That's it! 🎉 Everything is automatically configured.
+
+### Option 2: Development Setup
 
 ```bash
 # Clone the repository
 git clone https://github.com/alcibiadesc/happy-balance.git
 cd happy-balance
 
-# Install frontend dependencies
+# Install dependencies
 pnpm install
-
-# Install backend dependencies
-cd backend
-pnpm install
+cd backend && pnpm install
 
 # Setup database
 npx prisma migrate dev
-npx prisma db seed
 
-# Start development servers
+# Start development
 pnpm dev # Frontend on :5173
 cd backend && pnpm dev # Backend on :3004
-```
-
-### Default Credentials
-
-- Username: `admin`
-- Password: `admin123`
-
-**⚠️ CHANGE THESE IMMEDIATELY IN PRODUCTION!**
-
-## 🐳 Docker Deployment
-
-### Using Docker Compose
-
-```yaml
-version: "3.8"
-
-services:
-  postgres:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_PASSWORD: change_me
-      POSTGRES_DB: happy_balance
-
-  backend:
-    build: ./backend
-    environment:
-      DATABASE_URL: postgresql://postgres:change_me@postgres:5432/happy_balance
-      JWT_ACCESS_SECRET: change_me_32_chars_minimum
-    ports:
-      - "3004:3004"
 
   frontend:
     build: .
