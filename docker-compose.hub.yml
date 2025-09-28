@@ -1,0 +1,67 @@
+# Docker Compose using Docker Hub image
+# Quick deployment without building from source
+
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: happy-balance-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-happy_balance}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - happy-balance
+
+  # Backend API
+  backend:
+    image: alcibiadesc/happy-balance-backend:latest
+    container_name: happy-balance-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-happy_balance}
+      PORT: 3004
+      NODE_ENV: production
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-this-to-a-secure-32-char-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-this-to-another-secure-32-char-secret}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme123}
+    ports:
+      - "3004:3004"
+    depends_on:
+      - postgres
+    networks:
+      - happy-balance
+
+  # Frontend
+  frontend:
+    image: alcibiadesc/happy-balance:latest
+    container_name: happy-balance-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3004/api}
+    ports:
+      - "5173:3000"
+    depends_on:
+      - backend
+    networks:
+      - happy-balance
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  happy-balance:
+    driver: bridge

@@ -11,13 +11,13 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN pnpm build
+# Build the application (frontend only)
+RUN pnpm build:frontend
 
 # Production stage
 FROM node:20-alpine AS production
@@ -37,7 +37,7 @@ COPY --chown=nodeuser:nodejs --from=base /app/package.json ./
 COPY --chown=nodeuser:nodejs --from=base /app/node_modules/@sveltejs/adapter-node ./node_modules/@sveltejs/adapter-node
 
 # Install only production dependencies for the adapter
-RUN pnpm install --prod --frozen-lockfile @sveltejs/adapter-node
+RUN pnpm add --prod @sveltejs/adapter-node
 
 # Switch to non-root user
 USER nodeuser

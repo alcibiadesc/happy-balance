@@ -9,6 +9,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![SvelteKit](https://img.shields.io/badge/SvelteKit-2.0-orange)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)
+![Docker Hub](https://img.shields.io/docker/pulls/alcibiadesc/happy-balance)
 
 **🔒 The Private, Self-Hosted Alternative to Fintonic, Mint & YNAB**
 
@@ -115,7 +116,20 @@ Customize your experience with comprehensive settings
 - PostgreSQL 15+
 - Or just Docker 🐳
 
-### Option 1: Docker (Recommended)
+### Option 1: Docker Hub (Easiest) 🐳
+
+```bash
+# Pull and run the official image
+docker run -d \
+  --name happy-balance \
+  -p 5173:3000 \
+  -e VITE_API_URL=http://localhost:3004/api \
+  alcibiadesc/happy-balance:latest
+
+# Or use docker-compose with the image
+```
+
+### Option 2: Build from Source
 
 ```bash
 # Clone the repository
@@ -132,7 +146,7 @@ docker-compose up -d
 
 Access the application at `http://localhost:5173`
 
-### Option 2: Manual Installation
+### Option 3: Manual Installation
 
 ```bash
 # Clone the repository
