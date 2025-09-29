@@ -16,9 +16,10 @@
 
   // Domain Store - Usar el enhanced store que detecta el último período con datos
   import { createEnhancedDashboardStore } from "$lib/modules/dashboard/presentation/stores/enhancedDashboardStore.svelte.ts";
+  import { getApiUrl } from "$lib/utils/api-url";
 
   // Initialize store with API configuration
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3004/api";
+  const API_BASE = getApiUrl();
   console.log('[Dashboard] Using API base:', API_BASE);
   const store = createEnhancedDashboardStore(API_BASE);
 

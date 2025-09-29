@@ -1,6 +1,7 @@
 import { writable, derived } from "svelte/store";
 import { browser } from "$app/environment";
 import { authStore } from "$lib/modules/auth/presentation/stores/authStore.svelte";
+import { getApiUrl } from "$lib/utils/api-url";
 
 export interface UserPreferences {
   id?: string;
@@ -12,7 +13,7 @@ export interface UserPreferences {
   updatedAt?: Date;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3004/api";
+const API_BASE = getApiUrl();
 
 // Helper function to create authenticated headers
 function getAuthHeaders(): Record<string, string> {

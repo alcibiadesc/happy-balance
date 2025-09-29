@@ -18,7 +18,8 @@
   import { fly } from 'svelte/transition';
 
   // API Configuration
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3004/api';
+  import { getApiUrl } from "$lib/utils/api-url";
+const API_BASE = getApiUrl();
 
   // Create settings store instance
   const store = createSettingsStore(API_BASE);

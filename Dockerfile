@@ -31,7 +31,7 @@ COPY apps/frontend ./apps/frontend
 
 # Build the application
 WORKDIR /app/apps/frontend
-RUN pnpm build
+RUN pnpm install --frozen-lockfile && pnpm build
 
 # Production stage - Simple Node.js server for SvelteKit
 FROM node:20-alpine AS production
@@ -49,8 +49,9 @@ COPY --from=builder /app/pnpm-workspace.yaml ./
 # Copy built application
 COPY --from=builder /app/apps/frontend/build ./build
 
-# Install only production dependencies for the built app
-RUN pnpm install --prod --frozen-lockfile
+# Copy lockfile and install production dependencies
+COPY --from=builder /app/pnpm-lock.yaml ./
+RUN pnpm install --prod --no-frozen-lockfile
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \

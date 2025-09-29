@@ -17,6 +17,14 @@ export default defineConfig({
   },
   build: {
     target: "esnext",
+    outDir: "build",
+    sourcemap: false,
+    minify: true,
+  },
+  preview: {
+    host: "0.0.0.0",
+    port: 3000,
+    strictPort: true,
   },
   optimizeDeps: {
     include: ["chart.js/auto"]

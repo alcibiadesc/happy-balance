@@ -1,8 +1,9 @@
 import { writable, derived } from "svelte/store";
 import type { Transaction, Category } from "$lib/types/transaction";
 import { authStore } from "$lib/modules/auth/presentation/stores/authStore.svelte";
+import { getApiUrl } from "$lib/utils/api-url";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3004/api";
+const API_BASE = getApiUrl();
 
 // Helper function to create authenticated headers
 function getAuthHeaders(): Record<string, string> {

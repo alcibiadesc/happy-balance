@@ -10,8 +10,9 @@ import { AuthTokens, AccessToken, RefreshToken } from '../../domain/value-object
 import { UserId } from '../../domain/value-objects/UserId';
 import { Username } from '../../domain/value-objects/Username';
 import { UserRole } from '../../domain/value-objects/UserRole';
+import { getApiUrl } from '$lib/utils/api-url';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3004/api';
+const API_BASE = getApiUrl();
 
 export class HttpAuthRepository implements IAuthRepository {
   private accessToken: string | null = null;

@@ -103,16 +103,35 @@ docker compose push
 - **`production`**: Incluye Nginx como reverse proxy
 - **`monitoring`**: Incluye Prometheus y Redis para observabilidad
 
-## 🌐 Puertos y Acceso
+## 🌐 Puertos y Acceso - Arquitectura de Seguridad Optimizada
 
-### Desarrollo
+### ✅ Desarrollo Básico (Recomendado)
+```bash
+docker compose up -d
+```
+- **Frontend**: http://localhost:3000 ← Solo puerto necesario
+- **Backend**: Comunicación interna (sin puerto expuesto)
+- **PostgreSQL**: Comunicación interna (sin puerto expuesto)
+
+### 🔧 Desarrollo con Acceso Directo (Para debugging)
+```bash
+# Exponer solo cuando necesites herramientas externas
+POSTGRES_PORT=5432 BACKEND_PORT=3004 docker compose up -d
+
+# O usar override completo
+docker compose -f docker-compose.yml -f docker-compose.development.yml up -d
+```
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3004
-- **PostgreSQL**: localhost:5432 (para herramientas como pgAdmin)
+- **Backend API**: http://localhost:3004 (para testing directo)
+- **PostgreSQL**: localhost:5432 (para pgAdmin, DataGrip, etc.)
 
-### Producción
-- **Solo Frontend expuesto**: puerto 3000
-- **Backend y PostgreSQL**: solo comunicación interna (sin puertos expuestos al host)
+### 🔒 Producción (Completamente Seguro)
+```bash
+docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+```
+- **Solo Nginx expuesto**: puerto 80/443
+- **Frontend, Backend y PostgreSQL**: solo comunicación interna
+- **Red de base de datos**: completamente interna (`internal: true`)
 
 ## 💾 Volúmenes Persistentes
 
@@ -127,20 +146,22 @@ docker compose push
 - `.env.production` - Variables para producción (con placeholders)
 - `.env.example` - Template con todas las variables disponibles
 
-### Variables Dinámicas Clave
+### 🔐 Variables de Control de Seguridad
 
-| Variable | Desarrollo | Producción | Descripción |
-|----------|------------|------------|-------------|
-| `VITE_API_URL` | `http://localhost:3004/api` | `http://backend:3004/api` | URL del backend para el frontend |
-| `DATABASE_NETWORK_INTERNAL` | `false` | `true` | Control de acceso externo a BD |
-| `POSTGRES_PORT` | `5432` | `vacío` | Puerto expuesto de PostgreSQL |
-| `BACKEND_PORT` | `3004` | `vacío` | Puerto expuesto del backend |
-| `CORS_ORIGIN` | Múltiples localhost | Dominio específico | Orígenes permitidos para CORS |
+| Variable | Desarrollo Básico | Desarrollo Full | Producción | Descripción |
+|----------|-------------------|-----------------|------------|-------------|
+| `POSTGRES_PORT` | `vacío` (no expuesto) | `5432` | `vacío` | Control de exposición PostgreSQL |
+| `BACKEND_PORT` | `vacío` (no expuesto) | `3004` | `vacío` | Control de exposición Backend API |
+| `DATABASE_NETWORK_INTERNAL` | `false` | `false` | `true` | Red de BD completamente interna |
+| `VITE_API_URL` | `http://localhost:3004/api` | `http://localhost:3004/api` | `https://api.dominio.com` | URL del backend para frontend |
+| `CORS_ORIGIN` | Localhost múltiple | Localhost múltiple | Dominio específico | Control de CORS |
 
-### Seguridad por Variables
+### 🛡️ Principio de Seguridad: Zero Trust por Defecto
 
-- **Desarrollo**: Puertos expuestos, red abierta, CORS permisivo
-- **Producción**: Solo frontend expuesto, red interna, CORS restrictivo
+- **✅ Por defecto**: Solo frontend expuesto (puerto 3000)
+- **🔧 Bajo demanda**: Backend y PostgreSQL se exponen solo cuando se especifica
+- **🔒 Producción**: Cero exposición - toda comunicación interna
+- **🎯 Granular**: Control individual por servicio via variables
 
 ## 🔒 Seguridad
 
@@ -237,4 +258,51 @@ docker compose --env-file .env.production --profile monitoring up -d
 ```bash
 # Probar configuración de producción localmente
 DATABASE_NETWORK_INTERNAL=true POSTGRES_PORT= BACKEND_PORT= docker compose up -d
+
+# Verificar que no hay puertos expuestos innecesarios
+docker compose ps
+
+# Confirmar segmentación de red
+docker network inspect happy_balance_db --format '{{.Internal}}'
+```
+
+## 🚨 Resumen de Optimización de Seguridad
+
+### ✅ Antes vs Después
+
+| Aspecto | ❌ Antes (Inseguro) | ✅ Después (Optimizado) |
+|---------|----------------------|---------------------------|
+| **PostgreSQL** | Siempre expuesto :5432 | Solo bajo demanda o nunca |
+| **Backend API** | Siempre expuesto :3004 | Solo bajo demanda o nunca |
+| **Comunicación** | Via localhost expuesto | Via Docker networks internas |
+| **Producción** | Misma configuración | Red de BD completamente interna |
+| **Desarrollo** | Todo expuesto siempre | Granular: exponer solo lo necesario |
+| **Superficie de ataque** | 3 puertos siempre | 1 puerto por defecto, 0 en producción |
+
+### 🛡️ Beneficios de Seguridad Logrados
+
+1. **Reducción de superficie de ataque**: De 3 puertos a 1 por defecto
+2. **Principio de menor privilegio**: Solo se expone lo estrictamente necesario
+3. **Segregación de red**: Base de datos completamente aislada en producción
+4. **Configuración defensiva**: Seguro por defecto, inseguro bajo demanda
+5. **Zero Trust**: Cada exposición debe ser explícitamente autorizada
+
+### 🔍 Cómo Verificar la Seguridad
+
+```bash
+# 1. Verificar puertos expuestos mínimos
+docker compose ps
+# Debe mostrar solo :3000->3000 (frontend)
+
+# 2. Confirmar conectividad interna funciona
+docker compose exec frontend curl http://backend:3004/health
+# Debe responder OK
+
+# 3. Verificar aislamiento de base de datos en producción
+docker network inspect happy_balance_db --format '{{.Internal}}'
+# Debe mostrar "true" con el override de producción
+
+# 4. Confirmar que no hay acceso externo a PostgreSQL
+psql -h localhost -p 5432 -U postgres
+# Debe fallar con "connection refused" (a menos que POSTGRES_PORT esté definido)
 ```

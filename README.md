@@ -47,21 +47,43 @@ Happy Balance is an open-source personal finance tracker designed with simplicit
 - **No Tracking**: Zero telemetry, zero external analytics
 - **Open Source**: Transparent, auditable, and community-driven
 
-## 🚀 Quick Start with Docker
+## 🚀 Quick Start
 
+### One-Line Install (No Git Required!)
+
+**For localhost access only:**
 ```bash
-# Clone
-git clone https://github.com/alcibiadesc/happy-balance.git
-cd happy-balance
-
-# Build and run
-docker-compose up -d --build
-
-# Access
-http://localhost:3000
+curl -sSL https://raw.githubusercontent.com/alcibiadesc/happy-balance/main/install.sh | bash
 ```
 
-See [DOCKER.md](./DOCKER.md) for details.
+**⚠️ Important for NAS/Remote Server:** If you're installing on a NAS (Synology, QNAP, etc.) or want to access from other devices:
+
+```bash
+# 1. Find your server's IP address
+hostname -I | awk '{print $1}'   # Linux/Mac
+# Or check your router's DHCP settings
+
+# 2. Create .env file (replace 192.168.1.100 with YOUR server's IP)
+cat > .env << EOF
+VITE_API_URL=http://192.168.1.100:3004/api
+CORS_ORIGIN=http://192.168.1.100:3000
+ORIGIN=http://192.168.1.100:3000
+EOF
+
+# 3. Download and start
+curl -sSL https://raw.githubusercontent.com/alcibiadesc/happy-balance/main/docker-compose.yml -o docker-compose.yml
+docker compose up -d
+```
+
+**Access:**
+- **Localhost:** http://localhost:3000
+- **From other devices:** http://YOUR_SERVER_IP:3000 (e.g., http://192.168.1.100:3000)
+
+**Default credentials:**
+- Username: `admin`
+- Password: `admin123`
+
+See [Quick Start Guide](./QUICK_START.md) for more installation options.
 
 ## ✨ Features
 
@@ -126,24 +148,31 @@ Customize your experience with comprehensive settings
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (Easiest) 🐳
+### Option 1: Production Deployment (Docker) 🐳
 
 ```bash
 # Clone the repo
 git clone https://github.com/alcibiadesc/happy-balance.git
 cd happy-balance
 
-# Start everything with one command
-docker-compose up -d
+# Setup environment
+cp .env.example .env
+
+# Deploy with pre-built images from Docker Hub
+docker compose up -d
 ```
 
-Access at: `http://localhost:5173`
+**Access:**
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:3004/api`
+
+**Default credentials:**
 - Username: `admin`
 - Password: `admin123`
 
-That's it! 🎉 Everything is automatically configured.
+**Note:** Images are automatically pulled from Docker Hub (alcibiadesc/happy-balance)
 
-### Option 2: Development Setup
+### Option 2: Development (Recommended) 💻
 
 ```bash
 # Clone the repository
@@ -151,23 +180,22 @@ git clone https://github.com/alcibiadesc/happy-balance.git
 cd happy-balance
 
 # Install dependencies
-pnpm install
-cd backend && pnpm install
+pnpm install:all
+
+# Start PostgreSQL only with Docker
+docker compose up -d postgres
 
 # Setup database
-npx prisma migrate dev
+pnpm db:setup
 
-# Start development
-pnpm dev # Frontend on :5173
-cd backend && pnpm dev # Backend on :3004
-
-  frontend:
-    build: .
-    environment:
-      VITE_API_URL: http://localhost:3004/api
-    ports:
-      - "5173:5173"
+# Start development servers
+pnpm dev
 ```
+
+**Access:**
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:3004`
+- PostgreSQL: `localhost:5432`
 
 ### Using Portainer
 
@@ -236,18 +264,26 @@ pnpm db:seed          # Seed database
 
 ### Environment Variables
 
-Create a `.env` file in the root:
+The project includes a `.env.example` file with all required variables. Copy it to `.env`:
 
+```bash
+cp .env.example .env
+```
+
+**Minimal configuration needed:**
 ```env
-# Backend
-DATABASE_URL=postgresql://user:pass@localhost:5432/happy_balance
-JWT_ACCESS_SECRET=your-secret-key-min-32-chars
-JWT_REFRESH_SECRET=another-secret-key-min-32-chars
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=secure_password
+# Security (CHANGE IN PRODUCTION!)
+JWT_ACCESS_SECRET=your-super-secret-jwt-key-change-in-production-32chars-min
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production-32chars
 
-# Frontend
-VITE_API_URL=http://localhost:3004/api
+# Admin credentials
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123
+
+# Optional - defaults work for local development
+# FRONTEND_PORT=3000
+# BACKEND_PORT=3004
+# VITE_API_URL=http://localhost:3004/api
 ```
 
 ## 🤝 Contributing
