@@ -18,7 +18,11 @@ export class GetCurrentMetricsUseCase {
 
   public async execute(command: GetCurrentMetricsCommand): Promise<Result<MetricSnapshot>> {
     try {
-      const currency = Currency.create(command.currency);
+      const currencyResult = Currency.create(command.currency);
+      if (currencyResult.isFailure()) {
+        return Result.fail(currencyResult.getError());
+      }
+      const currency = currencyResult.getValue();
       const period = this.createPeriod(command);
 
       const snapshot = await this.metricsRepository.getCurrentMetrics(period, currency);
@@ -26,7 +30,7 @@ export class GetCurrentMetricsUseCase {
       return Result.ok(snapshot);
     } catch (error) {
       console.error('Error in GetCurrentMetricsUseCase:', error);
-      return Result.fail(`Failed to get current metrics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(`Failed to get current metrics: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

@@ -76,6 +76,16 @@ export class Money {
     return Money.create(this._amount * factor, this._currency);
   }
 
+  divide(divisor: number): Result<Money> {
+    if (!Number.isFinite(divisor) || divisor <= 0) {
+      return Result.failWithMessage(
+        "Divisor must be a positive finite number",
+      );
+    }
+
+    return Money.create(this._amount / divisor, this._currency);
+  }
+
   isGreaterThan(other: Money): boolean {
     this.ensureSameCurrency(other);
     return this._amount > other._amount;

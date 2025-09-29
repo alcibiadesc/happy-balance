@@ -73,7 +73,7 @@ export class DashboardService {
     const result = await this.metricsUseCase.execute(query);
 
     if (result.isFailure()) {
-      throw new Error(result.getError());
+      throw result.getError();
     }
 
     const data = this.formatMetrics(result.getValue());
@@ -146,7 +146,7 @@ export class DashboardService {
     const result = await this.metricsUseCase.execute(query);
 
     if (result.isFailure()) {
-      throw new Error(result.getError());
+      throw result.getError();
     }
 
     // Agrupar por mes desde los datos ya obtenidos

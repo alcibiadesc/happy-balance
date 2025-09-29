@@ -9,9 +9,10 @@
     "packages/*"
   ],
   "scripts": {
+    "install:all": "pnpm --recursive install",
     "dev": "node scripts/dev-local.js",
     "dev:docker": "node scripts/dev.js",
-    "setup": "node scripts/dev.js setup",
+    "setup": "pnpm install:all && pnpm db:setup",
     "db:start": "node scripts/db-manager.js start",
     "db:stop": "node scripts/db-manager.js stop",
     "db:reset": "node scripts/db-manager.js reset",

@@ -27,7 +27,7 @@ export class GetUserPreferencesUseCase {
 
       return Result.ok(result.getValue()!);
     } catch (error) {
-      return Result.failWithMessage(`Failed to get user preferences: ${error}`);
+      return Result.failWithMessage(`Failed to get user preferences: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 }

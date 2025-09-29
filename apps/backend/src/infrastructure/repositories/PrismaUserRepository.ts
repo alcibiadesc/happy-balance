@@ -32,7 +32,7 @@ export class PrismaUserRepository implements IUserRepository {
         })
       );
     } catch (error) {
-      return Result.fail(`Failed to find user by id: ${error}`);
+      return Result.failWithMessage(`Failed to find user by id: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
@@ -62,7 +62,7 @@ export class PrismaUserRepository implements IUserRepository {
         })
       );
     } catch (error) {
-      return Result.fail(`Failed to find user by username: ${error}`);
+      return Result.failWithMessage(`Failed to find user by username: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
@@ -90,7 +90,7 @@ export class PrismaUserRepository implements IUserRepository {
 
       return Result.ok(domainUsers);
     } catch (error) {
-      return Result.fail(`Failed to find all users: ${error}`);
+      return Result.failWithMessage(`Failed to find all users: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
@@ -125,7 +125,7 @@ export class PrismaUserRepository implements IUserRepository {
         })
       );
     } catch (error) {
-      return Result.fail(`Failed to create user: ${error}`);
+      return Result.failWithMessage(`Failed to create user: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
@@ -158,7 +158,7 @@ export class PrismaUserRepository implements IUserRepository {
         })
       );
     } catch (error) {
-      return Result.fail(`Failed to update user: ${error}`);
+      return Result.failWithMessage(`Failed to update user: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
@@ -169,7 +169,7 @@ export class PrismaUserRepository implements IUserRepository {
       });
       return Result.ok(undefined);
     } catch (error) {
-      return Result.fail(`Failed to delete user: ${error}`);
+      return Result.failWithMessage(`Failed to delete user: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
@@ -183,7 +183,7 @@ export class PrismaUserRepository implements IUserRepository {
       });
       return Result.ok(undefined);
     } catch (error) {
-      return Result.fail(`Failed to update last login: ${error}`);
+      return Result.failWithMessage(`Failed to update last login: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 }

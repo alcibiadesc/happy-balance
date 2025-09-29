@@ -35,7 +35,7 @@ export class AuthenticationService {
       const hashedPassword = await bcrypt.hash(password, this.saltRounds);
       return Result.ok(hashedPassword);
     } catch (error) {
-      return Result.fail(`Failed to hash password: ${error}`);
+      return Result.failWithMessage(`Failed to hash password: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
@@ -44,7 +44,7 @@ export class AuthenticationService {
       const isValid = await bcrypt.compare(password, hashedPassword);
       return Result.ok(isValid);
     } catch (error) {
-      return Result.fail(`Failed to verify password: ${error}`);
+      return Result.failWithMessage(`Failed to verify password: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
@@ -70,7 +70,7 @@ export class AuthenticationService {
 
       return Result.ok({ accessToken, refreshToken });
     } catch (error) {
-      return Result.fail(`Failed to generate tokens: ${error}`);
+      return Result.failWithMessage(`Failed to generate tokens: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
@@ -80,12 +80,12 @@ export class AuthenticationService {
       return Result.ok(payload);
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
-        return Result.fail('Token expired');
+        return Result.failWithMessage('Token expired');
       }
       if (error instanceof jwt.JsonWebTokenError) {
-        return Result.fail('Invalid token');
+        return Result.failWithMessage('Invalid token');
       }
-      return Result.fail(`Token verification failed: ${error}`);
+      return Result.failWithMessage(`Token verification failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
@@ -95,12 +95,12 @@ export class AuthenticationService {
       return Result.ok(payload);
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
-        return Result.fail('Refresh token expired');
+        return Result.failWithMessage('Refresh token expired');
       }
       if (error instanceof jwt.JsonWebTokenError) {
-        return Result.fail('Invalid refresh token');
+        return Result.failWithMessage('Invalid refresh token');
       }
-      return Result.fail(`Refresh token verification failed: ${error}`);
+      return Result.failWithMessage(`Refresh token verification failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
