@@ -15,7 +15,11 @@ export class GetMetricsTrendsUseCase {
 
   public async execute(command: GetMetricsTrendsCommand): Promise<Result<MetricSnapshot[]>> {
     try {
-      const currency = Currency.create(command.currency);
+      const currencyResult = Currency.create(command.currency);
+      if (currencyResult.isFailure()) {
+        return Result.fail(currencyResult.getError());
+      }
+      const currency = currencyResult.getValue();
       const numberOfPeriods = command.numberOfPeriods || this.getDefaultPeriodCount(command.period);
 
       const periods = this.generatePeriods(command.period, numberOfPeriods);
@@ -24,7 +28,7 @@ export class GetMetricsTrendsUseCase {
       return Result.ok(trends);
     } catch (error) {
       console.error('Error in GetMetricsTrendsUseCase:', error);
-      return Result.fail(`Failed to get metrics trends: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return Result.failWithMessage(`Failed to get metrics trends: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

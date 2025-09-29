@@ -1,4 +1,49 @@
+# Happy Balance - Docker Compose Configuration
+# Arquitectura de red segmentada con múltiples entornos
+#
+# Uso:
+# - Desarrollo: docker compose up -d
+# - Producción: ENVIRONMENT=production docker compose up -d
+# - Con monitoreo: MONITORING=true docker compose up -d
+
+# Redes segmentadas por capas de seguridad
+networks:
+  # Red frontal - solo frontend y proxy
+  frontend_network:
+    name: happy_balance_frontend
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+
+  # Red de aplicación - backend y servicios de aplicación
+  application_network:
+    name: happy_balance_app
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24
+
+  # Red de base de datos - solo backend y BD
+  database_network:
+    name: happy_balance_db
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.3.0/24
+    # En producción será internal: true
+    internal: ${DATABASE_NETWORK_INTERNAL:-false}
+
+  # Red de monitoreo (opcional)
+  monitoring_network:
+    name: happy_balance_monitoring
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.4.0/24
+
 services:
+  # Base de datos PostgreSQL
   postgres:
     image: postgres:17-alpine
     container_name: happy-balance-db
@@ -8,15 +53,21 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: happy_balance
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - happy_balance_postgres_data:/var/lib/postgresql/data
+    networks:
+      - database_network
+    # Puerto solo en desarrollo
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
+    expose:
+      - "5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # Backend API
   backend:
     image: alcibiadesc/happy-balance:backend
     build:
@@ -30,22 +81,30 @@ services:
       JWT_REFRESH_SECRET: your-refresh-key-change-this-in-production-min-32-chars
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: admin123
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-development}
       PORT: 3004
-      CORS_ORIGIN: http://localhost:3000,http://frontend:3000
+      # CORS dinámico según entorno
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://frontend:3000}
+    networks:
+      - application_network
+      - database_network
+    # Puerto solo en desarrollo
     ports:
-      - "3004:3004"
+      - "${BACKEND_PORT:-3004}:3004"
+    expose:
+      - "3004"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      - backend_uploads:/app/uploads
+      - happy_balance_uploads:/app/uploads
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3004/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
+  # Frontend SvelteKit
   frontend:
     image: alcibiadesc/happy-balance:frontend
     build:
@@ -54,14 +113,98 @@ services:
     container_name: happy-balance-frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:3004/api
-      NODE_ENV: production
+      # URL dinámica según entorno
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3004/api}
+      NODE_ENV: ${NODE_ENV:-development}
+    networks:
+      - frontend_network
+      - application_network
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       backend:
         condition: service_healthy
 
+  # Redis para cache (opcional)
+  redis:
+    image: redis:7-alpine
+    container_name: happy-balance-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - happy_balance_redis_data:/data
+    networks:
+      - application_network
+    expose:
+      - "6379"
+    # Solo en desarrollo o con monitoreo
+    ports:
+      - "${REDIS_PORT:-}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    profiles:
+      - monitoring
+      - dev-full
+
+  # Nginx reverse proxy (opcional)
+  nginx:
+    image: nginx:alpine
+    container_name: happy-balance-nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - happy_balance_ssl_certs:/etc/ssl/certs
+    networks:
+      - frontend_network
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    depends_on:
+      - frontend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - production
+      - monitoring
+
+  # Prometheus para métricas (opcional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: happy-balance-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - happy_balance_prometheus_data:/prometheus
+    networks:
+      - monitoring_network
+      - application_network
+    expose:
+      - "9090"
+    ports:
+      - "${PROMETHEUS_PORT:-}:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    profiles:
+      - monitoring
+
+# Volúmenes persistentes con nombres descriptivos
 volumes:
-  postgres_data:
-  backend_uploads:
+  happy_balance_postgres_data:
+    name: happy_balance_postgres_data
+  happy_balance_uploads:
+    name: happy_balance_uploads
+  happy_balance_redis_data:
+    name: happy_balance_redis_data
+  happy_balance_ssl_certs:
+    name: happy_balance_ssl_certs
+  happy_balance_prometheus_data:
+    name: happy_balance_prometheus_data

@@ -39,7 +39,7 @@ VITE_PORT=${frontendPort}`;
 // Check and install dependencies if needed
 function checkAndInstallDependencies() {
   const backendNodeModules = resolve(rootDir, "apps", "backend", "node_modules");
-  const frontendNodeModules = resolve(rootDir, "node_modules");
+  const frontendNodeModules = resolve(rootDir, "apps", "frontend", "node_modules");
   let needsInstall = false;
 
   // Check for pnpm
@@ -51,32 +51,17 @@ function checkAndInstallDependencies() {
     process.exit(1);
   }
 
-  if (!existsSync(frontendNodeModules)) {
-    log("📦 Installing frontend dependencies...", "yellow");
+  if (!existsSync(frontendNodeModules) || !existsSync(backendNodeModules)) {
+    log("📦 Installing all workspace dependencies...", "yellow");
     needsInstall = true;
     try {
-      execSync("pnpm install", {
+      execSync("pnpm install:all", {
         cwd: rootDir,
         stdio: "inherit",
       });
-      log("✅ Frontend dependencies installed", "green");
+      log("✅ All dependencies installed", "green");
     } catch (error) {
-      log("❌ Failed to install frontend dependencies", "red");
-      throw error;
-    }
-  }
-
-  if (!existsSync(backendNodeModules)) {
-    log("📦 Installing backend dependencies...", "yellow");
-    needsInstall = true;
-    try {
-      execSync("pnpm install", {
-        cwd: resolve(rootDir, "apps", "backend"),
-        stdio: "inherit",
-      });
-      log("✅ Backend dependencies installed", "green");
-    } catch (error) {
-      log("❌ Failed to install backend dependencies", "red");
+      log("❌ Failed to install dependencies", "red");
       throw error;
     }
   }
@@ -152,9 +137,9 @@ function startFrontend(frontendPort, backendPort) {
 
   return spawn(
     packageManager,
-    ["exec", "vite", "--port", frontendPort.toString(), "--host"],
+    ["dev", "--port", frontendPort.toString(), "--host"],
     {
-      cwd: rootDir,
+      cwd: resolve(rootDir, "apps", "frontend"),
       stdio: "inherit",
       shell: true,
       env: {

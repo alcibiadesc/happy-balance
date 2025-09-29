@@ -1,0 +1,6 @@
+# Configuración optimizada para monorepo
+auto-install-peers=true
+prefer-workspace-packages=true
+link-workspace-packages=deep
+save-workspace-protocol=rolling
+strict-peer-dependencies=false
