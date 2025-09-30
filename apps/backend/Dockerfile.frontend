@@ -19,7 +19,7 @@ COPY apps/backend ./apps/backend
 
 # Generate Prisma client only
 WORKDIR /app/apps/backend
-RUN pnpm prisma generate
+RUN npx prisma generate
 
 # Create uploads directory
 RUN mkdir -p /app/uploads

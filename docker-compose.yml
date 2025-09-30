@@ -27,7 +27,7 @@ services:
 
   # Backend API
   backend:
-    image: alcibiadesc/happy-balance:backend
+    image: alcibiadesc/happy-balance:backend-latest
     container_name: happy-balance-backend
     restart: unless-stopped
     environment:
@@ -57,7 +57,7 @@ services:
 
   # SvelteKit Frontend
   frontend:
-    image: alcibiadesc/happy-balance:frontend
+    image: alcibiadesc/happy-balance:frontend-latest
     container_name: happy-balance-frontend
     restart: unless-stopped
     environment:
