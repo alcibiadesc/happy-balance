@@ -26,6 +26,7 @@ import {
   dashboardLimiter,
   createTransactionLimiter,
 } from "@infrastructure/middleware/rateLimiter";
+import { seedAdminUser } from "./scripts/seed-admin";
 
 
 class App {
@@ -82,6 +83,11 @@ class App {
         origin: (origin, callback) => {
           // Allow requests with no origin (mobile apps, curl, etc.)
           if (!origin) return callback(null, true);
+
+          // Check if wildcard CORS is enabled (for zero-config deployment)
+          if (process.env.CORS_ORIGIN === "*") {
+            return callback(null, true);
+          }
 
           // Check if origin is in allowed list
           if (allowedOrigins.includes(origin)) {
@@ -192,8 +198,8 @@ class App {
       // Test database connection
       await prisma.$connect();
 
-      // Initial setup is now handled differently with multi-user support
-      // Admin user is created via seed script
+      // Automatically seed admin user on startup
+      await seedAdminUser();
 
       // Start server with automatic port detection
       const server = this.app.listen(preferredPort, () => {
