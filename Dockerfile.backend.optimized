@@ -1,43 +1,109 @@
-# Optimized backend for production (using tsx due to TS errors)
-FROM node:20-alpine AS production
+# ====================================
+# Stage 1: Dependencies
+# ====================================
+FROM node:20-alpine AS deps
 
-RUN npm install -g pnpm && \
-    apk add --no-cache wget dumb-init
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# Copy workspace files
+# Copy only dependency files
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/backend/package.json ./apps/backend/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies with optimizations
+RUN pnpm install --frozen-lockfile \
+    --prefer-offline \
+    --config.confirmModulesPurge=false
 
-# Copy backend source
+# ====================================
+# Stage 2: Build
+# ====================================
+FROM node:20-alpine AS builder
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy dependencies and source
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/backend/node_modules ./apps/backend/node_modules
+COPY pnpm-workspace.yaml package.json ./
 COPY apps/backend ./apps/backend
 
-# Generate Prisma Client
+# Generate Prisma client and build
 WORKDIR /app/apps/backend
-RUN npx prisma generate
+RUN npx prisma generate && \
+    pnpm build && \
+    # Clean up build artifacts
+    rm -rf src tsconfig.json
 
-# Create non-root user BEFORE changing ownership
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S backend -u 1001 -G nodejs
+# ====================================
+# Stage 3: Production Dependencies
+# ====================================
+FROM node:20-alpine AS prod-deps
 
-# Change ownership (this creates a new layer but necessary)
-RUN chown -R backend:nodejs /app && \
-    mkdir -p /app/uploads && \
-    chown backend:nodejs /app/uploads
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy package files
+COPY --from=builder /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/apps/backend/package.json ./apps/backend/
+
+# Install ONLY production dependencies
+RUN pnpm install --prod --frozen-lockfile \
+    --prefer-offline \
+    --config.confirmModulesPurge=false && \
+    pnpm store prune
+
+# ====================================
+# Stage 4: Production Runtime
+# ====================================
+FROM node:20-alpine AS production
+
+# Install only essential runtime dependencies
+RUN apk add --no-cache \
+    wget \
+    dumb-init && \
+    corepack enable && \
+    corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy production dependencies
+COPY --from=prod-deps /app/node_modules ./node_modules
+
+# Copy built application
+COPY --from=builder /app/apps/backend/dist ./dist
+COPY --from=builder /app/apps/backend/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/apps/backend/prisma ./prisma
+COPY --from=builder /app/apps/backend/package.json ./
+
+# Create uploads directory
+RUN mkdir -p uploads && \
+    # Create non-root user
+    addgroup -g 1001 -S nodejs && \
+    adduser -S backend -u 1001 -G nodejs && \
+    chown -R backend:nodejs /app
 
 USER backend
 
 EXPOSE 3004
 
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3004/health || exit 1
 
-ENV NODE_ENV=production PORT=3004
+# Environment
+ENV NODE_ENV=production \
+    PORT=3004 \
+    NODE_OPTIONS="--max-old-space-size=512"
 
-# Use dumb-init for proper signal handling
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["pnpm", "dev"]
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["sh", "-c", "pnpm prisma migrate deploy && node dist/main.js"]

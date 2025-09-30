@@ -1,34 +1,109 @@
+# Dependencies
 node_modules
-npm-debug.log
-.git
-.gitignore
-README.md
-.env
-.env.*
-!.env.example
+**/node_modules
+.pnpm-store
+
+# Build outputs
 dist
 build
 .svelte-kit
 .vite
-.DS_Store
-backend/node_modules
-backend/dist
-backend/.env
-*.log
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
 .vscode
 .idea
 *.swp
 *.swo
+*.sublime-*
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
 coverage
 .nyc_output
+test-results
+playwright-report
+**/__tests__
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+
+# Documentation
+README.md
+*.md
+!DOCKER_DEPLOYMENT.md
+docs
+LEGACY_CODE_ANALYSIS.md
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Cache
 .cache
 .parcel-cache
 .next
 .nuxt
-.svelte-kit
+.turbo
+.eslintcache
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Lock files (we copy specific ones in Dockerfile)
 package-lock.json
 yarn.lock
-playwright-report
-test-results
+
+# Screenshots and media
 static/screenshots
 scripts/capture-screenshots.js
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.gif
+**/*.svg
+!apps/frontend/static/**
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.temp
+
+# Database
+*.sqlite
+*.db
+prisma/dev.db
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Misc
+.prettierrc
+.eslintrc*
+tsconfig*.json
+!apps/backend/tsconfig.json
+!apps/frontend/tsconfig.json

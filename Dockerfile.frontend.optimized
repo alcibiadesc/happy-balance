@@ -1,0 +1,87 @@
+# ====================================
+# Stage 1: Dependencies
+# ====================================
+FROM node:20-alpine AS deps
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy dependency files
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY apps/frontend/package.json ./apps/frontend/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile \
+    --prefer-offline \
+    --config.confirmModulesPurge=false
+
+# ====================================
+# Stage 2: Build
+# ====================================
+FROM node:20-alpine AS builder
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
+COPY pnpm-workspace.yaml package.json ./
+COPY apps/frontend ./apps/frontend
+
+# Build application
+WORKDIR /app/apps/frontend
+RUN pnpm build && \
+    # Remove source files to reduce size
+    rm -rf src static
+
+# ====================================
+# Stage 3: Production Runtime
+# ====================================
+FROM node:20-alpine AS production
+
+# Install only essential runtime dependencies
+RUN apk add --no-cache \
+    wget \
+    dumb-init && \
+    corepack enable && \
+    corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy package.json for dependencies
+COPY --from=builder /app/apps/frontend/package.json ./
+
+# Install ONLY production dependencies (adapter-node needs some deps)
+RUN pnpm install --prod --frozen-lockfile \
+    --prefer-offline && \
+    pnpm store prune
+
+# Copy built application
+COPY --from=builder /app/apps/frontend/build ./build
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S frontend -u 1001 -G nodejs && \
+    chown -R frontend:nodejs /app
+
+USER frontend
+
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+
+# Environment
+ENV NODE_ENV=production \
+    PORT=3000 \
+    NODE_OPTIONS="--max-old-space-size=256"
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "build"]
