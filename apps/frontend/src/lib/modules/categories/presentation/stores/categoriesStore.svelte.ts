@@ -210,11 +210,13 @@ export function createCategoriesStore() {
   async function confirmDelete() {
     if (!categoryToDelete) return;
 
+    const category = categoryToDelete;
+
     try {
       // Handle recategorization if there are transactions
       if (transactionsWithCategory > 0) {
         const transactions = get(apiTransactions);
-        const affectedTransactions = transactions.filter(t => t.categoryId === categoryToDelete.getId());
+        const affectedTransactions = transactions.filter(t => t.categoryId === category.getId());
 
         for (const transaction of affectedTransactions) {
           await apiTransactions.update(transaction.id, {
@@ -224,7 +226,7 @@ export function createCategoriesStore() {
       }
 
       // Delete the category
-      await apiCategories.delete(categoryToDelete.getId());
+      await apiCategories.delete(category.getId());
       await loadCategories(); // Reload to get the updated list
 
       showDeleteModal = false;

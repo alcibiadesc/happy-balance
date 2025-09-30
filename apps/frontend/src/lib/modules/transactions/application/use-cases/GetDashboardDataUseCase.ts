@@ -52,21 +52,13 @@ export class GetDashboardDataUseCase {
     try {
       // Get date range
       const { startDate, endDate } = query.getDateRange();
-      const startTransactionDate = TransactionDate.create(startDate);
-      const endTransactionDate = TransactionDate.create(endDate);
-
-      if (startTransactionDate.isFailure()) {
-        return Result.fail(startTransactionDate.getError());
-      }
-
-      if (endTransactionDate.isFailure()) {
-        return Result.fail(endTransactionDate.getError());
-      }
+      const startTransactionDate = TransactionDate.fromDate(startDate);
+      const endTransactionDate = TransactionDate.fromDate(endDate);
 
       // Create date period for calculations
       const period = {
-        startDate: startTransactionDate.getValue(),
-        endDate: endTransactionDate.getValue(),
+        startDate: startTransactionDate,
+        endDate: endTransactionDate,
         label: this.getPeriodLabel(query.period),
       };
 
@@ -221,7 +213,7 @@ export class GetDashboardDataUseCase {
    */
   private generateTrendPeriods(currentPeriod: any, periodType: string) {
     const periods = [];
-    const baseEndDate = new Date(currentPeriod.endDate.value);
+    const baseEndDate = new Date(currentPeriod.endDate.getDate());
 
     // Generate last 6 periods for trends
     for (let i = 5; i >= 0; i--) {
@@ -264,7 +256,7 @@ export class GetDashboardDataUseCase {
           // Custom period - divide into 6 equal parts
           const totalDays = Math.floor(
             (baseEndDate.getTime() -
-              new Date(currentPeriod.startDate.value).getTime()) /
+              new Date(currentPeriod.startDate.getDate()).getTime()) /
               (1000 * 60 * 60 * 24),
           );
           const periodDays = Math.floor(totalDays / 6);
@@ -273,16 +265,14 @@ export class GetDashboardDataUseCase {
           break;
       }
 
-      const startResult = TransactionDate.create(periodStart);
-      const endResult = TransactionDate.create(periodEnd);
+      const startResult = TransactionDate.fromDate(periodStart);
+      const endResult = TransactionDate.fromDate(periodEnd);
 
-      if (startResult.isSuccess() && endResult.isSuccess()) {
-        periods.push({
-          startDate: startResult.getValue(),
-          endDate: endResult.getValue(),
-          label: this.formatPeriodLabel(periodEnd, periodType),
-        });
-      }
+      periods.push({
+        startDate: startResult,
+        endDate: endResult,
+        label: this.formatPeriodLabel(periodEnd, periodType),
+      });
     }
 
     return periods;

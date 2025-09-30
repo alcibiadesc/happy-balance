@@ -92,9 +92,9 @@ export class ApiDashboardRepository implements DashboardRepository {
 
     // Map expense distribution - extract amounts properly
     const expenseDistribution = {
-      essential: { _amount: this.extractAmount(data.expenseDistribution?.essential) },
-      discretionary: { _amount: this.extractAmount(data.expenseDistribution?.discretionary) },
-      debtPayments: { _amount: this.extractAmount(data.expenseDistribution?.debtPayments) }
+      essential: this.extractAmount(data.expenseDistribution?.essential),
+      discretionary: this.extractAmount(data.expenseDistribution?.discretionary),
+      debtPayments: this.extractAmount(data.expenseDistribution?.debtPayments)
     };
 
     return {
@@ -185,9 +185,9 @@ export class ApiDashboardRepository implements DashboardRepository {
       monthlyTrend: [],
       monthlyBarData: [],
       expenseDistribution: {
-        essential: { _amount: 0 },
-        discretionary: { _amount: 0 },
-        debtPayments: { _amount: 0 }
+        essential: 0,
+        discretionary: 0,
+        debtPayments: 0
       }
     };
   }

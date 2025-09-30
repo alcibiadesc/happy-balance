@@ -491,25 +491,14 @@ export class ModernApiDashboardRepository implements DashboardRepository {
                            distribution.uncategorized !== undefined;
 
     const expenseDistribution = {
-      essential: {
-        _amount: distribution.essential?._amount !== undefined ? distribution.essential._amount :
+      essential: distribution.essential?._amount !== undefined ? distribution.essential._amount :
                 distribution.essential !== undefined ? distribution.essential :
-                (hasDistribution ? 0 : totalExpensesValue * 0.6)
-      },
-      discretionary: {
-        _amount: distribution.discretionary?._amount !== undefined ? distribution.discretionary._amount :
+                (hasDistribution ? 0 : totalExpensesValue * 0.6),
+      discretionary: distribution.discretionary?._amount !== undefined ? distribution.discretionary._amount :
                 distribution.discretionary !== undefined ? distribution.discretionary :
-                (hasDistribution ? 0 : totalExpensesValue * 0.35)
-      },
-      debtPayments: {
-        _amount: distribution.debtPayments?._amount !== undefined ? distribution.debtPayments._amount :
+                (hasDistribution ? 0 : totalExpensesValue * 0.35),
+      debtPayments: distribution.debtPayments?._amount !== undefined ? distribution.debtPayments._amount :
                 distribution.debtPayments !== undefined ? distribution.debtPayments : 0
-      },
-      uncategorized: {
-        _amount: distribution.uncategorized?._amount !== undefined ? distribution.uncategorized._amount :
-                distribution.uncategorized !== undefined ? distribution.uncategorized :
-                (hasDistribution ? 0 : totalExpensesValue * 0.05)
-      }
     };
 
     // Generar datos para gráficos de barras
@@ -575,9 +564,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       monthlyTrend: [],
       monthlyBarData: [],
       expenseDistribution: {
-        essential: { amount: 0 },
-        discretionary: { amount: 0 },
-        debtPayments: { amount: 0 }
+        essential: 0,
+        discretionary: 0,
+        debtPayments: 0
       },
       categoryBreakdown: []
     };

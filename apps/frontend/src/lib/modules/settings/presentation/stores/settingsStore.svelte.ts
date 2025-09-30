@@ -1,5 +1,5 @@
 import { Settings } from '../../domain/entities/Settings';
-import { Theme } from '../../domain/value-objects/Theme';
+import { Theme, type ThemeType } from '../../domain/value-objects/Theme';
 import { Language } from '../../domain/value-objects/Language';
 import { ExportDataUseCase } from '../../application/use-cases/ExportData';
 import { t } from '$lib/stores/i18n';
@@ -43,8 +43,8 @@ export function createSettingsStore(apiBase: string) {
 
   // State
   let settings = $state<Settings>(Settings.create({
-    theme: Theme.fromString(currentTheme),
-    language: Language.fromCode(currentLangCode),
+    theme: currentTheme as ThemeType,
+    language: currentLangCode,
     currency: currentCurrencyCode
   }));
   let importStatus = $state('');
@@ -98,7 +98,7 @@ export function createSettingsStore(apiBase: string) {
     exportUseCase.downloadAsJSON(data);
 
     // Show success feedback
-    importStatus = t.get()('settings.export_success');
+    importStatus = get(t)('settings.export_success');
     importSuccess = true;
     setTimeout(() => {
       importStatus = '';
@@ -119,7 +119,7 @@ export function createSettingsStore(apiBase: string) {
     try {
       await importData(pendingImportData);
 
-      importStatus = t.get()('settings.import_success', {
+      importStatus = get(t)('settings.import_success', {
         count: pendingImportData.transactions?.length || 0
       });
       importSuccess = true;
@@ -130,7 +130,7 @@ export function createSettingsStore(apiBase: string) {
       }, 5000);
     } catch (error) {
       console.error('Import error:', error);
-      importError = t.get()('settings.import_error');
+      importError = get(t)('settings.import_error');
     } finally {
       importing = false;
       pendingImportData = null;
@@ -174,8 +174,8 @@ export function createSettingsStore(apiBase: string) {
         await changeLanguage(data.settings.language);
       }
       if (data.settings.theme) {
-        setTheme(data.settings.theme);
-        await userPreferences.updateTheme(data.settings.theme);
+        setTheme(data.settings.theme as ThemeType);
+        await userPreferences.updateTheme(data.settings.theme as ThemeType);
       }
     }
   }
@@ -297,7 +297,7 @@ export function createSettingsStore(apiBase: string) {
 
     // Validate file type
     if (!file.name.toLowerCase().endsWith('.json')) {
-      importError = t.get()('settings.file_type_error');
+      importError = get(t)('settings.file_type_error');
       importing = false;
       return;
     }
@@ -309,7 +309,7 @@ export function createSettingsStore(apiBase: string) {
         prepareImport(data);
       } catch (error) {
         console.error('Parse error:', error);
-        importError = t.get()('settings.parse_error');
+        importError = get(t)('settings.parse_error');
       } finally {
         importing = false;
         input.value = '';
@@ -317,7 +317,7 @@ export function createSettingsStore(apiBase: string) {
     };
 
     reader.onerror = () => {
-      importError = t.get()('settings.read_error');
+      importError = get(t)('settings.read_error');
       importing = false;
     };
 

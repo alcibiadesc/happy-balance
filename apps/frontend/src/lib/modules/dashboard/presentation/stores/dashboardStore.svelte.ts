@@ -110,10 +110,8 @@ export function createDashboardStore(apiBase: string) {
 
   // Formatters using functional composition
   const formatCurrency = (amount: number): string => {
-    return pipe(
-      (val: number) => Math.abs(val),
-      currencyFormatter
-    )(amount);
+    const absValue = Math.abs(amount);
+    return currencyFormatter(absValue);
   };
 
   const formatMoneyValue = (money: any): string => {

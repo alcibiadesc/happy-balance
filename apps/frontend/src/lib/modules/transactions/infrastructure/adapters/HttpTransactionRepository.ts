@@ -157,10 +157,10 @@ export class HttpTransactionRepository implements ITransactionRepository {
 
       if (filters) {
         if (filters.startDate) {
-          queryParams.append("startDate", filters.startDate.toDateString());
+          queryParams.append("startDate", filters.startDate.toString());
         }
         if (filters.endDate) {
-          queryParams.append("endDate", filters.endDate.toDateString());
+          queryParams.append("endDate", filters.endDate.toString());
         }
         if (filters.type) {
           queryParams.append("type", filters.type);
@@ -367,8 +367,8 @@ export class HttpTransactionRepository implements ITransactionRepository {
   > {
     try {
       const queryParams = new URLSearchParams({
-        startDate: startDate.toDateString(),
-        endDate: endDate.toDateString(),
+        startDate: startDate.toString(),
+        endDate: endDate.toString(),
         currency,
       });
 

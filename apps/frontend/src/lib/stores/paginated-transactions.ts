@@ -293,7 +293,6 @@ function mapApiToTransaction(apiTransaction: any): Transaction {
     createdAt: new Date(apiTransaction.createdAt),
     updatedAt: new Date(apiTransaction.updatedAt || apiTransaction.createdAt),
     hidden: apiTransaction.hidden || false,
-    notes: undefined,
   };
 }
 

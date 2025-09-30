@@ -7,6 +7,7 @@ import { HttpAuthRepository } from '../../infrastructure/repositories/HttpAuthRe
 import { LoginUseCase } from '../../application/use-cases/LoginUseCase';
 import { LogoutUseCase } from '../../application/use-cases/LogoutUseCase';
 import { GetCurrentUserUseCase } from '../../application/use-cases/GetCurrentUserUseCase';
+import { Username } from '../../domain/value-objects/Username';
 import type { User } from '../../domain/entities/User';
 
 class AuthStore {
@@ -55,7 +56,7 @@ class AuthStore {
 
     try {
       const result = await this.authRepository.login({
-        username: { value: username },
+        username: Username.create(username),
         password
       });
 

@@ -147,7 +147,7 @@ export class LocalStorageTransactionRepository
 
       // Sort by date (newest first)
       transactions.sort(
-        (a, b) => b.date.value.getTime() - a.date.value.getTime(),
+        (a, b) => b.date.getDate().getTime() - a.date.getDate().getTime(),
       );
 
       return Result.ok(transactions);
@@ -346,9 +346,7 @@ export class LocalStorageTransactionRepository
         return Result.fail(transactionsResult.getError());
       }
 
-      const transactions = transactionsResult
-        .getValue()
-        .filter((t) => t.amount.currency === currency);
+      const transactions = transactionsResult.getValue();
 
       let totalIncome = 0;
       let totalExpenses = 0;
@@ -357,13 +355,13 @@ export class LocalStorageTransactionRepository
       for (const transaction of transactions) {
         switch (transaction.type) {
           case TransactionType.INCOME:
-            totalIncome += transaction.amount.amount;
+            totalIncome += transaction.amount.getValue();
             break;
           case TransactionType.EXPENSE:
-            totalExpenses += transaction.amount.amount;
+            totalExpenses += transaction.amount.getValue();
             break;
           case TransactionType.INVESTMENT:
-            totalInvestments += transaction.amount.amount;
+            totalInvestments += transaction.amount.getValue();
             break;
         }
       }
@@ -630,7 +628,7 @@ export class LocalStorageTransactionRepository
 
       const transactions = allResult.getValue();
       const sourceMerchant = sourceTransaction.merchant.name.toLowerCase();
-      const sourceAmount = sourceTransaction.amount.amount;
+      const sourceAmount = sourceTransaction.amount.getValue();
 
       // Find transactions with similar merchant names and similar amounts
       const matches = transactions.filter((t) => {
@@ -642,7 +640,7 @@ export class LocalStorageTransactionRepository
           t.merchant.name.toLowerCase().includes(sourceMerchant) ||
           sourceMerchant.includes(t.merchant.name.toLowerCase());
 
-        const amountMatch = Math.abs(t.amount.amount - sourceAmount) < 0.01; // Similar amounts
+        const amountMatch = Math.abs(t.amount.getValue() - sourceAmount) < 0.01; // Similar amounts
 
         return merchantMatch || amountMatch;
       });
@@ -755,22 +753,14 @@ export class LocalStorageTransactionRepository
       // Amount filters
       if (
         filters.minAmount !== undefined &&
-        transaction.amount.amount < filters.minAmount
+        transaction.amount.getValue() < filters.minAmount
       ) {
         return false;
       }
 
       if (
         filters.maxAmount !== undefined &&
-        transaction.amount.amount > filters.maxAmount
-      ) {
-        return false;
-      }
-
-      // Currency filter
-      if (
-        filters.currency &&
-        transaction.amount.currency !== filters.currency
+        transaction.amount.getValue() > filters.maxAmount
       ) {
         return false;
       }

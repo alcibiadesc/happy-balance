@@ -3,7 +3,7 @@
  * Adapter that implements the auth repository using HTTP API
  */
 
-import type { IAuthRepository, LoginCredentials } from '../../domain/repositories/IAuthRepository';
+import type { IAuthRepository, LoginCredentials, LoginResponse, PasswordChangeRequired } from '../../domain/repositories/IAuthRepository';
 import type { User } from '../../domain/entities/User';
 import { User as UserEntity } from '../../domain/entities/User';
 import { AuthTokens, AccessToken, RefreshToken } from '../../domain/value-objects/AuthToken';
@@ -26,7 +26,7 @@ export class HttpAuthRepository implements IAuthRepository {
     }
   }
 
-  async login(credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens } | { requiresPasswordChange: true; userId: string; username: string }> {
+  async login(credentials: LoginCredentials): Promise<LoginResponse | PasswordChangeRequired> {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: {
@@ -177,7 +177,7 @@ export class HttpAuthRepository implements IAuthRepository {
     }
   }
 
-  async resetPasswordChange(userId: string, currentPassword: string, newPassword: string): Promise<{ user: User; tokens: AuthTokens }> {
+  async resetPasswordChange(userId: string, currentPassword: string, newPassword: string): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE}/auth/reset-password-change`, {
       method: 'POST',
       headers: {

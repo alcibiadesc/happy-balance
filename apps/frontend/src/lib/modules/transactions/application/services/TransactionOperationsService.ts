@@ -1,6 +1,8 @@
 import type { Transaction, Category } from '$lib/types/transaction';
-import type { ApiTransactionsStore } from '$lib/stores/api-transactions';
+import { apiTransactions as apiTransactionsStore } from '$lib/stores/api-transactions';
 import { get } from 'svelte/store';
+
+type ApiTransactionsStore = typeof apiTransactionsStore;
 
 export class TransactionOperationsService {
   constructor(
@@ -35,7 +37,7 @@ export class TransactionOperationsService {
 
   async add(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>): Promise<void> {
     try {
-      await this.apiTransactions.add(transaction);
+      await this.apiTransactions.add(transaction as Omit<Transaction, 'id' | 'createdAt'>);
     } catch (error) {
       console.error('Failed to add transaction:', error);
       throw error;
@@ -51,7 +53,7 @@ export class TransactionOperationsService {
       const selectedCategory = categoryId ? this.getCategory(categoryId) : null;
 
       let updates: Partial<Transaction> = {
-        categoryId: categoryId
+        categoryId: categoryId ?? undefined
       };
 
       // Handle amount conversion based on category type
@@ -143,7 +145,7 @@ export class TransactionOperationsService {
     observations: string | null
   ): Promise<boolean> {
     try {
-      await this.apiTransactions.update(transactionId, { observations });
+      await this.apiTransactions.update(transactionId, { observations: observations ?? undefined });
       return true;
     } catch (error) {
       console.error('Error updating observations:', error);

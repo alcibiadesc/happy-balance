@@ -3,7 +3,7 @@
  * Orchestrates the login flow
  */
 
-import type { IAuthRepository } from '../../domain/repositories/IAuthRepository';
+import type { IAuthRepository, LoginResponse, PasswordChangeRequired } from '../../domain/repositories/IAuthRepository';
 import type { User } from '../../domain/entities/User';
 import type { AuthTokens } from '../../domain/value-objects/AuthToken';
 import { Username } from '../../domain/value-objects/Username';
@@ -13,15 +13,10 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface LoginResponse {
-  user: User;
-  tokens: AuthTokens;
-}
-
 export class LoginUseCase {
   constructor(private authRepository: IAuthRepository) {}
 
-  async execute(request: LoginRequest): Promise<LoginResponse> {
+  async execute(request: LoginRequest): Promise<LoginResponse | PasswordChangeRequired> {
     // Validate input
     if (!request.username || !request.password) {
       throw new Error('Username and password are required');

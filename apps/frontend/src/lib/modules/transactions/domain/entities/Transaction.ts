@@ -36,21 +36,21 @@ export class Transaction {
     id?: TransactionId,
   ): Result<Transaction> {
     // Business rule: Income transactions should have non-negative amounts
-    if (type === TransactionType.INCOME && amount.amount < 0) {
+    if (type === TransactionType.INCOME && amount.getValue() < 0) {
       return Result.failWithMessage(
         "Income transactions cannot have negative amounts",
       );
     }
 
     // Business rule: Expense transactions should have non-negative amounts
-    if (type === TransactionType.EXPENSE && amount.amount < 0) {
+    if (type === TransactionType.EXPENSE && amount.getValue() < 0) {
       return Result.failWithMessage(
         "Expense transactions cannot have negative amounts",
       );
     }
 
     // Business rule: Investment transactions should have non-negative amounts
-    if (type === TransactionType.INVESTMENT && amount.amount < 0) {
+    if (type === TransactionType.INVESTMENT && amount.getValue() < 0) {
       return Result.failWithMessage(
         "Investment transactions cannot have negative amounts",
       );
@@ -168,7 +168,7 @@ export class Transaction {
 
     // Within tolerance time window
     const timeDiffMs = Math.abs(
-      this._date.value.getTime() - other._date.value.getTime(),
+      this._date.getDate().getTime() - other._date.getDate().getTime(),
     );
     const toleranceMs = toleranceHours * 60 * 60 * 1000;
 
@@ -179,7 +179,7 @@ export class Transaction {
    * Generate a hash for duplicate detection
    */
   getHash(): string {
-    const data = `${this._date.toDateString()}_${this._merchant.normalizedName}_${this._amount.amount}_${this._amount.currency}`;
+    const data = `${this._date.toString()}_${this._merchant.normalizedName}_${this._amount.getValue()}`;
 
     // Simple hash function
     let hash = 0;
@@ -198,7 +198,7 @@ export class Transaction {
    */
   getEffectiveAmount(): Money {
     if (this._type === TransactionType.EXPENSE) {
-      return this._amount.multiply(-1).getValue();
+      return this._amount.multiply(-1);
     }
     return this._amount;
   }
@@ -212,7 +212,7 @@ export class Transaction {
     return (
       this._merchant.name.toLowerCase().includes(term) ||
       this._description.toLowerCase().includes(term) ||
-      this._amount.format().toLowerCase().includes(term)
+      this._amount.getValue().toString().toLowerCase().includes(term)
     );
   }
 
@@ -230,9 +230,9 @@ export class Transaction {
   toSnapshot(): TransactionSnapshot {
     return {
       id: this._id.value,
-      amount: this._amount.amount,
-      currency: this._amount.currency,
-      date: this._date.toDateString(),
+      amount: this._amount.getValue(),
+      currency: "EUR", // Currency is managed separately in the app
+      date: this._date.toString(),
       merchant: this._merchant.name,
       type: this._type,
       description: this._description,
@@ -243,49 +243,48 @@ export class Transaction {
   }
 
   static fromSnapshot(snapshot: TransactionSnapshot): Result<Transaction> {
-    // Reconstruct value objects
-    const idResult = TransactionId.create(snapshot.id);
-    if (idResult.isFailure()) {
-      return Result.fail(idResult.getError());
-    }
-
-    const amountResult = Money.create(snapshot.amount, snapshot.currency);
-    if (amountResult.isFailure()) {
-      return Result.fail(amountResult.getError());
-    }
-
-    const dateResult = TransactionDate.fromString(snapshot.date);
-    if (dateResult.isFailure()) {
-      return Result.fail(dateResult.getError());
-    }
-
-    const merchantResult = Merchant.create(snapshot.merchant);
-    if (merchantResult.isFailure()) {
-      return Result.fail(merchantResult.getError());
-    }
-
-    // Create transaction
-    const transaction = new Transaction(
-      idResult.getValue(),
-      amountResult.getValue(),
-      dateResult.getValue(),
-      merchantResult.getValue(),
-      snapshot.type,
-      snapshot.description,
-      new Date(snapshot.createdAt),
-    );
-
-    // Set optional fields
-    if (snapshot.categoryId) {
-      const categoryIdResult = CategoryId.create(snapshot.categoryId);
-      if (categoryIdResult.isSuccess()) {
-        transaction._categoryId = categoryIdResult.getValue();
+    try {
+      // Reconstruct value objects
+      const idResult = TransactionId.create(snapshot.id);
+      if (idResult.isFailure()) {
+        return Result.fail(idResult.getError());
       }
+
+      const amount = Money.create(snapshot.amount);
+      const date = TransactionDate.create(snapshot.date);
+
+      const merchantResult = Merchant.create(snapshot.merchant);
+      if (merchantResult.isFailure()) {
+        return Result.fail(merchantResult.getError());
+      }
+
+      // Create transaction
+      const transaction = new Transaction(
+        idResult.getValue(),
+        amount,
+        date,
+        merchantResult.getValue(),
+        snapshot.type,
+        snapshot.description,
+        new Date(snapshot.createdAt),
+      );
+
+      // Set optional fields
+      if (snapshot.categoryId) {
+        const categoryIdResult = CategoryId.create(snapshot.categoryId);
+        if (categoryIdResult.isSuccess()) {
+          transaction._categoryId = categoryIdResult.getValue();
+        }
+      }
+
+      transaction._isSelected = snapshot.isSelected ?? true;
+
+      return Result.ok(transaction);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to create transaction from snapshot: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
-
-    transaction._isSelected = snapshot.isSelected ?? true;
-
-    return Result.ok(transaction);
   }
 }
 

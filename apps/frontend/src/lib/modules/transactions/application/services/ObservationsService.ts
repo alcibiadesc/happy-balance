@@ -65,7 +65,7 @@ export const createObservationsHandler = (
       }
 
       return await updateTransaction(transaction.id, {
-        observations: trimmedText || null
+        observations: trimmedText || undefined
       });
     } catch (error) {
       console.error('Error saving observations:', error);

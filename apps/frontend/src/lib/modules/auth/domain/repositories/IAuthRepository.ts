@@ -13,8 +13,19 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface LoginResponse {
+  user: User;
+  tokens: AuthTokens;
+}
+
+export interface PasswordChangeRequired {
+  requiresPasswordChange: true;
+  userId: string;
+  username: string;
+}
+
 export interface IAuthRepository {
-  login(credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens }>;
+  login(credentials: LoginCredentials): Promise<LoginResponse | PasswordChangeRequired>;
   logout(): Promise<void>;
   refreshToken(refreshToken: string): Promise<AuthTokens>;
   getCurrentUser(): Promise<User | null>;

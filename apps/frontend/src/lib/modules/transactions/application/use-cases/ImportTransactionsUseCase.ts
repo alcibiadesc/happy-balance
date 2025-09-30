@@ -283,10 +283,7 @@ export class ImportTransactionsUseCase {
       }
 
       // Create value objects
-      const dateResult = TransactionDate.fromString(dateStr);
-      if (dateResult.isFailure()) {
-        return Result.fail(dateResult.getError());
-      }
+      const date = TransactionDate.create(dateStr);
 
       const merchantResult = Merchant.create(merchantName);
       if (merchantResult.isFailure()) {
@@ -294,10 +291,7 @@ export class ImportTransactionsUseCase {
       }
 
       const amount = this.parseAmount(amountStr);
-      const moneyResult = Money.create(Math.abs(amount), currency);
-      if (moneyResult.isFailure()) {
-        return Result.fail(moneyResult.getError());
-      }
+      const money = Money.create(Math.abs(amount));
 
       // Determine transaction type based on amount sign
       const type =
@@ -305,8 +299,8 @@ export class ImportTransactionsUseCase {
 
       // Create transaction
       const transactionResult = Transaction.create(
-        moneyResult.getValue(),
-        dateResult.getValue(),
+        money,
+        date,
         merchantResult.getValue(),
         type,
         description,

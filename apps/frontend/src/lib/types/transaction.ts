@@ -25,7 +25,8 @@ export interface Category {
     | "essential"
     | "discretionary"
     | "investment"
-    | "debt_payment";
+    | "debt_payment"
+    | "no_compute";
   color: string;
   icon: string;
   parentId?: string; // For subcategories

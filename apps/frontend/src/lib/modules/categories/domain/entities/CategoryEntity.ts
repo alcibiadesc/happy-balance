@@ -11,7 +11,7 @@ export interface CategoryData {
   icon: string;
   color: string;
   type: CategoryTypeValue;
-  annualBudget: number;
+  annualBudget?: number;
 }
 
 export class CategoryEntity {
@@ -31,7 +31,7 @@ export class CategoryEntity {
       data.icon,
       data.color,
       CategoryType.create(data.type),
-      CategoryBudget.create(data.annualBudget)
+      CategoryBudget.create(data.annualBudget || 0)
     );
   }
 

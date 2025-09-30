@@ -17,7 +17,11 @@ export class CategoryId {
 
   static generate(): CategoryId {
     const id = `cat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    return CategoryId.create(id).getValue();
+    const result = CategoryId.create(id);
+    if (result.isFailure()) {
+      throw new Error(`Failed to generate CategoryId: ${result.getError()}`);
+    }
+    return result.getValue();
   }
 
   get value(): string {

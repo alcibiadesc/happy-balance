@@ -132,7 +132,7 @@ export class DuplicateDetectionService {
           duplicates.push(newTransaction);
           duplicateReasons.set(
             newTransaction.id.value,
-            `Duplicate of existing transaction from ${existingTransaction.date.toDisplayString()}`,
+            `Duplicate of existing transaction from ${existingTransaction.date.formatShort()}`,
           );
           isDuplicate = true;
           break;
@@ -225,14 +225,9 @@ export class DuplicateDetectionService {
       merchantSimilarity: number;
     },
   ): boolean {
-    // Check currency match
-    if (t1.amount.currency !== t2.amount.currency) {
-      return false;
-    }
-
     // Check amount within tolerance
-    const amountDiff = Math.abs(t1.amount.amount - t2.amount.amount);
-    const amountAvg = (t1.amount.amount + t2.amount.amount) / 2;
+    const amountDiff = Math.abs(t1.amount.getValue() - t2.amount.getValue());
+    const amountAvg = (t1.amount.getValue() + t2.amount.getValue()) / 2;
     const amountToleranceValue = (criteria.amountTolerance / 100) * amountAvg;
 
     if (amountDiff > amountToleranceValue) {
@@ -246,7 +241,7 @@ export class DuplicateDetectionService {
 
     // Check time tolerance
     const timeDiffMs = Math.abs(
-      t1.date.value.getTime() - t2.date.value.getTime(),
+      t1.date.getDate().getTime() - t2.date.getDate().getTime(),
     );
     const toleranceMs = criteria.timeTolerance * 60 * 60 * 1000;
 
@@ -258,11 +253,11 @@ export class DuplicateDetectionService {
     duplicate: Transaction,
   ): string {
     const timeDiff = Math.abs(
-      original.date.value.getTime() - duplicate.date.value.getTime(),
+      original.date.getDate().getTime() - duplicate.date.getDate().getTime(),
     );
     const hoursDiff = Math.round(timeDiff / (1000 * 60 * 60));
 
-    return `Same amount (${original.amount.format()}) and merchant (${original.merchant.name}) within ${hoursDiff} hours`;
+    return `Same amount (${original.amount.getValue()}) and merchant (${original.merchant.name}) within ${hoursDiff} hours`;
   }
 
   private buildAdvancedDuplicateReason(
@@ -287,7 +282,7 @@ export class DuplicateDetectionService {
     }
 
     const timeDiff = Math.abs(
-      original.date.value.getTime() - duplicate.date.value.getTime(),
+      original.date.getDate().getTime() - duplicate.date.getDate().getTime(),
     );
     const hoursDiff = Math.round(timeDiff / (1000 * 60 * 60));
     reasons.push(`within ${hoursDiff} hours`);
