@@ -1,0 +1,84 @@
+# Multi-stage build for production backend
+FROM node:20-alpine AS deps
+
+# Install pnpm
+RUN npm install -g pnpm
+
+WORKDIR /app
+
+# Copy dependency files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Build stage
+FROM node:20-alpine AS builder
+
+# Install pnpm
+RUN npm install -g pnpm
+
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package.json ./
+
+# Copy source code
+COPY prisma ./prisma
+COPY src ./src
+COPY scripts ./scripts
+COPY tsconfig.json ./
+
+# Generate Prisma Client
+RUN pnpm prisma generate
+
+# Build TypeScript
+RUN pnpm build
+
+# Production stage
+FROM node:20-alpine AS production
+
+# Install pnpm and wget for health checks
+RUN npm install -g pnpm && \
+    apk add --no-cache wget
+
+WORKDIR /app
+
+# Copy package files
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/pnpm-lock.yaml ./
+
+# Install production dependencies only
+RUN pnpm install --prod --frozen-lockfile
+
+# Copy built application
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# Copy Prisma schema for migrations
+COPY --from=builder /app/prisma ./prisma
+
+# Create uploads directory
+RUN mkdir -p uploads
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S backend -u 1001 -G nodejs && \
+    chown -R backend:nodejs /app
+
+USER backend
+
+EXPOSE 3004
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3004/health || exit 1
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3004
+
+# Start server (migrations run automatically via entrypoint if needed)
+CMD ["sh", "-c", "pnpm prisma migrate deploy && node dist/main.js"]

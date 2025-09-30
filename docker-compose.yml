@@ -38,7 +38,9 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       PORT: 3004
-      CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:3000}"
+      # CORS: Allow all origins by default (works on any IP/hostname)
+      # For production, set CORS_ORIGIN in .env to your specific domain
+      CORS_ORIGIN: "${CORS_ORIGIN:-*}"
     ports:
       - "${BACKEND_PORT:-3004}:3004"
     depends_on:
@@ -62,8 +64,7 @@ services:
       NODE_ENV: production
       # Internal URL for SSR (server-side rendering) - uses Docker network
       INTERNAL_API_URL: http://backend:3004/api
-      # Public URL for client-side (browser) - uses localhost or your server IP
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:3004/api}
+      # Client-side URL is auto-detected from browser location - no config needed!
       PORT: 3000
       ORIGIN: ${ORIGIN:-http://localhost:3000}
     ports:

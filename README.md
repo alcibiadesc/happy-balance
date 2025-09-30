@@ -49,41 +49,25 @@ Happy Balance is an open-source personal finance tracker designed with simplicit
 
 ## 🚀 Quick Start
 
-### One-Line Install (No Git Required!)
-
-**For localhost access only:**
-```bash
-curl -sSL https://raw.githubusercontent.com/alcibiadesc/happy-balance/main/install.sh | bash
-```
-
-**⚠️ Important for NAS/Remote Server:** If you're installing on a NAS (Synology, QNAP, etc.) or want to access from other devices:
+### One-Line Install (No Configuration Needed!)
 
 ```bash
-# 1. Find your server's IP address
-hostname -I | awk '{print $1}'   # Linux/Mac
-# Or check your router's DHCP settings
-
-# 2. Create .env file (replace 192.168.1.100 with YOUR server's IP)
-cat > .env << EOF
-VITE_API_URL=http://192.168.1.100:3004/api
-CORS_ORIGIN=http://192.168.1.100:3000
-ORIGIN=http://192.168.1.100:3000
-EOF
-
-# 3. Download and start
-curl -sSL https://raw.githubusercontent.com/alcibiadesc/happy-balance/main/docker-compose.yml -o docker-compose.yml
-docker compose up -d
+curl -sSL https://raw.githubusercontent.com/alcibiadesc/happy-balance/main/docker-compose.yml | docker compose -f - up -d
 ```
 
-**Access:**
-- **Localhost:** http://localhost:3000
-- **From other devices:** http://YOUR_SERVER_IP:3000 (e.g., http://192.168.1.100:3000)
+**That's it!** The app auto-detects your server's URL.
+
+**Access from:**
+- Same computer: http://localhost:3000
+- Other devices: http://YOUR_SERVER_IP:3000
 
 **Default credentials:**
 - Username: `admin`
 - Password: `admin123`
 
-See [Quick Start Guide](./QUICK_START.md) for more installation options.
+⚠️ **Change default credentials after first login!**
+
+See [Quick Start Guide](./QUICK_START.md) for more options.
 
 ## ✨ Features
 
@@ -285,6 +269,20 @@ ADMIN_PASSWORD=admin123
 # BACKEND_PORT=3004
 # VITE_API_URL=http://localhost:3004/api
 ```
+
+## 🚢 Deployment & Building Images
+
+For maintainers who need to build and publish Docker images:
+
+```bash
+# Build and push all images with automatic tagging
+./build-and-push.sh 1.1.0
+
+# Or build without version tag
+./build-and-push.sh
+```
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 
 ## 🤝 Contributing
 
