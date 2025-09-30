@@ -16,23 +16,26 @@ export const createCategoryRoutesV2 = (
     await controller.getCategories(req, res);
   });
 
-  router.get("/search", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createCategoryController(userId);
-    await controller.searchCategories(req, res);
-  });
+  // TODO: Implement searchCategories method
+  // router.get("/search", async (req: Request, res: Response) => {
+  //   const userId = req.user?.userId || 'default';
+  //   const controller = controllerFactory.createCategoryController(userId);
+  //   await controller.searchCategories(req, res);
+  // });
 
-  router.get("/budgets", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createCategoryController(userId);
-    await controller.getCategoryBudgets(req, res);
-  });
+  // TODO: Implement getCategoryBudgets method
+  // router.get("/budgets", async (req: Request, res: Response) => {
+  //   const userId = req.user?.userId || 'default';
+  //   const controller = controllerFactory.createCategoryController(userId);
+  //   await controller.getCategoryBudgets(req, res);
+  // });
 
-  router.get("/with-totals", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createCategoryController(userId);
-    await controller.getCategoriesWithTotals(req, res);
-  });
+  // TODO: Implement getCategoriesWithTotals method
+  // router.get("/with-totals", async (req: Request, res: Response) => {
+  //   const userId = req.user?.userId || 'default';
+  //   const controller = controllerFactory.createCategoryController(userId);
+  //   await controller.getCategoriesWithTotals(req, res);
+  // });
 
   router.get("/:id", async (req: Request, res: Response) => {
     const userId = req.user?.userId || 'default';

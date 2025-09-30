@@ -192,7 +192,7 @@ export class PrismaDashboardRepository {
       });
     }, new Map<string, MonthlyMetrics>());
 
-    return Array.from(monthlyMap.values())
+    return (Array.from(monthlyMap.values()) as MonthlyMetrics[])
       .sort((a, b) => a.year === b.year ? a.month - b.month : a.year - b.year);
   }
 

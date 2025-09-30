@@ -10,17 +10,19 @@ export const createMetricsRoutesV2 = (
   // All metrics routes require authentication
   router.use(authenticate);
 
-  router.get("/period", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createMetricsController(userId);
-    await controller.getPeriodMetrics(req, res);
-  });
+  // TODO: Implement getPeriodMetrics method
+  // router.get("/period", async (req: Request, res: Response) => {
+  //   const userId = req.user?.userId || 'default';
+  //   const controller = controllerFactory.createMetricsController(userId);
+  //   await controller.getPeriodMetrics(req, res);
+  // });
 
-  router.get("/summary", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createMetricsController(userId);
-    await controller.getSummary(req, res);
-  });
+  // TODO: Implement getSummary method
+  // router.get("/summary", async (req: Request, res: Response) => {
+  //   const userId = req.user?.userId || 'default';
+  //   const controller = controllerFactory.createMetricsController(userId);
+  //   await controller.getSummary(req, res);
+  // });
 
   router.get("/trends", async (req: Request, res: Response) => {
     const userId = req.user?.userId || 'default';
@@ -28,11 +30,12 @@ export const createMetricsRoutesV2 = (
     await controller.getTrends(req, res);
   });
 
-  router.get("/category-breakdown", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createMetricsController(userId);
-    await controller.getCategoryBreakdown(req, res);
-  });
+  // TODO: Implement getCategoryBreakdown method
+  // router.get("/category-breakdown", async (req: Request, res: Response) => {
+  //   const userId = req.user?.userId || 'default';
+  //   const controller = controllerFactory.createMetricsController(userId);
+  //   await controller.getCategoryBreakdown(req, res);
+  // });
 
   return router;
 };

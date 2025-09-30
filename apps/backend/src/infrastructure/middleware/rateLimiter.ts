@@ -18,7 +18,7 @@ export const apiLimiter = rateLimit({
       success: false,
       error: "Too many requests",
       message: "You have exceeded the rate limit. Please try again later.",
-      retryAfter: req.rateLimit?.resetTime,
+      retryAfter: req.rateLimit?.reset,
     });
   },
 });
@@ -42,7 +42,7 @@ export const uploadLimiter = rateLimit({
       error: "Upload limit exceeded",
       message:
         "You have reached the maximum number of file uploads. Please try again in an hour.",
-      retryAfter: req.rateLimit?.resetTime,
+      retryAfter: req.rateLimit?.reset,
     });
   },
 });
@@ -58,7 +58,7 @@ export const dashboardLimiter = rateLimit({
       error: "Dashboard rate limit exceeded",
       message:
         "Too many dashboard requests. Please wait a moment before refreshing.",
-      retryAfter: req.rateLimit?.resetTime,
+      retryAfter: req.rateLimit?.reset,
     });
   },
 });
@@ -73,7 +73,7 @@ export const createTransactionLimiter = rateLimit({
       success: false,
       error: "Transaction creation rate limit exceeded",
       message: "You are creating transactions too quickly. Please slow down.",
-      retryAfter: req.rateLimit?.resetTime,
+      retryAfter: req.rateLimit?.reset,
     });
   },
 });

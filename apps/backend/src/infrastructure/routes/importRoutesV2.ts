@@ -18,12 +18,13 @@ export const createImportRoutesV2 = (
   // All import routes require authentication
   router.use(authenticate);
 
+  // TODO: Implement previewImport method
   // Parse CSV file and preview transactions
-  router.post("/preview", upload.single("file"), async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createImportController(userId);
-    await controller.previewImport(req, res);
-  });
+  // router.post("/preview", upload.single("file"), async (req: Request, res: Response) => {
+  //   const userId = req.user?.userId || 'default';
+  //   const controller = controllerFactory.createImportController(userId);
+  //   await controller.previewImport(req, res);
+  // });
 
   // Generate hashes for preview transactions
   router.post("/generate-hashes", async (req: Request, res: Response) => {
@@ -46,12 +47,13 @@ export const createImportRoutesV2 = (
     await controller.importSelected(req, res);
   });
 
+  // TODO: Implement importTransactions method
   // Full import (legacy)
-  router.post("/", upload.single("file"), async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createImportController(userId);
-    await controller.importTransactions(req, res);
-  });
+  // router.post("/", upload.single("file"), async (req: Request, res: Response) => {
+  //   const userId = req.user?.userId || 'default';
+  //   const controller = controllerFactory.createImportController(userId);
+  //   await controller.importTransactions(req, res);
+  // });
 
   return router;
 };

@@ -7,7 +7,7 @@ import { TransactionType } from "../../domain/entities/TransactionType";
 export class DashboardQuery {
   constructor(
     public readonly currency: string = "EUR",
-    public readonly period: "week" | "month" | "quarter" | "year" = "month",
+    public readonly period: "week" | "month" | "quarter" | "year" | "custom" = "month",
     public readonly startDate?: string,
     public readonly endDate?: string,
     public readonly includeInvestments: boolean = true,
@@ -24,9 +24,9 @@ export class DashboardQuery {
       errors.push("Currency must be a 3-letter ISO code");
     }
 
-    const validPeriods = ["week", "month", "quarter", "year"];
+    const validPeriods = ["week", "month", "quarter", "year", "custom"];
     if (!validPeriods.includes(this.period)) {
-      errors.push("Period must be one of: week, month, quarter, year");
+      errors.push("Period must be one of: week, month, quarter, year, custom");
     }
 
     if (this.startDate && isNaN(Date.parse(this.startDate))) {

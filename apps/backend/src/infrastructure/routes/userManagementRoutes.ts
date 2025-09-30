@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { UserManagementController } from '@infrastructure/controllers/UserManagementController';
-import { authenticate, requireAdmin } from '@infrastructure/middleware/auth';
+import { authenticate, requireAdmin, AuthRequest } from '@infrastructure/middleware/auth';
 
 export function createUserManagementRoutes(controller: UserManagementController): Router {
   const router = Router();
@@ -21,7 +21,7 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *       200:
    *         description: List of users
    */
-  router.get('/', (req, res) => controller.listUsers(req, res));
+  router.get('/', (req, res) => controller.listUsers(req as AuthRequest, res));
 
   /**
    * @swagger
@@ -53,7 +53,7 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *       201:
    *         description: User created successfully
    */
-  router.post('/', (req, res) => controller.createUser(req, res));
+  router.post('/', (req, res) => controller.createUser(req as AuthRequest, res));
 
   /**
    * @swagger
@@ -85,7 +85,7 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *       200:
    *         description: User updated successfully
    */
-  router.put('/:id', (req, res) => controller.updateUser(req, res));
+  router.put('/:id', (req, res) => controller.updateUser(req as AuthRequest, res));
 
   /**
    * @swagger
@@ -105,7 +105,7 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *       200:
    *         description: User deleted successfully
    */
-  router.delete('/:id', (req, res) => controller.deleteUser(req, res));
+  router.delete('/:id', (req, res) => controller.deleteUser(req as AuthRequest, res));
 
   /**
    * @swagger
@@ -133,7 +133,7 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *       200:
    *         description: Password reset successfully
    */
-  router.post('/reset-password', (req, res) => controller.resetPassword(req, res));
+  router.post('/reset-password', (req, res) => controller.resetPassword(req as AuthRequest, res));
 
   return router;
 }

@@ -292,7 +292,7 @@ export class MetricsController {
               label: this.formatPeriodLabel(data.periodInfo.startDate, data.periodInfo.periodType),
             }
           },
-          trends: monthlyTrend,
+          monthlyTrend: monthlyTrend,
           spendingRate: spendingRate,
           expenseDistribution: {
             essential: {
@@ -318,7 +318,6 @@ export class MetricsController {
             percentage: category.percentage,
             transactionCount: category.transactionCount,
           })),
-          monthlyTrend: monthlyTrend,
           monthlyBarData: monthlyBarData
         },
       });

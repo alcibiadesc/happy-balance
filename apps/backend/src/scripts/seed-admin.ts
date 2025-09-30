@@ -107,8 +107,9 @@ async function main(): Promise<void> {
   }
 }
 
-// Run if called directly (ES modules)
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run if called directly
+// @ts-ignore - CommonJS compatibility
+if (require.main === module) {
   main();
 }
 

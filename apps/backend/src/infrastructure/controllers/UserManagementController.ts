@@ -176,6 +176,7 @@ export class UserManagementController {
       // Update user
       const updatedUser = User.create({
         ...user.toDTO(),
+        password: user.password, // Keep existing password
         role: updates.role || user.role,
         isActive: updates.isActive !== undefined ? updates.isActive : user.isActive
       });

@@ -43,6 +43,11 @@ export class Result<T, E = Error> {
     return this._error;
   }
 
+  // Getter for backward compatibility
+  get error(): E | undefined {
+    return this._error;
+  }
+
   getValueOrDefault(defaultValue: T): T {
     return this._isSuccess && this._value !== undefined
       ? this._value

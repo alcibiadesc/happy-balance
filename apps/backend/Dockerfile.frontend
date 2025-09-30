@@ -21,6 +21,10 @@ COPY apps/backend ./apps/backend
 WORKDIR /app/apps/backend
 RUN npx prisma generate
 
+# Copy and set entrypoint script
+COPY apps/backend/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Create uploads directory
 RUN mkdir -p /app/uploads
 
@@ -34,8 +38,8 @@ USER backend
 EXPOSE 3004
 
 # Health check endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3004/health || exit 1
 
-# Use ts-node for production to avoid compilation issues
-CMD ["pnpm", "dev"]
+# Use entrypoint script to run migrations before starting
+ENTRYPOINT ["/docker-entrypoint.sh"]

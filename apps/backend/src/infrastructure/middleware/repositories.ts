@@ -5,7 +5,7 @@ import { PrismaCategoryRepository } from '../repositories/PrismaCategoryReposito
 import { PrismaUserPreferencesRepository } from '../repositories/PrismaUserPreferencesRepository';
 import { PrismaDashboardRepository } from '../repositories/PrismaDashboardRepository';
 
-// Extend Express Request type to include repositories
+// Extend Express Request type to include repositories and user
 declare global {
   namespace Express {
     interface Request {
@@ -14,6 +14,11 @@ declare global {
         category: PrismaCategoryRepository;
         userPreferences: PrismaUserPreferencesRepository;
         dashboard: PrismaDashboardRepository;
+      };
+      user?: {
+        userId: string;
+        username: string;
+        role: string;
       };
     }
   }

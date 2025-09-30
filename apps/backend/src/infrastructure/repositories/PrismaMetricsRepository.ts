@@ -89,7 +89,7 @@ export class PrismaMetricsRepository implements MetricsRepository {
       },
     });
 
-    const totalExpenses = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const totalExpenses = transactions.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
 
     if (totalExpenses === 0) {
       return [];
@@ -100,14 +100,20 @@ export class PrismaMetricsRepository implements MetricsRepository {
     transactions.forEach((transaction) => {
       const categoryName = transaction.category?.name || 'Uncategorized';
       const current = categoryTotals.get(categoryName) || 0;
-      categoryTotals.set(categoryName, current + Math.abs(transaction.amount));
+      categoryTotals.set(categoryName, current + Math.abs(Number(transaction.amount)));
     });
 
-    return Array.from(categoryTotals.entries()).map(([categoryName, amount]) => ({
-      categoryName,
-      amount: Money.create(amount, currency.value),
-      percentage: Number(((amount / totalExpenses) * 100).toFixed(1)),
-    }));
+    return Array.from(categoryTotals.entries()).map(([categoryName, amount]) => {
+      const moneyResult = Money.create(amount, currency.value);
+      if (moneyResult.isFailure()) {
+        throw new Error(`Failed to create Money: ${moneyResult.getError()}`);
+      }
+      return {
+        categoryName,
+        amount: moneyResult.getValue(),
+        percentage: Number(((amount / totalExpenses) * 100).toFixed(1)),
+      };
+    });
   }
 
   private calculateMetricsFromTransactions(
@@ -153,14 +159,26 @@ export class PrismaMetricsRepository implements MetricsRepository {
     const spendingRate = totalIncome > 0 ? ((totalExpenses + totalDebtPayments) / totalIncome) * 100 : 0;
     const savingsRate = totalIncome > 0 ? Math.max(0, (balance / totalIncome) * 100) : 0;
 
+    const totalIncomeResult = Money.create(totalIncome, 'EUR');
+    const totalExpensesResult = Money.create(totalExpenses, 'EUR');
+    const totalInvestmentsResult = Money.create(totalInvestments, 'EUR');
+    const totalDebtPaymentsResult = Money.create(totalDebtPayments, 'EUR');
+    const balanceResult = SignedMoney.create(balance, 'EUR');
+
+    if (totalIncomeResult.isFailure() || totalExpensesResult.isFailure() ||
+        totalInvestmentsResult.isFailure() || totalDebtPaymentsResult.isFailure() ||
+        balanceResult.isFailure()) {
+      throw new Error('Failed to create Money objects');
+    }
+
     return MetricSnapshot.create({
       period,
       type,
-      totalIncome: Money.create(totalIncome, 'EUR'), // Should use actual currency
-      totalExpenses: Money.create(totalExpenses, 'EUR'),
-      totalInvestments: Money.create(totalInvestments, 'EUR'),
-      totalDebtPayments: Money.create(totalDebtPayments, 'EUR'),
-      balance: SignedMoney.create(balance, 'EUR'),
+      totalIncome: totalIncomeResult.getValue(),
+      totalExpenses: totalExpensesResult.getValue(),
+      totalInvestments: totalInvestmentsResult.getValue(),
+      totalDebtPayments: totalDebtPaymentsResult.getValue(),
+      balance: balanceResult.getValue(),
       savingsRate,
       spendingRate,
     });

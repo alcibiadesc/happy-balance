@@ -1,6 +1,13 @@
 # Happy Balance - Docker Deployment
 
-Versión lista para usar con imágenes pre-construidas desde Docker Hub.
+Versión lista para usar con imágenes pre-construidas multi-platform (AMD64 + ARM64) desde Docker Hub.
+
+## ✨ What's New in V2
+
+- ✅ **Multi-platform**: Soporte nativo para AMD64 y ARM64
+- ✅ **Auto-migration**: Base de datos se inicializa automáticamente
+- ✅ **Optimized**: Imágenes más pequeñas y rápidas
+- ✅ **Production-ready**: Configuración lista para producción
 
 ## 🚀 Inicio Rápido
 
@@ -63,6 +70,11 @@ Abre tu navegador en: **http://localhost:3000**
 
 ## 📦 Imágenes Docker Hub
 
+### V2 (Recomendado - Multi-platform)
+- **Backend**: `alcibiadesc/happy-balance:backend-v2` (AMD64 + ARM64)
+- **Frontend**: `alcibiadesc/happy-balance:frontend-v2` (AMD64 + ARM64)
+
+### V1 (Legacy - Solo AMD64)
 - **Backend**: `alcibiadesc/happy-balance:backend-latest`
 - **Frontend**: `alcibiadesc/happy-balance:frontend-latest`
 

@@ -522,6 +522,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 categoryId: snapshot.categoryId,
                 isSelected: snapshot.isSelected,
                 hash: snapshot.hash,
+                userId: this.userId,
                 createdAt: new Date(snapshot.createdAt),
               },
             });
@@ -551,6 +552,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 categoryId: snapshot.categoryId,
                 isSelected: snapshot.isSelected,
                 hash: snapshot.hash,
+                userId: this.userId,
                 createdAt: new Date(snapshot.createdAt),
               },
             });

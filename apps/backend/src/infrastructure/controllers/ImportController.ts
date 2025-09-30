@@ -102,7 +102,12 @@ export class ImportController {
       }
 
       const command: GenerateHashesCommand = {
-        transactions: validation.data.transactions,
+        transactions: validation.data.transactions.map(t => ({
+          date: t.date,
+          merchant: t.merchant,
+          amount: t.amount,
+          currency: t.currency
+        })),
       };
 
       const result = await this.generateHashesUseCase.execute(command);
@@ -168,7 +173,14 @@ export class ImportController {
       const validatedData = validation.data;
 
       const command: ImportSelectedTransactionsCommand = {
-        transactions: validatedData.transactions,
+        transactions: validatedData.transactions.map(t => ({
+          hash: t.hash,
+          date: t.date,
+          merchant: t.merchant,
+          amount: t.amount,
+          description: t.description,
+          currency: t.currency
+        })),
         currency: validatedData.currency,
         duplicateDetectionEnabled: validatedData.duplicateDetectionEnabled,
         skipDuplicates: validatedData.skipDuplicates,

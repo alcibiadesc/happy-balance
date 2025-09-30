@@ -859,7 +859,14 @@ export class TransactionController {
 
       const query = validationResult.data;
 
-      const result = await this.getDashboardMetricsUseCase.execute(query);
+      const result = await this.getDashboardMetricsUseCase.execute({
+        currency: query.currency || "EUR",
+        period: query.period || "month",
+        startDate: query.startDate,
+        endDate: query.endDate,
+        includeInvestments: query.includeInvestments ?? true,
+        periodOffset: query.periodOffset ?? 0
+      });
 
       if (result.isFailure()) {
         return res.status(500).json({ error: result.getError() });

@@ -19,7 +19,6 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         where: {
           categoryId,
           isActive: true,
-          userId: this.userId || 'default',
         },
         orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
       });
@@ -38,7 +37,6 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
       const patterns = await this.prisma.categoryPattern.findMany({
         where: {
           isActive: true,
-          userId: this.userId || 'default',
         },
         orderBy: [{ priority: "desc" }, { matchCount: "desc" }],
       });
@@ -67,7 +65,6 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
           applyToFuture: snapshot.applyToFuture,
           priority: snapshot.priority,
           matchCount: snapshot.matchCount,
-          userId: this.userId || 'default',
         },
         update: {
           pattern: snapshot.pattern,

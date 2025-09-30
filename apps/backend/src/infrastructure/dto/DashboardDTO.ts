@@ -32,7 +32,7 @@ export const DateRangeSchema = z.object({
   return new Date(data.startDate) <= new Date(data.endDate);
 }, "Start date must be before or equal to end date");
 
-export const PeriodTypeSchema = z.enum(["week", "month", "quarter", "year"]);
+export const PeriodTypeSchema = z.enum(["week", "month", "quarter", "year", "custom"]);
 
 export const DashboardQuerySchema = z.object({
   type: PeriodTypeSchema.optional().default("month"),

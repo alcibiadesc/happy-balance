@@ -1,0 +1,43 @@
+# Optimized backend for production (using tsx due to TS errors)
+FROM node:20-alpine AS production
+
+RUN npm install -g pnpm && \
+    apk add --no-cache wget dumb-init
+
+WORKDIR /app
+
+# Copy workspace files
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY apps/backend/package.json ./apps/backend/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy backend source
+COPY apps/backend ./apps/backend
+
+# Generate Prisma Client
+WORKDIR /app/apps/backend
+RUN npx prisma generate
+
+# Create non-root user BEFORE changing ownership
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S backend -u 1001 -G nodejs
+
+# Change ownership (this creates a new layer but necessary)
+RUN chown -R backend:nodejs /app && \
+    mkdir -p /app/uploads && \
+    chown backend:nodejs /app/uploads
+
+USER backend
+
+EXPOSE 3004
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3004/health || exit 1
+
+ENV NODE_ENV=production PORT=3004
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["pnpm", "dev"]
