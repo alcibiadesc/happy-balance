@@ -10,60 +10,11 @@ export const createDashboardRoutesV2 = (
   // All dashboard routes require authentication
   router.use(authenticate);
 
-  // TODO: Implement getMetrics method
-  // router.get("/metrics", async (req: Request, res: Response) => {
-  //   const userId = req.user?.userId || 'default';
-  //   const controller = controllerFactory.createDashboardController(userId);
-  //   await controller.getMetrics(req, res);
-  // });
-
-  // TODO: Implement getCategoryDistribution method
-  // router.get("/category-distribution", async (req: Request, res: Response) => {
-  //   const userId = req.user?.userId || 'default';
-  //   const controller = controllerFactory.createDashboardController(userId);
-  //   await controller.getCategoryDistribution(req, res);
-  // });
-
   router.get("/available-periods", async (req: Request, res: Response) => {
     const userId = req.user?.userId || 'default';
     const controller = controllerFactory.createDashboardController(userId);
     await controller.getAvailablePeriods(req, res);
   });
-
-  // TODO: Implement getMonthlyTrend method
-  // router.get("/monthly-trend", async (req: Request, res: Response) => {
-  //   const userId = req.user?.userId || 'default';
-  //   const controller = controllerFactory.createDashboardController(userId);
-  //   await controller.getMonthlyTrend(req, res);
-  // });
-
-  // TODO: Implement getWeekData method
-  // router.get("/week", async (req: Request, res: Response) => {
-  //   const userId = req.user?.userId || 'default';
-  //   const controller = controllerFactory.createDashboardController(userId);
-  //   await controller.getWeekData(req, res);
-  // });
-
-  // TODO: Implement getMonthData method
-  // router.get("/month", async (req: Request, res: Response) => {
-  //   const userId = req.user?.userId || 'default';
-  //   const controller = controllerFactory.createDashboardController(userId);
-  //   await controller.getMonthData(req, res);
-  // });
-
-  // TODO: Implement getQuarterData method
-  // router.get("/quarter", async (req: Request, res: Response) => {
-  //   const userId = req.user?.userId || 'default';
-  //   const controller = controllerFactory.createDashboardController(userId);
-  //   await controller.getQuarterData(req, res);
-  // });
-
-  // TODO: Implement getYearData method
-  // router.get("/year", async (req: Request, res: Response) => {
-  //   const userId = req.user?.userId || 'default';
-  //   const controller = controllerFactory.createDashboardController(userId);
-  //   await controller.getYearData(req, res);
-  // });
 
   router.get("/history", async (req: Request, res: Response) => {
     const userId = req.user?.userId || 'default';

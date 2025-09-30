@@ -3,7 +3,6 @@ import { z } from "zod";
 import { GetDashboardMetricsUseCase } from "../../application/use-cases/GetDashboardMetricsUseCase";
 import { DashboardQuery } from "../../application/queries/DashboardQuery";
 import { PrismaDashboardRepository } from "../repositories/PrismaDashboardRepository";
-import { DashboardService } from "../services/DashboardService";
 import { DashboardResponseDTO, ErrorResponseDTO, DashboardErrors } from "../dto/DashboardDTO";
 
 // Schemas de validación
@@ -26,17 +25,10 @@ const CurrentPeriodSchema = z.object({
  * Endpoints claros y RESTful sin offsets confusos
  */
 export class DashboardController {
-  private dashboardService: DashboardService;
-
   constructor(
     private readonly getDashboardMetricsUseCase: GetDashboardMetricsUseCase,
     private readonly dashboardRepository: PrismaDashboardRepository
-  ) {
-    this.dashboardService = new DashboardService(
-      getDashboardMetricsUseCase,
-      dashboardRepository as any
-    );
-  }
+  ) {}
 
   /**
    * GET /api/dashboard/current
