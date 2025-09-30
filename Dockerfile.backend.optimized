@@ -1,9 +1,7 @@
-# ====================================
-# Stage 1: Dependencies  
-# ====================================
+# Multi-stage build for production backend (Optimized)
 FROM node:20-alpine AS deps
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm
 
 WORKDIR /app
 
@@ -12,69 +10,48 @@ COPY apps/backend/package.json ./apps/backend/
 
 RUN pnpm install --frozen-lockfile --prefer-offline
 
-# ====================================
-# Stage 2: Build
-# ====================================
+# Build stage
 FROM node:20-alpine AS builder
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm
 
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY pnpm-workspace.yaml package.json ./
+COPY --from=deps /app/apps/backend/package.json ./apps/backend/
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/backend ./apps/backend
 
 WORKDIR /app/apps/backend
+RUN npx prisma generate && pnpm build
 
-# Generate Prisma client and build (using pnpm instead of npx)
-RUN pnpm prisma generate && pnpm build
-
-# ====================================
-# Stage 3: Production Dependencies
-# ====================================
-FROM node:20-alpine AS prod-deps
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-WORKDIR /app
-
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY apps/backend/package.json ./apps/backend/
-
-RUN pnpm install --prod --frozen-lockfile --prefer-offline && pnpm store prune
-
-# Generate Prisma client for production
-WORKDIR /app/apps/backend
-COPY apps/backend/prisma ./prisma
-RUN pnpm prisma generate
-
-# ====================================
-# Stage 4: Production Runtime
-# ====================================
+# Production stage
 FROM node:20-alpine AS production
 
-RUN apk add --no-cache wget dumb-init && \
-    corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm && \
+    apk add --no-cache wget dumb-init && \
+    rm -rf /root/.npm
 
 WORKDIR /app
 
-# Copy production node_modules
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=prod-deps /app/apps/backend/node_modules ./apps/backend/node_modules
+# Copy all necessary files from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/pnpm-lock.yaml ./
+COPY --from=builder /app/apps/backend/package.json ./apps/backend/
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
 
-# Copy built application
-COPY --from=builder /app/apps/backend/dist ./dist
-COPY --from=builder /app/apps/backend/prisma ./prisma
-COPY --from=builder /app/apps/backend/package.json ./package.json
-
-# Create directories and set permissions
-RUN mkdir -p uploads && \
+# Create uploads directory and set permissions
+RUN mkdir -p apps/backend/uploads && \
     addgroup -g 1001 -S nodejs && \
     adduser -S backend -u 1001 -G nodejs && \
     chown -R backend:nodejs /app
 
 USER backend
+
+WORKDIR /app/apps/backend
 
 EXPOSE 3004
 

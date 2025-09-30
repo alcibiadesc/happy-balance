@@ -30,7 +30,7 @@ WORKDIR /app
 # Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
-COPY pnpm-workspace.yaml package.json ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/frontend ./apps/frontend
 
 # Build application
@@ -53,16 +53,15 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-# Copy package.json for dependencies
-COPY --from=builder /app/apps/frontend/package.json ./
-
-# Install ONLY production dependencies (adapter-node needs some deps)
-RUN pnpm install --prod --frozen-lockfile \
-    --prefer-offline && \
-    pnpm store prune
+# Copy workspace files and built node_modules
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/pnpm-lock.yaml ./
+COPY --from=builder /app/apps/frontend/package.json ./apps/frontend/
 
 # Copy built application
-COPY --from=builder /app/apps/frontend/build ./build
+COPY --from=builder /app/apps/frontend/build ./apps/frontend/build
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -70,6 +69,8 @@ RUN addgroup -g 1001 -S nodejs && \
     chown -R frontend:nodejs /app
 
 USER frontend
+
+WORKDIR /app/apps/frontend
 
 EXPOSE 3000
 
