@@ -67,7 +67,7 @@ curl -sSL https://raw.githubusercontent.com/alcibiadesc/happy-balance/main/docke
 
 ⚠️ **Change default credentials after first login!**
 
-See [Quick Start Guide](./QUICK_START.md) for more options.
+See [DOCKER.md](./DOCKER.md) for more deployment options.
 
 ## ✨ Features
 
@@ -189,7 +189,7 @@ pnpm dev
 4. Configure environment variables
 5. Deploy the stack
 
-[Full Docker documentation →](./DOCKER_INSTALL.md)
+[Full Docker documentation →](./DOCKER.md)
 
 ## 🛠️ Development
 
@@ -282,7 +282,7 @@ For maintainers who need to build and publish Docker images:
 ./build-and-push.sh
 ```
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed deployment instructions.
 
 ## 🤝 Contributing
 
