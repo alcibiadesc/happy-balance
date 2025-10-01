@@ -1,9 +1,12 @@
-# Happy Balance - Production Deployment
-# Ready-to-use Docker Compose configuration
+# Happy Balance - Docker Compose Configuration
+# Unified configuration for both development and production
 #
 # Usage:
-# - Production: docker compose up -d
-# - Development: docker compose up -d postgres && pnpm dev
+#   Production:  docker compose up -d
+#   Development: docker compose --profile dev up -d && pnpm dev
+#   Pull images: docker compose pull
+#
+# Environment variables can be configured in .env file
 
 services:
   # PostgreSQL Database
@@ -12,30 +15,34 @@ services:
     container_name: happy-balance-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: happy_balance
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-happy_balance}
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      # Expose port 5432 for development access
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
 
-  # Backend API
+  # Backend API (Production)
   backend:
+    image: alcibiadesc/happy-balance:backend-v2
     build:
       context: .
       dockerfile: Dockerfile.backend.optimized
-    image: alcibiadesc/happy-balance:backend-v2
     container_name: happy-balance-backend
     restart: unless-stopped
+    profiles: ["production", ""]  # Runs by default (empty profile) and with 'production'
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/happy_balance
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-happy_balance}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-your-super-secret-jwt-key-change-in-production-32chars-min}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production-32chars}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
@@ -58,14 +65,15 @@ services:
       retries: 3
       start_period: 60s
 
-  # SvelteKit Frontend
+  # SvelteKit Frontend (Production)
   frontend:
+    image: alcibiadesc/happy-balance:frontend-v2
     build:
       context: .
       dockerfile: Dockerfile.frontend.optimized
-    image: alcibiadesc/happy-balance:frontend-v2
     container_name: happy-balance-frontend
     restart: unless-stopped
+    profiles: ["production", ""]  # Runs by default (empty profile) and with 'production'
     environment:
       NODE_ENV: production
       # Internal URL for SSR (server-side rendering) - uses Docker network

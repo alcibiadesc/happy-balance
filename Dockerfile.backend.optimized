@@ -1,57 +1,50 @@
-# Multi-stage build for production backend (Optimized)
-FROM node:20-alpine AS deps
+# Multi-stage build for production backend (Best practices with pnpm deploy)
+FROM node:20-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
-RUN npm install -g pnpm
+# Build stage - install all deps and build
+FROM base AS build
+COPY . /usr/src/app
+WORKDIR /usr/src/app
+# Use BuildKit cache mount for faster installs
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install
+# Generate Prisma Client
+WORKDIR /usr/src/app/apps/backend
+RUN pnpm prisma generate
+# Build application
+RUN pnpm build
 
-WORKDIR /app
+# Deploy stage - create production-ready standalone package
+WORKDIR /usr/src/app
+RUN pnpm deploy --filter=happy-balance-backend --prod /prod/backend
 
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY apps/backend/package.json ./apps/backend/
+# Generate Prisma Client in deployed directory
+WORKDIR /prod/backend
+RUN npx prisma generate
 
-RUN pnpm install --frozen-lockfile --prefer-offline
+# Production stage - minimal runtime image
+FROM base AS production
 
-# Build stage
-FROM node:20-alpine AS builder
-
-RUN npm install -g pnpm
-
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/backend/package.json ./apps/backend/
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY apps/backend ./apps/backend
-
-WORKDIR /app/apps/backend
-RUN npx prisma generate && pnpm build
-
-# Production stage
-FROM node:20-alpine AS production
-
-RUN npm install -g pnpm && \
-    apk add --no-cache wget dumb-init && \
+RUN apk add --no-cache wget dumb-init && \
     rm -rf /root/.npm
 
 WORKDIR /app
 
-# Copy all necessary files from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/pnpm-workspace.yaml ./
-COPY --from=builder /app/pnpm-lock.yaml ./
-COPY --from=builder /app/apps/backend/package.json ./apps/backend/
-COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
-COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
+# Copy deployed package (all dependencies resolved, no symlinks, includes generated Prisma Client)
+COPY --from=build /prod/backend /app
+
+# Copy built application
+COPY --from=build /usr/src/app/apps/backend/dist ./dist
 
 # Create uploads directory and set permissions
-RUN mkdir -p apps/backend/uploads && \
+RUN mkdir -p uploads && \
     addgroup -g 1001 -S nodejs && \
     adduser -S backend -u 1001 -G nodejs && \
     chown -R backend:nodejs /app
 
 USER backend
-
-WORKDIR /app/apps/backend
 
 EXPOSE 3004
 
@@ -63,4 +56,4 @@ ENV NODE_ENV=production \
     NODE_OPTIONS="--max-old-space-size=512"
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "pnpm prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/main.js"]
