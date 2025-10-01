@@ -27,6 +27,9 @@ services:
 
   # Backend API
   backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend.optimized
     image: alcibiadesc/happy-balance:backend-v2
     container_name: happy-balance-backend
     restart: unless-stopped
@@ -57,6 +60,9 @@ services:
 
   # SvelteKit Frontend
   frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend.optimized
     image: alcibiadesc/happy-balance:frontend-v2
     container_name: happy-balance-frontend
     restart: unless-stopped
