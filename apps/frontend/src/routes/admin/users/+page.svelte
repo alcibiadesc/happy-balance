@@ -6,6 +6,7 @@
   import Button from '$lib/components/atoms/Button.svelte';
   import Input from '$lib/components/atoms/Input.svelte';
   import Badge from '$lib/components/atoms/Badge.svelte';
+  import { t } from '$lib/stores/i18n';
 
   interface UserDTO {
     id: string;
@@ -134,9 +135,9 @@
 
       // Show success message
       if (result.data && result.data.tempPassword) {
-        successMessage = `User created! Password: ${result.data.tempPassword}`;
+        successMessage = $t('admin.users.user_created_with_password', { password: result.data.tempPassword });
       } else {
-        successMessage = 'User created successfully!';
+        successMessage = $t('admin.users.user_created');
       }
 
       // Auto-hide success message after 8 seconds
@@ -192,8 +193,8 @@
 
   async function deleteUser(userId: string, username: string) {
     showConfirmation(
-      'Delete User',
-      `Are you sure you want to permanently delete user "${username}"? This action cannot be undone.`,
+      $t('admin.users.delete_user_title'),
+      $t('admin.users.delete_user_message', { username }),
       () => performDeleteUser(userId)
     );
   }
@@ -229,8 +230,8 @@
 
   async function resetPassword(userId: string, username: string) {
     showConfirmation(
-      'Reset Password',
-      `Are you sure you want to reset the password for user "${username}"?`,
+      $t('admin.users.reset_password_title'),
+      $t('admin.users.reset_password_message', { username }),
       () => performResetPassword(userId, username)
     );
   }
@@ -261,7 +262,7 @@
 
       // Handle different response formats
       const tempPassword = result.data?.tempPassword || result.tempPassword;
-      successMessage = `Password reset for ${username}. New password: ${tempPassword}`;
+      successMessage = $t('admin.users.password_reset', { username, password: tempPassword });
 
       // Auto-hide success message after 10 seconds
       setTimeout(() => {
@@ -323,7 +324,9 @@
         throw new Error(errorData.message || 'Failed to update user status');
       }
 
-      successMessage = `User ${user.username} ${newStatus ? 'activated' : 'deactivated'} successfully`;
+      successMessage = newStatus
+        ? $t('admin.users.user_activated', { username: user.username })
+        : $t('admin.users.user_deactivated', { username: user.username });
 
       // Auto-hide success message
       setTimeout(() => {
@@ -370,15 +373,15 @@
 </script>
 
 <svelte:head>
-  <title>User Management - Happy Balance</title>
+  <title>{$t('admin.users.title')} - Happy Balance</title>
 </svelte:head>
 
 {#if !authStore.isLoading && authStore.isAdmin}
   <div class="page">
     <div class="page-header">
       <div class="header-content">
-        <h1 class="page-title">Users</h1>
-        <p class="page-subtitle">Manage user accounts and permissions</p>
+        <h1 class="page-title">{$t('admin.users.title')}</h1>
+        <p class="page-subtitle">{$t('admin.users.subtitle')}</p>
       </div>
       <Button
         variant="primary"
@@ -386,7 +389,7 @@
         disabled={loading}
       >
         <Plus size={16} strokeWidth={2} />
-        Add User
+        {$t('admin.users.add_user')}
       </Button>
     </div>
 
@@ -418,7 +421,7 @@
       {#if loading}
         <div class="loading-state">
           <div class="spinner"></div>
-          <span>Loading users...</span>
+          <span>{$t('admin.users.loading')}</span>
         </div>
       {:else}
         {#if users.length === 0}
@@ -426,11 +429,11 @@
             <div class="empty-icon">
               <Users size={48} strokeWidth={1} />
             </div>
-            <h3>No users found</h3>
-            <p>No users are currently available to display. Try creating a new user or check your permissions.</p>
+            <h3>{$t('admin.users.no_users')}</h3>
+            <p>{$t('admin.users.no_users_desc')}</p>
             <Button variant="outline" onclick={handleCreateUserClick}>
               <Plus size={16} />
-              Create User
+              {$t('admin.users.create_user_button')}
             </Button>
           </div>
         {:else}
@@ -455,17 +458,17 @@
                       {user.role}
                     </Badge>
                     <Badge variant={user.isActive ? 'success' : 'warning'} size="sm">
-                      {user.isActive ? 'Active' : 'Inactive'}
+                      {user.isActive ? $t('admin.users.active') : $t('admin.users.inactive')}
                     </Badge>
                   </div>
                 </div>
                 <div class="user-actions">
                   {#if editingUser?.id === user.id}
                     <Button variant="primary" size="sm" onclick={() => updateUser(user)}>
-                      Save
+                      {$t('admin.users.save')}
                     </Button>
                     <Button variant="ghost" size="sm" onclick={() => editingUser = null}>
-                      Cancel
+                      {$t('common.cancel')}
                     </Button>
                   {:else}
                     <Button variant="ghost" size="sm" onclick={() => editingUser = user}>
@@ -478,7 +481,7 @@
                       variant="ghost"
                       size="sm"
                       onclick={() => toggleUserStatus(user)}
-                      title={user.isActive ? 'Deactivate user' : 'Activate user'}
+                      title={user.isActive ? $t('admin.users.deactivate_user') : $t('admin.users.activate_user')}
                     >
                       {#if user.isActive}
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -539,7 +542,7 @@
           <!-- Header -->
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb;">
             <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 0.5rem;">
-              Create New User
+              {$t('admin.users.create_user')}
             </h2>
             <button
               onclick={closeModal}
@@ -563,11 +566,11 @@
           <form onsubmit={(e) => { e.preventDefault(); createUser(); }}>
             <div style="margin-bottom: 1.25rem;">
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem;">
-                Username * (3-50 characters)
+                {$t('admin.users.username')} {$t('admin.users.username_required')}
               </label>
               <input
                 bind:value={newUser.username}
-                placeholder="Enter username (min 3 chars)"
+                placeholder={$t('admin.users.username_placeholder')}
                 required
                 minlength="3"
                 maxlength="50"
@@ -582,19 +585,19 @@
               />
               {#if newUser.username && newUser.username.length < 3}
                 <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #dc2626;">
-                  Username must be at least 3 characters
+                  {$t('admin.users.username_min_error')}
                 </p>
               {/if}
             </div>
 
             <div style="margin-bottom: 1.25rem;">
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem;">
-                Password * (4-100 characters)
+                {$t('admin.users.password')} {$t('admin.users.password_required')}
               </label>
               <input
                 type="password"
                 bind:value={newUser.password}
-                placeholder="Enter password (min 4 chars)"
+                placeholder={$t('admin.users.password_placeholder')}
                 required
                 minlength="4"
                 maxlength="100"
@@ -609,14 +612,14 @@
               />
               {#if newUser.password && newUser.password.length < 4}
                 <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #dc2626;">
-                  Password must be at least 4 characters
+                  {$t('admin.users.password_min_error')}
                 </p>
               {/if}
             </div>
 
             <div style="margin-bottom: 2rem;">
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem;">
-                Role
+                {$t('admin.users.role')}
               </label>
               <select
                 bind:value={newUser.role}
@@ -629,14 +632,14 @@
                   background: white;
                 "
               >
-                <option value="user">User - Can view and edit own data</option>
-                <option value="viewer">Viewer - Read-only access</option>
-                <option value="admin">Admin - Full access</option>
+                <option value="user">{$t('admin.users.role_user')}</option>
+                <option value="viewer">{$t('admin.users.role_viewer')}</option>
+                <option value="admin">{$t('admin.users.role_admin')}</option>
               </select>
             </div>
 
             <!-- Actions -->
-            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 0.5rem;">
               <button
                 type="button"
                 onclick={closeModal}
@@ -651,7 +654,7 @@
                   transition: all 0.2s;
                 "
               >
-                Cancel
+                {$t('common.cancel')}
               </button>
               <button
                 type="submit"
@@ -668,7 +671,7 @@
                   opacity: {loading || !newUser.username || !newUser.password || newUser.username.length < 3 || newUser.password.length < 4 ? '0.5' : '1'};
                 "
               >
-{loading ? 'Creating...' : 'Create User'}
+                {loading ? $t('admin.users.creating') : $t('admin.users.add_user')}
               </button>
             </div>
           </form>
@@ -688,10 +691,10 @@
           </div>
           <div class="modal-actions">
             <Button variant="ghost" onclick={confirmNo}>
-              Cancel
+              {$t('common.cancel')}
             </Button>
             <Button variant="danger" onclick={confirmYes}>
-              Confirm
+              {$t('admin.users.confirm')}
             </Button>
           </div>
         </div>
@@ -701,14 +704,14 @@
 {:else if authStore.isLoading}
   <div class="loading">
     <div class="spinner"></div>
-    Loading...
+    {$t('common.loading')}
   </div>
 {:else}
   <div class="unauthorized">
-    <h1>Unauthorized</h1>
-    <p>You don't have permission to access this page.</p>
+    <h1>{$t('admin.users.unauthorized_title')}</h1>
+    <p>{$t('admin.users.unauthorized_message')}</p>
     <Button onclick={() => goto('/')}>
-      Go Home
+      {$t('admin.users.go_home')}
     </Button>
   </div>
 {/if}
@@ -1039,10 +1042,11 @@
 
   .modal-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 1rem;
     justify-content: flex-end;
-    padding-top: 1rem;
+    padding: 1.5rem;
     border-top: 1px solid var(--border-color);
+    margin-top: 0.5rem;
   }
 
   @keyframes fadeIn {
