@@ -556,6 +556,6 @@
   .transactions-list {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 1.5rem 3rem 1.5rem;
+    padding: 2rem 0 0 0;
   }
 </style>
