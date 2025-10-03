@@ -5,6 +5,7 @@ import compression from "compression";
 import swaggerUi from "swagger-ui-express";
 import { prisma } from "@infrastructure/database/prisma";
 import { PrismaUserRepository } from "@infrastructure/repositories/PrismaUserRepository";
+import { PrismaUserPreferencesRepository } from "@infrastructure/repositories/PrismaUserPreferencesRepository";
 import { AuthController } from "@infrastructure/controllers/AuthController";
 import { UserManagementController } from "@infrastructure/controllers/UserManagementController";
 import { createTransactionRoutesV2 } from "@infrastructure/routes/transactionRoutesV2";
@@ -33,6 +34,7 @@ class App {
   private app: express.Application;
   // Shared repositories (don't need userId)
   private userRepository: PrismaUserRepository;
+  private userPreferencesRepository: PrismaUserPreferencesRepository;
   private controllerFactory: ControllerFactory;
   private authController!: AuthController;
   private userManagementController!: UserManagementController;
@@ -41,6 +43,7 @@ class App {
     this.app = express();
     // Initialize shared repositories
     this.userRepository = new PrismaUserRepository(prisma);
+    this.userPreferencesRepository = new PrismaUserPreferencesRepository(prisma);
     this.controllerFactory = new ControllerFactory(prisma);
     this.initializeServices();
     this.initializeMiddleware();
@@ -51,7 +54,10 @@ class App {
   private initializeServices() {
     // Initialize auth controller (doesn't need userId)
     this.authController = new AuthController(this.userRepository);
-    this.userManagementController = new UserManagementController(this.userRepository);
+    this.userManagementController = new UserManagementController(
+      this.userRepository,
+      this.userPreferencesRepository
+    );
 
 
   }

@@ -5,6 +5,7 @@ import { AuthenticationService } from '@domain/services/AuthenticationService';
 import { IUserRepository } from '@domain/repositories/IUserRepository';
 import { User, UserRole } from '@domain/entities/User';
 import { AuthRequest } from '@infrastructure/middleware/auth';
+import { UserPreferencesRepository } from '@domain/repositories/UserPreferencesRepository';
 
 const CreateUserSchema = z.object({
   username: z.string().min(3).max(50),
@@ -25,7 +26,10 @@ const ResetPasswordSchema = z.object({
 export class UserManagementController {
   private authService: AuthenticationService;
 
-  constructor(private userRepository: IUserRepository) {
+  constructor(
+    private userRepository: IUserRepository,
+    private userPreferencesRepository?: UserPreferencesRepository
+  ) {
     this.authService = new AuthenticationService();
   }
 
@@ -116,6 +120,16 @@ export class UserManagementController {
       }
 
       const createdUser = createResult.getValue();
+
+      // Create default user preferences after user is created
+      if (this.userPreferencesRepository) {
+        await this.userPreferencesRepository.create({
+          userId: createdUser.id,
+          currency: 'EUR',
+          language: 'en',
+          theme: 'light'
+        });
+      }
 
       res.status(201).json({
         success: true,
