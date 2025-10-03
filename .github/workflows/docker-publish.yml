@@ -1,0 +1,66 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata for backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: alcibiadesc/happy-balance
+          tags: |
+            type=raw,value=backend-latest
+            type=raw,value=backend-v2
+            type=sha,prefix=backend-
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.backend.optimized
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          cache-from: type=registry,ref=alcibiadesc/happy-balance:backend-latest
+          cache-to: type=inline
+
+      - name: Extract metadata for frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: alcibiadesc/happy-balance
+          tags: |
+            type=raw,value=frontend-latest
+            type=raw,value=frontend-v2
+            type=sha,prefix=frontend-
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.frontend.optimized
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          cache-from: type=registry,ref=alcibiadesc/happy-balance:frontend-latest
+          cache-to: type=inline
