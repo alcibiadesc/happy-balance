@@ -361,7 +361,41 @@
     font-weight: 500;
   }
 
-  @media (max-width: 768px) {
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .date-selector-section {
+      gap: 0.375rem;
+    }
+
+    .date-display {
+      min-width: 140px;
+      font-size: 0.8125rem;
+      padding: 0.5rem;
+    }
+
+    .date-display span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .custom-date-range {
+      padding: 0.25rem 0.375rem;
+    }
+
+    .date-input {
+      width: 90px;
+      font-size: 0.75rem;
+    }
+
+    .all-toggle-btn,
+    .date-nav-btn,
+    .date-mode-btn,
+    .hidden-toggle-btn {
+      padding: 0.4rem;
+    }
+  }
+
+  @media (max-width: 767px) {
     .date-selector-section {
       flex-wrap: wrap;
       gap: 0.375rem;

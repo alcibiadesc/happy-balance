@@ -39,6 +39,13 @@
   align-items: center;
 }
 
+@media (min-width: 768px) and (max-width: 1023px) {
+  .toolbar-content {
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto);
+    gap: 0.75rem;
+  }
+}
+
 @media (min-width: 1024px) {
   .toolbar-content {
     grid-template-columns: minmax(240px, auto) 1fr minmax(200px, auto);
@@ -76,6 +83,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   position: relative;
+  flex-shrink: 0;
 }
 
 .toolbar-btn:hover {
@@ -171,7 +179,36 @@
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (min-width: 768px) and (max-width: 1023px) {
+  .toolbar-content {
+    padding: 0 1rem;
+  }
+
+  .toolbar-actions {
+    gap: 0.375rem;
+    padding: 0.375rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .toolbar-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toolbar-btn {
+    font-size: 0.8125rem;
+    padding: 0 0.875rem;
+    height: 2.25rem;
+  }
+
+  .toolbar-btn.icon-only {
+    width: 2.25rem;
+  }
+}
+
+@media (max-width: 767px) {
   .toolbar {
     padding: 0.75rem 0;
   }

@@ -98,7 +98,14 @@
     color: var(--text-primary);
   }
 
-  @media (max-width: 768px) {
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .search-bar {
+      max-width: 240px;
+      min-width: 180px;
+    }
+  }
+
+  @media (max-width: 767px) {
     .search-bar {
       max-width: 100%;
       flex: 1;
