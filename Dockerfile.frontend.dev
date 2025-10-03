@@ -15,7 +15,7 @@ COPY package.json pnpm-workspace.yaml ./
 # The source code will be mounted as a volume
 # node_modules will be in named volumes to avoid conflicts
 
-EXPOSE 3000
+EXPOSE 5173
 EXPOSE 24678
 
 # Use dumb-init to handle signals properly

@@ -73,10 +73,10 @@ services:
       NODE_ENV: development
       INTERNAL_API_URL: http://backend-dev:3004/api
       PUBLIC_API_URL: http://localhost:3004/api
-      PORT: 3000
-      ORIGIN: ${ORIGIN:-http://localhost:3000}
+      PORT: 5173
+      ORIGIN: ${ORIGIN:-http://localhost:5173}
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-5173}:5173"
       - "24678:24678"  # Vite HMR port
     depends_on:
       - backend-dev
