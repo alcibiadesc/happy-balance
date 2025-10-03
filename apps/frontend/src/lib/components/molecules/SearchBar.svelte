@@ -100,8 +100,13 @@
 
   @media (min-width: 768px) and (max-width: 1023px) {
     .search-bar {
-      max-width: 240px;
-      min-width: 180px;
+      max-width: 200px;
+      min-width: 140px;
+      flex-shrink: 1;
+    }
+
+    .search-bar input {
+      font-size: 0.8125rem;
     }
   }
 

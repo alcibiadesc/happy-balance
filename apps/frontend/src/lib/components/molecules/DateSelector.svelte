@@ -363,13 +363,15 @@
 
   @media (min-width: 768px) and (max-width: 1023px) {
     .date-selector-section {
-      gap: 0.375rem;
+      gap: 0.25rem;
+      flex-shrink: 0;
     }
 
     .date-display {
-      min-width: 140px;
-      font-size: 0.8125rem;
-      padding: 0.5rem;
+      min-width: 120px;
+      max-width: 120px;
+      font-size: 0.75rem;
+      padding: 0.375rem 0.5rem;
     }
 
     .date-display span {
@@ -380,18 +382,21 @@
 
     .custom-date-range {
       padding: 0.25rem 0.375rem;
+      min-width: 180px;
     }
 
     .date-input {
-      width: 90px;
-      font-size: 0.75rem;
+      width: 75px;
+      font-size: 0.7rem;
     }
 
     .all-toggle-btn,
     .date-nav-btn,
     .date-mode-btn,
     .hidden-toggle-btn {
-      padding: 0.4rem;
+      padding: 0.375rem;
+      min-width: 2rem;
+      min-height: 2rem;
     }
   }
 
