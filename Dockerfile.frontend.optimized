@@ -59,6 +59,7 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/pnpm-workspace.yaml ./
 COPY --from=builder /app/pnpm-lock.yaml ./
 COPY --from=builder /app/apps/frontend/package.json ./apps/frontend/
+COPY --from=builder /app/apps/frontend/node_modules ./apps/frontend/node_modules
 
 # Copy built application
 COPY --from=builder /app/apps/frontend/build ./apps/frontend/build
