@@ -24,7 +24,7 @@ function setupEnvironment() {
   // Create frontend .env.local if it doesn't exist
   if (!existsSync(frontendEnvPath)) {
     const gitInfo = getGitInfo(rootDir);
-    const backendPort = gitInfo.isWorktree ? "3003" : "3004";
+    const backendPort = gitInfo.isWorktree ? "14041" : "14040";
     const frontendPort = gitInfo.isWorktree ? "5176" : "5173";
 
     const frontendEnv = `# Frontend Configuration

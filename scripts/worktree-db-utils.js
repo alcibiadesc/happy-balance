@@ -138,7 +138,7 @@ export function createDatabase(dbName) {
  * @param {string} dbName - Database name
  */
 export function updateDatabaseUrl(envPath, dbName) {
-  const newUrl = `postgresql://postgres:password@localhost:5432/${dbName}`;
+  const newUrl = `postgresql://postgres:password@localhost:15432/${dbName}`;
 
   if (existsSync(envPath)) {
     // Read existing .env file
@@ -158,7 +158,7 @@ export function updateDatabaseUrl(envPath, dbName) {
 
     // Set PORT and CORS based on environment type
     const gitInfo = getGitInfo(".");
-    const backendPort = gitInfo.isWorktree ? "3003" : "3004";
+    const backendPort = gitInfo.isWorktree ? "14041" : "14040";
     const frontendPort = gitInfo.isWorktree ? "5176" : "5173";
 
     const portRegex = /^PORT=.*$/m;
@@ -185,7 +185,7 @@ export function updateDatabaseUrl(envPath, dbName) {
   } else {
     // Create new .env file with DATABASE_URL
     const gitInfo = getGitInfo(".");
-    const backendPort = gitInfo.isWorktree ? "3003" : "3004";
+    const backendPort = gitInfo.isWorktree ? "14041" : "14040";
     const corsOrigin = gitInfo.isWorktree
       ? `"http://localhost:5176"`
       : `"http://localhost:5173,http://localhost:5177"`;

@@ -198,7 +198,7 @@ class App {
   }
 
   public async start() {
-    const preferredPort = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+    const preferredPort = process.env.PORT ? parseInt(process.env.PORT) : 14040;
 
     try {
       // Test database connection

@@ -20,7 +20,7 @@ That's it! The script will automatically:
 - ✅ Start PostgreSQL in Docker
 - ✅ Generate Prisma client
 - ✅ Push database schema
-- ✅ Start backend on http://localhost:3004
+- ✅ Start backend on http://localhost:14040
 - ✅ Start frontend on http://localhost:5173
 
 ## Manual Setup (if pnpm dev fails)
@@ -64,8 +64,8 @@ pnpm dev
 
 Backend `.env` (already configured):
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/happy_balance"
-PORT=3004
+DATABASE_URL="postgresql://postgres:postgres@localhost:15432/happy_balance"
+PORT=14040
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
 JWT_ACCESS_SECRET=dev-secret-key-minimum-32-characters-long-for-jwt-access
@@ -74,14 +74,14 @@ JWT_REFRESH_SECRET=dev-refresh-key-minimum-32-characters-long-for-jwt-refresh
 
 ## Common Issues
 
-### Port 3004 already in use
+### Port 14040 already in use
 
 ```bash
 # Stop Docker containers
 docker compose down
 
 # Or kill process on port
-lsof -ti:3004 | xargs kill -9
+lsof -ti:14040 | xargs kill -9
 ```
 
 ### Database connection error
@@ -133,9 +133,9 @@ pnpm db:seed
 ## Access Points
 
 - **Frontend:** http://localhost:5173
-- **Backend API:** http://localhost:3004/api
-- **API Docs:** http://localhost:3004/api-docs
-- **PostgreSQL:** localhost:5432 (user: postgres, password: postgres)
+- **Backend API:** http://localhost:14040/api
+- **API Docs:** http://localhost:14040/api-docs
+- **PostgreSQL:** localhost:15432 (user: postgres, password: postgres)
 
 ## Next Steps
 

@@ -61,7 +61,7 @@ export async function getAvailablePorts(isWorktree = false) {
     };
   } else {
     // Regular branch: Use fixed stable ports
-    const backendPort = 3004;
+    const backendPort = 14040;
     const frontendPort = 5173;
 
     // Check if fixed ports are available, fallback if needed

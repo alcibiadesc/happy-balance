@@ -12,7 +12,7 @@ const execAsync = promisify(exec);
 
 const DB_CONFIG = {
   host: "localhost",
-  port: 5432,
+  port: 15432,
   user: "postgres",
   password: "postgres",
   mainDb: "happy_balance",

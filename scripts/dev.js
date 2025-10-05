@@ -72,7 +72,7 @@ function getWorkspaceInfo() {
 function getWorkspacePorts(workspaceInfo) {
   if (!workspaceInfo.isWorktree) {
     return {
-      backend: 3000,
+      backend: 14040,
       frontend: 5173,
     };
   }

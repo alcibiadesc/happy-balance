@@ -123,12 +123,21 @@ export class UserManagementController {
 
       // Create default user preferences after user is created
       if (this.userPreferencesRepository) {
-        await this.userPreferencesRepository.create({
+        const preferencesResult = await this.userPreferencesRepository.create({
           userId: createdUser.id,
           currency: 'EUR',
           language: 'en',
           theme: 'light'
         });
+
+        if (preferencesResult.isFailure()) {
+          // If preferences creation fails, we should rollback the user creation
+          await this.userRepository.delete(createdUser.id);
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to create user preferences'
+          });
+        }
       }
 
       res.status(201).json({

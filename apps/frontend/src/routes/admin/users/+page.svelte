@@ -7,6 +7,7 @@
   import Input from '$lib/components/atoms/Input.svelte';
   import Badge from '$lib/components/atoms/Badge.svelte';
   import { t } from '$lib/stores/i18n';
+  import { getApiUrl } from '$lib/utils/api-url';
 
   interface UserDTO {
     id: string;
@@ -57,7 +58,7 @@
 
     try {
       const token = authStore.getAccessToken();
-      const response = await fetch('http://localhost:3004/api/admin/users', {
+      const response = await fetch(`${getApiUrl()}/admin/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -109,7 +110,7 @@
 
       console.log('Sending request data:', requestData);
 
-      const response = await fetch('http://localhost:3004/api/admin/users', {
+      const response = await fetch(`${getApiUrl()}/admin/users`, {
         method: 'POST',
         headers,
         body: JSON.stringify(requestData)
@@ -163,7 +164,7 @@
 
     try {
       const token = authStore.getAccessToken();
-      const response = await fetch(`http://localhost:3004/api/admin/users/${user.id}`, {
+      const response = await fetch(`${getApiUrl()}/admin/users/${user.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -206,7 +207,7 @@
 
     try {
       const token = authStore.getAccessToken();
-      const response = await fetch(`http://localhost:3004/api/admin/users/${userId}`, {
+      const response = await fetch(`${getApiUrl()}/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -243,7 +244,7 @@
 
     try {
       const token = authStore.getAccessToken();
-      const response = await fetch('http://localhost:3004/api/admin/users/reset-password', {
+      const response = await fetch(`${getApiUrl()}/admin/users/reset-password`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -307,7 +308,7 @@
       const token = authStore.getAccessToken();
       const newStatus = !user.isActive;
 
-      const response = await fetch(`http://localhost:3004/api/admin/users/${user.id}`, {
+      const response = await fetch(`${getApiUrl()}/admin/users/${user.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

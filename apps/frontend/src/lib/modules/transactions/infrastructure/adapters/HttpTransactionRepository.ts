@@ -12,6 +12,7 @@ import {
   type PaginationOptions,
   type TransactionQueryResult,
 } from "../../domain/repositories/ITransactionRepository";
+import { getApiUrl } from "$lib/utils/api-url";
 
 /**
  * HTTP API implementation of Transaction Repository
@@ -21,10 +22,7 @@ export class HttpTransactionRepository implements ITransactionRepository {
   private readonly baseUrl: string;
 
   constructor(
-    baseUrl = (typeof window !== "undefined" &&
-      (window as any).ENV?.VITE_API_URL) ||
-      (import.meta as any).env?.VITE_API_URL ||
-      "http://localhost:3004/api",
+    baseUrl = getApiUrl(),
   ) {
     this.baseUrl = baseUrl;
   }

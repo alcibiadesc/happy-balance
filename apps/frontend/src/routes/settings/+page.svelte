@@ -82,7 +82,7 @@ const API_BASE = getApiUrl();
 
     try {
       const token = authStore.getAccessToken();
-      const response = await fetch('http://localhost:3004/api/auth/change-password', {
+      const response = await fetch(`${API_BASE}/auth/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

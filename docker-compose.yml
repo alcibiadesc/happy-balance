@@ -20,8 +20,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-happy_balance}
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     ports:
-      # Expose port 5432 for development access
-      - "${POSTGRES_PORT:-5432}:5432"
+      # Expose port 15432 for development access
+      - "${POSTGRES_PORT:-15432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -47,19 +47,19 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production-32chars}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
-      PORT: 3004
+      PORT: 14040
       # CORS: Allow all origins by default (works on any IP/hostname)
       # For production, set CORS_ORIGIN in .env to your specific domain
       CORS_ORIGIN: "${CORS_ORIGIN:-*}"
     ports:
-      - "${BACKEND_PORT:-3004}:3004"
+      - "${BACKEND_PORT:-14040}:14040"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - uploads_data:/app/uploads
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3004/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:14040/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -77,17 +77,17 @@ services:
     environment:
       NODE_ENV: production
       # Internal URL for SSR (server-side rendering) - uses Docker network
-      INTERNAL_API_URL: http://backend:3004/api
+      INTERNAL_API_URL: http://backend:14040/api
       # Client-side URL is auto-detected from browser location - no config needed!
-      PORT: 3000
-      ORIGIN: ${ORIGIN:-http://localhost:3000}
+      PORT: 14080
+      ORIGIN: ${ORIGIN:-http://localhost:14080}
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-14080}:14080"
     depends_on:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:14080"]
       interval: 30s
       timeout: 10s
       retries: 3

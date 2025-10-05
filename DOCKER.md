@@ -12,8 +12,8 @@ docker compose pull
 docker compose up -d
 
 # 3. Access the application
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:3004
+# Frontend: http://localhost:14080
+# Backend API: http://localhost:14040
 # Default credentials: admin / admin123
 ```
 
@@ -34,8 +34,9 @@ ADMIN_PASSWORD=your-secure-password
 CORS_ORIGIN=*
 
 # Ports (optional)
-FRONTEND_PORT=3000
-BACKEND_PORT=3004
+FRONTEND_PORT=14080
+BACKEND_PORT=14040
+POSTGRES_PORT=15432
 ```
 
 ## 🚀 Commands

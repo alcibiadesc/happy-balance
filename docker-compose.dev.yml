@@ -19,7 +19,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-happy_balance}
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-15432}:5432"
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
@@ -43,10 +43,10 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production-32chars}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
-      PORT: 3004
+      PORT: 14040
       CORS_ORIGIN: "*"
     ports:
-      - "${BACKEND_PORT:-3004}:3004"
+      - "${BACKEND_PORT:-14040}:14040"
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,8 +71,8 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
-      INTERNAL_API_URL: http://backend-dev:3004/api
-      PUBLIC_API_URL: http://localhost:3004/api
+      INTERNAL_API_URL: http://backend-dev:14040/api
+      PUBLIC_API_URL: http://localhost:14040/api
       PORT: 5173
       ORIGIN: ${ORIGIN:-http://localhost:5173}
     ports:

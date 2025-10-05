@@ -58,8 +58,8 @@ curl -sSL https://raw.githubusercontent.com/alcibiadesc/happy-balance/main/docke
 **That's it!** The app auto-detects your server's URL.
 
 **Access from:**
-- Same computer: http://localhost:3000
-- Other devices: http://YOUR_SERVER_IP:3000
+- Same computer: http://localhost:14080
+- Other devices: http://YOUR_SERVER_IP:14080
 
 **Default credentials:**
 - Username: `admin`
@@ -147,8 +147,8 @@ docker compose up -d
 ```
 
 **Access:**
-- Frontend: `http://localhost:3000`
-- Backend API: `http://localhost:3004/api`
+- Frontend: `http://localhost:14080`
+- Backend API: `http://localhost:14040/api`
 
 **Default credentials:**
 - Username: `admin`
@@ -178,8 +178,8 @@ pnpm dev
 
 **Access:**
 - Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:3004`
-- PostgreSQL: `localhost:5432`
+- Backend API: `http://localhost:14040`
+- PostgreSQL: `localhost:15432`
 
 ### Using Portainer
 
@@ -265,9 +265,10 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
 
 # Optional - defaults work for local development
-# FRONTEND_PORT=3000
-# BACKEND_PORT=3004
-# VITE_API_URL=http://localhost:3004/api
+# FRONTEND_PORT=14080
+# BACKEND_PORT=14040
+# POSTGRES_PORT=15432
+# VITE_API_URL=http://localhost:14040/api
 ```
 
 ## 🚢 Deployment & Building Images

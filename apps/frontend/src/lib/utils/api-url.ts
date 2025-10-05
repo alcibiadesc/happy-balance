@@ -11,14 +11,14 @@ export function getApiUrl(): string {
 
   if (isServer) {
     // Server-side: use internal Docker network URL
-    return process.env.INTERNAL_API_URL || 'http://backend:3004/api';
+    return process.env.INTERNAL_API_URL || 'http://backend:14040/api';
   }
 
   // Client-side: auto-detect API URL from current window location
   // This makes it work on localhost, NAS, or any IP without configuration!
   const protocol = window.location.protocol; // http: or https:
   const hostname = window.location.hostname; // localhost, 192.168.1.50, etc.
-  const apiPort = '3004'; // Backend port
+  const apiPort = '14040'; // Backend port
 
   return `${protocol}//${hostname}:${apiPort}/api`;
 }

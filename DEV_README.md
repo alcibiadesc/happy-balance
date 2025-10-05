@@ -27,9 +27,9 @@ docker compose -f docker-compose.dev.yml logs -f
 ### 3. Acceder a la aplicación
 
 - **Frontend**: http://localhost:5173 (o http://192.168.1.170:5173 desde tu red local)
-- **Backend API**: http://localhost:3004
-- **Swagger Docs**: http://localhost:3004/api-docs
-- **PostgreSQL**: localhost:5432
+- **Backend API**: http://localhost:14040
+- **Swagger Docs**: http://localhost:14040/api-docs
+- **PostgreSQL**: localhost:15432
 
 ### 4. Credenciales por defecto
 
