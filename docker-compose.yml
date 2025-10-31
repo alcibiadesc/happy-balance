@@ -80,7 +80,7 @@ services:
       INTERNAL_API_URL: http://backend:14040/api
       # Client-side URL is auto-detected from browser location - no config needed!
       PORT: 14080
-      ORIGIN: ${ORIGIN:-http://localhost:14080}
+      ORIGIN: ${ORIGIN:-http://balance.nas}
     ports:
       - "${FRONTEND_PORT:-14080}:14080"
     depends_on:
@@ -92,9 +92,23 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - default
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.happy-balance.rule=Host(`balance.nas`)"
+      - "traefik.http.routers.happy-balance.entrypoints=web"
+      - "traefik.http.services.happy-balance.loadbalancer.server.port=14080"
+      - "traefik.docker.network=traefik_network"
 
 volumes:
   postgres_data:
     name: happy_balance_postgres_data
   uploads_data:
     name: happy_balance_uploads_data
+
+networks:
+  traefik_network:
+    external: true
+    name: traefik_network

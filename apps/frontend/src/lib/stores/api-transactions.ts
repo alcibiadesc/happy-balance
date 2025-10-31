@@ -142,7 +142,8 @@ function createApiTransactionStore() {
         // Only include fields that are being updated (not undefined)
         if (updates.description !== undefined) payload.description = updates.description;
         if (updates.hidden !== undefined) payload.hidden = updates.hidden;
-        if (updates.categoryId !== undefined) payload.categoryId = updates.categoryId;
+        // Allow null to be sent for categoryId to remove category
+        if ('categoryId' in updates) payload.categoryId = updates.categoryId;
         if (updates.observations !== undefined) payload.observations = updates.observations;
 
         // If amount is being updated, handle the type change
