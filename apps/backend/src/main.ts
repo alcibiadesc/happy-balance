@@ -134,6 +134,133 @@ class App {
       });
     });
 
+    // Version endpoint
+    this.app.get("/version", (req, res) => {
+      try {
+        const fs = require("fs");
+        const path = require("path");
+        const versionFile = path.join(process.cwd(), ".version.json");
+
+        if (fs.existsSync(versionFile)) {
+          const versionData = JSON.parse(fs.readFileSync(versionFile, "utf8"));
+          res.json(versionData);
+        } else {
+          // Fallback for local development
+          const packageJson = require("../../../package.json");
+          res.json({
+            version: packageJson.version || "unknown",
+            commit: "local-dev",
+            buildTimestamp: new Date().toISOString(),
+            component: "backend",
+            environment: process.env.NODE_ENV || "development"
+          });
+        }
+      } catch (error) {
+        res.status(500).json({
+          error: "Failed to read version information",
+          version: "unknown"
+        });
+      }
+    });
+
+    // Check for updates endpoint
+    this.app.get("/api/system/check-updates", async (req, res) => {
+      try {
+        const https = require("https");
+        const fs = require("fs");
+        const path = require("path");
+
+        // Get current version
+        const versionFile = path.join(process.cwd(), ".version.json");
+        let currentVersion = { version: "unknown", commit: "local-dev" };
+
+        if (fs.existsSync(versionFile)) {
+          currentVersion = JSON.parse(fs.readFileSync(versionFile, "utf8"));
+        }
+
+        // Check Docker Hub for latest image labels
+        const dockerHubUrl = "https://hub.docker.com/v2/repositories/alcibiadesc/happy-balance/tags/backend-latest";
+
+        https.get(dockerHubUrl, (response: any) => {
+          let data = "";
+          response.on("data", (chunk: any) => { data += chunk; });
+          response.on("end", () => {
+            try {
+              const imageInfo = JSON.parse(data);
+              const latestCommit = imageInfo.name?.split("-").pop() || "unknown";
+
+              res.json({
+                current: currentVersion,
+                latest: {
+                  version: imageInfo.tag_last_pushed ? "latest" : "unknown",
+                  commit: latestCommit,
+                  lastPushed: imageInfo.tag_last_pushed
+                },
+                updateAvailable: currentVersion.commit !== latestCommit && currentVersion.commit !== "local-dev"
+              });
+            } catch (error) {
+              res.json({
+                current: currentVersion,
+                latest: null,
+                updateAvailable: false,
+                error: "Could not parse Docker Hub response"
+              });
+            }
+          });
+        }).on("error", () => {
+          res.json({
+            current: currentVersion,
+            latest: null,
+            updateAvailable: false,
+            error: "Could not reach Docker Hub"
+          });
+        });
+      } catch (error) {
+        res.status(500).json({
+          error: "Failed to check for updates",
+          details: error instanceof Error ? error.message : String(error)
+        });
+      }
+    });
+
+    // Trigger update endpoint (requires proper permissions)
+    this.app.post("/api/system/update", async (req, res) => {
+      try {
+        const { exec } = require("child_process");
+        const path = require("path");
+
+        // Find the update script
+        const scriptPath = path.join(process.cwd(), "../../../scripts/update-docker.sh");
+
+        // Execute the update script
+        exec(scriptPath, (error: any, stdout: string, stderr: string) => {
+          if (error) {
+            console.error("Update error:", error);
+            return res.status(500).json({
+              success: false,
+              error: "Failed to execute update script",
+              details: error.message,
+              stderr: stderr,
+              note: "This operation may require additional Docker permissions. Consider running the update script manually: ./scripts/update-docker.sh"
+            });
+          }
+
+          res.json({
+            success: true,
+            message: "Update initiated successfully. The application will restart with the latest version.",
+            output: stdout
+          });
+        });
+      } catch (error) {
+        res.status(500).json({
+          success: false,
+          error: "Failed to trigger update",
+          details: error instanceof Error ? error.message : String(error),
+          note: "This operation may require additional Docker permissions. Consider running the update script manually: ./scripts/update-docker.sh"
+        });
+      }
+    });
+
     // Swagger documentation
     this.app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
       customCss: '.swagger-ui .topbar { display: none }',

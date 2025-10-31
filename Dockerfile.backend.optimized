@@ -1,5 +1,11 @@
 # Multi-stage build for production backend (Best practices with pnpm deploy)
 FROM node:20-alpine AS base
+
+# Build arguments for version tracking
+ARG VERSION=unknown
+ARG COMMIT_SHA=unknown
+ARG BUILD_TIMESTAMP=unknown
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -27,6 +33,11 @@ RUN npx prisma generate
 # Production stage - minimal runtime image
 FROM base AS production
 
+# Re-declare ARGs for this stage
+ARG VERSION=unknown
+ARG COMMIT_SHA=unknown
+ARG BUILD_TIMESTAMP=unknown
+
 RUN apk add --no-cache wget dumb-init && \
     rm -rf /root/.npm
 
@@ -37,6 +48,9 @@ COPY --from=build /prod/backend /app
 
 # Copy built application
 COPY --from=build /usr/src/app/apps/backend/dist ./dist
+
+# Create version file with build metadata
+RUN echo "{\"version\":\"${VERSION}\",\"commit\":\"${COMMIT_SHA}\",\"buildTimestamp\":\"${BUILD_TIMESTAMP}\",\"component\":\"backend\"}" > /app/.version.json
 
 # Create uploads directory and set permissions
 RUN mkdir -p uploads && \

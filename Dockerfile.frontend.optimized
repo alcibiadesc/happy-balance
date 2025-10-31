@@ -3,6 +3,11 @@
 # ====================================
 FROM node:20-alpine AS deps
 
+# Build arguments for version tracking
+ARG VERSION=unknown
+ARG COMMIT_SHA=unknown
+ARG BUILD_TIMESTAMP=unknown
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -44,6 +49,11 @@ RUN pnpm build && \
 # ====================================
 FROM node:20-alpine AS production
 
+# Re-declare ARGs for this stage
+ARG VERSION=unknown
+ARG COMMIT_SHA=unknown
+ARG BUILD_TIMESTAMP=unknown
+
 # Install only essential runtime dependencies
 RUN apk add --no-cache \
     wget \
@@ -63,6 +73,9 @@ COPY --from=builder /app/apps/frontend/node_modules ./apps/frontend/node_modules
 
 # Copy built application
 COPY --from=builder /app/apps/frontend/build ./apps/frontend/build
+
+# Create version file with build metadata
+RUN echo "{\"version\":\"${VERSION}\",\"commit\":\"${COMMIT_SHA}\",\"buildTimestamp\":\"${BUILD_TIMESTAMP}\",\"component\":\"frontend\"}" > /app/.version.json
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DollarSign, Palette, Globe, Lock } from 'lucide-svelte';
+  import { DollarSign, Palette, Globe, Lock, Info, RefreshCw } from 'lucide-svelte';
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
   import SettingsStatusMessage from '$lib/components/molecules/SettingsStatusMessage.svelte';
   import SettingsCard from '$lib/components/organisms/SettingsCard.svelte';
@@ -43,6 +43,14 @@ const API_BASE = getApiUrl();
   let passwordSuccess = $state<string | null>(null);
   let isSubmittingPassword = $state(false);
 
+  // Version and update state
+  let versionInfo = $state<any>(null);
+  let updateInfo = $state<any>(null);
+  let checkingUpdates = $state(false);
+  let updatingSystem = $state(false);
+  let updateMessage = $state<string | null>(null);
+  let updateError = $state<string | null>(null);
+
   // Load user preferences on mount
   onMount(async () => {
     await userPreferences.load();
@@ -51,7 +59,81 @@ const API_BASE = getApiUrl();
     if (!authStore.isAuthenticated) {
       goto('/login');
     }
+
+    // Load version info
+    await loadVersionInfo();
   });
+
+  async function loadVersionInfo() {
+    try {
+      const response = await fetch(`${API_BASE}/version`);
+      if (response.ok) {
+        versionInfo = await response.json();
+      }
+    } catch (err) {
+      console.error('Failed to load version info:', err);
+    }
+  }
+
+  async function checkForUpdates() {
+    checkingUpdates = true;
+    updateError = null;
+    updateMessage = null;
+
+    try {
+      const token = authStore.getAccessToken();
+      const response = await fetch(`${API_BASE}/system/check-updates`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        updateInfo = await response.json();
+        if (updateInfo.updateAvailable) {
+          updateMessage = `New version available! Latest commit: ${updateInfo.latest.commit}`;
+        } else {
+          updateMessage = 'You are running the latest version';
+        }
+      }
+    } catch (err) {
+      updateError = 'Failed to check for updates';
+    } finally {
+      checkingUpdates = false;
+    }
+  }
+
+  async function applyUpdate() {
+    updatingSystem = true;
+    updateError = null;
+    updateMessage = null;
+
+    try {
+      const token = authStore.getAccessToken();
+      const response = await fetch(`${API_BASE}/system/update`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        updateMessage = 'Update initiated! The application will restart shortly...';
+        // Reload after a delay to give containers time to restart
+        setTimeout(() => {
+          window.location.reload();
+        }, 15000);
+      } else {
+        updateError = result.note || result.error || 'Update failed';
+      }
+    } catch (err) {
+      updateError = 'Failed to apply update. Try running manually: ./scripts/update-docker.sh';
+    } finally {
+      updatingSystem = false;
+    }
+  }
 
   async function handlePasswordChange(event: Event) {
     event.preventDefault();
@@ -282,6 +364,88 @@ const API_BASE = getApiUrl();
         </form>
     </SettingsCard>
 
+    <!-- System Information & Updates -->
+    <SettingsCard
+      title="System Information"
+      icon={Info}
+      iconClass="system"
+    >
+        <div class="version-info">
+          {#if versionInfo}
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label">Version</span>
+                <span class="setting-desc">{versionInfo.version}</span>
+              </div>
+            </div>
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label">Commit</span>
+                <span class="setting-desc">{versionInfo.commit}</span>
+              </div>
+            </div>
+            {#if versionInfo.buildTimestamp}
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">Build Date</span>
+                  <span class="setting-desc">{new Date(versionInfo.buildTimestamp).toLocaleString()}</span>
+                </div>
+              </div>
+            {/if}
+          {:else}
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-desc">Loading version information...</span>
+              </div>
+            </div>
+          {/if}
+
+          {#if updateMessage}
+            <div class="success-message" in:fly={{ y: -10, duration: 200 }}>
+              {updateMessage}
+            </div>
+          {/if}
+
+          {#if updateError}
+            <div class="error-message" in:fly={{ y: -10, duration: 200 }}>
+              {updateError}
+            </div>
+          {/if}
+
+          <div class="update-actions">
+            <button
+              class="update-btn"
+              onclick={checkForUpdates}
+              disabled={checkingUpdates || updatingSystem}
+            >
+              {#if checkingUpdates}
+                <div class="spinner"></div>
+                Checking...
+              {:else}
+                <RefreshCw size={16} />
+                Check for Updates
+              {/if}
+            </button>
+
+            {#if updateInfo?.updateAvailable}
+              <button
+                class="update-btn primary"
+                onclick={applyUpdate}
+                disabled={updatingSystem || checkingUpdates}
+              >
+                {#if updatingSystem}
+                  <div class="spinner"></div>
+                  Updating...
+                {:else}
+                  <RefreshCw size={16} />
+                  Apply Update
+                {/if}
+              </button>
+            {/if}
+          </div>
+        </div>
+    </SettingsCard>
+
     <!-- Data Management -->
     <SettingsCard
       title={$t('settings.data')}
@@ -489,6 +653,64 @@ const API_BASE = getApiUrl();
     to {
       transform: rotate(360deg);
     }
+  }
+
+  /* Version info and update styles */
+  .version-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .update-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .update-btn {
+    background: var(--surface-alt);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 40px;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .update-btn:hover:not(:disabled) {
+    background: var(--surface-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .update-btn.primary {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .update-btn.primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+    box-shadow: var(--shadow-md);
+  }
+
+  .update-btn:disabled {
+    background: var(--border-color);
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 
   /* Mobile responsive */

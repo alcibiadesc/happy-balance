@@ -16,6 +16,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get version and commit info
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION, SHA: $SHORT_SHA, Timestamp: $TIMESTAMP"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -32,8 +43,15 @@ jobs:
           images: alcibiadesc/happy-balance
           tags: |
             type=raw,value=backend-latest
-            type=raw,value=backend-v2
-            type=sha,prefix=backend-
+            type=raw,value=backend-v${{ steps.version.outputs.version }}
+            type=raw,value=backend-v${{ steps.version.outputs.version }}-${{ steps.version.outputs.short_sha }}
+            type=raw,value=backend-${{ steps.version.outputs.short_sha }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            happy-balance.version=${{ steps.version.outputs.version }}
+            happy-balance.commit=${{ steps.version.outputs.short_sha }}
+            happy-balance.build-timestamp=${{ steps.version.outputs.timestamp }}
 
       - name: Build and push backend
         uses: docker/build-push-action@v5
@@ -42,6 +60,11 @@ jobs:
           file: ./Dockerfile.backend.optimized
           push: true
           tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            COMMIT_SHA=${{ steps.version.outputs.short_sha }}
+            BUILD_TIMESTAMP=${{ steps.version.outputs.timestamp }}
           cache-from: type=registry,ref=alcibiadesc/happy-balance:backend-latest
           cache-to: type=inline
 
@@ -52,8 +75,15 @@ jobs:
           images: alcibiadesc/happy-balance
           tags: |
             type=raw,value=frontend-latest
-            type=raw,value=frontend-v2
-            type=sha,prefix=frontend-
+            type=raw,value=frontend-v${{ steps.version.outputs.version }}
+            type=raw,value=frontend-v${{ steps.version.outputs.version }}-${{ steps.version.outputs.short_sha }}
+            type=raw,value=frontend-${{ steps.version.outputs.short_sha }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            happy-balance.version=${{ steps.version.outputs.version }}
+            happy-balance.commit=${{ steps.version.outputs.short_sha }}
+            happy-balance.build-timestamp=${{ steps.version.outputs.timestamp }}
 
       - name: Build and push frontend
         uses: docker/build-push-action@v5
@@ -62,5 +92,28 @@ jobs:
           file: ./Dockerfile.frontend.optimized
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            COMMIT_SHA=${{ steps.version.outputs.short_sha }}
+            BUILD_TIMESTAMP=${{ steps.version.outputs.timestamp }}
           cache-from: type=registry,ref=alcibiadesc/happy-balance:frontend-latest
           cache-to: type=inline
+
+      - name: Summary
+        run: |
+          echo "### 🚀 Docker Images Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ steps.version.outputs.short_sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** ${{ steps.version.outputs.timestamp }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### Backend Tags:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`alcibiadesc/happy-balance:backend-latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`alcibiadesc/happy-balance:backend-v${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`alcibiadesc/happy-balance:backend-v${{ steps.version.outputs.version }}-${{ steps.version.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### Frontend Tags:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`alcibiadesc/happy-balance:frontend-latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`alcibiadesc/happy-balance:frontend-v${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`alcibiadesc/happy-balance:frontend-v${{ steps.version.outputs.version }}-${{ steps.version.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
