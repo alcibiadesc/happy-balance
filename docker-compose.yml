@@ -33,7 +33,7 @@ services:
 
   # Backend API (Production)
   backend:
-    image: alcibiadesc/happy-balance:backend-v2
+    image: alcibiadesc/happy-balance:backend-latest
     build:
       context: .
       dockerfile: Dockerfile.backend.optimized
@@ -67,7 +67,7 @@ services:
 
   # SvelteKit Frontend (Production)
   frontend:
-    image: alcibiadesc/happy-balance:frontend-v2
+    image: alcibiadesc/happy-balance:frontend-latest
     build:
       context: .
       dockerfile: Dockerfile.frontend.optimized

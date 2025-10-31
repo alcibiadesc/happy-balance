@@ -1,13 +1,34 @@
 <script lang="ts">
   import { Upload } from "lucide-svelte";
   import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
   import UserMenu from "./UserMenu.svelte";
+  import { getApiUrl } from "$lib/utils/api-url";
 
   interface Props {
     collapsed: boolean;
   }
 
   let { collapsed }: Props = $props();
+
+  let versionInfo = $state<{version: string, commit: string, buildTimestamp: string} | null>(null);
+
+  onMount(async () => {
+    try {
+      const API_BASE = getApiUrl();
+      const response = await fetch(`${API_BASE}/version`);
+      if (response.ok) {
+        versionInfo = await response.json();
+      }
+    } catch (err) {
+      console.error('Failed to load version:', err);
+    }
+  });
+
+  function formatTimestamp(timestamp: string): string {
+    // Format: 20251031-171606 -> v.20251031171606
+    return `v.${timestamp.replace('-', '')}`;
+  }
 
   function handleImportClick() {
     goto("/import");
@@ -27,8 +48,22 @@
     <div class="user-menu-wrapper">
       <UserMenu />
     </div>
+    {#if versionInfo}
+      <div class="version-badge" title="Build: {versionInfo.buildTimestamp}&#10;Commit: {versionInfo.commit}">
+        {formatTimestamp(versionInfo.buildTimestamp)}
+      </div>
+    {/if}
   {:else}
     <UserMenu />
+    {#if versionInfo}
+      <div class="version-info" title="Click to go to Settings">
+        <button class="version-link" onclick={() => goto('/settings')}>
+          <span class="version-label">Version</span>
+          <span class="version-value">{formatTimestamp(versionInfo.buildTimestamp)}</span>
+          <span class="version-commit">({versionInfo.commit})</span>
+        </button>
+      </div>
+    {/if}
   {/if}
 </footer>
 
@@ -114,5 +149,63 @@
 
   .import-button:active {
     transform: translateY(0);
+  }
+
+  /* Version info styles */
+  .version-info {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-color);
+  }
+
+  .version-link {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background 0.2s ease;
+    text-align: left;
+  }
+
+  .version-link:hover {
+    background: var(--surface-hover);
+  }
+
+  .version-label {
+    font-size: 0.625rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .version-value {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  }
+
+  .version-commit {
+    font-size: 0.625rem;
+    color: var(--text-tertiary);
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  }
+
+  .version-badge {
+    font-size: 0.625rem;
+    color: var(--text-tertiary);
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--surface-alt);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    width: 100%;
+    cursor: help;
   }
 </style>
