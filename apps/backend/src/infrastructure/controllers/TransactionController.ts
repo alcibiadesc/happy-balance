@@ -805,6 +805,7 @@ export class TransactionController {
         description: snapshot.description,
         maxResults: Number(maxResults),
         includeHidden: Boolean(includeHidden),
+        transactionType: snapshot.type, // Pass transaction type to filter similar transactions
       });
 
       if (similarResult.isFailure()) {
