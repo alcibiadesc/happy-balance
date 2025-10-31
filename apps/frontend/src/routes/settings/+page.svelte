@@ -287,7 +287,7 @@ const API_BASE = getApiUrl();
       icon={Lock}
       iconClass="security"
     >
-        <form on:submit={handlePasswordChange} class="password-form">
+        <form onsubmit={handlePasswordChange} class="password-form">
           {#if passwordError}
             <div class="error-message" in:fly={{ y: -10, duration: 200 }}>
               {passwordError}
