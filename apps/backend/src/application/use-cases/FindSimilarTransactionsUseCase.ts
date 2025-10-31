@@ -8,7 +8,7 @@ export interface SimilarTransactionQuery {
   description?: string;
   maxResults?: number;
   includeHidden?: boolean;
-  transactionType?: string; // "INCOME", "EXPENSE", "INVESTMENT", or "NON_COMPUTABLE"
+  transactionType?: string; // "INCOME", "EXPENSE", or "INVESTMENT"
 }
 
 export interface SimilarTransactionResult {
@@ -61,12 +61,10 @@ export class FindSimilarTransactionsUseCase {
         if (snapshot.id === transactionId) continue;
 
         // Filter by transaction type if specified
-        // NON_COMPUTABLE can match with any type
-        if (transactionType && transactionType !== "NON_COMPUTABLE") {
-          // If the similar transaction is NON_COMPUTABLE, it can match any type
-          if (snapshot.type !== transactionType && snapshot.type !== "NON_COMPUTABLE") {
-            continue;
-          }
+        // Only show transactions of the same type to avoid categorization errors
+        // (e.g., don't suggest expense categories for income transactions)
+        if (transactionType && snapshot.type !== transactionType) {
+          continue;
         }
 
         const similarity = this.calculateSimilarity(
