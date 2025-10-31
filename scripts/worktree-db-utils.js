@@ -138,7 +138,7 @@ export function createDatabase(dbName) {
  * @param {string} dbName - Database name
  */
 export function updateDatabaseUrl(envPath, dbName) {
-  const newUrl = `postgresql://postgres:password@localhost:15432/${dbName}`;
+  const newUrl = `postgresql://postgres:postgres@localhost:15432/${dbName}`;
 
   if (existsSync(envPath)) {
     // Read existing .env file

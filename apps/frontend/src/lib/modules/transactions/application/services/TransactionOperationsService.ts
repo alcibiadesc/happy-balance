@@ -97,6 +97,20 @@ export class TransactionOperationsService {
     }
   }
 
+  async categorizeSpecificTransactions(
+    transactionIds: string[],
+    categoryId: string
+  ): Promise<void> {
+    const allTransactions = get(this.apiTransactions);
+    const transactionsToUpdate = allTransactions.filter(t =>
+      transactionIds.includes(t.id)
+    );
+
+    for (const t of transactionsToUpdate) {
+      await this.categorize(t, categoryId, false);
+    }
+  }
+
   private findSimilarTransactions(
     transaction: Transaction,
     allTransactions: Transaction[],

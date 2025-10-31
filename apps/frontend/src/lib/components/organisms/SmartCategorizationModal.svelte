@@ -13,17 +13,27 @@
     reason: string;
     potentialMatches: number;
   }> = [];
-  export let onConfirm: (scope: 'single' | 'pattern' | 'all', applyToFuture: boolean) => void = () => {};
+  export let onConfirm: (scope: 'single' | 'pattern' | 'all', applyToFuture: boolean, selectedTransactionIds?: string[]) => void = () => {};
   export let onCancel: () => void = () => {};
 
   // State
   let selectedScope: 'single' | 'pattern' | 'all' = 'single';
   let applyToFuture = false;
+  let selectedTransactionIds = new Set<string>();
 
   $: hasMatches = matchingTransactions.length > 0;
 
+  // Reset selected transactions when modal opens or matching transactions change
+  $: if (isOpen) {
+    selectedTransactionIds = new Set(matchingTransactions.map(t => t.id));
+  }
+
   function handleConfirm() {
-    onConfirm(selectedScope, applyToFuture);
+    if (selectedScope === 'pattern') {
+      onConfirm(selectedScope, applyToFuture, Array.from(selectedTransactionIds));
+    } else {
+      onConfirm(selectedScope, applyToFuture);
+    }
   }
 
   function formatAmount(amount: number): string {
@@ -38,9 +48,30 @@
   }
 
   function getTotalAmount(): string {
-    const total = matchingTransactions.reduce((sum, t) => sum + Math.abs(t.amount), Math.abs(transaction?.amount || 0));
+    const selectedTransactions = matchingTransactions.filter(t => selectedTransactionIds.has(t.id));
+    const total = selectedTransactions.reduce((sum, t) => sum + Math.abs(t.amount), Math.abs(transaction?.amount || 0));
     return formatAmount(total);
   }
+
+  function toggleTransaction(transactionId: string) {
+    const newSet = new Set(selectedTransactionIds);
+    if (newSet.has(transactionId)) {
+      newSet.delete(transactionId);
+    } else {
+      newSet.add(transactionId);
+    }
+    selectedTransactionIds = newSet;
+  }
+
+  function toggleAll() {
+    if (selectedTransactionIds.size === matchingTransactions.length) {
+      selectedTransactionIds = new Set();
+    } else {
+      selectedTransactionIds = new Set(matchingTransactions.map(t => t.id));
+    }
+  }
+
+  $: selectedCount = selectedTransactionIds.size + 1; // +1 for the current transaction
 </script>
 
 {#if isOpen && transaction && selectedCategory}
@@ -98,9 +129,9 @@
               <div class="option-content">
                 <div class="option-info">
                   <span class="option-title">Transacciones similares</span>
-                  <span class="option-detail">Aplicar a todas las transacciones similares</span>
+                  <span class="option-detail">Selecciona las transacciones a las que aplicar</span>
                 </div>
-                <span class="option-count">{matchingTransactions.length + 1}</span>
+                <span class="option-count">{selectedCount}</span>
               </div>
             </label>
 
@@ -120,19 +151,32 @@
         {#if selectedScope === 'pattern' && hasMatches && matchingTransactions.length > 0}
           <div class="preview-section">
             <div class="preview-header">
-              <span class="preview-title">Se aplicará también a:</span>
+              <div class="preview-header-left">
+                <span class="preview-title">Se aplicará también a:</span>
+                <button
+                  type="button"
+                  class="toggle-all-btn"
+                  on:click={toggleAll}
+                >
+                  {selectedTransactionIds.size === matchingTransactions.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
+                </button>
+              </div>
               <span class="preview-total">{getTotalAmount()}</span>
             </div>
             <div class="preview-list">
-              {#each matchingTransactions.slice(0, 3) as match}
-                <div class="preview-item">
-                  <span class="preview-merchant">{match.merchant}</span>
-                  <span class="preview-amount">{formatAmount(match.amount)}</span>
-                </div>
+              {#each matchingTransactions as match}
+                <label class="preview-item" class:selected={selectedTransactionIds.has(match.id)}>
+                  <input
+                    type="checkbox"
+                    checked={selectedTransactionIds.has(match.id)}
+                    on:change={() => toggleTransaction(match.id)}
+                  />
+                  <div class="preview-item-content">
+                    <span class="preview-merchant">{match.merchant}</span>
+                    <span class="preview-amount">{formatAmount(match.amount)}</span>
+                  </div>
+                </label>
               {/each}
-              {#if matchingTransactions.length > 3}
-                <div class="preview-more">+{matchingTransactions.length - 3} transacciones más</div>
-              {/if}
             </div>
           </div>
         {/if}
@@ -143,8 +187,12 @@
         <button class="btn-secondary" on:click={onCancel}>
           Cancelar
         </button>
-        <button class="btn-primary" on:click={handleConfirm}>
-          {selectedScope === 'single' ? 'Aplicar categoría' : `Aplicar a ${matchingTransactions.length + 1}`}
+        <button
+          class="btn-primary"
+          on:click={handleConfirm}
+          disabled={selectedScope === 'pattern' && selectedTransactionIds.size === 0}
+        >
+          {selectedScope === 'single' ? 'Aplicar categoría' : `Aplicar a ${selectedCount}`}
         </button>
       </div>
     </div>
@@ -384,8 +432,16 @@
   .preview-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .preview-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
   }
 
   .preview-title {
@@ -394,26 +450,72 @@
     color: #64748b;
   }
 
+  .toggle-all-btn {
+    padding: 4px 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #059669;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+  }
+
+  .toggle-all-btn:hover {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+
   .preview-total {
     font-size: 12px;
     font-weight: 600;
     color: #059669;
+    white-space: nowrap;
   }
 
   .preview-list {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    max-height: 300px;
+    overflow-y: auto;
   }
 
   .preview-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 10px;
     padding: 8px 12px;
     background: white;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1.5px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .preview-item:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .preview-item.selected {
+    background: #f0fdf4;
+    border-color: #059669;
+  }
+
+  .preview-item input[type="checkbox"] {
+    margin: 0;
+    accent-color: #059669;
+    cursor: pointer;
+  }
+
+  .preview-item-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1;
   }
 
   .preview-merchant {
@@ -432,14 +534,21 @@
     color: #dc2626;
   }
 
-  .preview-more {
-    padding: 8px 12px;
-    text-align: center;
-    font-size: 11px;
-    color: #64748b;
-    font-style: italic;
-    background: #f1f5f9;
-    border-radius: 8px;
+  .preview-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .preview-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .preview-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  .preview-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
   }
 
   .modal-actions {
@@ -481,9 +590,17 @@
     transition: all 0.2s ease;
   }
 
-  .btn-primary:hover {
+  .btn-primary:hover:not(:disabled) {
     background: #047857;
     border-color: #047857;
+  }
+
+  .btn-primary:disabled {
+    background: #cbd5e1;
+    border-color: #cbd5e1;
+    color: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 
   /* Responsive */

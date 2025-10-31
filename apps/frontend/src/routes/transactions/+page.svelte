@@ -192,13 +192,29 @@
     }
   }
 
-  async function handleSmartCategorization(applyToAll: boolean) {
+  async function handleSmartCategorization(
+    scope: 'single' | 'pattern' | 'all',
+    applyToFuture: boolean,
+    selectedTransactionIds?: string[]
+  ) {
     const transaction = pageStore.modalState.smartCategorizationTransaction;
     const category = pageStore.modalState.smartCategorizationCategory;
 
     if (!transaction || !category) return;
 
-    await transactionOps.categorize(transaction, category.id, applyToAll);
+    // Categorize the current transaction
+    await transactionOps.categorize(transaction, category.id, false);
+
+    // Apply to selected related transactions if pattern scope
+    if (scope === 'pattern' && selectedTransactionIds && selectedTransactionIds.length > 0) {
+      await transactionOps.categorizeSpecificTransactions(
+        selectedTransactionIds,
+        category.id
+      );
+    }
+
+    // TODO: Handle applyToFuture flag to save categorization rule
+
     pageStore.closeSmartCategorization();
   }
 
