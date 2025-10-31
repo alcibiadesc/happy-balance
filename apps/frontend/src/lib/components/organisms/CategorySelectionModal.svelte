@@ -263,6 +263,8 @@
     max-width: 500px;
     width: 100%;
     max-height: 85vh;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -284,6 +286,7 @@
     justify-content: space-between;
     padding: 24px;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
   }
 
   .header-content {
@@ -378,6 +381,7 @@
   .search-section {
     padding: 16px 24px;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
   }
 
   .search-input-container {
@@ -408,8 +412,11 @@
 
   .category-content {
     padding: 8px 24px 32px;
-    max-height: calc(85vh - 140px);
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   .uncategorize-section {
