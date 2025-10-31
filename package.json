@@ -40,7 +40,8 @@
     "clean": "rm -rf node_modules apps/*/node_modules apps/*/dist apps/frontend/build apps/backend/dist"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "playwright": "^1.55.1"
   },
   "engines": {
     "node": ">=20.0.0",

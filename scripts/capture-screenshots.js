@@ -22,7 +22,7 @@ async function captureScreenshots() {
     console.log('📸 Starting screenshot capture...');
 
     // Navigate to login page
-    await page.goto('http://localhost:5173/login');
+    await page.goto('http://localhost:5174/login');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
@@ -40,10 +40,10 @@ async function captureScreenshots() {
       }
 
       // Wait for navigation to dashboard
-      await page.waitForURL('http://localhost:5173/', { timeout: 10000 }).catch(() => {});
+      await page.waitForURL('http://localhost:5174/', { timeout: 10000 }).catch(() => {});
     } else {
       // Already logged in, go to dashboard
-      await page.goto('http://localhost:5173/');
+      await page.goto('http://localhost:5174/');
     }
 
     await page.waitForLoadState('networkidle');
@@ -92,7 +92,7 @@ async function captureScreenshots() {
     // 5. Mobile View - Dashboard
     console.log('📸 Capturing mobile view...');
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('http://localhost:5173/');
+    await page.goto('http://localhost:5174/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1500);
 
@@ -112,7 +112,7 @@ async function captureScreenshots() {
     });
 
     // Navigate to dashboard with dark mode active
-    await page.goto('http://localhost:5173/');
+    await page.goto('http://localhost:5174/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
