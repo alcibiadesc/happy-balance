@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import Chart from 'chart.js/auto';
+  import { LayerCake, Svg, Html } from 'layercake';
+  import { scaleLinear, scalePoint } from 'd3-scale';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
-  import { currentLanguage } from '$lib/stores/i18n';
-  import { getChartThemeColors, updateChartTheme, updateChartDatasetColors, setupChartThemeObserver } from '$lib/utils/chartTheme';
+  import Line from './chart-layers/Line.svelte';
+  import Area from './chart-layers/Area.svelte';
+  import AxisX from './chart-layers/AxisX.svelte';
+  import AxisY from './chart-layers/AxisY.svelte';
 
   interface DataPoint {
     month: string;
@@ -21,291 +23,141 @@
 
   let { data = [], height = 280, period = 'month', loading = false }: Props = $props();
 
-  let canvasRef = $state<HTMLCanvasElement>();
-  let chart: Chart | null = null;
-  let cleanupThemeObserver: (() => void) | null = null;
+  // Process data for Layer Cake
+  let chartData = $derived(
+    data.map((d) => ({
+      month: d.month,
+      income: Math.abs(d.income),
+      expenses: Math.abs(d.expenses),
+      balance: d.balance
+    }))
+  );
 
-  // Reactive data processing
-  let chartData = $derived(() => {
-    if (!data?.length) return { labels: [], income: [], expenses: [], balance: [] };
+  // Tooltip state
+  let hoveredData = $state<DataPoint | null>(null);
+  let tooltipX = $state(0);
+  let tooltipY = $state(0);
 
-    return {
-      labels: data.map(d => d.month),
-      income: data.map(d => Math.abs(d.income)),
-      expenses: data.map(d => Math.abs(d.expenses)),
-      balance: data.map(d => d.balance)
-    };
-  });
-
-  // Format currency for tooltips
-  function formatTooltipValue(value: number): string {
-    return formatCurrency(value, $currentCurrency);
+  function handleMouseMove(event: MouseEvent, d: DataPoint) {
+    hoveredData = d;
+    tooltipX = event.offsetX;
+    tooltipY = event.offsetY;
   }
 
-  // Get month labels based on period
-  function getTimeUnit() {
-    switch (period) {
-      case 'week': return 'week';
-      case 'quarter': return 'quarter';
-      case 'year': return 'year';
-      default: return 'month';
-    }
+  function handleMouseLeave() {
+    hoveredData = null;
   }
-
-  // Chart configuration
-  function getChartConfig() {
-    const colors = getChartThemeColors();
-    const timeUnit = getTimeUnit();
-
-    return {
-      type: 'line' as const,
-      data: {
-        labels: chartData().labels,
-        datasets: [
-          {
-            label: 'Income',
-            data: chartData().income,
-            borderColor: colors.income,
-            backgroundColor: colors.income + '20',
-            borderWidth: 2.5,
-            fill: false,
-            tension: 0.4,
-            pointBackgroundColor: colors.income,
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            segment: {
-              borderColor: colors.income,
-            }
-          },
-          {
-            label: 'Expenses',
-            data: chartData().expenses,
-            borderColor: colors.expenses,
-            backgroundColor: colors.expenses + '20',
-            borderWidth: 2.5,
-            fill: false,
-            tension: 0.4,
-            pointBackgroundColor: colors.expenses,
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            segment: {
-              borderColor: colors.expenses,
-            }
-          },
-          {
-            label: 'Balance',
-            data: chartData().balance,
-            borderColor: colors.balance,
-            backgroundColor: colors.balance + '20',
-            borderWidth: 2.5,
-            fill: false,
-            tension: 0.4,
-            pointBackgroundColor: colors.balance,
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            segment: {
-              borderColor: colors.balance,
-            }
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          intersect: false,
-          mode: 'index' as const
-        },
-        plugins: {
-          legend: {
-            position: 'top' as const,
-            labels: {
-              color: colors.text,
-              font: {
-                size: 13,
-                weight: '500'
-              },
-              usePointStyle: true,
-              pointStyle: 'circle',
-              padding: 20
-            }
-          },
-          tooltip: {
-            backgroundColor: 'rgba(17, 24, 39, 0.95)',
-            titleColor: '#f9fafb',
-            bodyColor: '#f9fafb',
-            borderColor: colors.grid,
-            borderWidth: 1,
-            cornerRadius: 8,
-            displayColors: true,
-            callbacks: {
-              label: (context: any) => {
-                const label = context.dataset.label || '';
-                const value = formatTooltipValue(context.parsed.y);
-                return `${label}: ${value}`;
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            type: 'category',
-            grid: {
-              color: colors.grid,
-              drawBorder: false,
-              lineWidth: 1
-            },
-            ticks: {
-              color: colors.text,
-              font: {
-                size: 12,
-                weight: '500'
-              },
-              maxRotation: 45
-            },
-            border: {
-              display: false
-            }
-          },
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: colors.grid,
-              drawBorder: false,
-              lineWidth: 1
-            },
-            ticks: {
-              color: colors.text,
-              font: {
-                size: 12,
-                weight: '500'
-              },
-              callback: function(value: any) {
-                return formatCurrency(value, $currentCurrency);
-              }
-            },
-            border: {
-              display: false
-            }
-          }
-        },
-        elements: {
-          point: {
-            hoverBorderWidth: 3
-          }
-        }
-      }
-    };
-  }
-
-  function initChart() {
-    if (!canvasRef) {
-      return;
-    }
-
-    const ctx = canvasRef.getContext('2d');
-    if (!ctx) {
-      return;
-    }
-
-    // Clear any existing chart before creating new one
-    if (chart) {
-      chart.destroy();
-      chart = null;
-    }
-
-    const config = getChartConfig();
-    chart = new Chart(ctx, config);
-  }
-
-  function updateChart() {
-    if (!chart) return;
-
-    const newData = chartData();
-    chart.data.labels = newData.labels;
-    chart.data.datasets[0].data = newData.income;
-    chart.data.datasets[1].data = newData.expenses;
-    chart.data.datasets[2].data = newData.balance;
-
-    chart.update('none');
-  }
-
-  // Watch for data changes
-  $effect(() => {
-    // Reference data to make effect reactive to data changes
-    if (chart) {
-      updateChart();
-    }
-  });
-
-  // Watch for currency changes to update tooltips
-  $effect(() => {
-    if (chart && $currentCurrency) {
-      chart.options.scales!.y!.ticks!.callback = function(value: any) {
-        return formatCurrency(value, $currentCurrency);
-      };
-      chart.update('none');
-    }
-  });
-
-  // Watch for loading state and reinitialize chart when needed
-  $effect(() => {
-    if (!loading && canvasRef) {
-      // Always try to initialize/reinitialize when loading completes
-      setTimeout(() => {
-        initChart();
-      }, 100);
-    }
-  });
-
-  onMount(() => {
-    if (!loading) {
-      initChart();
-      // Force theme update after initialization to ensure colors are correct
-      setTimeout(() => {
-        if (chart) {
-          updateChartTheme(chart);
-        }
-      }, 100);
-    }
-
-    // Setup theme observer
-    cleanupThemeObserver = setupChartThemeObserver(chart, () => {
-      updateChartDatasetColors(chart, 0, 'income');
-      updateChartDatasetColors(chart, 1, 'expenses');
-      updateChartDatasetColors(chart, 2, 'balance');
-    });
-  });
-
-  onDestroy(() => {
-    if (chart) {
-      chart.destroy();
-      chart = null;
-    }
-    if (cleanupThemeObserver) {
-      cleanupThemeObserver();
-    }
-  });
 </script>
 
 <div class="financial-chart" style="height: {height}px;">
   {#if loading}
     <div class="chart-loading">
       <div class="loading-spinner"></div>
-      <span>Loading chart data...</span>
+      <span>Cargando datos...</span>
     </div>
   {:else if !data?.length}
     <div class="chart-empty">
-      <span>No data available for the selected period</span>
+      <span>No hay datos disponibles para el período seleccionado</span>
     </div>
   {:else}
-    <canvas bind:this={canvasRef}></canvas>
+    <div class="chart-container">
+      <!-- Legend -->
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background: #10b981;"></div>
+          <span>Ingresos</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #ef4444;"></div>
+          <span>Gastos</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #3b82f6;"></div>
+          <span>Balance</span>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <LayerCake
+        padding={{ top: 10, right: 15, bottom: 35, left: 60 }}
+        x="month"
+        y={['income', 'expenses', 'balance']}
+        yDomain={[0, null]}
+        xScale={scalePoint()}
+        yScale={scaleLinear()}
+        data={chartData}
+      >
+        <Svg>
+          <!-- Areas with gradient -->
+          <Area
+            y="income"
+            fill="#10b981"
+            opacity={0.1}
+          />
+          <Area
+            y="expenses"
+            fill="#ef4444"
+            opacity={0.1}
+          />
+          <Area
+            y="balance"
+            fill="#3b82f6"
+            opacity={0.1}
+          />
+
+          <!-- Lines -->
+          <Line
+            y="income"
+            stroke="#10b981"
+            strokeWidth={3}
+          />
+          <Line
+            y="expenses"
+            stroke="#ef4444"
+            strokeWidth={3}
+          />
+          <Line
+            y="balance"
+            stroke="#3b82f6"
+            strokeWidth={3}
+          />
+
+          <!-- Axes -->
+          <AxisX gridlines={false} />
+          <AxisY
+            gridlines={true}
+            formatTick={(d) => formatCurrency(d, $currentCurrency)}
+          />
+        </Svg>
+
+        <Html>
+          <!-- Tooltip -->
+          {#if hoveredData}
+            <div
+              class="chart-tooltip"
+              style="left: {tooltipX + 15}px; top: {tooltipY - 28}px;"
+            >
+              <div style="font-weight: 600; margin-bottom: 8px;">{hoveredData.month}</div>
+              <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; margin-right: 8px;"></span>
+                <span style="flex: 1;">Ingresos:</span>
+                <span style="font-weight: 600; margin-left: 12px;">{formatCurrency(hoveredData.income, $currentCurrency)}</span>
+              </div>
+              <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; margin-right: 8px;"></span>
+                <span style="flex: 1;">Gastos:</span>
+                <span style="font-weight: 600; margin-left: 12px;">{formatCurrency(hoveredData.expenses, $currentCurrency)}</span>
+              </div>
+              <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; margin-right: 8px;"></span>
+                <span style="flex: 1;">Balance:</span>
+                <span style="font-weight: 600; margin-left: 12px;">{formatCurrency(hoveredData.balance, $currentCurrency)}</span>
+              </div>
+            </div>
+          {/if}
+        </Html>
+      </LayerCake>
+    </div>
   {/if}
 </div>
 
@@ -316,6 +168,12 @@
     background: var(--surface);
     border-radius: 8px;
     padding: 1rem;
+  }
+
+  .chart-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
   }
 
   .chart-loading,
@@ -343,8 +201,38 @@
     100% { transform: rotate(360deg); }
   }
 
-  canvas {
-    max-width: 100%;
-    height: auto;
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 13px;
+    font-weight: 500;
+    color: #000000;
+  }
+
+  .legend-color {
+    width: 20px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  :global(.chart-tooltip) {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    pointer-events: none;
+    font-size: 13px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 200px;
+    z-index: 100;
   }
 </style>
