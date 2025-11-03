@@ -3,6 +3,7 @@
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import { currentLanguage, t } from '$lib/stores/i18n';
+  import { effectiveTheme } from '$lib/stores/theme';
   import { getChartThemeColors, updateChartTheme, updateChartDatasetColors, setupChartThemeObserver } from '$lib/utils/chartTheme';
 
   interface DataPoint {
@@ -265,6 +266,16 @@
       setTimeout(() => {
         initChart();
       }, 100);
+    }
+  });
+
+  // Watch for theme changes and update chart colors
+  $effect(() => {
+    const theme = $effectiveTheme;
+    console.log('[FinancialBarCharts] Theme changed to:', theme);
+    if (chart) {
+      updateChartTheme(chart);
+      updateChartDatasetColors(chart, 4, 'investments');
     }
   });
 
