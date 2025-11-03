@@ -434,7 +434,7 @@ export class DashboardController {
       const formattedHistory = history.map(h => ({
         year: h.year,
         month: h.month,
-        monthName: new Date(h.year, h.month - 1).toLocaleDateString("en-US", {
+        monthName: new Date(h.year, h.month - 1).toLocaleDateString("es-ES", {
           month: "short",
           year: "numeric"
         }),
@@ -481,7 +481,7 @@ export class DashboardController {
         .map(p => ({
           year: p.year,
           month: p.month,
-          label: new Date(p.year, p.month - 1).toLocaleDateString("en-US", {
+          label: new Date(p.year, p.month - 1).toLocaleDateString("es-ES", {
             month: "long",
             year: "numeric"
           }),

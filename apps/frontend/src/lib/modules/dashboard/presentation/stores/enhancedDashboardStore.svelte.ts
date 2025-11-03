@@ -134,23 +134,40 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
         // Update monthlyTrend with historical data if available
         if (loadHistoricalData && historicalData && historicalData.length > 0) {
-          dashboardData.monthlyTrend = historicalData.map((item: any) => ({
-            month: item.label || item.month || item.period || item.year?.toString() || 'Unknown',
-            income: item.income || 0,
-            expenses: item.expenses || 0,
-            balance: item.balance || (item.income - item.expenses) || 0,
-            investments: item.investments || 0
-          }));
+          console.log('[Store] Historical data received:', historicalData.length, 'items');
+          console.log('[Store] First item:', historicalData[0]);
+
+          dashboardData.monthlyTrend = historicalData.map((item: any) => {
+            // Backend returns data in item.summary
+            const summary = item.summary || item;
+            const monthLabel = item.monthName || item.label || item.month || 'Unknown';
+
+            return {
+              month: monthLabel,
+              income: summary.income || 0,
+              expenses: summary.expenses || 0,
+              balance: summary.balance || ((summary.income || 0) - (summary.expenses || 0)),
+              investments: summary.investments || 0
+            };
+          });
 
           // Also update monthlyBarData based on historical data
-          dashboardData.monthlyBarData = historicalData.map((item: any) => ({
-            month: item.label || item.month || item.period || item.year?.toString() || 'Unknown',
-            income: item.income || 0,
-            essentialExpenses: item.essentialExpenses || (item.expenses * 0.6) || 0,
-            discretionaryExpenses: item.discretionaryExpenses || (item.expenses * 0.4) || 0,
-            debtPayments: item.debtPayments || 0,
-            investments: item.investments || 0
-          }));
+          dashboardData.monthlyBarData = historicalData.map((item: any) => {
+            const summary = item.summary || item;
+            const monthLabel = item.monthName || item.label || item.month || 'Unknown';
+            const totalExpenses = summary.expenses || 0;
+
+            return {
+              month: monthLabel,
+              income: summary.income || 0,
+              essentialExpenses: item.essentialExpenses || (totalExpenses * 0.6),
+              discretionaryExpenses: item.discretionaryExpenses || (totalExpenses * 0.4),
+              debtPayments: item.debtPayments || 0,
+              investments: summary.investments || 0
+            };
+          });
+
+          console.log('[Store] Mapped monthlyTrend:', dashboardData.monthlyTrend);
         }
       } else {
         console.error('[Dashboard] No data received');
