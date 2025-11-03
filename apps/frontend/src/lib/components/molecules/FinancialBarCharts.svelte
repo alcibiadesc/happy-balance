@@ -120,7 +120,7 @@
           legend: {
             position: 'top' as const,
             labels: {
-              color: document.documentElement.classList.contains('dark') ? '#fef7ee' : '#023c46',
+              color: colors.text,
               font: {
                 size: 11,
                 weight: '600'
@@ -151,12 +151,12 @@
           x: {
             type: 'category',
             grid: {
-              color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+              color: colors.grid,
               drawBorder: false,
               lineWidth: 1
             },
             ticks: {
-              color: document.documentElement.classList.contains('dark') ? '#fef7ee' : '#023c46',
+              color: colors.text,
               font: {
                 size: 11,
                 weight: '600'
@@ -170,12 +170,12 @@
           y: {
             beginAtZero: true,
             grid: {
-              color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+              color: colors.grid,
               drawBorder: false,
               lineWidth: 1
             },
             ticks: {
-              color: document.documentElement.classList.contains('dark') ? '#fef7ee' : '#023c46',
+              color: colors.text,
               font: {
                 size: 11,
                 weight: '600'
@@ -212,6 +212,9 @@
 
     const config = getChartConfig();
     chart = new Chart(ctx, config);
+
+    // Immediately update theme to ensure correct colors
+    updateChartTheme(chart);
   }
 
   function updateChart() {
@@ -259,18 +262,14 @@
   onMount(() => {
     if (!loading) {
       initChart();
-      // Force theme update after initialization to ensure colors are correct
-      setTimeout(() => {
-        if (chart) {
-          updateChartTheme(chart);
-        }
-      }, 100);
     }
 
-    // Setup theme observer
-    cleanupThemeObserver = setupChartThemeObserver(chart, () => {
-      updateChartDatasetColors(chart, 2, 'investments');
-    });
+    // Setup theme observer (only after chart is created)
+    if (chart) {
+      cleanupThemeObserver = setupChartThemeObserver(chart, () => {
+        updateChartDatasetColors(chart, 2, 'investments');
+      });
+    }
   });
 
   onDestroy(() => {
