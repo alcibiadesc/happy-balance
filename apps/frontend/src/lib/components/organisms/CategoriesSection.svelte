@@ -74,9 +74,16 @@
   ].filter(cat => cat.amount > 0));
 
   // Get income categories from categoryBreakdown
-  const incomeCategories = $derived(
-    categoryBreakdown
-      .filter(cat => cat.type === 'income' || cat.type === 'INCOME')
+  const incomeCategories = $derived.by(() => {
+    console.log('[CategoriesSection] categoryBreakdown:', categoryBreakdown);
+    console.log('[CategoriesSection] totalIncome:', totalIncome);
+
+    const filtered = categoryBreakdown
+      .filter(cat => {
+        const isIncome = cat.type === 'income' || cat.type === 'INCOME';
+        console.log('[CategoriesSection] Category:', cat.name, 'type:', cat.type, 'isIncome:', isIncome, 'total:', cat.total);
+        return isIncome;
+      })
       .filter(cat => cat.total && Math.abs(cat.total) > 0.01)
       .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
       .map(cat => ({
@@ -85,13 +92,22 @@
         percentage: totalIncome > 0 ? Math.round((Math.abs(cat.total) / totalIncome) * 100) : 0,
         color: cat.color || '#34d399',
         icon: cat.icon || '💰'
-      }))
-  );
+      }));
+
+    console.log('[CategoriesSection] incomeCategories result:', filtered);
+    return filtered;
+  });
 
   // Get investment categories from categoryBreakdown
-  const investmentCategories = $derived(
-    categoryBreakdown
-      .filter(cat => cat.type === 'investment' || cat.type === 'INVESTMENT')
+  const investmentCategories = $derived.by(() => {
+    console.log('[CategoriesSection] totalInvestments:', totalInvestments);
+
+    const filtered = categoryBreakdown
+      .filter(cat => {
+        const isInvestment = cat.type === 'investment' || cat.type === 'INVESTMENT';
+        console.log('[CategoriesSection] Category:', cat.name, 'type:', cat.type, 'isInvestment:', isInvestment, 'total:', cat.total);
+        return isInvestment;
+      })
       .filter(cat => cat.total && Math.abs(cat.total) > 0.01)
       .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
       .map(cat => ({
@@ -100,8 +116,11 @@
         percentage: totalInvestments > 0 ? Math.round((Math.abs(cat.total) / totalInvestments) * 100) : 0,
         color: cat.color || '#60a5fa',
         icon: cat.icon || '📈'
-      }))
-  );
+      }));
+
+    console.log('[CategoriesSection] investmentCategories result:', filtered);
+    return filtered;
+  });
 
   // Current categories based on selected type
   const currentCategories = $derived(
