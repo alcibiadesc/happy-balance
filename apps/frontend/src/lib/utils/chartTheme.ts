@@ -4,12 +4,12 @@ import { browser } from '$app/environment';
 export function getChartThemeColors() {
   if (!browser) {
     return {
-      income: '#7aba9e',
+      income: '#10b981',
       expenses: '#ef4444',
-      balance: '#06b6d4',
-      investments: '#023c46',
-      grid: 'rgba(100, 116, 139, 0.2)',
-      text: '#000000' // Black for maximum contrast
+      balance: '#3b82f6',
+      investments: '#8b5cf6',
+      grid: 'rgba(0, 0, 0, 0.1)',
+      text: '#1f2937' // Very dark gray, almost black
     };
   }
 
@@ -18,22 +18,22 @@ export function getChartThemeColors() {
 
   if (isDark) {
     return {
-      income: '#7aba9e',
+      income: '#34d399',
       expenses: '#f87171',
-      balance: '#22d3ee',
-      investments: '#06b6d4',
-      grid: 'rgba(100, 116, 139, 0.15)',
-      text: '#ffffff' // White text for dark mode
+      balance: '#60a5fa',
+      investments: '#a78bfa',
+      grid: 'rgba(255, 255, 255, 0.1)',
+      text: '#f9fafb' // Almost white for dark mode
     };
   }
 
   return {
-    income: '#7aba9e',
+    income: '#10b981',
     expenses: '#ef4444',
-    balance: '#06b6d4',
-    investments: '#023c46',
-    grid: 'rgba(148, 163, 184, 0.2)',
-    text: '#000000' // Pure black for maximum contrast in light mode
+    balance: '#3b82f6',
+    investments: '#8b5cf6',
+    grid: 'rgba(0, 0, 0, 0.1)',
+    text: '#1f2937' // Very dark gray (Tailwind gray-800) for maximum contrast
   };
 }
 
@@ -43,15 +43,37 @@ export function updateChartTheme(chart: any) {
 
   const colors = getChartThemeColors();
 
-  // Update chart options
-  chart.options.scales.x.grid.color = colors.grid;
-  chart.options.scales.y.grid.color = colors.grid;
-  chart.options.scales.x.ticks.color = colors.text;
-  chart.options.scales.y.ticks.color = colors.text;
+  // Update grid colors
+  if (chart.options.scales?.x?.grid) {
+    chart.options.scales.x.grid.color = colors.grid;
+  }
+  if (chart.options.scales?.y?.grid) {
+    chart.options.scales.y.grid.color = colors.grid;
+  }
 
-  // Update legend label colors
+  // Update tick colors with strong contrast
+  if (chart.options.scales?.x?.ticks) {
+    chart.options.scales.x.ticks.color = colors.text;
+    chart.options.scales.x.ticks.font = {
+      ...chart.options.scales.x.ticks.font,
+      weight: '600' // Make text bolder for better visibility
+    };
+  }
+  if (chart.options.scales?.y?.ticks) {
+    chart.options.scales.y.ticks.color = colors.text;
+    chart.options.scales.y.ticks.font = {
+      ...chart.options.scales.y.ticks.font,
+      weight: '600' // Make text bolder for better visibility
+    };
+  }
+
+  // Update legend label colors with strong contrast
   if (chart.options.plugins?.legend?.labels) {
     chart.options.plugins.legend.labels.color = colors.text;
+    chart.options.plugins.legend.labels.font = {
+      ...chart.options.plugins.legend.labels.font,
+      weight: '600' // Make legend text bolder
+    };
   }
 
   chart.update('none');

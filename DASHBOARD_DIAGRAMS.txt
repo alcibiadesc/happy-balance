@@ -1,0 +1,471 @@
+================================================================================
+DASHBOARD ARCHITECTURE VISUAL DIAGRAMS
+================================================================================
+
+DIAGRAM 1: COMPLETE DATA FLOW ARCHITECTURE
+================================================================================
+
+                        User Interaction
+                               |
+                               v
+                    +-------------------+
+                    |  +page.svelte      |
+                    | (Dashboard Page)   |
+                    +-------------------+
+                               |
+                               v
+                    +-------------------+
+                    |  Store Creation   |
+                    | createEnhanced    |
+                    | DashboardStore()  |
+                    +-------------------+
+                               |
+            +------------------+-------------------+
+            |                  |                    |
+            v                  v                    v
+     +----------+       +----------+       +-------------------+
+     |$state    |       |$derived  |       |Methods:           |
+     |Variables |       |Computed  |       |changePeriod()    |
+     |          |       |Values    |       |navigatePeriod()  |
+     |          |       |          |       |loadDashboard()   |
+     +----------+       +----------+       +-------------------+
+            |                  |                    |
+            |                  |                    |
+            v                  v                    v
+   ┌─────────────────────────────────────────────────────┐
+   │   Store State Management (Line 22-60)              │
+   │   selectedPeriodType = 'year' (CHANGEABLE HERE)     │
+   │   periodOffset = 0 (current period)                │
+   │   dashboardData, trends, categories, etc           │
+   └─────────────────────────────────────────────────────┘
+            |
+            v
+   ┌─────────────────────────────────────────────────────┐
+   │   loadDashboardData() Method (Line 82-168)         │
+   │   Creates Period object                             │
+   │   Fetches data based on selectedPeriodType          │
+   │   Processes chart data                              │
+   └─────────────────────────────────────────────────────┘
+            |
+            v
+   ┌─────────────────────────────────────────────────────┐
+   │   ModernApiDashboardRepository                      │
+   │   getDashboardData(period, currency)                │
+   │   getHistory(months)                                │
+   │   getYearlyHistory(years)                           │
+   │   getQuarterlyHistory(quarters)                     │
+   └─────────────────────────────────────────────────────┘
+            |
+            v
+   ┌─────────────────────────────────────────────────────┐
+   │   HTTP API Calls                                    │
+   │   /dashboard/enhanced/:year/:month                  │
+   │   /dashboard/history?months=12                      │
+   │   /dashboard/year/:year                             │
+   └─────────────────────────────────────────────────────┘
+            |
+            v
+   ┌─────────────────────────────────────────────────────┐
+   │   Backend: DashboardController                      │
+   │   - getEnhancedMonthMetrics()                       │
+   │   - getHistory()                                    │
+   │   - getYearMetrics()                                │
+   └─────────────────────────────────────────────────────┘
+            |
+            v
+   ┌─────────────────────────────────────────────────────┐
+   │   Backend: DashboardQuery & Repository              │
+   │   Calculate date ranges                             │
+   │   Query transactions                                │
+   │   Aggregate by period                               │
+   └─────────────────────────────────────────────────────┘
+            |
+            v
+   ┌─────────────────────────────────────────────────────┐
+   │   Database (Prisma ORM)                             │
+   │   Transactions, Categories, Budgets, etc            │
+   └─────────────────────────────────────────────────────┘
+
+
+DIAGRAM 2: PERIOD TYPE STATE MACHINE
+================================================================================
+
+                       Dashboard Loaded
+                            |
+                            v
+                    +─────────────────+
+                    |  selectedPeriod |
+                    |    Type='year'  |
+                    +─────────────────+
+                            ^
+                            |
+            +───────────────┼───────────────+
+            |               |               |
+            v               v               v
+       ┌────────┐     ┌────────┐     ┌────────┐
+       | month  |     |quarter |     | year   |
+       └────────┘     └────────┘     └────────┘
+            |               |               |
+            v               v               v
+      Loads:           Loads:           Loads:
+      12 months        8 quarters       12 years
+      OR               OR               OR
+      12 months*       12 months*       12 months*
+      (with rolling)   (with rolling)   (with rolling)
+      
+      *After phase 2 implementation
+
+        User clicks period type button
+                   |
+                   v
+        changePeriod(type)
+                   |
+                   v
+        Set selectedPeriodType = type
+        Set periodOffset = 0
+                   |
+                   v
+        loadDashboardData()
+                   |
+                   v
+        Period.create(type, offset)
+                   |
+                   v
+        buildModernUrl()
+                   |
+                   v
+        Fetch new data
+                   |
+                   v
+        Update $state & $derived
+                   |
+                   v
+        Components re-render
+
+
+DIAGRAM 3: NAVIGATION OFFSET SYSTEM
+================================================================================
+
+                        Period Navigator
+                             |
+                      +------+------+
+                      |             |
+                      v             v
+                   [<] Button    [>] Button
+                   Go Back       Go Forward
+                      |             |
+                      v             v
+            navigatePeriod(-1)  navigatePeriod(1)
+                      |             |
+                      +------+------+
+                             |
+                             v
+                  if (type === 'month') {
+                    offset: 0 → -1 (previous month)
+                    offset: -1 → 0 (current month)
+                    limit: -24 to 0
+                  }
+                  
+                  if (type === 'year') {
+                    offset: 0 → -1 (previous year)
+                    offset: -1 → 0 (current year)
+                    limit: -5 to 0
+                  }
+
+        Period Display Examples:
+        
+        MONTHLY VIEW:
+        offset=0:  "Este mes" (November 2025)
+        offset=-1: "Octubre 2025"
+        offset=-2: "Septiembre 2025"
+        
+        YEARLY VIEW:
+        offset=0:  "Este año" (2025)
+        offset=-1: "2024"
+        offset=-2: "2023"
+
+
+DIAGRAM 4: REACTIVE DATA BINDING CHAIN
+================================================================================
+
+                        User Action
+                             |
+        +--------------------+--------------------+
+        |                     |                    |
+        v                     v                    v
+   Period Type          Period Navigation   Currency Change
+   Selection           (offset change)      
+        |                     |                    |
+        +--------------------+--------------------+
+                             |
+                             v
+                    State Update ($state)
+        selectedPeriodType | periodOffset | currency
+                             |
+                             v
+                    loadDashboardData()
+                             |
+                             v
+                    API Call & Data Fetch
+                             |
+                             v
+                    Update dashboardData
+                             |
+        +--------------------+--------------------+
+        |                     |                    |
+        v                     v                    v
+   $derived:           $derived:            $derived:
+   monthlyTrend        trends               categories
+        |                     |                    |
+        +--------------------+--------------------+
+                             |
+                             v
+                 Components React (auto)
+                             |
+        +--------------------+--------------------+
+        |                     |                    |
+        v                     v                    v
+   FinancialChart      MetricsGrid       CategoriesSection
+   (re-renders)        (re-renders)       (re-renders)
+
+
+DIAGRAM 5: CURRENT BI METRICS (ALREADY IMPLEMENTED)
+================================================================================
+
+         Dashboard Metrics Available Now
+                        |
+        +-------+-------+-------+-------+
+        |       |       |       |       |
+        v       v       v       v       v
+    Income  Expenses Invest  Balance  Trends
+        |       |       |       |       |
+        v       v       v       v       v
+    Monthly % Month Avg % Available  % Change
+    Trend    Budget   Allocation    vs Period
+    
+    Category Breakdown:
+    ├─ Name & Icon
+    ├─ Amount & %
+    ├─ Monthly Budget
+    └─ Budget Usage
+    
+    Expense Distribution:
+    ├─ Essential
+    ├─ Discretionary
+    └─ Debt Payments
+    
+    Charts:
+    ├─ Line Chart (Income/Expenses/Balance trends)
+    └─ Bar Chart (Expense breakdown by category)
+
+
+DIAGRAM 6: BI FEATURES MISSING (TO ADD)
+================================================================================
+
+         Additional BI Features Needed
+                        |
+        +-------+-------+-------+-------+
+        |       |       |       |       |
+        v       v       v       v       v
+    YoY     Moving   Seasonal Forecast  Data
+    Comp    Avg      Pattern  Model    Quality
+        |       |       |       |       |
+        v       v       v       v       v
+    Year vs Month   Monthly  3-6 Month Validation
+    Previous Year   Pattern  Projection Scores
+    % Change        Index    Linear    Data Gaps
+                            Regression Missing
+                                       Periods
+
+
+DIAGRAM 7: FILE MODIFICATION POINTS
+================================================================================
+
+MUST CHANGE:
+┌──────────────────────────────────────────────────────────────┐
+│ /frontend/...dashboard/.../stores/enhancedDashboardStore.ts │
+│                                                              │
+│ Line 22: 'month' → 'year'                                    │
+│ Lines 103-157: Modify data loading logic                     │
+│                                                              │
+│ These 2 changes enable:                                      │
+│ - Annual default view                                        │
+│ - 12-month rolling charts                                    │
+└──────────────────────────────────────────────────────────────┘
+
+SHOULD UPDATE:
+┌──────────────────────────────────────────────────────────────┐
+│ /frontend/...dashboard/infrastructure/adapters/              │
+│    ModernApiDashboardRepository.ts                           │
+│                                                              │
+│ Add new methods for BI features (optional):                  │
+│ - getMultipleYears(count)                                    │
+│ - getQuarterlyComparison(year, quarter)                      │
+└──────────────────────────────────────────────────────────────┘
+
+NICE TO HAVE:
+┌──────────────────────────────────────────────────────────────┐
+│ New files to create (new BI services):                       │
+│                                                              │
+│ /frontend/.../domain/services/TrendAnalysisService.ts       │
+│ /frontend/.../domain/services/BudgetVarianceService.ts      │
+│ /frontend/.../domain/services/SeasonalAnalysisService.ts    │
+│                                                              │
+│ New components:                                              │
+│ /frontend/.../organisms/YearOverYearComparison.svelte       │
+│ /frontend/.../organisms/SeasonalPatterns.svelte             │
+│ /frontend/.../organisms/ForecastingChart.svelte             │
+└──────────────────────────────────────────────────────────────┘
+
+
+DIAGRAM 8: QUICK IMPLEMENTATION TIMELINE
+================================================================================
+
+TIME    TASK                  FILES CHANGED           IMPACT
+────────────────────────────────────────────────────────────────
+5 min   Read this doc         (none)                  Understand arch
+10 min  Change default        enhancedDashboardStore  Default=annual
+10 min  Test basic flow       (manual testing)        Verify works
+30 min  Implement rolling     enhancedDashboardStore  Charts show 12m
+30 min  Test thoroughly       (manual testing)        Ensure stable
+────────────────────────────────────────────────────────────────
+2 hrs   PHASE 1+2 COMPLETE
+
+2 hrs   YoY comparison        Repository              Compare years
+        Implementation        Store methods
+                             New component
+
+2 hrs   Moving average        New service             Trend lines
+        Implementation        Update store
+                             New component
+
+2 hrs   Seasonal patterns     New service             Season analysis
+        Implementation        Update store
+                             New visualization
+
+────────────────────────────────────────────────────────────────
+8 hrs   PHASE 3 COMPLETE (core BI features)
+
+4 hrs   Forecasting          New service/component   Predictions
+2 hrs   Data quality         New service/component   Quality score
+2 hrs   Unit tests           Various                 Code coverage
+2 hrs   Documentation        New .md files           User guides
+────────────────────────────────────────────────────────────────
+18 hrs  ALL PHASES COMPLETE
+
+
+DIAGRAM 9: PERFORMANCE IMPACT ANALYSIS
+================================================================================
+
+CURRENT STATE:
+┌─────────────────────────────────────────────────────────────┐
+│ Per Period Change:                                          │
+│  - 2-3 API calls                                            │
+│  - ~500-800ms total                                         │
+│  - No caching (reload same period = same calls)             │
+│  - Charts re-render even with same data                     │
+└─────────────────────────────────────────────────────────────┘
+
+AFTER PHASE 1 (Default Change):
+┌─────────────────────────────────────────────────────────────┐
+│ Initial Load:                                               │
+│  - 2-3 API calls (same as before)                           │
+│  - ~500-800ms                                               │
+│ Period Navigation:                                          │
+│  - Still 2-3 calls per change                               │
+│  - No improvement (yearly data still needs fetches)         │
+└─────────────────────────────────────────────────────────────┘
+
+AFTER PHASE 2 (12-Month Charts):
+┌─────────────────────────────────────────────────────────────┐
+│ Initial Load:                                               │
+│  - Same 2-3 calls                                           │
+│  - ~500-800ms (same)                                        │
+│ Charts:                                                     │
+│  - Now show 12 months (more data, same requests)            │
+│  - Better monthly granularity                               │
+└─────────────────────────────────────────────────────────────┘
+
+OPTIMIZATION OPPORTUNITY (Caching):
+┌─────────────────────────────────────────────────────────────┐
+│ Add simple in-memory cache:                                 │
+│  - First period load: 2-3 API calls, ~500-800ms             │
+│  - Repeat same period: Cache hit, ~10ms                     │
+│  - Different period: 2-3 API calls, ~500-800ms              │
+│                                                             │
+│ With typical user patterns (exploring 3-4 periods):         │
+│  - Without cache: 9-12 calls                                │
+│  - With cache: 6-8 calls (40% reduction)                    │
+│  - With aggressive cache: 3-4 calls (67% reduction)         │
+└─────────────────────────────────────────────────────────────┘
+
+
+DIAGRAM 10: PERIOD TYPE SELECTION STATE FLOW
+================================================================================
+
+     Initialize Dashboard
+            |
+            v
+    ┌───────────────────┐
+    │ selectedPeriod    │
+    │ Type='year'       │
+    │ (after change)    │
+    └───────────────────┘
+            |
+            v
+    ┌───────────────────────────────────────┐
+    │ loadDashboardData() called            │
+    │ period.getType() === 'year'           │
+    └───────────────────────────────────────┘
+            |
+            v
+    ┌───────────────────────────────────────┐
+    │ buildModernUrl(period)                │
+    │ Returns: /dashboard/year/2025         │
+    └───────────────────────────────────────┘
+            |
+            v
+    ┌───────────────────────────────────────┐
+    │ fetch('/dashboard/year/2025')         │
+    │ Returns: annual metrics               │
+    └───────────────────────────────────────┘
+            |
+            v
+    ┌───────────────────────────────────────┐
+    │ if (selectedPeriodType === 'year') {  │
+    │   historicalData =                    │
+    │   repository.getHistory(12)           │
+    │ }                                      │
+    └───────────────────────────────────────┘
+            |
+            v
+    ┌───────────────────────────────────────┐
+    │ fetch('/dashboard/history?months=12') │
+    │ Returns: 12 months of data            │
+    └───────────────────────────────────────┘
+            |
+            v
+    ┌───────────────────────────────────────┐
+    │ Update dashboardData                  │
+    │ Update monthlyTrend                   │
+    │ Update monthlyBarData                 │
+    └───────────────────────────────────────┘
+            |
+            v
+    ┌───────────────────────────────────────┐
+    │ $derived values update automatically  │
+    │ Components re-render via reactivity   │
+    └───────────────────────────────────────┘
+            |
+            v
+    ┌───────────────────────────────────────┐
+    │ Dashboard displays:                    │
+    │ - Annual metrics in summary            │
+    │ - 12 months of data in charts          │
+    │ - Annual trends calculated            │
+    │ - Category breakdown for year          │
+    └───────────────────────────────────────┘
+
+
+END OF DIAGRAMS
+================================================================================

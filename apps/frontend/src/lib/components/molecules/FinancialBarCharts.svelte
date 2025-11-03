@@ -120,10 +120,10 @@
           legend: {
             position: 'top' as const,
             labels: {
-              color: colors.text,
+              color: '#1f2937', // Dark gray - FORCED for visibility
               font: {
                 size: 11,
-                weight: '500'
+                weight: '600'
               },
               usePointStyle: true,
               pointStyle: 'rect',
@@ -156,10 +156,10 @@
               lineWidth: 1
             },
             ticks: {
-              color: colors.text,
+              color: '#1f2937', // Dark gray - FORCED for visibility
               font: {
                 size: 11,
-                weight: '500'
+                weight: '600'
               },
               maxRotation: 45
             },
@@ -175,10 +175,10 @@
               lineWidth: 1
             },
             ticks: {
-              color: colors.text,
+              color: '#1f2937', // Dark gray - FORCED for visibility
               font: {
                 size: 11,
-                weight: '500'
+                weight: '600'
               },
               callback: function(value: any) {
                 return formatCurrency(value, $currentCurrency);

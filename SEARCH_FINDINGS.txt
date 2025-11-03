@@ -1,0 +1,314 @@
+================================================================================
+HAPPY BALANCE - SEARCH FUNCTIONALITY ANALYSIS
+================================================================================
+
+ANALYSIS DATE: 2025-11-03
+STATUS: Complete
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+The Happy Balance application has search functionality implemented in both the
+frontend and backend. The search is currently:
+
+  ✓ Case-insensitive (works correctly)
+  ✗ NOT Accent-insensitive (does NOT work with accented characters)
+
+Examples of current limitations:
+  - Searching "cafe" will NOT find transactions with merchant "Café"
+  - Searching "senor" will NOT find category named "Señor"
+  - Searching "panama" will NOT find merchant "Panamá"
+
+================================================================================
+2. FRONTEND SEARCH LOCATIONS
+================================================================================
+
+PRIMARY FILES:
+1. FilterService.ts
+   Location: apps/frontend/src/lib/modules/transactions/application/services/
+   Lines: 31-51 (matchesSearch function)
+   Function: Filters transactions locally on the client
+   Scope: Merchant name, description, and amount
+   Status: Case-insensitive only
+
+2. CategorySelectionModal.svelte
+   Location: apps/frontend/src/lib/components/organisms/
+   Lines: 60+ (category filter logic)
+   Function: Filters categories by name in the modal
+   Scope: Category names only
+   Status: Case-insensitive only
+
+SUPPORTING COMPONENTS:
+3. SearchBar.svelte
+   Location: apps/frontend/src/lib/components/molecules/
+   Role: UI component only (no filtering logic)
+
+4. FiltersPanel.svelte
+   Location: apps/frontend/src/lib/components/organisms/
+   Role: Category selection UI (no search logic)
+
+5. +page.svelte (Transactions page)
+   Location: apps/frontend/src/routes/transactions/
+   Role: Integrates search with FilterService
+
+================================================================================
+3. BACKEND SEARCH LOCATIONS
+================================================================================
+
+PRIMARY FILE:
+PrismaTransactionRepository.ts
+Location: apps/backend/src/infrastructure/repositories/
+Main Method: buildWhereClause() [Line 665-758]
+Search Logic: Lines 699-736
+
+IMPLEMENTATION DETAILS:
+- Uses Prisma's mode: "insensitive" for case-insensitive search
+- Smart strategy: Uses startsWith for ≤3 chars, contains for >3 chars
+- Searches both merchant and description fields
+- Does NOT support accent-insensitive matching
+
+RELATED METHODS:
+- findByMerchant() [Line 219]
+- findByPattern() [Line 786]
+- findPotentialDuplicates() [Line 446]
+
+DATABASE:
+- Type: PostgreSQL
+- Search Mode: Case-insensitive only
+- Collation: PostgreSQL default (not accent-insensitive)
+
+================================================================================
+4. HOW SEARCH CURRENTLY WORKS
+================================================================================
+
+FRONTEND FLOW:
+  User Types → SearchBar.svelte → FilterService.matchesSearch()
+      ↓
+  searchQuery stored in FilterState
+      ↓
+  filterTransactions() filters locally
+      ↓
+  Filtered results displayed
+
+BACKEND FLOW (if used):
+  API Request → TransactionListQuery → PrismaTransactionRepository
+      ↓
+  buildWhereClause() constructs WHERE clause
+      ↓
+  Prisma queries PostgreSQL
+      ↓
+  Results returned
+
+================================================================================
+5. SEARCH FEATURES MATRIX
+================================================================================
+
+FEATURE                    FRONTEND    BACKEND     STATUS
+─────────────────────────────────────────────────────────
+Case-insensitive            YES         YES        ✓ Works
+Accent-insensitive          NO          NO         ✗ Broken
+Merchant name search        YES         YES        ✓ Works
+Description search          YES         YES        ✓ Works
+Category name search        YES         N/A        ✓ Works
+Amount/numeric search       YES         YES        ✓ Works
+Short term optimization     NO          YES        ✓ Backend only
+
+================================================================================
+6. CODE SNIPPETS - CURRENT IMPLEMENTATION
+================================================================================
+
+FRONTEND - FilterService.ts (matchesSearch function):
+────────────────────────────────────────────────────
+const matchesSearch = (transaction: Transaction, query: string): boolean => {
+  const lowerQuery = query.toLowerCase();                    // Only lowercases
+  const numericQuery = parseFloat(query);
+  const isNumeric = !isNaN(numericQuery) && isFinite(numericQuery);
+
+  const textMatch =
+    transaction.merchant.toLowerCase().includes(lowerQuery) ||
+    transaction.description.toLowerCase().includes(lowerQuery);
+
+  if (isNumeric) {
+    const transactionAmount = Math.abs(transaction.amount);
+    const amountMatch =
+      Math.abs(transactionAmount - numericQuery) < 0.01 ||
+      transactionAmount.toString().includes(numericQuery.toString());
+    return textMatch || amountMatch;
+  }
+
+  return textMatch;
+};
+
+BACKEND - PrismaTransactionRepository.ts (buildWhereClause):
+───────────────────────────────────────────────────────────
+if (filters.merchantName && filters.merchantName.trim()) {
+  const searchTerm = filters.merchantName.trim();
+
+  if (searchTerm.length <= 3) {
+    where.OR = [
+      { merchant: { startsWith: searchTerm, mode: "insensitive" } },
+      { description: { startsWith: searchTerm, mode: "insensitive" } }
+    ];
+  } else {
+    where.OR = [
+      { merchant: { contains: searchTerm, mode: "insensitive" } },
+      { description: { contains: searchTerm, mode: "insensitive" } }
+    ];
+  }
+}
+
+================================================================================
+7. SOLUTION - MAKE SEARCH ACCENT-INSENSITIVE
+================================================================================
+
+EASIEST APPROACH (Frontend Only):
+
+Create: apps/frontend/src/lib/utils/stringNormalization.ts
+
+export const normalizeForSearch = (str: string): string => {
+  return str
+    .toLowerCase()
+    .normalize('NFD')                  // Decompose é → e, ñ → n, etc.
+    .replace(/[\u0300-\u036f]/g, '')  // Remove diacritical marks
+    .trim();
+};
+
+Then use in FilterService.ts:
+  const normalizedQuery = normalizeForSearch(query);
+  const textMatch =
+    normalizeForSearch(transaction.merchant).includes(normalizedQuery) ||
+    normalizeForSearch(transaction.description).includes(normalizedQuery);
+
+And in CategorySelectionModal.svelte:
+  normalizeForSearch(cat.name).includes(normalizeForSearch(searchTerm))
+
+BENEFITS:
+- Simple to implement
+- No database changes needed
+- Works immediately
+- Good performance for typical transaction lists
+
+FILES TO MODIFY:
+1. Create: apps/frontend/src/lib/utils/stringNormalization.ts
+2. Update: apps/frontend/src/lib/modules/transactions/application/services/FilterService.ts
+3. Update: apps/frontend/src/lib/components/organisms/CategorySelectionModal.svelte
+4. (Optional) Update: apps/backend/src/infrastructure/repositories/PrismaTransactionRepository.ts
+
+================================================================================
+8. DOCUMENTATION GENERATED
+================================================================================
+
+The following documentation files have been created in the repository root:
+
+1. SEARCH_IMPLEMENTATION_GUIDE.md
+   - Comprehensive analysis of all search implementations
+   - Current limitations and how they work
+   - Detailed code locations and line numbers
+   - Recommended solutions
+
+2. SEARCH_QUICK_REFERENCE.md
+   - Quick lookup guide for search locations
+   - File structure map
+   - Data flow diagrams
+   - Testing information
+
+3. SEARCH_IMPLEMENTATION_CODE.md
+   - Ready-to-use code snippets
+   - Step-by-step implementation guide
+   - Complete test file template
+   - Browser compatibility information
+
+================================================================================
+9. KEY TECHNICAL DETAILS
+================================================================================
+
+UNICODE NORMALIZATION:
+- Method: String.prototype.normalize('NFD')
+- Removes: Diacritical marks (accents)
+- Browser Support: Chrome 34+, Firefox 29+, Safari 11+, All modern browsers
+
+PRISMA CASE-INSENSITIVITY:
+- Parameter: mode: "insensitive"
+- Database: PostgreSQL
+- Limitation: Only handles case, NOT accents
+- Alternative: Use PostgreSQL unaccent extension (requires setup)
+
+PERFORMANCE CHARACTERISTICS:
+- Small lists (< 1,000): No noticeable impact
+- Medium lists (< 10,000): Minimal impact, < 1ms per search
+- Large lists (> 100,000): May need debouncing or server-side filtering
+
+================================================================================
+10. TESTING RECOMMENDATIONS
+================================================================================
+
+MANUAL TESTING:
+Search for these terms and verify they find merchants/categories with accents:
+  - "cafe" should find "Café"
+  - "senor" should find "Señor"
+  - "panama" should find "Panamá"
+  - "resume" should find "Résumé"
+  - "sao paulo" should find "São Paulo"
+
+AUTOMATED TESTING:
+Create: apps/frontend/src/lib/utils/stringNormalization.test.ts
+Include test cases for:
+  - Spanish accents (á, é, í, ó, ú, ñ)
+  - French accents (à, é, è, ê, ë, ç)
+  - Portuguese accents (ã, õ, ç)
+  - Case sensitivity
+  - Whitespace handling
+  - Partial matching
+
+================================================================================
+11. IMPLEMENTATION TIMELINE
+================================================================================
+
+QUICK IMPLEMENTATION (< 30 minutes):
+1. Create stringNormalization.ts utility file
+2. Update FilterService.ts
+3. Update CategorySelectionModal.svelte
+4. Manual testing
+
+FULL IMPLEMENTATION (< 1 hour):
++ Create test file (stringNormalization.test.ts)
++ Update backend repository (optional)
++ Run test suite
+
+COMPREHENSIVE (< 2 hours):
++ Set up database collation (optional)
++ Optimize for very large datasets (optional)
++ Documentation and code review
+
+================================================================================
+12. FILES FOR REFERENCE
+================================================================================
+
+Created Documents:
+✓ SEARCH_IMPLEMENTATION_GUIDE.md
+✓ SEARCH_QUICK_REFERENCE.md
+✓ SEARCH_IMPLEMENTATION_CODE.md
+
+Source Code Files (read-only):
+✓ apps/frontend/src/lib/modules/transactions/application/services/FilterService.ts
+✓ apps/frontend/src/lib/components/organisms/CategorySelectionModal.svelte
+✓ apps/backend/src/infrastructure/repositories/PrismaTransactionRepository.ts
+✓ apps/frontend/src/lib/components/molecules/SearchBar.svelte
+
+================================================================================
+13. NEXT STEPS
+================================================================================
+
+1. Review the three generated documentation files
+2. Implement the stringNormalization utility
+3. Update FilterService.ts and CategorySelectionModal.svelte
+4. Test with accented characters
+5. Optionally update backend for consistency
+6. Deploy and monitor
+
+For detailed implementation instructions, see: SEARCH_IMPLEMENTATION_CODE.md
+
+================================================================================
+END OF ANALYSIS
+================================================================================
