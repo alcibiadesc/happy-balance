@@ -19,7 +19,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
   const navigationService = new PeriodNavigationService();
 
   // State (usando $state rune de Svelte 5)
-  let selectedPeriodType = $state<PeriodType>('year'); // Changed default from 'month' to 'year' for annual view
+  let selectedPeriodType = $state<PeriodType>('overview'); // Default to overview (last 12 months)
   let periodOffset = $state(0);
   let customStartDate = $state('');
   let customEndDate = $state('');
@@ -100,11 +100,16 @@ export function createEnhancedDashboardStore(apiBase: string) {
           console.log('[Store] First category in breakdown:', categoryBreakdown[0]);
         }
 
-        // ALWAYS load last 12 months for charts (regardless of selected period type)
+        // ALWAYS load last 12 months for charts
         let historicalData: any[] = [];
         let loadHistoricalData = false;
 
-        if (selectedPeriodType === 'month') {
+        if (selectedPeriodType === 'overview') {
+          // For overview, ALWAYS show last 12 months
+          historicalData = await repository.getHistory(12);
+          loadHistoricalData = true;
+          console.log('[Dashboard] Overview mode: loaded 12 months history');
+        } else if (selectedPeriodType === 'month') {
           const now = new Date();
           const targetDate = new Date(now.getFullYear(), now.getMonth() + periodOffset, 1);
           const year = targetDate.getFullYear();
@@ -162,7 +167,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
   // Navigation methods
   async function changePeriod(type: PeriodType) {
     // Validate period type
-    if (['month', 'quarter', 'year', 'week'].includes(type)) {
+    if (['overview', 'month', 'quarter', 'year', 'week'].includes(type)) {
       selectedPeriodType = type;
       periodOffset = 0;
       await loadDashboardData();
@@ -170,6 +175,11 @@ export function createEnhancedDashboardStore(apiBase: string) {
   }
 
   async function navigatePeriod(newOffset: number) {
+    // Overview cannot navigate (always shows last 12 months)
+    if (selectedPeriodType === 'overview') {
+      return;
+    }
+
     // Clamp offset to valid range
     // 0 = current period
     // -1 = one period back
@@ -284,6 +294,10 @@ export function createEnhancedDashboardStore(apiBase: string) {
       const now = new Date();
 
       switch (selectedPeriodType) {
+        case 'overview': {
+          return 'Últimos 12 meses';
+        }
+
         case 'month': {
           const targetDate = new Date(now.getFullYear(), now.getMonth() + periodOffset, 1);
           const monthName = targetDate.toLocaleDateString('es-ES', {
@@ -321,13 +335,17 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
     // Check if we can navigate forward
     canNavigateForward(): boolean {
+      if (selectedPeriodType === 'overview') return false;
       return periodOffset < 0;
     },
 
     // Check if we can navigate backward
     canNavigateBackward(): boolean {
+      if (selectedPeriodType === 'overview') return false;
+
       // Different limits based on period type
       const limits: Record<PeriodType, number> = {
+        overview: 0,  // No navigation for overview
         month: -24,   // 2 years back
         quarter: -8,  // 2 years back (8 quarters)
         year: -5,     // 5 years back

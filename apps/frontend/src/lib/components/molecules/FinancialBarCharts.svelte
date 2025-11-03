@@ -259,6 +259,12 @@
   onMount(() => {
     if (!loading) {
       initChart();
+      // Force theme update after initialization to ensure colors are correct
+      setTimeout(() => {
+        if (chart) {
+          updateChartTheme(chart);
+        }
+      }, 100);
     }
 
     // Setup theme observer

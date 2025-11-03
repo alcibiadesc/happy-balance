@@ -401,6 +401,12 @@ export class ModernApiDashboardRepository implements DashboardRepository {
     const offset = period.getOffset();
 
     switch (period.getType()) {
+      case 'overview': {
+        // Overview = last 12 months using range endpoint
+        const params = period.toApiParams();
+        return `${this.apiBase}/dashboard/range?startDate=${params.startDate}&endDate=${params.endDate}`;
+      }
+
       case 'month': {
         // Calcular año y mes basado en el offset
         const targetDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);

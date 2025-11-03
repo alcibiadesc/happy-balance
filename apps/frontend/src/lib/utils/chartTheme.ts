@@ -8,8 +8,8 @@ export function getChartThemeColors() {
       expenses: '#ef4444',
       balance: '#06b6d4',
       investments: '#023c46',
-      grid: 'rgba(209, 213, 219, 0.3)',
-      text: '#1f2937'
+      grid: 'rgba(100, 116, 139, 0.2)',
+      text: '#334155' // Safe dark color for SSR
     };
   }
 
@@ -22,8 +22,8 @@ export function getChartThemeColors() {
       expenses: '#f87171',
       balance: '#22d3ee',
       investments: '#06b6d4',
-      grid: 'rgba(55, 65, 81, 0.2)', // More subtle grid lines in dark mode
-      text: '#f3f4f6' // Light text for dark mode
+      grid: 'rgba(100, 116, 139, 0.15)',
+      text: '#e2e8f0' // Light text for dark mode - brighter for better visibility
     };
   }
 
@@ -32,8 +32,8 @@ export function getChartThemeColors() {
     expenses: '#ef4444',
     balance: '#06b6d4',
     investments: '#023c46',
-    grid: 'rgba(209, 213, 219, 0.3)', // More subtle grid lines in light mode
-    text: '#1f2937' // Darker text for better contrast in light mode (was #374151)
+    grid: 'rgba(148, 163, 184, 0.2)',
+    text: '#1e293b' // Very dark text for excellent contrast in light mode
   };
 }
 

@@ -1,5 +1,5 @@
 // Value Object: Period
-export type PeriodType = 'week' | 'month' | 'quarter' | 'year' | 'custom';
+export type PeriodType = 'overview' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
 
 export class Period {
   private constructor(
@@ -46,6 +46,12 @@ export class Period {
     const end = new Date(now);
 
     switch (type) {
+      case 'overview':
+        // Overview = last 12 months from today
+        start.setMonth(now.getMonth() - 11, 1); // 11 months back + current month = 12 months
+        end.setTime(now.getTime()); // Today
+        break;
+
       case 'week':
         start.setDate(now.getDate() - now.getDay() - offset * 7);
         end.setDate(start.getDate() + 6);
@@ -89,6 +95,7 @@ export class Period {
   ): string {
     if (offset === 0) {
       const labels: Record<PeriodType, string> = {
+        overview: 'Últimos 12 meses',
         week: 'Esta semana',
         month: 'Este mes',
         quarter: 'Este trimestre',
@@ -99,6 +106,8 @@ export class Period {
     }
 
     switch (type) {
+      case 'overview':
+        return 'Últimos 12 meses';
       case 'week':
         const weekNum = Math.ceil((startDate.getDate() - startDate.getDay() + 1) / 7);
         return `Semana ${weekNum} ${startDate.getFullYear()}`;

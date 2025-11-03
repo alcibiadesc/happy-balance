@@ -26,6 +26,7 @@
 
   // Period type options
   const periodTypes = [
+    { value: 'overview', label: 'General' },
     { value: 'month', label: 'Mensual' },
     { value: 'quarter', label: 'Trimestral' },
     { value: 'year', label: 'Anual' }
@@ -36,7 +37,10 @@
     const options = [];
     const now = new Date();
 
-    if (selectedPeriodType === 'month') {
+    if (selectedPeriodType === 'overview') {
+      // No navigation options for overview
+      return [];
+    } else if (selectedPeriodType === 'month') {
       for (let i = 0; i > -24; i--) {
         const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
         options.push({
@@ -107,14 +111,16 @@
 </script>
 
 <div class="period-nav">
-  <button
-    class="nav-arrow"
-    onclick={goToPast}
-    disabled={loading}
-    title="Período anterior"
-  >
-    <ChevronLeft size={18} />
-  </button>
+  {#if selectedPeriodType !== 'overview'}
+    <button
+      class="nav-arrow"
+      onclick={goToPast}
+      disabled={loading}
+      title="Período anterior"
+    >
+      <ChevronLeft size={18} />
+    </button>
+  {/if}
 
   <div class="period-selector" bind:this={dropdownRef}>
     <button
@@ -141,29 +147,33 @@
         </div>
 
         <!-- Period Options -->
-        <div class="period-options">
-          {#each navigationOptions() as option}
-            <button
-              class="option"
-              class:selected={periodOffset === option.offset}
-              onclick={() => handleSelection(option.offset)}
-            >
-              {option.label}
-            </button>
-          {/each}
-        </div>
+        {#if navigationOptions().length > 0}
+          <div class="period-options">
+            {#each navigationOptions() as option}
+              <button
+                class="option"
+                class:selected={periodOffset === option.offset}
+                onclick={() => handleSelection(option.offset)}
+              >
+                {option.label}
+              </button>
+            {/each}
+          </div>
+        {/if}
       </div>
     {/if}
   </div>
 
-  <button
-    class="nav-arrow"
-    onclick={goToFuture}
-    disabled={loading || periodOffset >= 0}
-    title="Período siguiente"
-  >
-    <ChevronRight size={18} />
-  </button>
+  {#if selectedPeriodType !== 'overview'}
+    <button
+      class="nav-arrow"
+      onclick={goToFuture}
+      disabled={loading || periodOffset >= 0}
+      title="Período siguiente"
+    >
+      <ChevronRight size={18} />
+    </button>
+  {/if}
 </div>
 
 <style>
