@@ -19,20 +19,20 @@ export function getChartThemeColors() {
 
   if (isDark) {
     return {
-      income: '#7abaa5', // Acapulco
-      expenses: '#f5796c', // Froly
-      balance: '#7abaa5', // Acapulco for dark mode
-      investments: '#7abaa5', // Acapulco for dark mode
+      income: '#7abaa5', // Acapulco - green/teal
+      expenses: '#f5796c', // Froly - coral/red
+      balance: '#6ba5d6', // Light blue - different from income
+      investments: '#d4a574', // Gold/tan - different from both
       grid: 'rgba(255, 255, 255, 0.1)',
       text: '#fef7ee' // Bridesmaid for dark mode
     };
   }
 
   return {
-    income: '#7abaa5', // Acapulco from palette
-    expenses: '#f5796c', // Froly from palette
-    balance: '#023c46', // Evening Sea from palette
-    investments: '#023c46', // Evening Sea from palette
+    income: '#7abaa5', // Acapulco - green/teal
+    expenses: '#f5796c', // Froly - coral/red
+    balance: '#023c46', // Evening Sea - dark blue
+    investments: '#8b7a52', // Brown/gold - different from balance
     grid: 'rgba(0, 0, 0, 0.1)',
     text: '#023c46' // Evening Sea - primary dark color from palette
   };
