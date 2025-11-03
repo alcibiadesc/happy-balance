@@ -173,7 +173,7 @@
                   />
                   <div class="preview-item-content">
                     <span class="preview-merchant">{match.merchant}</span>
-                    <span class="preview-amount">{formatAmount(match.amount)}</span>
+                    <span class="preview-amount" class:income={match.amount > 0} class:expense={match.amount < 0}>{formatAmount(match.amount)}</span>
                   </div>
                 </label>
               {/each}
@@ -531,7 +531,14 @@
   .preview-amount {
     font-size: 12px;
     font-weight: 600;
+  }
+
+  .preview-amount.expense {
     color: #dc2626;
+  }
+
+  .preview-amount.income {
+    color: #22c55e;
   }
 
   .preview-list::-webkit-scrollbar {
