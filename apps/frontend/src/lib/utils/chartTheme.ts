@@ -8,8 +8,8 @@ export function getChartThemeColors() {
       expenses: '#ef4444',
       balance: '#06b6d4',
       investments: '#023c46',
-      grid: '#e5e7eb',
-      text: '#374151'
+      grid: 'rgba(209, 213, 219, 0.3)',
+      text: '#1f2937'
     };
   }
 
@@ -22,8 +22,8 @@ export function getChartThemeColors() {
       expenses: '#f87171',
       balance: '#22d3ee',
       investments: '#06b6d4',
-      grid: '#374151',
-      text: '#f3f4f6'
+      grid: 'rgba(55, 65, 81, 0.2)', // More subtle grid lines in dark mode
+      text: '#f3f4f6' // Light text for dark mode
     };
   }
 
@@ -32,8 +32,8 @@ export function getChartThemeColors() {
     expenses: '#ef4444',
     balance: '#06b6d4',
     investments: '#023c46',
-    grid: '#e5e7eb',
-    text: '#374151'
+    grid: 'rgba(209, 213, 219, 0.3)', // More subtle grid lines in light mode
+    text: '#1f2937' // Darker text for better contrast in light mode (was #374151)
   };
 }
 

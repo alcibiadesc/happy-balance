@@ -152,30 +152,40 @@
             type: 'category',
             grid: {
               color: colors.grid,
-              drawBorder: false
+              drawBorder: false,
+              lineWidth: 1
             },
             ticks: {
               color: colors.text,
               font: {
-                size: 11
+                size: 11,
+                weight: '500'
               },
               maxRotation: 45
+            },
+            border: {
+              display: false
             }
           },
           y: {
             beginAtZero: true,
             grid: {
               color: colors.grid,
-              drawBorder: false
+              drawBorder: false,
+              lineWidth: 1
             },
             ticks: {
               color: colors.text,
               font: {
-                size: 11
+                size: 11,
+                weight: '500'
               },
               callback: function(value: any) {
                 return formatCurrency(value, $currentCurrency);
               }
+            },
+            border: {
+              display: false
             }
           }
         },

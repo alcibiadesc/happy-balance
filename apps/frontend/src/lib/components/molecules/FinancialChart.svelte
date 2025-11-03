@@ -67,42 +67,51 @@
             data: chartData().income,
             borderColor: colors.income,
             backgroundColor: colors.income + '20',
-            borderWidth: 3,
+            borderWidth: 2.5,
             fill: false,
             tension: 0.4,
             pointBackgroundColor: colors.income,
             pointBorderColor: '#ffffff',
             pointBorderWidth: 2,
-            pointRadius: 5,
-            pointHoverRadius: 7
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            segment: {
+              borderColor: colors.income,
+            }
           },
           {
             label: 'Expenses',
             data: chartData().expenses,
             borderColor: colors.expenses,
             backgroundColor: colors.expenses + '20',
-            borderWidth: 3,
+            borderWidth: 2.5,
             fill: false,
             tension: 0.4,
             pointBackgroundColor: colors.expenses,
             pointBorderColor: '#ffffff',
             pointBorderWidth: 2,
-            pointRadius: 5,
-            pointHoverRadius: 7
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            segment: {
+              borderColor: colors.expenses,
+            }
           },
           {
             label: 'Balance',
             data: chartData().balance,
             borderColor: colors.balance,
             backgroundColor: colors.balance + '20',
-            borderWidth: 3,
+            borderWidth: 2.5,
             fill: false,
             tension: 0.4,
             pointBackgroundColor: colors.balance,
             pointBorderColor: '#ffffff',
             pointBorderWidth: 2,
-            pointRadius: 5,
-            pointHoverRadius: 7
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            segment: {
+              borderColor: colors.balance,
+            }
           }
         ]
       },
@@ -149,30 +158,40 @@
             type: 'category',
             grid: {
               color: colors.grid,
-              drawBorder: false
+              drawBorder: false,
+              lineWidth: 1
             },
             ticks: {
               color: colors.text,
               font: {
-                size: 12
+                size: 12,
+                weight: '500'
               },
               maxRotation: 45
+            },
+            border: {
+              display: false
             }
           },
           y: {
             beginAtZero: true,
             grid: {
               color: colors.grid,
-              drawBorder: false
+              drawBorder: false,
+              lineWidth: 1
             },
             ticks: {
               color: colors.text,
               font: {
-                size: 12
+                size: 12,
+                weight: '500'
               },
               callback: function(value: any) {
                 return formatCurrency(value, $currentCurrency);
               }
+            },
+            border: {
+              display: false
             }
           }
         },
