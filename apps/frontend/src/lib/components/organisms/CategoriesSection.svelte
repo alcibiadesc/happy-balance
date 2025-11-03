@@ -74,34 +74,51 @@
   ].filter(cat => cat.amount > 0));
 
   // Get income categories from categoryBreakdown
-  const incomeCategories = $derived(
-    categoryBreakdown
-      .filter(cat => cat.type === 'income')
-      .filter(cat => cat.total && Math.abs(cat.total) > 0.01)
-      .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
+  const incomeCategories = $derived.by(() => {
+    console.log('[CategoriesSection] Full categoryBreakdown:', JSON.stringify(categoryBreakdown, null, 2));
+    console.log('[CategoriesSection] totalIncome:', totalIncome);
+
+    const filtered = categoryBreakdown.filter(cat => {
+      console.log('[CategoriesSection] Category:', cat.categoryName || cat.name, 'type:', cat.type, 'amount:', cat.amount, 'total:', cat.total);
+      return cat.type === 'income';
+    });
+
+    console.log('[CategoriesSection] Filtered income categories:', filtered);
+
+    const mapped = filtered
+      .filter(cat => (cat.amount || cat.total) && Math.abs(cat.amount || cat.total || 0) > 0.01)
+      .sort((a, b) => Math.abs(b.amount || b.total || 0) - Math.abs(a.amount || a.total || 0))
       .map(cat => ({
-        name: cat.name,
-        amount: Math.abs(cat.total),
-        percentage: totalIncome > 0 ? Math.round((Math.abs(cat.total) / totalIncome) * 100) : 0,
+        name: cat.categoryName || cat.name,
+        amount: Math.abs(cat.amount || cat.total || 0),
+        percentage: cat.percentage || (totalIncome > 0 ? Math.round((Math.abs(cat.amount || cat.total || 0) / totalIncome) * 100) : 0),
         color: cat.color || '#34d399',
         icon: cat.icon || '💰'
-      }))
-  );
+      }));
+
+    console.log('[CategoriesSection] Final income categories:', mapped);
+    return mapped;
+  });
 
   // Get investment categories from categoryBreakdown
-  const investmentCategories = $derived(
-    categoryBreakdown
-      .filter(cat => cat.type === 'investment')
-      .filter(cat => cat.total && Math.abs(cat.total) > 0.01)
-      .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
+  const investmentCategories = $derived.by(() => {
+    const filtered = categoryBreakdown.filter(cat => cat.type === 'investment');
+    console.log('[CategoriesSection] Filtered investment categories:', filtered);
+
+    const mapped = filtered
+      .filter(cat => (cat.amount || cat.total) && Math.abs(cat.amount || cat.total || 0) > 0.01)
+      .sort((a, b) => Math.abs(b.amount || b.total || 0) - Math.abs(a.amount || a.total || 0))
       .map(cat => ({
-        name: cat.name,
-        amount: Math.abs(cat.total),
-        percentage: totalInvestments > 0 ? Math.round((Math.abs(cat.total) / totalInvestments) * 100) : 0,
+        name: cat.categoryName || cat.name,
+        amount: Math.abs(cat.amount || cat.total || 0),
+        percentage: cat.percentage || (totalInvestments > 0 ? Math.round((Math.abs(cat.amount || cat.total || 0) / totalInvestments) * 100) : 0),
         color: cat.color || '#60a5fa',
         icon: cat.icon || '📈'
-      }))
-  );
+      }));
+
+    console.log('[CategoriesSection] Final investment categories:', mapped);
+    return mapped;
+  });
 
   // Current categories based on selected type
   const currentCategories = $derived(
