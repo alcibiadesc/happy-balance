@@ -1,11 +1,9 @@
 <script lang="ts">
-  import { LayerCake, Svg, Html } from 'layercake';
-  import { scaleBand, scaleLinear } from 'd3-scale';
+  import { onMount, onDestroy } from 'svelte';
+  import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import { currentLanguage, t } from '$lib/stores/i18n';
-  import GroupedColumn from './chart-layers/GroupedColumn.svelte';
-  import AxisX from './chart-layers/AxisX.svelte';
-  import AxisY from './chart-layers/AxisY.svelte';
+  import { getChartThemeColors, updateChartTheme, updateChartDatasetColors, setupChartThemeObserver } from '$lib/utils/chartTheme';
 
   interface DataPoint {
     month: string;
@@ -25,43 +23,265 @@
 
   let { data = [], height = 250, period = 'month', loading = false }: Props = $props();
 
-  // Process data for Layer Cake
-  let chartData = $derived(
-    data.map((d) => ({
-      month: d.month,
-      income: Math.abs(d.income),
-      essentialExpenses: Math.abs(d.essentialExpenses),
-      discretionaryExpenses: Math.abs(d.discretionaryExpenses),
-      debtPayments: Math.abs(d.debtPayments),
-      investments: Math.abs(d.investments)
-    }))
-  );
+  let canvasRef = $state<HTMLCanvasElement>();
+  let chart: Chart | null = null;
+  let cleanupThemeObserver: (() => void) | null = null;
 
-  // Group keys for the bars
-  const groupKeys = ['income', 'essentialExpenses', 'discretionaryExpenses', 'debtPayments', 'investments'];
+  // Reactive data processing
+  let chartData = $derived(() => {
+    if (!data?.length) return {
+      labels: [],
+      income: [],
+      essentialExpenses: [],
+      discretionaryExpenses: [],
+      debtPayments: [],
+      investments: []
+    };
 
-  // Colors for each group
-  const colors = {
-    income: '#7aba9e',
-    essentialExpenses: '#ef4444',
-    discretionaryExpenses: '#f59e0b',
-    debtPayments: '#dc2626',
-    investments: '#023c46'
-  };
+    return {
+      labels: data.map(d => d.month),
+      income: data.map(d => Math.abs(d.income)),
+      essentialExpenses: data.map(d => Math.abs(d.essentialExpenses)),
+      discretionaryExpenses: data.map(d => Math.abs(d.discretionaryExpenses)),
+      debtPayments: data.map(d => Math.abs(d.debtPayments)),
+      investments: data.map(d => Math.abs(d.investments))
+    };
+  });
 
-  // Legend items
-  let legendItems = $derived([
-    { key: 'income', label: $t('dashboard.metrics.income'), color: colors.income },
-    { key: 'essentialExpenses', label: $t('dashboard.metrics.essential_expenses'), color: colors.essentialExpenses },
-    { key: 'discretionaryExpenses', label: $t('dashboard.metrics.discretionary_expenses'), color: colors.discretionaryExpenses },
-    { key: 'debtPayments', label: $t('dashboard.metrics.debt_payments'), color: colors.debtPayments },
-    { key: 'investments', label: $t('dashboard.metrics.investments'), color: colors.investments }
-  ]);
+  // Format currency for tooltips
+  function formatTooltipValue(value: number): string {
+    return formatCurrency(value, $currentCurrency);
+  }
 
-  // Tooltip state
-  let hoveredData = $state<any>(null);
-  let tooltipX = $state(0);
-  let tooltipY = $state(0);
+  // Chart configuration
+  function getChartConfig() {
+    const colors = getChartThemeColors();
+
+    return {
+      type: 'bar' as const,
+      data: {
+        labels: chartData().labels,
+        datasets: [
+          {
+            label: $t('dashboard.metrics.income'),
+            data: chartData().income,
+            backgroundColor: colors.income + '80',
+            borderColor: colors.income,
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          },
+          {
+            label: $t('dashboard.metrics.essential_expenses'),
+            data: chartData().essentialExpenses,
+            backgroundColor: colors.expenses + '80',
+            borderColor: colors.expenses,
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          },
+          {
+            label: $t('dashboard.metrics.discretionary_expenses'),
+            data: chartData().discretionaryExpenses,
+            backgroundColor: '#f59e0b80',
+            borderColor: '#f59e0b',
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          },
+          {
+            label: $t('dashboard.metrics.debt_payments'),
+            data: chartData().debtPayments,
+            backgroundColor: '#dc262680',
+            borderColor: '#dc2626',
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          },
+          {
+            label: $t('dashboard.metrics.investments'),
+            data: chartData().investments,
+            backgroundColor: colors.investments + '80',
+            borderColor: colors.investments,
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: 'index' as const
+        },
+        plugins: {
+          legend: {
+            position: 'top' as const,
+            labels: {
+              color: colors.text,
+              font: {
+                size: 11,
+                weight: '500'
+              },
+              usePointStyle: true,
+              pointStyle: 'rect',
+              padding: 15
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+            titleColor: '#f9fafb',
+            bodyColor: '#f9fafb',
+            borderColor: colors.grid,
+            borderWidth: 1,
+            cornerRadius: 8,
+            displayColors: true,
+            callbacks: {
+              label: (context: any) => {
+                const label = context.dataset.label || '';
+                const value = formatTooltipValue(context.parsed.y);
+                return `${label}: ${value}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'category',
+            grid: {
+              color: colors.grid,
+              drawBorder: false,
+              lineWidth: 1
+            },
+            ticks: {
+              color: colors.text,
+              font: {
+                size: 11,
+                weight: '500'
+              },
+              maxRotation: 45
+            },
+            border: {
+              display: false
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: colors.grid,
+              drawBorder: false,
+              lineWidth: 1
+            },
+            ticks: {
+              color: colors.text,
+              font: {
+                size: 11,
+                weight: '500'
+              },
+              callback: function(value: any) {
+                return formatCurrency(value, $currentCurrency);
+              }
+            },
+            border: {
+              display: false
+            }
+          }
+        },
+        elements: {
+          bar: {
+            borderRadius: 4
+          }
+        }
+      }
+    };
+  }
+
+  function initChart() {
+    if (!canvasRef) return;
+
+    const ctx = canvasRef.getContext('2d');
+    if (!ctx) return;
+
+    // Clear any existing chart before creating new one
+    if (chart) {
+      chart.destroy();
+      chart = null;
+    }
+
+    const config = getChartConfig();
+    chart = new Chart(ctx, config);
+  }
+
+  function updateChart() {
+    if (!chart) return;
+
+    const newData = chartData();
+    chart.data.labels = newData.labels;
+    chart.data.datasets[0].data = newData.income;
+    chart.data.datasets[1].data = newData.essentialExpenses;
+    chart.data.datasets[2].data = newData.discretionaryExpenses;
+    chart.data.datasets[3].data = newData.debtPayments;
+    chart.data.datasets[4].data = newData.investments;
+
+    chart.update('none');
+  }
+
+  // Watch for data changes
+  $effect(() => {
+    // Reference data to make effect reactive to data changes
+    if (chart) {
+      updateChart();
+    }
+  });
+
+  // Watch for currency changes to update tooltips
+  $effect(() => {
+    if (chart && $currentCurrency) {
+      chart.options.scales!.y!.ticks!.callback = function(value: any) {
+        return formatCurrency(value, $currentCurrency);
+      };
+      chart.update('none');
+    }
+  });
+
+  // Watch for loading state and reinitialize chart when needed
+  $effect(() => {
+    if (!loading && canvasRef) {
+      // Always try to initialize/reinitialize when loading completes
+      setTimeout(() => {
+        initChart();
+      }, 100);
+    }
+  });
+
+  onMount(() => {
+    if (!loading) {
+      initChart();
+      // Force theme update after initialization to ensure colors are correct
+      setTimeout(() => {
+        if (chart) {
+          updateChartTheme(chart);
+        }
+      }, 100);
+    }
+
+    // Setup theme observer
+    cleanupThemeObserver = setupChartThemeObserver(chart, () => {
+      updateChartDatasetColors(chart, 2, 'investments');
+    });
+  });
+
+  onDestroy(() => {
+    if (chart) {
+      chart.destroy();
+      chart = null;
+    }
+    if (cleanupThemeObserver) {
+      cleanupThemeObserver();
+    }
+  });
 </script>
 
 <section class="financial-bar-charts">
@@ -79,35 +299,7 @@
         <span>No data available for the selected period</span>
       </div>
     {:else}
-      <!-- Legend -->
-      <div class="legend">
-        {#each legendItems as item}
-          <div class="legend-item">
-            <div class="legend-color" style="background: {item.color};"></div>
-            <span>{item.label}</span>
-          </div>
-        {/each}
-      </div>
-
-      <!-- Chart -->
-      <LayerCake
-        padding={{ top: 10, right: 15, bottom: 40, left: 70 }}
-        x="month"
-        y={groupKeys}
-        yDomain={[0, null]}
-        xScale={scaleBand().paddingInner(0.2)}
-        yScale={scaleLinear()}
-        data={chartData}
-      >
-        <Svg>
-          <AxisX gridlines={false} />
-          <AxisY
-            gridlines={true}
-            formatTick={(d) => formatCurrency(d, $currentCurrency)}
-          />
-          <GroupedColumn {groupKeys} {colors} />
-        </Svg>
-      </LayerCake>
+      <canvas bind:this={canvasRef}></canvas>
     {/if}
   </div>
 </section>
@@ -165,29 +357,6 @@
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-  }
-
-  .legend {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 11px;
-    font-weight: 500;
-    color: #000000;
-  }
-
-  .legend-color {
-    width: 12px;
-    height: 12px;
-    border-radius: 2px;
   }
 
   canvas {

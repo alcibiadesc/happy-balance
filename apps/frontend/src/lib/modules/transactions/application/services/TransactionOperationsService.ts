@@ -53,7 +53,7 @@ export class TransactionOperationsService {
       const selectedCategory = categoryId ? this.getCategory(categoryId) : null;
 
       let updates: Partial<Transaction> = {
-        categoryId: categoryId === null ? null : categoryId
+        categoryId: categoryId === null ? undefined : categoryId
       };
 
       // Handle amount conversion based on category type

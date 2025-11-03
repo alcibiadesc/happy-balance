@@ -71,6 +71,10 @@ export class PeriodNavigationService {
           };
         });
 
+      case 'overview':
+        // Overview doesn't have navigation options (shows last 12 months)
+        return [{ offset: 0, label: 'Últimos 12 meses', fullLabel: 'Últimos 12 meses' }];
+
       case 'custom':
         return [{ offset: 0, label: 'Personalizado', fullLabel: 'Período personalizado' }];
 
@@ -81,6 +85,7 @@ export class PeriodNavigationService {
 
   private getCurrentLabel(periodType: PeriodType): string {
     const labels: Record<PeriodType, string> = {
+      overview: 'Últimos 12 meses',
       week: 'Esta semana',
       month: 'Este mes',
       quarter: 'Este trimestre',
@@ -92,6 +97,8 @@ export class PeriodNavigationService {
 
   private getOffsetLabel(periodType: PeriodType, offset: number, period: Period): string {
     switch (periodType) {
+      case 'overview':
+        return 'Últimos 12 meses';
       case 'week':
         return `S${offset + 1}`;
       case 'month':

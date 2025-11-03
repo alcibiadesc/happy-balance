@@ -14,8 +14,7 @@
     "typecheck": "svelte-kit sync && tsc --noEmit"
   },
   "dependencies": {
-    "d3-scale": "^4.0.2",
-    "layercake": "^10.0.2",
+    "chart.js": "^4.5.0",
     "lucide-svelte": "^0.542.0"
   },
   "devDependencies": {
