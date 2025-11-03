@@ -7,9 +7,13 @@
     visible: boolean;
     transactionTypeFilter: 'all' | 'income' | 'expenses' | 'uncategorized';
     selectedCategories: string[];
+    selectedPrimaryTypes: string[];
+    showUncategorized: boolean;
     categories: Category[];
     onTransactionTypeFilter: (type: 'all' | 'income' | 'expenses' | 'uncategorized') => void;
     onToggleCategory: (categoryId: string) => void;
+    onTogglePrimaryType: (primaryType: string) => void;
+    onToggleShowUncategorized: () => void;
     onClearFilters: () => void;
   }
 
@@ -17,13 +21,27 @@
     visible,
     transactionTypeFilter,
     selectedCategories,
+    selectedPrimaryTypes,
+    showUncategorized,
     categories,
     onTransactionTypeFilter,
     onToggleCategory,
+    onTogglePrimaryType,
+    onToggleShowUncategorized,
     onClearFilters
   }: Props = $props();
 
   let showCategoryFilterDropdown = $state(false);
+  let showPrimaryTypeDropdown = $state(false);
+
+  const primaryTypeNames = {
+    'income': '💰 Ingresos',
+    'essential': '🏠 Esenciales',
+    'discretionary': '🎉 Discrecionales',
+    'investment': '📈 Inversiones',
+    'debt_payment': '💳 Pago Deudas',
+    'no_compute': '🚫 No Computar'
+  };
 </script>
 
 {#if visible}
@@ -34,54 +52,43 @@
       <div class="bento-item quick-filters">
         <button
           class="filter-pill income"
-          class:active={transactionTypeFilter === 'income' && selectedCategories.length === 0}
-          class:disabled={selectedCategories.length > 0}
+          class:active={transactionTypeFilter === 'income'}
           onclick={() => {
-            if (selectedCategories.length === 0) {
-              onTransactionTypeFilter(transactionTypeFilter === 'income' ? 'all' : 'income');
-            }
+            onTransactionTypeFilter(transactionTypeFilter === 'income' ? 'all' : 'income');
           }}
           aria-pressed={transactionTypeFilter === 'income'}
         >
           <TrendingUp size={12} class="pill-icon" />
           <span>Ingresos</span>
-          {#if transactionTypeFilter === 'income' && selectedCategories.length === 0}
+          {#if transactionTypeFilter === 'income'}
             <span class="pill-indicator"></span>
           {/if}
         </button>
 
         <button
           class="filter-pill expense"
-          class:active={transactionTypeFilter === 'expenses' && selectedCategories.length === 0}
-          class:disabled={selectedCategories.length > 0}
+          class:active={transactionTypeFilter === 'expenses'}
           onclick={() => {
-            if (selectedCategories.length === 0) {
-              onTransactionTypeFilter(transactionTypeFilter === 'expenses' ? 'all' : 'expenses');
-            }
+            onTransactionTypeFilter(transactionTypeFilter === 'expenses' ? 'all' : 'expenses');
           }}
           aria-pressed={transactionTypeFilter === 'expenses'}
         >
           <TrendingDown size={12} class="pill-icon" />
           <span>Gastos</span>
-          {#if transactionTypeFilter === 'expenses' && selectedCategories.length === 0}
+          {#if transactionTypeFilter === 'expenses'}
             <span class="pill-indicator"></span>
           {/if}
         </button>
 
         <button
           class="filter-pill uncategorized"
-          class:active={transactionTypeFilter === 'uncategorized' && selectedCategories.length === 0}
-          class:disabled={selectedCategories.length > 0}
-          onclick={() => {
-            if (selectedCategories.length === 0) {
-              onTransactionTypeFilter(transactionTypeFilter === 'uncategorized' ? 'all' : 'uncategorized');
-            }
-          }}
-          aria-pressed={transactionTypeFilter === 'uncategorized'}
+          class:active={showUncategorized}
+          onclick={onToggleShowUncategorized}
+          aria-pressed={showUncategorized}
         >
           <Tag size={12} class="pill-icon" style="opacity: 0.5" />
           <span>{$t('transactions.period.uncategorized')}</span>
-          {#if transactionTypeFilter === 'uncategorized' && selectedCategories.length === 0}
+          {#if showUncategorized}
             <span class="pill-indicator"></span>
           {/if}
         </button>
@@ -130,8 +137,50 @@
         {/if}
       </div>
 
+      <!-- Primary Type Selector -->
+      <div class="bento-item category-selector">
+        <button
+          class="category-pill"
+          class:active={selectedPrimaryTypes.length > 0}
+          class:open={showPrimaryTypeDropdown}
+          onclick={(e) => {
+            e.stopPropagation();
+            showPrimaryTypeDropdown = !showPrimaryTypeDropdown;
+          }}
+        >
+          <Tag size={12} />
+          <span>
+            {selectedPrimaryTypes.length > 0
+              ? `${selectedPrimaryTypes.length} tipos`
+              : 'Tipos de categoría'}
+          </span>
+          <ChevronDown size={12} class="chevron {showPrimaryTypeDropdown ? 'rotated' : ''}" />
+        </button>
+
+        {#if showPrimaryTypeDropdown}
+          <div class="category-dropdown-mini">
+            <div class="category-grid-compact">
+              {#each Object.entries(primaryTypeNames) as [type, name]}
+                <button
+                  class="category-chip-mini"
+                  class:selected={selectedPrimaryTypes.includes(type)}
+                  onclick={() => onTogglePrimaryType(type)}
+                >
+                  <span class="chip-name">{name}</span>
+                  {#if selectedPrimaryTypes.includes(type)}
+                    <div class="chip-check">
+                      <Check size={8} />
+                    </div>
+                  {/if}
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
+
       <!-- Clear Button (when filters active) -->
-      {#if transactionTypeFilter !== 'all' || selectedCategories.length > 0}
+      {#if transactionTypeFilter !== 'all' || selectedCategories.length > 0 || selectedPrimaryTypes.length > 0 || showUncategorized}
         <div class="bento-item clear-section">
           <button class="clear-pill" onclick={onClearFilters}>
             <X size={12} />
@@ -142,7 +191,7 @@
     </div>
 
     <!-- Active Tags (minimal display) -->
-    {#if transactionTypeFilter !== 'all' || selectedCategories.length > 0}
+    {#if transactionTypeFilter !== 'all' || selectedCategories.length > 0 || selectedPrimaryTypes.length > 0 || showUncategorized}
       <div class="active-tags-mini">
         {#if transactionTypeFilter === 'income'}
           <button
@@ -168,10 +217,10 @@
           </button>
         {/if}
 
-        {#if transactionTypeFilter === 'uncategorized'}
+        {#if showUncategorized}
           <button
             class="tag-mini uncategorized-tag"
-            onclick={() => onTransactionTypeFilter('all')}
+            onclick={onToggleShowUncategorized}
             aria-label={$t('accessibility.remove_filter')}
           >
             <Tag size={10} style="opacity: 0.5" />
@@ -179,6 +228,17 @@
             <X size={10} class="tag-close" />
           </button>
         {/if}
+
+        {#each selectedPrimaryTypes as primaryType}
+          <button
+            class="tag-mini primary-type-tag"
+            onclick={() => onTogglePrimaryType(primaryType)}
+            aria-label="Remove primary type filter"
+          >
+            <span>{primaryTypeNames[primaryType]}</span>
+            <X size={10} class="tag-close" />
+          </button>
+        {/each}
 
         {#each selectedCategories as categoryId}
           {@const category = categories.find(c => c.id === categoryId)}
@@ -561,6 +621,11 @@
   .tag-mini.category-tag {
     background: var(--surface-muted);
     color: var(--text-secondary);
+  }
+
+  .tag-mini.primary-type-tag {
+    background: var(--primary-light);
+    color: var(--primary);
   }
 
   /* Responsive Bento Grid */

@@ -129,6 +129,14 @@ class TransactionsPageStore {
     this.filters = filterActions.toggleCategory(this.filters, categoryId);
   };
 
+  togglePrimaryType = (primaryType: string) => {
+    this.filters = filterActions.togglePrimaryType(this.filters, primaryType);
+  };
+
+  toggleShowUncategorized = () => {
+    this.filters = filterActions.toggleShowUncategorized(this.filters);
+  };
+
   clearFilters = () => {
     this.filters = filterActions.clearFilters(this.filters);
   };

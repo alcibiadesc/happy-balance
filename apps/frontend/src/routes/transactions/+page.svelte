@@ -453,10 +453,14 @@
       visible={pageStore.modalState.showFilters}
       transactionTypeFilter={pageStore.filterState.transactionTypeFilter}
       selectedCategories={pageStore.filterState.selectedCategories}
+      selectedPrimaryTypes={pageStore.filterState.selectedPrimaryTypes}
+      showUncategorized={pageStore.filterState.showUncategorized}
       categories={$apiCategories}
       onTransactionTypeFilter={(type) =>
         pageStore.setTransactionTypeFilter(type)}
       onToggleCategory={(id) => pageStore.toggleCategory(id)}
+      onTogglePrimaryType={(type) => pageStore.togglePrimaryType(type)}
+      onToggleShowUncategorized={() => pageStore.toggleShowUncategorized()}
       onClearFilters={() => pageStore.clearFilters()}
     />
   </div>
