@@ -120,7 +120,7 @@
           legend: {
             position: 'top' as const,
             labels: {
-              color: colors.text, // Adapts to dark/light mode
+              color: document.documentElement.classList.contains('dark') ? '#fef7ee' : '#023c46',
               font: {
                 size: 11,
                 weight: '600'
@@ -151,12 +151,12 @@
           x: {
             type: 'category',
             grid: {
-              color: colors.grid, // Adapts to dark/light mode
+              color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
               drawBorder: false,
               lineWidth: 1
             },
             ticks: {
-              color: colors.text, // Adapts to dark/light mode
+              color: document.documentElement.classList.contains('dark') ? '#fef7ee' : '#023c46',
               font: {
                 size: 11,
                 weight: '600'
@@ -170,12 +170,12 @@
           y: {
             beginAtZero: true,
             grid: {
-              color: colors.grid, // Adapts to dark/light mode
+              color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
               drawBorder: false,
               lineWidth: 1
             },
             ticks: {
-              color: colors.text, // Adapts to dark/light mode
+              color: document.documentElement.classList.contains('dark') ? '#fef7ee' : '#023c46',
               font: {
                 size: 11,
                 weight: '600'

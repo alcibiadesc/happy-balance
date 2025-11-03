@@ -41,39 +41,41 @@ export function getChartThemeColors() {
 export function updateChartTheme(chart: any) {
   if (!chart || !browser) return;
 
-  const colors = getChartThemeColors();
+  // Force detection of dark/light mode
+  const isDark = document.documentElement.classList.contains('dark');
+  const textColor = isDark ? '#fef7ee' : '#023c46';
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
 
-  // Update grid colors
-  if (chart.options.scales?.x?.grid) {
-    chart.options.scales.x.grid.color = colors.grid;
-  }
-  if (chart.options.scales?.y?.grid) {
-    chart.options.scales.y.grid.color = colors.grid;
-  }
-
-  // Update tick colors - adapts to dark/light mode
   if (chart.options.scales?.x?.ticks) {
-    chart.options.scales.x.ticks.color = colors.text; // Adapts to dark/light mode
+    chart.options.scales.x.ticks.color = textColor;
     chart.options.scales.x.ticks.font = {
       ...chart.options.scales.x.ticks.font,
-      weight: '600' // Make text bolder for better visibility
+      weight: '600'
     };
   }
   if (chart.options.scales?.y?.ticks) {
-    chart.options.scales.y.ticks.color = colors.text; // Adapts to dark/light mode
+    chart.options.scales.y.ticks.color = textColor;
     chart.options.scales.y.ticks.font = {
       ...chart.options.scales.y.ticks.font,
-      weight: '600' // Make text bolder for better visibility
+      weight: '600'
     };
   }
 
-  // Update legend label colors - adapts to dark/light mode
+  // Update legend label colors
   if (chart.options.plugins?.legend?.labels) {
-    chart.options.plugins.legend.labels.color = colors.text; // Adapts to dark/light mode
+    chart.options.plugins.legend.labels.color = textColor;
     chart.options.plugins.legend.labels.font = {
       ...chart.options.plugins.legend.labels.font,
-      weight: '600' // Make legend text bolder
+      weight: '600'
     };
+  }
+
+  // Update grid colors
+  if (chart.options.scales?.x?.grid) {
+    chart.options.scales.x.grid.color = gridColor;
+  }
+  if (chart.options.scales?.y?.grid) {
+    chart.options.scales.y.grid.color = gridColor;
   }
 
   chart.update('none');
