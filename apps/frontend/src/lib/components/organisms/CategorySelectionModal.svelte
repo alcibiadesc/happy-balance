@@ -65,11 +65,21 @@
     onSelect(null); // Pass null instead of empty string
   }
 
+  // Normalize string for search: remove accents, lowercase, and normalize spaces
+  function normalizeForSearch(text: string): string {
+    return text
+      .normalize('NFD') // Decompose combined characters
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
+      .toLowerCase()
+      .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+      .trim();
+  }
+
   // Group categories by type and filter by search term
   $: isIncomeTransaction = transaction ? transaction.amount > 0 : false;
   $: filteredCategories = categories.filter(cat =>
     searchTerm === '' ||
-    cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+    normalizeForSearch(cat.name).includes(normalizeForSearch(searchTerm))
   );
   $: groupedCategories = (() => {
     if (isIncomeTransaction) {

@@ -4,7 +4,9 @@ export interface FilterState {
   searchQuery: string;
   selectedPeriod: string;
   selectedCategories: string[];
+  selectedPrimaryTypes: string[]; // essential, discretionary, investment, debt_payment, income, no_compute
   transactionTypeFilter: 'all' | 'income' | 'expenses' | 'uncategorized';
+  showUncategorized: boolean;
   showAllTransactions: boolean;
   showHiddenTransactions: boolean;
   dateRangeMode: 'month' | 'custom';
@@ -16,7 +18,9 @@ export const createInitialFilterState = (): FilterState => ({
   searchQuery: '',
   selectedPeriod: new Date().toISOString().slice(0, 7),
   selectedCategories: [],
+  selectedPrimaryTypes: [],
   transactionTypeFilter: 'all',
+  showUncategorized: false,
   showAllTransactions: typeof window !== 'undefined'
     ? localStorage.getItem('showAllTransactions') === 'true' || localStorage.getItem('showAllTransactions') === null
     : true,
@@ -28,15 +32,25 @@ export const createInitialFilterState = (): FilterState => ({
   customEndDate: ''
 });
 
+// Normalize string for search: remove accents, lowercase, and normalize spaces
+const normalizeForSearch = (text: string): string => {
+  return text
+    .normalize('NFD') // Decompose combined characters
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
+    .toLowerCase()
+    .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+    .trim();
+};
+
 const matchesSearch = (transaction: Transaction, query: string): boolean => {
-  const lowerQuery = query.toLowerCase();
+  const normalizedQuery = normalizeForSearch(query);
   const numericQuery = parseFloat(query);
   const isNumeric = !isNaN(numericQuery) && isFinite(numericQuery);
 
-  // Text-based search
+  // Text-based search with normalized comparison
   const textMatch =
-    transaction.merchant.toLowerCase().includes(lowerQuery) ||
-    transaction.description.toLowerCase().includes(lowerQuery);
+    normalizeForSearch(transaction.merchant).includes(normalizedQuery) ||
+    normalizeForSearch(transaction.description).includes(normalizedQuery);
 
   // Amount-based search
   if (isNumeric) {
@@ -72,24 +86,57 @@ const matchesPeriod = (
 
 const matchesCategory = (
   transaction: Transaction,
-  filters: FilterState
+  filters: FilterState,
+  categories: Category[]
 ): boolean => {
-  if (filters.selectedCategories.length > 0) {
-    return transaction.categoryId
-      ? filters.selectedCategories.includes(transaction.categoryId)
-      : false;
+  // Check if transaction matches uncategorized filter
+  const isUncategorized = !transaction.categoryId;
+  const matchesUncategorizedFilter = !filters.showUncategorized || isUncategorized;
+
+  // If showUncategorized is true and transaction is categorized, exclude it
+  if (filters.showUncategorized && !isUncategorized) {
+    return false;
   }
 
+  // Check transaction type filter (income/expenses)
+  let matchesTypeFilter = true;
   switch (filters.transactionTypeFilter) {
     case 'income':
-      return transaction.amount > 0;
+      matchesTypeFilter = transaction.amount > 0;
+      break;
     case 'expenses':
-      return transaction.amount < 0;
+      matchesTypeFilter = transaction.amount < 0;
+      break;
     case 'uncategorized':
-      return !transaction.categoryId;
+      return isUncategorized;
+    case 'all':
     default:
-      return true;
+      matchesTypeFilter = true;
   }
+
+  // Check specific categories filter
+  if (filters.selectedCategories.length > 0) {
+    const matchesSpecificCategory = transaction.categoryId
+      ? filters.selectedCategories.includes(transaction.categoryId)
+      : false;
+    return matchesSpecificCategory && matchesTypeFilter && matchesUncategorizedFilter;
+  }
+
+  // Check primary category types filter (essential, discretionary, etc.)
+  if (filters.selectedPrimaryTypes.length > 0) {
+    if (!transaction.categoryId) {
+      // Uncategorized transactions don't match primary type filters
+      return matchesTypeFilter && matchesUncategorizedFilter;
+    }
+    const category = categories.find(c => c.id === transaction.categoryId);
+    if (!category) {
+      return false;
+    }
+    const matchesPrimaryType = filters.selectedPrimaryTypes.includes(category.type);
+    return matchesPrimaryType && matchesTypeFilter && matchesUncategorizedFilter;
+  }
+
+  return matchesTypeFilter && matchesUncategorizedFilter;
 };
 
 export const filterTransactions = (
@@ -102,7 +149,7 @@ export const filterTransactions = (
     if (!matchesPeriod(transaction, filters)) return false;
 
     // Category/type filter
-    if (!matchesCategory(transaction, filters)) return false;
+    if (!matchesCategory(transaction, filters, categories)) return false;
 
     // Search filter
     if (filters.searchQuery && !matchesSearch(transaction, filters.searchQuery)) {
@@ -148,7 +195,9 @@ export const filterActions = {
   clearFilters: (state: FilterState): FilterState => ({
     ...state,
     selectedCategories: [],
-    transactionTypeFilter: 'all'
+    selectedPrimaryTypes: [],
+    transactionTypeFilter: 'all',
+    showUncategorized: false
   }),
 
   setTransactionTypeFilter: (
@@ -165,5 +214,18 @@ export const filterActions = {
       : [...state.selectedCategories, categoryId];
 
     return { ...state, selectedCategories: newCategories };
-  }
+  },
+
+  togglePrimaryType: (state: FilterState, primaryType: string): FilterState => {
+    const newTypes = state.selectedPrimaryTypes.includes(primaryType)
+      ? state.selectedPrimaryTypes.filter(t => t !== primaryType)
+      : [...state.selectedPrimaryTypes, primaryType];
+
+    return { ...state, selectedPrimaryTypes: newTypes };
+  },
+
+  toggleShowUncategorized: (state: FilterState): FilterState => ({
+    ...state,
+    showUncategorized: !state.showUncategorized
+  })
 };
