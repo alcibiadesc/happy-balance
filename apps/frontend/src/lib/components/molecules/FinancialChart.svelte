@@ -126,7 +126,7 @@
           legend: {
             position: 'top' as const,
             labels: {
-              color: '#023c46', // Evening Sea - primary dark color from palette
+              color: colors.text, // Adapts to dark/light mode
               font: {
                 size: 13,
                 weight: '600'
@@ -157,12 +157,12 @@
           x: {
             type: 'category',
             grid: {
-              color: 'rgba(0, 0, 0, 0.1)', // Darker grid for visibility
+              color: colors.grid, // Adapts to dark/light mode
               drawBorder: false,
               lineWidth: 1
             },
             ticks: {
-              color: '#023c46', // Evening Sea - primary dark color from palette
+              color: colors.text, // Adapts to dark/light mode
               font: {
                 size: 12,
                 weight: '600'
@@ -176,12 +176,12 @@
           y: {
             beginAtZero: true,
             grid: {
-              color: 'rgba(0, 0, 0, 0.1)', // Darker grid for visibility
+              color: colors.grid, // Adapts to dark/light mode
               drawBorder: false,
               lineWidth: 1
             },
             ticks: {
-              color: '#023c46', // Evening Sea - primary dark color from palette
+              color: colors.text, // Adapts to dark/light mode
               font: {
                 size: 12,
                 weight: '600'

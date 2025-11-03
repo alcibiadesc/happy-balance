@@ -51,25 +51,25 @@ export function updateChartTheme(chart: any) {
     chart.options.scales.y.grid.color = colors.grid;
   }
 
-  // Update tick colors with strong contrast - force Evening Sea color
+  // Update tick colors - adapts to dark/light mode
   if (chart.options.scales?.x?.ticks) {
-    chart.options.scales.x.ticks.color = '#023c46'; // Evening Sea from palette
+    chart.options.scales.x.ticks.color = colors.text; // Adapts to dark/light mode
     chart.options.scales.x.ticks.font = {
       ...chart.options.scales.x.ticks.font,
       weight: '600' // Make text bolder for better visibility
     };
   }
   if (chart.options.scales?.y?.ticks) {
-    chart.options.scales.y.ticks.color = '#023c46'; // Evening Sea from palette
+    chart.options.scales.y.ticks.color = colors.text; // Adapts to dark/light mode
     chart.options.scales.y.ticks.font = {
       ...chart.options.scales.y.ticks.font,
       weight: '600' // Make text bolder for better visibility
     };
   }
 
-  // Update legend label colors with strong contrast - force Evening Sea color
+  // Update legend label colors - adapts to dark/light mode
   if (chart.options.plugins?.legend?.labels) {
-    chart.options.plugins.legend.labels.color = '#023c46'; // Evening Sea from palette
+    chart.options.plugins.legend.labels.color = colors.text; // Adapts to dark/light mode
     chart.options.plugins.legend.labels.font = {
       ...chart.options.plugins.legend.labels.font,
       weight: '600' // Make legend text bolder
