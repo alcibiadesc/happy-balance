@@ -1,4 +1,5 @@
 import { Result } from "@domain/shared/Result";
+import { CategoryType } from "@domain/entities/CategoryType";
 
 export interface PeriodBalance {
   income: number;
@@ -23,6 +24,7 @@ export interface CategoryBreakdown {
   percentage: number;
   transactionCount: number;
   isEssential: boolean;
+  type: CategoryType;
 }
 
 export interface MonthlyTrend {

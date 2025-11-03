@@ -307,23 +307,21 @@ export class GetDashboardMetricsUseCase {
   ) {
     const categoryTotals = new Map<
       string,
-      { amount: number; count: number; name: string }
+      { amount: number; count: number; name: string; type: CategoryType }
     >();
-    let totalExpenses = 0;
 
-    // Create a map of category ID to category type for quick lookup
-    const categoryTypeMap = new Map<string, CategoryType>();
+    // Create a map of category ID to category for quick lookup
+    const categoryMap = new Map<string, any>();
     for (const category of categories) {
       const snapshot = category.toSnapshot ? category.toSnapshot() : category;
-      categoryTypeMap.set(snapshot.id, snapshot.type);
-    }
+      categoryMap.set(snapshot.id, snapshot);
 
-    // Initialize with all categories
-    for (const category of categories) {
-      categoryTotals.set(category.id, {
+      // Initialize with all categories
+      categoryTotals.set(snapshot.id, {
         amount: 0,
         count: 0,
-        name: category.name,
+        name: snapshot.name,
+        type: snapshot.type,
       });
     }
 
@@ -332,42 +330,62 @@ export class GetDashboardMetricsUseCase {
       amount: 0,
       count: 0,
       name: "Uncategorized",
+      type: CategoryType.DISCRETIONARY, // Default type for uncategorized
     });
 
-    // Calculate totals
+    // Calculate totals for ALL transactions (income, expenses, investments)
     for (const transaction of transactions) {
       const snapshot = transaction.toSnapshot();
+      const categoryId = snapshot.categoryId || "uncategorized";
 
-      if (snapshot.type === TransactionType.EXPENSE) {
-        // Skip investment transactions in category breakdown
-        const categoryType = snapshot.categoryId ? categoryTypeMap.get(snapshot.categoryId) : null;
-        if (categoryType === CategoryType.INVESTMENT) {
-          continue;
-        }
+      // Get or create category entry
+      let categoryData = categoryTotals.get(categoryId);
 
-        totalExpenses += snapshot.amount;
+      // If category not found (e.g., deleted category), skip
+      if (!categoryData && categoryId !== "uncategorized") {
+        const category = categoryMap.get(categoryId);
+        if (!category) continue;
 
-        const categoryId = snapshot.categoryId || "uncategorized";
-        const existing = categoryTotals.get(categoryId);
+        categoryData = {
+          amount: 0,
+          count: 0,
+          name: category.name,
+          type: category.type,
+        };
+        categoryTotals.set(categoryId, categoryData);
+      }
 
-        if (existing) {
-          existing.amount += snapshot.amount;
-          existing.count += 1;
-        }
+      if (categoryData) {
+        // Add absolute value of amount
+        categoryData.amount += Math.abs(snapshot.amount);
+        categoryData.count += 1;
+      }
+    }
+
+    // Calculate totals by type for percentage calculations
+    const totalsByType = new Map<CategoryType, number>();
+    for (const [_, data] of categoryTotals.entries()) {
+      if (data.amount > 0) {
+        const currentTotal = totalsByType.get(data.type) || 0;
+        totalsByType.set(data.type, currentTotal + data.amount);
       }
     }
 
     // Convert to array and calculate percentages
     const breakdown = Array.from(categoryTotals.entries())
       .filter(([_, data]) => data.amount > 0)
-      .map(([categoryId, data]) => ({
-        categoryId: categoryId === "uncategorized" ? null : categoryId,
-        categoryName: data.name,
-        amount: data.amount,
-        percentage: totalExpenses > 0 ? (data.amount / totalExpenses) * 100 : 0,
-        transactionCount: data.count,
-        isEssential: this.isEssentialCategory(data.name),
-      }))
+      .map(([categoryId, data]) => {
+        const totalForType = totalsByType.get(data.type) || 1;
+        return {
+          categoryId: categoryId === "uncategorized" ? null : categoryId,
+          categoryName: data.name,
+          amount: data.amount,
+          percentage: (data.amount / totalForType) * 100,
+          transactionCount: data.count,
+          isEssential: this.isEssentialCategory(data.name),
+          type: data.type,
+        };
+      })
       .sort((a, b) => b.amount - a.amount);
 
     return breakdown;
