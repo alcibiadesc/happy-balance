@@ -19,7 +19,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
   const navigationService = new PeriodNavigationService();
 
   // State (usando $state rune de Svelte 5)
-  let selectedPeriodType = $state<PeriodType>('month');
+  let selectedPeriodType = $state<PeriodType>('year'); // Changed default from 'month' to 'year' for annual view
   let periodOffset = $state(0);
   let customStartDate = $state('');
   let customEndDate = $state('');
@@ -126,8 +126,8 @@ export function createEnhancedDashboardStore(apiBase: string) {
           historicalData = await repository.getQuarterlyHistory(8);
           loadHistoricalData = true;
         } else if (selectedPeriodType === 'year') {
-          // For year view, always load yearly history to show multiple years
-          historicalData = await repository.getYearlyHistory(12);
+          // For year view, load last 12 months to show monthly trend of the year
+          historicalData = await repository.getHistory(12);
           loadHistoricalData = true;
         }
 
