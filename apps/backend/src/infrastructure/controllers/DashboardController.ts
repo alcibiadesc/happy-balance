@@ -692,30 +692,11 @@ export class DashboardController {
 
       // Usar categoryBreakdown del use case (incluye income, expenses, investments)
       const categoryBreakdown = metricsData.categoryBreakdown || [];
-      console.log('[DashboardController] categoryBreakdown from use case:', JSON.stringify(categoryBreakdown, null, 2));
 
-      // Enriquecer con breakdown de categorías (simplificado por ahora)
-      const enrichedCategories = categoryBreakdown
-        .map(cat => {
-          const amount = Math.round(cat.amount);
-
-          return {
-            id: cat.categoryId,
-            name: cat.categoryName,
-            amount: amount,
-            percentage: Math.round(cat.percentage),
-            transactionCount: cat.transactionCount,
-            type: cat.type,
-            color: this.generateCategoryColor(cat.categoryName),
-            icon: this.getCategoryIcon(cat.type),
-            monthlyBudget: null, // TODO: Enrich with budget data
-            quarterlyBudget: null,
-            budgetUsage: null,
-            annualBudget: null
-          };
-        })
-        .filter(cat => cat.amount > 0)
-        .sort((a, b) => b.amount - a.amount);
+      // Enriquecer con breakdown de categorías usando método compartido
+      const enrichedCategories = this.enrichCategoryBreakdown(categoryBreakdown, {
+        includeBudgets: true
+      });
 
       // Calcular distribución de gastos (essential, discretionary, debt)
       const expenseDistribution = this.calculateExpenseDistribution(enrichedCategories);
@@ -890,6 +871,45 @@ export class DashboardController {
     return `${year}-${month}-${day}`;
   }
 
+  /**
+   * Enriquece el categoryBreakdown con información adicional (color, icono, presupuestos)
+   * Método compartido para evitar duplicación de código
+   */
+  private enrichCategoryBreakdown(
+    categoryBreakdown: any[],
+    options: { includeBudgets?: boolean } = {}
+  ): any[] {
+    return categoryBreakdown
+      .map(cat => {
+        const amount = Math.round(cat.amount);
+        const baseCategory = {
+          id: cat.categoryId,
+          name: cat.categoryName,
+          amount: amount,
+          percentage: Math.round(cat.percentage),
+          transactionCount: cat.transactionCount,
+          type: cat.type,
+          color: this.generateCategoryColor(cat.categoryName),
+          icon: this.getCategoryIcon(cat.type)
+        };
+
+        // Add budget fields if requested
+        if (options.includeBudgets) {
+          return {
+            ...baseCategory,
+            monthlyBudget: null,
+            quarterlyBudget: null,
+            budgetUsage: null,
+            annualBudget: null
+          };
+        }
+
+        return baseCategory;
+      })
+      .filter(cat => cat.amount > 0)
+      .sort((a, b) => b.amount - a.amount);
+  }
+
   private formatDashboardResponse(data: any) {
     const income = data.periodBalance?.income || 0;
     const expenses = data.periodBalance?.expenses || 0;
@@ -897,17 +917,10 @@ export class DashboardController {
     const debtPayments = data.periodBalance?.debtPayments || 0;
     const balance = data.periodBalance?.balance || 0;
 
-    // Map categoryBreakdown with all fields including type
-    const categoryBreakdown = (data.categoryBreakdown || []).map((cat: any) => ({
-      id: cat.categoryId,
-      name: cat.categoryName,
-      amount: cat.amount,
-      percentage: parseFloat(cat.percentage.toFixed(1)),
-      transactionCount: cat.transactionCount,
-      type: cat.type, // IMPORTANT: Include type for filtering
-      color: this.generateCategoryColor(cat.categoryName),
-      icon: this.getCategoryIcon(cat.type)
-    }));
+    // Enrich categoryBreakdown using shared method
+    const categoryBreakdown = this.enrichCategoryBreakdown(data.categoryBreakdown || [], {
+      includeBudgets: false
+    });
 
     return {
       summary: {
