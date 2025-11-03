@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TrendingUp, Wallet, PiggyBank } from 'lucide-svelte';
   import MetricCard from '../atoms/MetricCard.svelte';
-  import BreakdownCard from './BreakdownCard.svelte';
+  import ExpensesCard from './ExpensesCard.svelte';
 
   interface FilteredMetrics {
     income: number;
@@ -58,8 +58,19 @@
 
 <section class="metrics-section">
   <div class="metrics-grid">
-    <!-- Breakdown Card with Type Selector (Expenses/Income/Investments) -->
-    <BreakdownCard
+    <!-- Income Card -->
+    <MetricCard
+      icon={TrendingUp}
+      iconClass="income"
+      label={labels.income}
+      value={formatCurrency(metrics.income)}
+      {loading}
+      trend={formatTrend(trends.income)}
+      trendColor={getTrendColor(trends.income, 'income')}
+    />
+
+    <!-- Expenses Card with Breakdown and Type Selector -->
+    <ExpensesCard
       totalExpenses={metrics.expenses}
       totalIncome={metrics.income}
       totalInvestments={metrics.investments}
@@ -77,12 +88,12 @@
       {getTrendColor}
     />
 
-    <!-- Balance Card -->
+    <!-- Investments Card -->
     <MetricCard
-      icon={Wallet}
-      iconClass="balance"
-      label={labels.balance}
-      value={formatCurrency(metrics.balance)}
+      icon={PiggyBank}
+      iconClass="investments"
+      label={labels.investments}
+      value={formatCurrency(metrics.investments)}
       {loading}
       trend={formatTrend(trends.investments)}
       trendColor={getTrendColor(trends.investments, 'investments')}

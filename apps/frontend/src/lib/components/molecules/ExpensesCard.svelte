@@ -1,14 +1,19 @@
 <script lang="ts">
-  import { TrendingDown, ChevronDown, ChevronUp } from "lucide-svelte";
+  import { TrendingDown, TrendingUp, PiggyBank, ChevronDown, ChevronUp } from "lucide-svelte";
   import { t } from "$lib/stores/i18n";
 
   interface Props {
     totalExpenses: number;
+    totalIncome: number;
+    totalInvestments: number;
     essentialExpenses: number;
     discretionaryExpenses: number;
     debtPayments: number;
     uncategorizedExpenses?: number;
-    trend: number;
+    categoryBreakdown?: any[];
+    expensesTrend: number;
+    incomeTrend: number;
+    investmentsTrend: number;
     loading?: boolean;
     formatCurrency: (amount: number) => string;
     formatTrend: (value: number) => string;
@@ -17,17 +22,24 @@
 
   let {
     totalExpenses,
+    totalIncome,
+    totalInvestments,
     essentialExpenses,
     discretionaryExpenses,
     debtPayments,
     uncategorizedExpenses = 0,
-    trend,
+    categoryBreakdown = [],
+    expensesTrend,
+    incomeTrend,
+    investmentsTrend,
     loading = false,
     formatCurrency,
     formatTrend,
     getTrendColor,
   }: Props = $props();
 
+  type BreakdownType = 'expenses' | 'income' | 'investments';
+  let selectedType = $state<BreakdownType>('expenses');
   let expanded = $state(false);
 
   // Use uncategorized from props, or calculate if not provided
@@ -36,17 +48,71 @@
     Math.max(0, totalExpenses - essentialExpenses - discretionaryExpenses - debtPayments)
   );
 
+  // Get income categories with totals
+  const incomeCategories = $derived(
+    categoryBreakdown
+      .filter(cat => cat.type === 'income' || cat.type === 'INCOME')
+      .filter(cat => cat.total && Math.abs(cat.total) > 0.01)
+      .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
+  );
+
+  // Get investment categories with totals
+  const investmentCategories = $derived(
+    categoryBreakdown
+      .filter(cat => cat.type === 'investment' || cat.type === 'INVESTMENT')
+      .filter(cat => cat.total && Math.abs(cat.total) > 0.01)
+      .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
+  );
+
+  // Current totals and trend based on selected type
+  const currentTotal = $derived(
+    selectedType === 'expenses' ? totalExpenses :
+    selectedType === 'income' ? totalIncome :
+    totalInvestments
+  );
+
+  const currentTrend = $derived(
+    selectedType === 'expenses' ? expensesTrend :
+    selectedType === 'income' ? incomeTrend :
+    investmentsTrend
+  );
+
+  const currentIcon = $derived(
+    selectedType === 'expenses' ? TrendingDown :
+    selectedType === 'income' ? TrendingUp :
+    PiggyBank
+  );
+
+  const currentColor = $derived(
+    selectedType === 'expenses' ? 'expenses' :
+    selectedType === 'income' ? 'income' :
+    'investments'
+  );
+
+  const currentLabel = $derived(
+    selectedType === 'expenses' ? $t("dashboard.metrics.expenses") :
+    selectedType === 'income' ? $t("dashboard.metrics.income") :
+    $t("dashboard.metrics.investments")
+  );
+
   function toggleExpanded() {
     expanded = !expanded;
+  }
+
+  function selectType(type: BreakdownType) {
+    selectedType = type;
+    if (!expanded) {
+      expanded = true;
+    }
   }
 </script>
 
 <article class="metric-card expenses-card">
   <div class="metric-header">
-    <div class="metric-icon expenses">
-      <TrendingDown size={18} strokeWidth={2} />
+    <div class="metric-icon {currentColor}">
+      <svelte:component this={currentIcon} size={18} strokeWidth={2} />
     </div>
-    <span class="metric-label">{$t("dashboard.metrics.expenses")}</span>
+    <span class="metric-label">{currentLabel}</span>
     <button
       class="expand-button"
       onclick={toggleExpanded}
@@ -60,96 +126,166 @@
     </button>
   </div>
 
+  <!-- Type Selector Tabs -->
+  <div class="type-selector">
+    <button
+      class="type-tab"
+      class:active={selectedType === 'expenses'}
+      onclick={() => selectType('expenses')}
+    >
+      {$t("dashboard.metrics.expenses")}
+    </button>
+    <button
+      class="type-tab"
+      class:active={selectedType === 'income'}
+      onclick={() => selectType('income')}
+    >
+      {$t("dashboard.metrics.income")}
+    </button>
+    <button
+      class="type-tab"
+      class:active={selectedType === 'investments'}
+      onclick={() => selectType('investments')}
+    >
+      {$t("dashboard.metrics.investments")}
+    </button>
+  </div>
+
   <div class="metric-body">
     <div class="metric-value">
       {#if loading}
         <div class="metric-skeleton"></div>
       {:else}
-        {formatCurrency(totalExpenses)}
+        {formatCurrency(currentTotal)}
       {/if}
     </div>
     {#if !loading}
       <div
         class="metric-trend"
-        style="color: {getTrendColor(trend, 'expenses')}"
+        style="color: {getTrendColor(currentTrend, currentColor)}"
       >
-        {formatTrend(trend)}
+        {formatTrend(currentTrend)}
       </div>
     {/if}
   </div>
 
-  {#if expanded && totalExpenses > 0}
+  {#if expanded && currentTotal > 0}
     <div class="expenses-breakdown">
-      <div class="breakdown-item">
-        <div class="breakdown-info">
-          <div class="category-indicator essential"></div>
-          <div>
-            <span class="breakdown-label"
-              >{$t("dashboard.metrics.essential_expenses")}</span
-            >
-            <span class="breakdown-amount"
-              >{formatCurrency(essentialExpenses)}</span
-            >
-          </div>
-        </div>
-        <div class="breakdown-percentage">
-          {Math.round((essentialExpenses / totalExpenses) * 100)}%
-        </div>
-      </div>
-
-      <div class="breakdown-item">
-        <div class="breakdown-info">
-          <div class="category-indicator discretionary"></div>
-          <div>
-            <span class="breakdown-label"
-              >{$t("dashboard.metrics.discretionary_expenses")}</span
-            >
-            <span class="breakdown-amount"
-              >{formatCurrency(discretionaryExpenses)}</span
-            >
-          </div>
-        </div>
-        <div class="breakdown-percentage">
-          {Math.round((discretionaryExpenses / totalExpenses) * 100)}%
-        </div>
-      </div>
-
-      {#if debtPayments > 0}
+      {#if selectedType === 'expenses'}
+        <!-- Expense Breakdown -->
         <div class="breakdown-item">
           <div class="breakdown-info">
-            <div class="category-indicator debt"></div>
+            <div class="category-indicator essential"></div>
             <div>
               <span class="breakdown-label"
-                >{$t("dashboard.metrics.debt_payments")}</span
+                >{$t("dashboard.metrics.essential_expenses")}</span
               >
-              <span class="breakdown-amount">{formatCurrency(debtPayments)}</span>
+              <span class="breakdown-amount"
+                >{formatCurrency(essentialExpenses)}</span
+              >
             </div>
           </div>
           <div class="breakdown-percentage">
-            {Math.round((debtPayments / totalExpenses) * 100)}%
+            {Math.round((essentialExpenses / totalExpenses) * 100)}%
           </div>
         </div>
-      {/if}
 
-      {#if othersAmount > 0}
         <div class="breakdown-item">
           <div class="breakdown-info">
-            <div class="category-indicator others"></div>
+            <div class="category-indicator discretionary"></div>
             <div>
-              <span class="breakdown-label">Otros gastos</span>
-              <span class="breakdown-amount">{formatCurrency(othersAmount)}</span>
+              <span class="breakdown-label"
+                >{$t("dashboard.metrics.discretionary_expenses")}</span
+              >
+              <span class="breakdown-amount"
+                >{formatCurrency(discretionaryExpenses)}</span
+              >
             </div>
           </div>
           <div class="breakdown-percentage">
-            {Math.round((othersAmount / totalExpenses) * 100)}%
+            {Math.round((discretionaryExpenses / totalExpenses) * 100)}%
           </div>
         </div>
+
+        {#if debtPayments > 0}
+          <div class="breakdown-item">
+            <div class="breakdown-info">
+              <div class="category-indicator debt"></div>
+              <div>
+                <span class="breakdown-label"
+                  >{$t("dashboard.metrics.debt_payments")}</span
+                >
+                <span class="breakdown-amount">{formatCurrency(debtPayments)}</span>
+              </div>
+            </div>
+            <div class="breakdown-percentage">
+              {Math.round((debtPayments / totalExpenses) * 100)}%
+            </div>
+          </div>
+        {/if}
+
+        {#if othersAmount > 0}
+          <div class="breakdown-item">
+            <div class="breakdown-info">
+              <div class="category-indicator others"></div>
+              <div>
+                <span class="breakdown-label">Otros gastos</span>
+                <span class="breakdown-amount">{formatCurrency(othersAmount)}</span>
+              </div>
+            </div>
+            <div class="breakdown-percentage">
+              {Math.round((othersAmount / totalExpenses) * 100)}%
+            </div>
+          </div>
+        {/if}
+
+      {:else if selectedType === 'income'}
+        <!-- Income Categories Breakdown -->
+        {#each incomeCategories as category}
+          <div class="breakdown-item">
+            <div class="breakdown-info">
+              <div class="category-indicator income-category"></div>
+              <div>
+                <span class="breakdown-label">{category.name}</span>
+                <span class="breakdown-amount">{formatCurrency(Math.abs(category.total))}</span>
+              </div>
+            </div>
+            <div class="breakdown-percentage">
+              {Math.round((Math.abs(category.total) / totalIncome) * 100)}%
+            </div>
+          </div>
+        {/each}
+
+      {:else if selectedType === 'investments'}
+        <!-- Investment Categories Breakdown -->
+        {#each investmentCategories as category}
+          <div class="breakdown-item">
+            <div class="breakdown-info">
+              <div class="category-indicator investment-category"></div>
+              <div>
+                <span class="breakdown-label">{category.name}</span>
+                <span class="breakdown-amount">{formatCurrency(Math.abs(category.total))}</span>
+              </div>
+            </div>
+            <div class="breakdown-percentage">
+              {Math.round((Math.abs(category.total) / totalInvestments) * 100)}%
+            </div>
+          </div>
+        {/each}
       {/if}
     </div>
-  {:else if expanded && totalExpenses === 0}
+  {:else if expanded && currentTotal === 0}
     <div class="expenses-breakdown">
       <div class="no-expenses-message">
-        <span class="no-expenses-text">No hay gastos para este período</span>
+        <span class="no-expenses-text">
+          {#if selectedType === 'expenses'}
+            No hay gastos para este período
+          {:else if selectedType === 'income'}
+            No hay ingresos para este período
+          {:else}
+            No hay inversiones para este período
+          {/if}
+        </span>
       </div>
     </div>
   {/if}
@@ -191,6 +327,16 @@
     color: var(--accent);
   }
 
+  .metric-icon.income {
+    background: rgba(52, 211, 153, 0.1);
+    color: var(--success);
+  }
+
+  .metric-icon.investments {
+    background: rgba(96, 165, 250, 0.1);
+    color: var(--primary);
+  }
+
   .metric-label {
     font-size: 0.875rem;
     color: var(--text-secondary);
@@ -216,6 +362,41 @@
   .expand-button:hover {
     color: var(--text-primary);
     background: var(--surface-muted);
+  }
+
+  /* Type Selector Tabs */
+  .type-selector {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.25rem;
+    background: var(--surface-muted);
+    border-radius: 8px;
+  }
+
+  .type-tab {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .type-tab:hover {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+  }
+
+  .type-tab.active {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   .metric-body {
@@ -284,6 +465,14 @@
 
   .category-indicator.others {
     background-color: var(--text-muted);
+  }
+
+  .category-indicator.income-category {
+    background-color: var(--success);
+  }
+
+  .category-indicator.investment-category {
+    background-color: var(--primary);
   }
 
   .breakdown-label {

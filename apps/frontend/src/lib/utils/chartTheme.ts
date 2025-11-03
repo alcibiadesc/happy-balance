@@ -49,6 +49,11 @@ export function updateChartTheme(chart: any) {
   chart.options.scales.x.ticks.color = colors.text;
   chart.options.scales.y.ticks.color = colors.text;
 
+  // Update legend label colors
+  if (chart.options.plugins?.legend?.labels) {
+    chart.options.plugins.legend.labels.color = colors.text;
+  }
+
   chart.update('none');
 }
 
