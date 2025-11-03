@@ -657,17 +657,14 @@ export class DashboardController {
       // Obtener todos los datos en paralelo para mejor performance
       const [
         metricsResult,
-        categoryBreakdown,
         comparisonData,
         savingsMetrics,
         monthlyHistory
       ] = await Promise.all([
-        // Métricas básicas del período actual
+        // Métricas básicas del período actual (incluye categoryBreakdown)
         this.getDashboardMetricsUseCase.execute(
           new DashboardQuery("EUR", "custom", this.formatDate(startDate), this.formatDate(endDate), true, 0)
         ),
-        // Breakdown de categorías real
-        this.dashboardRepository.getCategoryDistribution(startDate, endDate),
         // Comparación con período anterior
         this.dashboardRepository.getComparisonMetrics(startDate, endDate, prevStart, prevEnd),
         // Métricas de ahorro
@@ -687,37 +684,33 @@ export class DashboardController {
       }
 
       const dashboardData = this.formatDashboardResponse(metricsResult.getValue());
+      const metricsData = metricsResult.getValue();
       const totalExpenses = dashboardData.summary.expenses || 1; // Evitar división por cero
 
       // Calcular el divisor del presupuesto según el período (para mensual = 12)
       const budgetDivisor = 12; // Por ahora solo soportamos vista mensual
 
-      // Enriquecer con breakdown de categorías real
+      // Usar categoryBreakdown del use case (incluye income, expenses, investments)
+      const categoryBreakdown = metricsData.categoryBreakdown || [];
+
+      // Enriquecer con breakdown de categorías (simplificado por ahora)
       const enrichedCategories = categoryBreakdown
         .map(cat => {
-          // Calcular presupuestos para diferentes períodos
-          const monthlyBudget = cat.annualBudget ? Math.round(cat.annualBudget / 12) : null;
-          const quarterlyBudget = cat.annualBudget ? Math.round(cat.annualBudget / 4) : null;
           const amount = Math.round(cat.amount);
-
-          // Calcular porcentaje de uso del presupuesto mensual
-          const budgetUsagePercentage = monthlyBudget && monthlyBudget > 0
-            ? Math.round((amount / monthlyBudget) * 100)
-            : null;
 
           return {
             id: cat.categoryId,
             name: cat.categoryName,
             amount: amount,
-            percentage: Math.round((cat.amount / totalExpenses) * 100),
-            transactionCount: cat.count,
+            percentage: Math.round(cat.percentage),
+            transactionCount: cat.transactionCount,
             type: cat.type,
-            color: cat.color || this.generateCategoryColor(cat.categoryName),
+            color: this.generateCategoryColor(cat.categoryName),
             icon: this.getCategoryIcon(cat.type),
-            monthlyBudget: monthlyBudget,
-            quarterlyBudget: quarterlyBudget,
-            budgetUsage: budgetUsagePercentage,
-            annualBudget: cat.annualBudget ? Math.round(cat.annualBudget) : null
+            monthlyBudget: null, // TODO: Enrich with budget data
+            quarterlyBudget: null,
+            budgetUsage: null,
+            annualBudget: null
           };
         })
         .filter(cat => cat.amount > 0)
