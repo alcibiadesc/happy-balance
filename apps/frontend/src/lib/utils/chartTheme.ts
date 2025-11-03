@@ -9,7 +9,7 @@ export function getChartThemeColors() {
       balance: '#06b6d4',
       investments: '#023c46',
       grid: 'rgba(100, 116, 139, 0.2)',
-      text: '#334155' // Safe dark color for SSR
+      text: '#000000' // Black for maximum contrast
     };
   }
 
@@ -23,7 +23,7 @@ export function getChartThemeColors() {
       balance: '#22d3ee',
       investments: '#06b6d4',
       grid: 'rgba(100, 116, 139, 0.15)',
-      text: '#e2e8f0' // Light text for dark mode - brighter for better visibility
+      text: '#ffffff' // White text for dark mode
     };
   }
 
@@ -33,7 +33,7 @@ export function getChartThemeColors() {
     balance: '#06b6d4',
     investments: '#023c46',
     grid: 'rgba(148, 163, 184, 0.2)',
-    text: '#1e293b' // Very dark text for excellent contrast in light mode
+    text: '#000000' // Pure black for maximum contrast in light mode
   };
 }
 
