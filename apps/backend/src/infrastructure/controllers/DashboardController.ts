@@ -692,6 +692,7 @@ export class DashboardController {
 
       // Usar categoryBreakdown del use case (incluye income, expenses, investments)
       const categoryBreakdown = metricsData.categoryBreakdown || [];
+      console.log('[DashboardController] categoryBreakdown from use case:', JSON.stringify(categoryBreakdown, null, 2));
 
       // Enriquecer con breakdown de categorías (simplificado por ahora)
       const enrichedCategories = categoryBreakdown

@@ -388,6 +388,9 @@ export class GetDashboardMetricsUseCase {
       })
       .sort((a, b) => b.amount - a.amount);
 
+    console.log('[GetDashboardMetricsUseCase] Calculated breakdown:', JSON.stringify(breakdown, null, 2));
+    console.log('[GetDashboardMetricsUseCase] Breakdown count:', breakdown.length);
+
     return breakdown;
   }
 
