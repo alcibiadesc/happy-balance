@@ -199,10 +199,16 @@
   }
 
   function initChart() {
-    if (!canvasRef) return;
+    if (!canvasRef) {
+      console.log('[FinancialBarCharts] initChart - no canvasRef');
+      return;
+    }
 
     const ctx = canvasRef.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('[FinancialBarCharts] initChart - no context');
+      return;
+    }
 
     // Clear any existing chart before creating new one
     if (chart) {
@@ -210,11 +216,14 @@
       chart = null;
     }
 
+    console.log('[FinancialBarCharts] Creating chart, dark class present:', document.documentElement.classList.contains('dark'));
     const config = getChartConfig();
     chart = new Chart(ctx, config);
+    console.log('[FinancialBarCharts] Chart created, calling updateChartTheme');
 
     // Immediately update theme to ensure correct colors
     updateChartTheme(chart);
+    console.log('[FinancialBarCharts] updateChartTheme called');
   }
 
   function updateChart() {

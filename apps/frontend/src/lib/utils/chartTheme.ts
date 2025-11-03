@@ -15,6 +15,7 @@ export function getChartThemeColors() {
 
   // Only check the dark class - this is the app's source of truth
   const isDark = document.documentElement.classList.contains('dark');
+  console.log('[chartTheme] getChartThemeColors - isDark:', isDark, 'classList:', document.documentElement.classList.toString());
 
   if (isDark) {
     return {
@@ -45,6 +46,8 @@ export function updateChartTheme(chart: any) {
   const isDark = document.documentElement.classList.contains('dark');
   const textColor = isDark ? '#fef7ee' : '#023c46';
   const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+  console.log('[chartTheme] updateChartTheme - isDark:', isDark, 'textColor:', textColor, 'classList:', document.documentElement.classList.toString());
 
   if (chart.options.scales?.x?.ticks) {
     chart.options.scales.x.ticks.color = textColor;
