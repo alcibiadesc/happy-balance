@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TrendingUp, Wallet, PiggyBank } from 'lucide-svelte';
   import MetricCard from '../atoms/MetricCard.svelte';
-  import ExpensesCard from './ExpensesCard.svelte';
+  import BreakdownCard from './BreakdownCard.svelte';
 
   interface FilteredMetrics {
     income: number;
@@ -18,16 +18,17 @@
   }
 
   interface ExpenseDistribution {
-    essential?: { _amount: number };
-    discretionary?: { _amount: number };
-    debtPayments?: { _amount: number };
-    uncategorized?: { _amount: number };
+    essential?: { _amount: number } | number;
+    discretionary?: { _amount: number } | number;
+    debtPayments?: { _amount: number } | number;
+    uncategorized?: { _amount: number } | number;
   }
 
   interface Props {
     metrics: FilteredMetrics;
     trends: Trends;
     expenseDistribution?: ExpenseDistribution;
+    categoryBreakdown?: any[];
     loading?: boolean;
     labels: {
       income: string;
@@ -45,6 +46,7 @@
     metrics,
     trends,
     expenseDistribution,
+    categoryBreakdown = [],
     loading = false,
     labels,
     formatCurrency,
@@ -56,37 +58,31 @@
 
 <section class="metrics-section">
   <div class="metrics-grid">
-    <!-- Income Card -->
-    <MetricCard
-      icon={TrendingUp}
-      iconClass="income"
-      label={labels.income}
-      value={formatCurrency(metrics.income)}
-      {loading}
-      trend={formatTrend(trends.income)}
-      trendColor={getTrendColor(trends.income, 'income')}
-    />
-
-    <!-- Expenses Card with Breakdown -->
-    <ExpensesCard
+    <!-- Breakdown Card with Type Selector (Expenses/Income/Investments) -->
+    <BreakdownCard
       totalExpenses={metrics.expenses}
+      totalIncome={metrics.income}
+      totalInvestments={metrics.investments}
       essentialExpenses={typeof expenseDistribution?.essential === 'number' ? expenseDistribution.essential : expenseDistribution?.essential?._amount || 0}
       discretionaryExpenses={typeof expenseDistribution?.discretionary === 'number' ? expenseDistribution.discretionary : expenseDistribution?.discretionary?._amount || 0}
       debtPayments={typeof expenseDistribution?.debtPayments === 'number' ? expenseDistribution.debtPayments : expenseDistribution?.debtPayments?._amount || 0}
       uncategorizedExpenses={typeof expenseDistribution?.uncategorized === 'number' ? expenseDistribution.uncategorized : expenseDistribution?.uncategorized?._amount || 0}
-      trend={trends.expenses}
+      {categoryBreakdown}
+      expensesTrend={trends.expenses}
+      incomeTrend={trends.income}
+      investmentsTrend={trends.investments}
       {loading}
       {formatCurrency}
       {formatTrend}
       {getTrendColor}
     />
 
-    <!-- Investments Card -->
+    <!-- Balance Card -->
     <MetricCard
-      icon={PiggyBank}
-      iconClass="investments"
-      label={labels.investments}
-      value={formatCurrency(metrics.investments)}
+      icon={Wallet}
+      iconClass="balance"
+      label={labels.balance}
+      value={formatCurrency(metrics.balance)}
       {loading}
       trend={formatTrend(trends.investments)}
       trendColor={getTrendColor(trends.investments, 'investments')}
