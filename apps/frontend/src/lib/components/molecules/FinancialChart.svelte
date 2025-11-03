@@ -206,16 +206,10 @@
   }
 
   function initChart() {
-    if (!canvasRef) {
-      console.log('[FinancialChart] initChart - no canvasRef');
-      return;
-    }
+    if (!canvasRef) return;
 
     const ctx = canvasRef.getContext('2d');
-    if (!ctx) {
-      console.log('[FinancialChart] initChart - no context');
-      return;
-    }
+    if (!ctx) return;
 
     // Clear any existing chart before creating new one
     if (chart) {
@@ -223,14 +217,11 @@
       chart = null;
     }
 
-    console.log('[FinancialChart] Creating chart, dark class present:', document.documentElement.classList.contains('dark'));
     const config = getChartConfig();
     chart = new Chart(ctx, config);
-    console.log('[FinancialChart] Chart created, calling updateChartTheme');
 
     // Immediately update theme to ensure correct colors
     updateChartTheme(chart);
-    console.log('[FinancialChart] updateChartTheme called');
   }
 
   function updateChart() {
