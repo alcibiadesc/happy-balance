@@ -70,10 +70,10 @@
     <!-- Expenses Card with Breakdown -->
     <ExpensesCard
       totalExpenses={metrics.expenses}
-      essentialExpenses={expenseDistribution?.essential?._amount || 0}
-      discretionaryExpenses={expenseDistribution?.discretionary?._amount || 0}
-      debtPayments={expenseDistribution?.debtPayments?._amount || 0}
-      uncategorizedExpenses={expenseDistribution?.uncategorized?._amount || 0}
+      essentialExpenses={typeof expenseDistribution?.essential === 'number' ? expenseDistribution.essential : expenseDistribution?.essential?._amount || 0}
+      discretionaryExpenses={typeof expenseDistribution?.discretionary === 'number' ? expenseDistribution.discretionary : expenseDistribution?.discretionary?._amount || 0}
+      debtPayments={typeof expenseDistribution?.debtPayments === 'number' ? expenseDistribution.debtPayments : expenseDistribution?.debtPayments?._amount || 0}
+      uncategorizedExpenses={typeof expenseDistribution?.uncategorized === 'number' ? expenseDistribution.uncategorized : expenseDistribution?.uncategorized?._amount || 0}
       trend={trends.expenses}
       {loading}
       {formatCurrency}
