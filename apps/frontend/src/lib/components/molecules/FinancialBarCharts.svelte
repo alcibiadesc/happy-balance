@@ -151,7 +151,7 @@
           x: {
             type: 'category',
             grid: {
-              color: colors.grid,
+              color: 'rgba(0, 0, 0, 0.1)', // Darker grid for visibility
               drawBorder: false,
               lineWidth: 1
             },
@@ -170,7 +170,7 @@
           y: {
             beginAtZero: true,
             grid: {
-              color: colors.grid,
+              color: 'rgba(0, 0, 0, 0.1)', // Darker grid for visibility
               drawBorder: false,
               lineWidth: 1
             },
