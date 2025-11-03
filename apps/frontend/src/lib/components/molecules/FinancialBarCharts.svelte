@@ -120,7 +120,7 @@
           legend: {
             position: 'top' as const,
             labels: {
-              color: '#1f2937', // Dark gray - FORCED for visibility
+              color: '#023c46', // Evening Sea - primary dark color from palette
               font: {
                 size: 11,
                 weight: '600'
@@ -156,7 +156,7 @@
               lineWidth: 1
             },
             ticks: {
-              color: '#1f2937', // Dark gray - FORCED for visibility
+              color: '#023c46', // Evening Sea - primary dark color from palette
               font: {
                 size: 11,
                 weight: '600'
@@ -175,7 +175,7 @@
               lineWidth: 1
             },
             ticks: {
-              color: '#1f2937', // Dark gray - FORCED for visibility
+              color: '#023c46', // Evening Sea - primary dark color from palette
               font: {
                 size: 11,
                 weight: '600'

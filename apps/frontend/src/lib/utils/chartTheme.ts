@@ -4,12 +4,12 @@ import { browser } from '$app/environment';
 export function getChartThemeColors() {
   if (!browser) {
     return {
-      income: '#10b981',
-      expenses: '#ef4444',
-      balance: '#3b82f6',
-      investments: '#8b5cf6',
+      income: '#7abaa5', // Acapulco from palette
+      expenses: '#f5796c', // Froly from palette
+      balance: '#023c46', // Evening Sea from palette
+      investments: '#023c46', // Evening Sea from palette
       grid: 'rgba(0, 0, 0, 0.1)',
-      text: '#1f2937' // Very dark gray, almost black
+      text: '#023c46' // Evening Sea - primary dark color from palette
     };
   }
 
@@ -18,22 +18,22 @@ export function getChartThemeColors() {
 
   if (isDark) {
     return {
-      income: '#34d399',
-      expenses: '#f87171',
-      balance: '#60a5fa',
-      investments: '#a78bfa',
+      income: '#7abaa5', // Acapulco
+      expenses: '#f5796c', // Froly
+      balance: '#7abaa5', // Acapulco for dark mode
+      investments: '#7abaa5', // Acapulco for dark mode
       grid: 'rgba(255, 255, 255, 0.1)',
-      text: '#f9fafb' // Almost white for dark mode
+      text: '#fef7ee' // Bridesmaid for dark mode
     };
   }
 
   return {
-    income: '#10b981',
-    expenses: '#ef4444',
-    balance: '#3b82f6',
-    investments: '#8b5cf6',
+    income: '#7abaa5', // Acapulco from palette
+    expenses: '#f5796c', // Froly from palette
+    balance: '#023c46', // Evening Sea from palette
+    investments: '#023c46', // Evening Sea from palette
     grid: 'rgba(0, 0, 0, 0.1)',
-    text: '#1f2937' // Very dark gray (Tailwind gray-800) for maximum contrast
+    text: '#023c46' // Evening Sea - primary dark color from palette
   };
 }
 
@@ -51,25 +51,25 @@ export function updateChartTheme(chart: any) {
     chart.options.scales.y.grid.color = colors.grid;
   }
 
-  // Update tick colors with strong contrast
+  // Update tick colors with strong contrast - force Evening Sea color
   if (chart.options.scales?.x?.ticks) {
-    chart.options.scales.x.ticks.color = colors.text;
+    chart.options.scales.x.ticks.color = '#023c46'; // Evening Sea from palette
     chart.options.scales.x.ticks.font = {
       ...chart.options.scales.x.ticks.font,
       weight: '600' // Make text bolder for better visibility
     };
   }
   if (chart.options.scales?.y?.ticks) {
-    chart.options.scales.y.ticks.color = colors.text;
+    chart.options.scales.y.ticks.color = '#023c46'; // Evening Sea from palette
     chart.options.scales.y.ticks.font = {
       ...chart.options.scales.y.ticks.font,
       weight: '600' // Make text bolder for better visibility
     };
   }
 
-  // Update legend label colors with strong contrast
+  // Update legend label colors with strong contrast - force Evening Sea color
   if (chart.options.plugins?.legend?.labels) {
-    chart.options.plugins.legend.labels.color = colors.text;
+    chart.options.plugins.legend.labels.color = '#023c46'; // Evening Sea from palette
     chart.options.plugins.legend.labels.font = {
       ...chart.options.plugins.legend.labels.font,
       weight: '600' // Make legend text bolder
