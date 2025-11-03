@@ -13,8 +13,8 @@ export function getChartThemeColors() {
     };
   }
 
-  const isDark = document.documentElement.classList.contains('dark') ||
-                window.matchMedia('(prefers-color-scheme: dark)').matches;
+  // Only check the dark class - this is the app's source of truth
+  const isDark = document.documentElement.classList.contains('dark');
 
   if (isDark) {
     return {
@@ -41,9 +41,8 @@ export function getChartThemeColors() {
 export function updateChartTheme(chart: any) {
   if (!chart || !browser) return;
 
-  // Force detection of dark/light mode (check both class and media query)
-  const isDark = document.documentElement.classList.contains('dark') ||
-                window.matchMedia('(prefers-color-scheme: dark)').matches;
+  // Only check the dark class - this is the app's source of truth
+  const isDark = document.documentElement.classList.contains('dark');
   const textColor = isDark ? '#fef7ee' : '#023c46';
   const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
 
