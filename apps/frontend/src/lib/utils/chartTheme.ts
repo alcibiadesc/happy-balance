@@ -31,7 +31,7 @@ export function getChartThemeColors() {
   return {
     income: '#7abaa5', // Acapulco - green/teal
     expenses: '#f5796c', // Froly - coral/red
-    balance: '#023c46', // Evening Sea - dark blue
+    balance: '#4a90e2', // Medium blue - clearly blue, not dark
     investments: '#8b7a52', // Brown/gold - different from balance
     grid: 'rgba(0, 0, 0, 0.1)',
     text: '#023c46' // Evening Sea - primary dark color from palette
