@@ -48,30 +48,30 @@
   // Number of categories to show on mobile before expanding
   const MOBILE_INITIAL_SHOW = 3;
 
-  // Build expense breakdown categories from expenseDistribution
-  const expenseCategories = $derived([
-    {
-      name: $t("dashboard.metrics.essential_expenses"),
-      amount: typeof expenseDistribution?.essential === 'number' ? expenseDistribution.essential : expenseDistribution?.essential?._amount || 0,
-      percentage: totalExpenses > 0 ? Math.round((typeof expenseDistribution?.essential === 'number' ? expenseDistribution.essential : expenseDistribution?.essential?._amount || 0) / totalExpenses * 100) : 0,
-      color: '#60a5fa',
-      icon: '🏠'
-    },
-    {
-      name: $t("dashboard.metrics.discretionary_expenses"),
-      amount: typeof expenseDistribution?.discretionary === 'number' ? expenseDistribution.discretionary : expenseDistribution?.discretionary?._amount || 0,
-      percentage: totalExpenses > 0 ? Math.round((typeof expenseDistribution?.discretionary === 'number' ? expenseDistribution.discretionary : expenseDistribution?.discretionary?._amount || 0) / totalExpenses * 100) : 0,
-      color: '#f59e0b',
-      icon: '🛍️'
-    },
-    {
-      name: $t("dashboard.metrics.debt_payments"),
-      amount: typeof expenseDistribution?.debtPayments === 'number' ? expenseDistribution.debtPayments : expenseDistribution?.debtPayments?._amount || 0,
-      percentage: totalExpenses > 0 ? Math.round((typeof expenseDistribution?.debtPayments === 'number' ? expenseDistribution.debtPayments : expenseDistribution?.debtPayments?._amount || 0) / totalExpenses * 100) : 0,
-      color: '#ef4444',
-      icon: '💳'
-    }
-  ].filter(cat => cat.amount > 0));
+  // Get expense categories from categoryBreakdown (individual categories like "Alquiler", "Comida", etc.)
+  const expenseCategories = $derived.by(() => {
+    const filtered = categoryBreakdown.filter(cat =>
+      cat.type === 'essential' ||
+      cat.type === 'discretionary' ||
+      cat.type === 'debt_payment'
+    );
+
+    console.log('[CategoriesSection] Filtered expense categories:', filtered);
+
+    const mapped = filtered
+      .filter(cat => (cat.amount || cat.total) && Math.abs(cat.amount || cat.total || 0) > 0.01)
+      .sort((a, b) => Math.abs(b.amount || b.total || 0) - Math.abs(a.amount || a.total || 0))
+      .map(cat => ({
+        name: cat.categoryName || cat.name,
+        amount: Math.abs(cat.amount || cat.total || 0),
+        percentage: cat.percentage || (totalExpenses > 0 ? Math.round((Math.abs(cat.amount || cat.total || 0) / totalExpenses) * 100) : 0),
+        color: cat.color || (cat.type === 'essential' ? '#60a5fa' : cat.type === 'debt_payment' ? '#ef4444' : '#f59e0b'),
+        icon: cat.icon || (cat.type === 'essential' ? '🏠' : cat.type === 'debt_payment' ? '💳' : '🛍️')
+      }));
+
+    console.log('[CategoriesSection] Final expense categories:', mapped);
+    return mapped;
+  });
 
   // Get income categories from categoryBreakdown
   const incomeCategories = $derived.by(() => {
