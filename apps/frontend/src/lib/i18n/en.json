@@ -50,16 +50,16 @@
     },
     "charts": {
       "temporal_evolution": "Temporal evolution",
-      "expense_distribution": "Expense and investment distribution",
+      "expense_distribution": "Distribution",
       "temporal_evolution_subtitle": "Income and expense trends over time",
-      "expense_distribution_subtitle": "Monthly comparison of essential, discretionary expenses and investments",
+      "expense_distribution_subtitle": "Monthly comparison of income, expenses and investments",
       "income_evolution": "Income Evolution",
       "expense_evolution": "Expense Evolution",
       "detailed_breakdown": "Detailed breakdown",
       "detailed_breakdown_subtitle": "Monthly expense analysis by category"
     },
     "categories": {
-      "title": "Expense breakdown",
+      "title": "Breakdown",
       "food": "Food",
       "transport": "Transport",
       "utilities": "Utilities",
