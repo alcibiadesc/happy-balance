@@ -897,6 +897,18 @@ export class DashboardController {
     const debtPayments = data.periodBalance?.debtPayments || 0;
     const balance = data.periodBalance?.balance || 0;
 
+    // Map categoryBreakdown with all fields including type
+    const categoryBreakdown = (data.categoryBreakdown || []).map((cat: any) => ({
+      id: cat.categoryId,
+      name: cat.categoryName,
+      amount: cat.amount,
+      percentage: parseFloat(cat.percentage.toFixed(1)),
+      transactionCount: cat.transactionCount,
+      type: cat.type, // IMPORTANT: Include type for filtering
+      color: this.generateCategoryColor(cat.categoryName),
+      icon: this.getCategoryIcon(cat.type)
+    }));
+
     return {
       summary: {
         income,
@@ -913,13 +925,8 @@ export class DashboardController {
         uncategorized: data.expenseDistribution?.uncategorized || 0,
         currency: data.expenseDistribution?.currency || "EUR"
       },
-      categories: (data.categoryBreakdown || []).map((cat: any) => ({
-        id: cat.categoryId,
-        name: cat.categoryName,
-        amount: cat.amount,
-        percentage: parseFloat(cat.percentage.toFixed(1)),
-        transactionCount: cat.transactionCount
-      })),
+      categories: categoryBreakdown, // For backwards compatibility
+      categoryBreakdown: categoryBreakdown, // Include with proper name
       trends: (data.monthlyTrend || []).map((trend: any) => ({
         month: trend.month,
         income: trend.income,
