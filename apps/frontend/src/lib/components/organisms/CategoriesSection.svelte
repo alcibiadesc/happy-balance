@@ -1,6 +1,7 @@
 <script lang="ts">
   import CategoryCard from "../atoms/CategoryCard.svelte";
   import { ChevronDown, ChevronUp } from "lucide-svelte";
+  import { t } from "$lib/stores/i18n";
 
   interface Category {
     name: string;
@@ -10,15 +11,34 @@
     icon?: string;
     monthlyBudget?: number | null;
     budgetUsage?: number | null;
+    type?: string;
+    total?: number;
   }
 
   interface Props {
     title: string;
     categories: Category[];
+    categoryBreakdown?: any[];
+    expenseDistribution?: any;
+    totalExpenses?: number;
+    totalIncome?: number;
+    totalInvestments?: number;
     formatCurrency: (amount: number) => string;
   }
 
-  let { title, categories, formatCurrency }: Props = $props();
+  let {
+    title,
+    categories,
+    categoryBreakdown = [],
+    expenseDistribution = {},
+    totalExpenses = 0,
+    totalIncome = 0,
+    totalInvestments = 0,
+    formatCurrency
+  }: Props = $props();
+
+  type BreakdownType = 'expenses' | 'income' | 'investments';
+  let selectedType = $state<BreakdownType>('expenses');
 
   let expanded = $state(false);
   let containerRef: HTMLDivElement;
@@ -27,6 +47,68 @@
 
   // Number of categories to show on mobile before expanding
   const MOBILE_INITIAL_SHOW = 3;
+
+  // Build expense breakdown categories from expenseDistribution
+  const expenseCategories = $derived([
+    {
+      name: $t("dashboard.metrics.essential_expenses"),
+      amount: typeof expenseDistribution?.essential === 'number' ? expenseDistribution.essential : expenseDistribution?.essential?._amount || 0,
+      percentage: totalExpenses > 0 ? Math.round((typeof expenseDistribution?.essential === 'number' ? expenseDistribution.essential : expenseDistribution?.essential?._amount || 0) / totalExpenses * 100) : 0,
+      color: '#60a5fa',
+      icon: '🏠'
+    },
+    {
+      name: $t("dashboard.metrics.discretionary_expenses"),
+      amount: typeof expenseDistribution?.discretionary === 'number' ? expenseDistribution.discretionary : expenseDistribution?.discretionary?._amount || 0,
+      percentage: totalExpenses > 0 ? Math.round((typeof expenseDistribution?.discretionary === 'number' ? expenseDistribution.discretionary : expenseDistribution?.discretionary?._amount || 0) / totalExpenses * 100) : 0,
+      color: '#f59e0b',
+      icon: '🛍️'
+    },
+    {
+      name: $t("dashboard.metrics.debt_payments"),
+      amount: typeof expenseDistribution?.debtPayments === 'number' ? expenseDistribution.debtPayments : expenseDistribution?.debtPayments?._amount || 0,
+      percentage: totalExpenses > 0 ? Math.round((typeof expenseDistribution?.debtPayments === 'number' ? expenseDistribution.debtPayments : expenseDistribution?.debtPayments?._amount || 0) / totalExpenses * 100) : 0,
+      color: '#ef4444',
+      icon: '💳'
+    }
+  ].filter(cat => cat.amount > 0));
+
+  // Get income categories from categoryBreakdown
+  const incomeCategories = $derived(
+    categoryBreakdown
+      .filter(cat => cat.type === 'income' || cat.type === 'INCOME')
+      .filter(cat => cat.total && Math.abs(cat.total) > 0.01)
+      .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
+      .map(cat => ({
+        name: cat.name,
+        amount: Math.abs(cat.total),
+        percentage: totalIncome > 0 ? Math.round((Math.abs(cat.total) / totalIncome) * 100) : 0,
+        color: cat.color || '#34d399',
+        icon: cat.icon || '💰'
+      }))
+  );
+
+  // Get investment categories from categoryBreakdown
+  const investmentCategories = $derived(
+    categoryBreakdown
+      .filter(cat => cat.type === 'investment' || cat.type === 'INVESTMENT')
+      .filter(cat => cat.total && Math.abs(cat.total) > 0.01)
+      .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
+      .map(cat => ({
+        name: cat.name,
+        amount: Math.abs(cat.total),
+        percentage: totalInvestments > 0 ? Math.round((Math.abs(cat.total) / totalInvestments) * 100) : 0,
+        color: cat.color || '#60a5fa',
+        icon: cat.icon || '📈'
+      }))
+  );
+
+  // Current categories based on selected type
+  const currentCategories = $derived(
+    selectedType === 'expenses' ? expenseCategories :
+    selectedType === 'income' ? incomeCategories :
+    investmentCategories
+  );
 
   // Calculate how many cards fit in a row and detect mobile
   $effect(() => {
@@ -56,14 +138,40 @@
   });
 
   const visibleCategories = $derived(
-    expanded ? categories : categories.slice(0, cardsPerRow)
+    expanded ? currentCategories : currentCategories.slice(0, cardsPerRow)
   );
-  const hiddenCount = $derived(categories.length - cardsPerRow);
-  const hasHiddenCategories = $derived(categories.length > cardsPerRow);
+  const hiddenCount = $derived(currentCategories.length - cardsPerRow);
+  const hasHiddenCategories = $derived(currentCategories.length > cardsPerRow);
 </script>
 
 <section class="categories-section">
   <h2 class="section-title">{title}</h2>
+
+  <!-- Type Selector Tabs -->
+  <div class="type-selector">
+    <button
+      class="type-tab"
+      class:active={selectedType === 'expenses'}
+      onclick={() => { selectedType = 'expenses'; expanded = false; }}
+    >
+      {$t("dashboard.metrics.expenses")}
+    </button>
+    <button
+      class="type-tab"
+      class:active={selectedType === 'income'}
+      onclick={() => { selectedType = 'income'; expanded = false; }}
+    >
+      {$t("dashboard.metrics.income")}
+    </button>
+    <button
+      class="type-tab"
+      class:active={selectedType === 'investments'}
+      onclick={() => { selectedType = 'investments'; expanded = false; }}
+    >
+      {$t("dashboard.metrics.investments")}
+    </button>
+  </div>
+
   <div class="categories-container" bind:this={containerRef}>
     <div class="categories-grid">
       {#each visibleCategories as category}
@@ -121,6 +229,41 @@
     margin: 0 0 1rem 0;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+  }
+
+  /* Type Selector Tabs */
+  .type-selector {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.25rem;
+    background: var(--surface-muted);
+    border-radius: 8px;
+  }
+
+  .type-tab {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .type-tab:hover {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+  }
+
+  .type-tab.active {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   .categories-container {

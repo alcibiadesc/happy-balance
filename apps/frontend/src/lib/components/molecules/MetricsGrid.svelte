@@ -69,23 +69,12 @@
       trendColor={getTrendColor(trends.income, 'income')}
     />
 
-    <!-- Expenses Card with Breakdown and Type Selector -->
+    <!-- Expenses Card -->
     <ExpensesCard
-      totalExpenses={metrics.expenses}
-      totalIncome={metrics.income}
-      totalInvestments={metrics.investments}
-      essentialExpenses={typeof expenseDistribution?.essential === 'number' ? expenseDistribution.essential : expenseDistribution?.essential?._amount || 0}
-      discretionaryExpenses={typeof expenseDistribution?.discretionary === 'number' ? expenseDistribution.discretionary : expenseDistribution?.discretionary?._amount || 0}
-      debtPayments={typeof expenseDistribution?.debtPayments === 'number' ? expenseDistribution.debtPayments : expenseDistribution?.debtPayments?._amount || 0}
-      uncategorizedExpenses={typeof expenseDistribution?.uncategorized === 'number' ? expenseDistribution.uncategorized : expenseDistribution?.uncategorized?._amount || 0}
-      {categoryBreakdown}
-      expensesTrend={trends.expenses}
-      incomeTrend={trends.income}
-      investmentsTrend={trends.investments}
+      value={formatCurrency(metrics.expenses)}
+      trend={formatTrend(trends.expenses)}
+      trendColor={getTrendColor(trends.expenses, 'expenses')}
       {loading}
-      {formatCurrency}
-      {formatTrend}
-      {getTrendColor}
     />
 
     <!-- Investments Card -->

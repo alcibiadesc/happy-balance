@@ -182,6 +182,11 @@
   <CategoriesSection
     title={$t("dashboard.categories.title")}
     categories={categoriesData}
+    categoryBreakdown={store.categoryBreakdown}
+    expenseDistribution={store.expenseDistribution}
+    totalExpenses={metricsData.expenses}
+    totalIncome={metricsData.income}
+    totalInvestments={metricsData.investments}
     formatCurrency={store.formatCurrency}
   />
 

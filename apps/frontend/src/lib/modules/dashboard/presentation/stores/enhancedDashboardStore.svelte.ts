@@ -100,7 +100,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
           console.log('[Store] First category in breakdown:', categoryBreakdown[0]);
         }
 
-        // Load period-specific historical data for charts
+        // ALWAYS load last 12 months for charts (regardless of selected period type)
         let historicalData: any[] = [];
         let loadHistoricalData = false;
 
@@ -121,12 +121,8 @@ export function createEnhancedDashboardStore(apiBase: string) {
           savingsMetrics = savings;
           historicalData = history;
           loadHistoricalData = true;
-        } else if (selectedPeriodType === 'quarter') {
-          // Load quarterly aggregated data (last 8 quarters)
-          historicalData = await repository.getQuarterlyHistory(8);
-          loadHistoricalData = true;
-        } else if (selectedPeriodType === 'year') {
-          // For year view, load last 12 months to show monthly trend of the year
+        } else {
+          // For any other period type (quarter, year, custom), ALWAYS show last 12 months
           historicalData = await repository.getHistory(12);
           loadHistoricalData = true;
         }
@@ -150,10 +146,6 @@ export function createEnhancedDashboardStore(apiBase: string) {
             debtPayments: item.debtPayments || 0,
             investments: item.investments || 0
           }));
-        } else if (selectedPeriodType === 'year' && !loadHistoricalData) {
-          // If no historical data available for year, use the data from the year endpoint
-          // but this should map monthly data within the year
-          console.log('[Dashboard] Using year endpoint data for charts');
         }
       } else {
         console.error('[Dashboard] No data received');
