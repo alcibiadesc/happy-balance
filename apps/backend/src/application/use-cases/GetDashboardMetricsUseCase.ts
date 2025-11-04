@@ -333,7 +333,8 @@ export class GetDashboardMetricsUseCase {
       type: CategoryType.DISCRETIONARY, // Default type for uncategorized
     });
 
-    // Calculate totals for ALL transactions (income, expenses, investments)
+    // Calculate totals per category, grouped by TRANSACTION type and CATEGORY
+    // We only count the transaction amount for each category once, based on the transaction's own type
     for (const transaction of transactions) {
       const snapshot = transaction.toSnapshot();
       const categoryId = snapshot.categoryId || "uncategorized";
@@ -356,9 +357,28 @@ export class GetDashboardMetricsUseCase {
       }
 
       if (categoryData) {
-        // Add absolute value of amount
-        categoryData.amount += Math.abs(snapshot.amount);
-        categoryData.count += 1;
+        // Only count transactions that match the category type
+        // INCOME transactions should only count for INCOME categories
+        // EXPENSE transactions should only count for expense-type categories (essential, discretionary, debt_payment)
+        const transactionType = snapshot.type;
+        const categoryType = categoryData.type;
+
+        const isIncomeMatch = transactionType === TransactionType.INCOME && categoryType === CategoryType.INCOME;
+        const isExpenseMatch = transactionType === TransactionType.EXPENSE && (
+          categoryType === CategoryType.ESSENTIAL ||
+          categoryType === CategoryType.DISCRETIONARY ||
+          categoryType === CategoryType.DEBT_PAYMENT
+        );
+        const isInvestmentMatch = (
+          transactionType === TransactionType.EXPENSE &&
+          categoryType === CategoryType.INVESTMENT
+        );
+
+        if (isIncomeMatch || isExpenseMatch || isInvestmentMatch) {
+          // Add absolute value of amount
+          categoryData.amount += Math.abs(snapshot.amount);
+          categoryData.count += 1;
+        }
       }
     }
 

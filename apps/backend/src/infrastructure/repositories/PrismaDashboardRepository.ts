@@ -102,6 +102,8 @@ export class PrismaDashboardRepository {
 
   /**
    * Obtiene distribución por categorías de manera eficiente
+   * Ahora incluye TODAS las categorías (income, expense, investment)
+   * pero solo las suma si el tipo de transacción coincide con el tipo de categoría
    */
   async getCategoryDistribution(startDate: Date, endDate: Date): Promise<CategoryMetrics[]> {
     const result = await this.prisma.$queryRaw<any[]>`
@@ -120,7 +122,16 @@ export class PrismaDashboardRepository {
         AND t.date <= ${endDate}
         AND t.hidden = false
         AND t."userId" = ${this.userId}
-        AND t.type = 'EXPENSE'
+        AND (
+          -- INCOME transactions only count for INCOME categories
+          (t.type = 'INCOME' AND c.type = 'income')
+          OR
+          -- EXPENSE transactions count for expense-type categories
+          (t.type = 'EXPENSE' AND c.type IN ('essential', 'discretionary', 'debt_payment'))
+          OR
+          -- EXPENSE transactions with investment category
+          (t.type = 'EXPENSE' AND c.type = 'investment')
+        )
       GROUP BY t."categoryId", c.name, c.type, c.color, c."annualBudget"
       ORDER BY amount DESC
     `;

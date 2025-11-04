@@ -74,7 +74,9 @@ export class FindSimilarTransactionsUseCase {
         );
 
         // Only include transactions with meaningful similarity
-        if (similarity.score > 0.3) {
+        // ULTRA-STRICT: Increased threshold to 0.85 for near-perfect matches
+        // This ensures only highly confident matches are shown to users
+        if (similarity.score >= 0.85) {
           similarTransactions.push({
             transaction,
             similarity,
@@ -111,55 +113,87 @@ export class FindSimilarTransactionsUseCase {
     let descriptionMatch = false;
     let amountSimilarity = 0;
 
-    // Merchant name matching (highest priority)
+    // Merchant name matching (highest priority) - STRICTER RULES
     if (normalizedMerchant && transactionMerchant) {
+      // 1. EXACT MATCH - Highest confidence
       if (transactionMerchant === normalizedMerchant) {
-        // Exact match
         merchantMatch = true;
-        score += 0.6;
-      } else if (
-        transactionMerchant.includes(normalizedMerchant) ||
-        normalizedMerchant.includes(transactionMerchant)
-      ) {
-        // Partial match
-        merchantMatch = true;
-        score += 0.4;
-      } else if (
-        this.calculateLevenshteinSimilarity(
-          transactionMerchant,
-          normalizedMerchant,
-        ) > 0.8
-      ) {
-        // Similar strings (typos, etc.)
-        merchantMatch = true;
-        score += 0.3;
+        score += 0.7; // Increased from 0.6
+      }
+      // 2. TOKEN-BASED MATCHING - Compare significant words
+      else {
+        const merchantTokens = this.extractSignificantTokens(normalizedMerchant);
+        const transactionTokens = this.extractSignificantTokens(transactionMerchant);
+
+        // Calculate token overlap
+        const tokenOverlap = this.calculateTokenOverlap(merchantTokens, transactionTokens);
+
+        // Require at least 70% token overlap for a match
+        if (tokenOverlap >= 0.7 && merchantTokens.length > 0) {
+          merchantMatch = true;
+          score += 0.5 * tokenOverlap; // 0.35 to 0.5 depending on overlap
+        }
+        // 3. SUBSTRING MATCHING - Only for longer strings (minimum 5 chars)
+        else if (normalizedMerchant.length >= 5 && transactionMerchant.length >= 5) {
+          // Check if one contains the other, but require meaningful length
+          const shorter = normalizedMerchant.length < transactionMerchant.length
+            ? normalizedMerchant
+            : transactionMerchant;
+          const longer = normalizedMerchant.length >= transactionMerchant.length
+            ? normalizedMerchant
+            : transactionMerchant;
+
+          // Only match if the shorter string is at least 60% of the longer
+          const lengthRatio = shorter.length / longer.length;
+
+          if (lengthRatio >= 0.6 && longer.includes(shorter)) {
+            merchantMatch = true;
+            score += 0.4 * lengthRatio; // 0.24 to 0.4
+          }
+          // 4. LEVENSHTEIN - Very strict, only for near-identical strings
+          else if (
+            this.calculateLevenshteinSimilarity(
+              transactionMerchant,
+              normalizedMerchant,
+            ) >= 0.9 // Increased from 0.8
+          ) {
+            merchantMatch = true;
+            score += 0.35;
+          }
+        }
       }
     }
 
-    // Description matching
-    if (normalizedDescription && transactionDescription) {
+    // Description matching - ONLY if we have a merchant match
+    // This prevents random matches based on description alone
+    if (merchantMatch && normalizedDescription && transactionDescription) {
       if (transactionDescription === normalizedDescription) {
         descriptionMatch = true;
-        score += 0.3;
-      } else if (
-        transactionDescription.includes(normalizedDescription) ||
-        normalizedDescription.includes(transactionDescription)
-      ) {
-        descriptionMatch = true;
-        score += 0.2;
+        score += 0.2; // Reduced from 0.3
+      } else if (normalizedDescription.length >= 5 && transactionDescription.length >= 5) {
+        // Token-based description matching
+        const descTokens = this.extractSignificantTokens(normalizedDescription);
+        const transDescTokens = this.extractSignificantTokens(transactionDescription);
+        const descOverlap = this.calculateTokenOverlap(descTokens, transDescTokens);
+
+        if (descOverlap >= 0.7) {
+          descriptionMatch = true;
+          score += 0.15 * descOverlap;
+        }
       }
     }
 
-    // Amount similarity (lower priority)
+    // Amount similarity (lower priority, bonus only)
     const sourceAmount = Math.abs(snapshot.amount);
     if (sourceAmount > 0) {
       const amountDifference =
         Math.abs(sourceAmount - Math.abs(snapshot.amount)) / sourceAmount;
       amountSimilarity = Math.max(0, 1 - amountDifference);
 
-      if (amountSimilarity > 0.9) {
+      // Only give small bonus for exact or very similar amounts
+      if (amountSimilarity > 0.95) {
         score += 0.1;
-      } else if (amountSimilarity > 0.7) {
+      } else if (amountSimilarity > 0.85) {
         score += 0.05;
       }
     }
@@ -170,6 +204,55 @@ export class FindSimilarTransactionsUseCase {
       amountSimilarity,
       score: Math.min(1, score), // Cap at 1.0
     };
+  }
+
+  /**
+   * Extract significant tokens (words) from text, filtering out:
+   * - Common words (stop words)
+   * - Very short words (< 3 characters)
+   * - Numbers in isolation
+   */
+  private extractSignificantTokens(text: string): string[] {
+    const stopWords = new Set([
+      'the', 'and', 'or', 'of', 'to', 'in', 'for', 'on', 'at', 'by',
+      'de', 'la', 'el', 'en', 'y', 'del', 'los', 'las', 'con', 'por'
+    ]);
+
+    return text
+      .split(/\s+/)
+      .filter(token => {
+        // Filter out empty, short, stop words, and pure numbers
+        return (
+          token.length >= 3 &&
+          !stopWords.has(token) &&
+          !/^\d+$/.test(token)
+        );
+      });
+  }
+
+  /**
+   * Calculate token overlap between two sets of tokens
+   * Returns a value between 0 and 1 representing the similarity
+   */
+  private calculateTokenOverlap(tokens1: string[], tokens2: string[]): number {
+    if (tokens1.length === 0 || tokens2.length === 0) return 0;
+
+    const set1 = new Set(tokens1);
+    const set2 = new Set(tokens2);
+
+    // Count how many tokens from set1 are in set2
+    let matches = 0;
+    for (const token of set1) {
+      if (set2.has(token)) {
+        matches++;
+      }
+    }
+
+    // Calculate Jaccard similarity: intersection / union
+    const union = new Set([...set1, ...set2]).size;
+    const intersection = matches;
+
+    return union > 0 ? intersection / union : 0;
   }
 
   private normalizeText(text: string): string {
