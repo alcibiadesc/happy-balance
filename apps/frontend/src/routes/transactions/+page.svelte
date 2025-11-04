@@ -168,7 +168,7 @@
         return;
       }
 
-      const matchingTransactions = findMatchingTransactions(
+      const matchingTransactions = await findMatchingTransactions(
         transaction,
         $apiTransactions,
       );

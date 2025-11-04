@@ -1,46 +1,39 @@
 import type { Transaction, Category } from '$lib/types/transaction';
+import { getApiUrl } from '$lib/utils/api-url';
 
-export const findMatchingTransactions = (
+export const findMatchingTransactions = async (
   transaction: Transaction,
-  allTransactions: Transaction[],
-  threshold: number = 0.8
-): Transaction[] => {
-  const cleanDescription = (desc: string): string => {
-    return desc
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
+  allTransactions: Transaction[]
+): Promise<Transaction[]> => {
+  try {
+    // Call backend API with ultra-strict matching (85% threshold + type validation)
+    const apiUrl = getApiUrl();
+    const response = await fetch(`${apiUrl}/transactions/${transaction.id}/similar?maxResults=100&includeHidden=false`);
 
-  const calculateSimilarity = (str1: string, str2: string): number => {
-    const clean1 = cleanDescription(str1);
-    const clean2 = cleanDescription(str2);
+    if (!response.ok) {
+      console.error('Failed to fetch similar transactions from backend:', response.statusText);
+      // Fallback to empty array if backend fails
+      return [];
+    }
 
-    if (clean1 === clean2) return 1;
+    const result = await response.json();
 
-    const words1 = new Set(clean1.split(' '));
-    const words2 = new Set(clean2.split(' '));
+    if (!result.success || !result.data || !result.data.similarTransactions) {
+      console.error('Invalid response format from similar transactions endpoint');
+      return [];
+    }
 
-    const intersection = new Set([...words1].filter(x => words2.has(x)));
-    const union = new Set([...words1, ...words2]);
+    // Extract transactions from response and filter out already categorized ones
+    const similarTransactions: Transaction[] = result.data.similarTransactions
+      .map((item: any) => item.transaction)
+      .filter((t: Transaction) => !t.categoryId); // Only uncategorized transactions
 
-    return intersection.size / union.size;
-  };
-
-  const targetDesc = transaction.description;
-  const targetMerchant = transaction.merchant;
-
-  return allTransactions.filter(t => {
-    if (t.id === transaction.id) return false;
-    if (t.categoryId) return false;
-
-    const descSimilarity = calculateSimilarity(targetDesc, t.description);
-    const merchantSimilarity = calculateSimilarity(targetMerchant, t.merchant);
-
-    const overallSimilarity = Math.max(descSimilarity, merchantSimilarity);
-    return overallSimilarity >= threshold;
-  });
+    return similarTransactions;
+  } catch (error) {
+    console.error('Error fetching similar transactions:', error);
+    // Fallback to empty array on error
+    return [];
+  }
 };
 
 export const getCategoryById = (
