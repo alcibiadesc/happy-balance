@@ -8,17 +8,47 @@
     onEdit: (category: Category) => void;
     onDelete: (category: Category) => void;
     formatCurrency: (amount: number) => string;
+    isSelectionMode?: boolean;
+    isSelected?: boolean;
+    onToggleSelect?: (category: Category) => void;
   }
 
   let {
     category,
     onEdit,
     onDelete,
-    formatCurrency
+    formatCurrency,
+    isSelectionMode = false,
+    isSelected = false,
+    onToggleSelect
   }: Props = $props();
+
+  function handleClick() {
+    if (isSelectionMode && onToggleSelect) {
+      onToggleSelect(category);
+    }
+  }
 </script>
 
-<div class="category-card">
+<div
+  class="category-card"
+  class:selection-mode={isSelectionMode}
+  class:selected={isSelected}
+  onclick={handleClick}
+  role={isSelectionMode ? "button" : undefined}
+  tabindex={isSelectionMode ? 0 : undefined}
+>
+  {#if isSelectionMode}
+    <div class="selection-checkbox">
+      <input
+        type="checkbox"
+        checked={isSelected}
+        onclick={(e) => e.stopPropagation()}
+        onchange={() => onToggleSelect?.(category)}
+      />
+    </div>
+  {/if}
+
   <div
     class="category-icon"
     style="background-color: {category.color}20"
@@ -39,22 +69,24 @@
     {/if}
   </div>
 
-  <div class="category-actions">
-    <button
-      class="action-btn"
-      onclick={() => onEdit(category)}
-      title={$t('common.edit')}
-    >
-      <Edit2 size={14} />
-    </button>
-    <button
-      class="action-btn delete"
-      onclick={() => onDelete(category)}
-      title={$t('common.delete')}
-    >
-      <Trash2 size={14} />
-    </button>
-  </div>
+  {#if !isSelectionMode}
+    <div class="category-actions">
+      <button
+        class="action-btn"
+        onclick={() => onEdit(category)}
+        title={$t('common.edit')}
+      >
+        <Edit2 size={14} />
+      </button>
+      <button
+        class="action-btn delete"
+        onclick={() => onDelete(category)}
+        title={$t('common.delete')}
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -75,6 +107,32 @@
   .category-card:hover {
     border-color: var(--gray-300, #d1d5db);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .category-card.selection-mode {
+    cursor: pointer;
+  }
+
+  .category-card.selection-mode:hover {
+    background: var(--surface-elevated);
+  }
+
+  .category-card.selected {
+    background: rgba(122, 186, 165, 0.1);
+    border-color: var(--acapulco);
+  }
+
+  .selection-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .selection-checkbox input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+    accent-color: var(--acapulco);
   }
 
   .category-icon {

@@ -48,6 +48,11 @@ export function createCategoriesStore() {
   let transactionsWithCategory = $state(0);
   let recategorizeTarget = $state<string>('remove');
 
+  // Bulk Selection State
+  let isSelectionMode = $state(false);
+  let selectedCategories = $state<Set<string>>(new Set());
+  let categoriesToDelete = $state<CategoryEntity[]>([]);
+
   // Icon Picker State
   let showIconPickerNew = $state(false);
   let showIconPickerEdit = $state<string | null>(null);
@@ -239,6 +244,86 @@ export function createCategoriesStore() {
     }
   }
 
+  // Bulk Selection Operations
+  function toggleSelectionMode() {
+    isSelectionMode = !isSelectionMode;
+    if (!isSelectionMode) {
+      selectedCategories.clear();
+      selectedCategories = selectedCategories; // Trigger reactivity
+    }
+  }
+
+  function toggleCategorySelection(category: CategoryEntity) {
+    const id = category.getId();
+    if (selectedCategories.has(id)) {
+      selectedCategories.delete(id);
+    } else {
+      selectedCategories.add(id);
+    }
+    selectedCategories = selectedCategories; // Trigger reactivity
+  }
+
+  function isCategorySelected(categoryId: string): boolean {
+    return selectedCategories.has(categoryId);
+  }
+
+  async function prepareBulkDelete() {
+    if (selectedCategories.size === 0) return;
+
+    // Get all selected category entities
+    categoriesToDelete = categories.filter(cat => selectedCategories.has(cat.getId()));
+
+    // Count total transactions across all selected categories
+    await apiTransactions.load();
+    const transactions = get(apiTransactions);
+    transactionsWithCategory = transactions.filter(t =>
+      t.categoryId && selectedCategories.has(t.categoryId)
+    ).length;
+
+    recategorizeTarget = 'remove';
+    showDeleteModal = true;
+  }
+
+  async function confirmBulkDelete() {
+    if (categoriesToDelete.length === 0) return;
+
+    try {
+      // Handle recategorization if there are transactions
+      if (transactionsWithCategory > 0) {
+        const transactions = get(apiTransactions);
+        const categoryIds = new Set(categoriesToDelete.map(cat => cat.getId()));
+        const affectedTransactions = transactions.filter(t =>
+          t.categoryId && categoryIds.has(t.categoryId)
+        );
+
+        for (const transaction of affectedTransactions) {
+          await apiTransactions.update(transaction.id, {
+            categoryId: recategorizeTarget === 'remove' ? undefined : recategorizeTarget
+          });
+        }
+      }
+
+      // Delete all selected categories
+      for (const category of categoriesToDelete) {
+        await apiCategories.delete(category.getId());
+      }
+
+      await loadCategories(); // Reload to get the updated list
+
+      // Reset state
+      showDeleteModal = false;
+      categoriesToDelete = [];
+      selectedCategories.clear();
+      selectedCategories = selectedCategories; // Trigger reactivity
+      recategorizeTarget = 'remove';
+      transactionsWithCategory = 0;
+      isSelectionMode = false;
+    } catch (error) {
+      console.error('Error deleting categories:', error);
+      showDeleteModal = false;
+    }
+  }
+
   // Icon Picker
   function selectIcon(icon: string) {
     if (showIconPickerNew) {
@@ -342,9 +427,15 @@ export function createCategoriesStore() {
     get showDeleteModal() { return showDeleteModal; },
     set showDeleteModal(value: boolean) { showDeleteModal = value; },
     get categoryToDelete() { return categoryToDelete; },
+    get categoriesToDelete() { return categoriesToDelete; },
     get transactionsWithCategory() { return transactionsWithCategory; },
     get recategorizeTarget() { return recategorizeTarget; },
     set recategorizeTarget(value: string) { recategorizeTarget = value; },
+
+    // Bulk Selection State
+    get isSelectionMode() { return isSelectionMode; },
+    get selectedCategories() { return selectedCategories; },
+    get selectedCount() { return selectedCategories.size; },
 
     // Icon Picker State
     get showIconPickerNew() { return showIconPickerNew; },
@@ -374,6 +465,11 @@ export function createCategoriesStore() {
     cancelEdit,
     prepareDelete,
     confirmDelete,
+    toggleSelectionMode,
+    toggleCategorySelection,
+    isCategorySelected,
+    prepareBulkDelete,
+    confirmBulkDelete,
     selectIcon,
     closeIconPicker,
     calculatePickerPosition,

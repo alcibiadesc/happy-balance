@@ -99,8 +99,19 @@
 <div class="categories-container full-width-page">
   <div class="categories-wrapper">
     <header class="page-header">
-      <h1 class="page-title">{$t("categories.title")}</h1>
-      <p class="page-subtitle">{$t("categories.subtitle")}</p>
+      <div class="header-content">
+        <div>
+          <h1 class="page-title">{$t("categories.title")}</h1>
+          <p class="page-subtitle">{$t("categories.subtitle")}</p>
+        </div>
+        <button
+          class="selection-mode-btn"
+          class:active={store.isSelectionMode}
+          onclick={store.toggleSelectionMode}
+        >
+          {store.isSelectionMode ? $t("common.cancel") : $t("categories.select_multiple")}
+        </button>
+      </div>
     </header>
 
     <main class="categories-content">
@@ -124,6 +135,10 @@
           onAddNew={() => store.startNewCategory(value)}
           showHelperButton={value === "no_compute"}
           onHelperClick={handleHelperClick}
+          isSelectionMode={store.isSelectionMode}
+          selectedCount={store.selectedCount}
+          onToggleSelectionMode={store.toggleSelectionMode}
+          onBulkDelete={store.prepareBulkDelete}
         >
           {#if store.newCategory && store.selectedType === value}
             <CategoryEditListItem
@@ -155,6 +170,9 @@
                 onEdit={() => store.startEdit(category)}
                 onDelete={() => store.prepareDelete(category)}
                 formatCurrency={store.formatCurrency}
+                isSelectionMode={store.isSelectionMode}
+                isSelected={store.isCategorySelected(category.getId())}
+                onToggleSelect={() => store.toggleCategorySelection(category)}
               />
             {/if}
           {/each}
@@ -199,18 +217,24 @@
 <!-- Delete Confirmation Modal -->
 <ConfirmModal
   isOpen={store.showDeleteModal}
-  title={$t("categories.delete_category")}
+  title={store.categoriesToDelete.length > 1
+    ? $t("categories.delete_categories", { count: store.categoriesToDelete.length })
+    : $t("categories.delete_category")}
   message={store.transactionsWithCategory > 0
     ? $t("categories.delete_with_transactions", {
         count: store.transactionsWithCategory,
       })
-    : $t("categories.delete_confirmation", {
-        name: store.categoryToDelete?.getName(),
-      })}
+    : store.categoriesToDelete.length > 1
+      ? $t("categories.delete_multiple_confirmation", {
+          count: store.categoriesToDelete.length,
+        })
+      : $t("categories.delete_confirmation", {
+          name: store.categoryToDelete?.getName(),
+        })}
   confirmText={$t("common.delete")}
   cancelText={$t("common.cancel")}
   type="danger"
-  onConfirm={store.confirmDelete}
+  onConfirm={store.categoriesToDelete.length > 1 ? store.confirmBulkDelete : store.confirmDelete}
   onCancel={() => (store.showDeleteModal = false)}
 >
   {#if store.transactionsWithCategory > 0}
@@ -225,7 +249,9 @@
         <span>{$t("categories.leave_uncategorized")}</span>
       </label>
       {#each store.categories as cat}
-        {#if cat.getId() !== store.categoryToDelete?.getId()}
+        {#if store.categoriesToDelete.length > 1
+          ? !store.categoriesToDelete.some(c => c.getId() === cat.getId())
+          : cat.getId() !== store.categoryToDelete?.getId()}
           <label class="radio-option">
             <input
               type="radio"
@@ -276,6 +302,13 @@
     margin-bottom: 2rem;
   }
 
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
   .page-title {
     font-size: 1.875rem;
     font-weight: 300;
@@ -288,6 +321,31 @@
     font-size: 0.875rem;
     color: var(--text-muted);
     margin: 0;
+  }
+
+  .selection-mode-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .selection-mode-btn:hover {
+    background: var(--surface-elevated);
+    border-color: var(--acapulco);
+    color: var(--acapulco);
+  }
+
+  .selection-mode-btn.active {
+    background: rgba(122, 186, 165, 0.1);
+    border-color: var(--acapulco);
+    color: var(--acapulco);
   }
 
   /* Content Grid */
@@ -408,6 +466,16 @@
   @media (max-width: 768px) {
     .page-title {
       font-size: 1.5rem;
+    }
+
+    .header-content {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .selection-mode-btn {
+      width: 100%;
+      text-align: center;
     }
 
     .helper-tooltip {

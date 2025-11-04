@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Plus, Info } from 'lucide-svelte';
+  import { Plus, Info, Trash2 } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
   import type { Category } from '$lib/types/transaction';
 
@@ -12,6 +12,10 @@
     onAddNew: () => void;
     showHelperButton?: boolean;
     onHelperClick?: (e: Event) => void;
+    isSelectionMode?: boolean;
+    selectedCount?: number;
+    onToggleSelectionMode?: () => void;
+    onBulkDelete?: () => void;
     children?: any;
   }
 
@@ -24,6 +28,10 @@
     onAddNew,
     showHelperButton = false,
     onHelperClick,
+    isSelectionMode = false,
+    selectedCount = 0,
+    onToggleSelectionMode,
+    onBulkDelete,
     children
   }: Props = $props();
 </script>
@@ -48,11 +56,30 @@
       </h2>
       <p class="section-description">{description}</p>
     </div>
-    <button class="add-button" onclick={onAddNew}>
-      <Plus size={16} strokeWidth={2} />
-      {$t('categories.new_category')}
-    </button>
+    {#if !isSelectionMode}
+      <button class="add-button" onclick={onAddNew}>
+        <Plus size={16} strokeWidth={2} />
+        {$t('categories.new_category')}
+      </button>
+    {/if}
   </div>
+
+  {#if isSelectionMode && selectedCount > 0}
+    <div class="bulk-actions-bar">
+      <span class="selected-count">
+        {selectedCount} {selectedCount === 1 ? $t('categories.category_selected') : $t('categories.categories_selected')}
+      </span>
+      <div class="bulk-actions">
+        <button class="bulk-btn cancel" onclick={onToggleSelectionMode}>
+          {$t('common.cancel')}
+        </button>
+        <button class="bulk-btn delete" onclick={onBulkDelete}>
+          <Trash2 size={14} />
+          {$t('common.delete')}
+        </button>
+      </div>
+    </div>
+  {/if}
 
   <div class="categories-list">{@render children?.()}</div>
 </section>
@@ -189,6 +216,75 @@
     box-sizing: border-box;
   }
 
+  /* Bulk Actions Bar */
+  .bulk-actions-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(122, 186, 165, 0.1);
+    border: 1px solid var(--acapulco);
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    animation: slideDown 0.2s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .selected-count {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .bulk-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .bulk-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .bulk-btn.cancel {
+    background: var(--surface);
+    color: var(--text-muted);
+  }
+
+  .bulk-btn.cancel:hover {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+  }
+
+  .bulk-btn.delete {
+    background: rgba(245, 121, 108, 0.1);
+    color: #f5796c;
+    border-color: #f5796c;
+  }
+
+  .bulk-btn.delete:hover {
+    background: #f5796c;
+    color: white;
+  }
+
   @media (max-width: 768px) {
     .section-header {
       flex-direction: column;
@@ -196,6 +292,21 @@
 
     .add-button {
       width: 100%;
+      justify-content: center;
+    }
+
+    .bulk-actions-bar {
+      flex-direction: column;
+      gap: 0.75rem;
+      align-items: stretch;
+    }
+
+    .bulk-actions {
+      width: 100%;
+    }
+
+    .bulk-btn {
+      flex: 1;
       justify-content: center;
     }
   }
