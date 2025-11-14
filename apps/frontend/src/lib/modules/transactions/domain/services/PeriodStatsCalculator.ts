@@ -60,19 +60,39 @@ export const calculatePeriodStats = (
   const incomeTransactions = computedTransactions.filter(isIncome);
   const expenseTransactions = computedTransactions.filter(isExpense);
 
-  // Calculate totals
-  const income = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = sumAmount(expenseTransactions);
+  // Calculate totals with split/reimbursement handling
+  const income = incomeTransactions.reduce((sum, t) => {
+    // If transaction is marked as reimbursement, it doesn't count as real income
+    if ((t as any).isReimbursement) {
+      return sum;
+    }
+    return sum + t.amount;
+  }, 0);
 
-  // Calculate expense categories
-  const essentialExpenses = sumAmount(filterByType(expenseTransactions, 'essential', categories));
-  const discretionaryExpenses = sumAmount(filterByType(expenseTransactions, 'discretionary', categories));
-  const investmentExpenses = sumAmount(filterByType(expenseTransactions, 'investment', categories));
-  const uncategorizedExpenses = sumAmount(filterUncategorized(expenseTransactions));
+  const totalExpenses = expenseTransactions.reduce((sum, t) => {
+    const amount = Math.abs(t.amount);
+    // Apply split percentage if exists
+    const splitPercent = (t as any).splitPercentage ?? 100;
+    return sum + (amount * splitPercent / 100);
+  }, 0);
+
+  // Helper to apply split percentage
+  const applySplitPercentage = (transactions: Transaction[]): number =>
+    transactions.reduce((sum, t) => {
+      const amount = Math.abs(t.amount);
+      const splitPercent = (t as any).splitPercentage ?? 100;
+      return sum + (amount * splitPercent / 100);
+    }, 0);
+
+  // Calculate expense categories with split handling
+  const essentialExpenses = applySplitPercentage(filterByType(expenseTransactions, 'essential', categories));
+  const discretionaryExpenses = applySplitPercentage(filterByType(expenseTransactions, 'discretionary', categories));
+  const investmentExpenses = applySplitPercentage(filterByType(expenseTransactions, 'investment', categories));
+  const uncategorizedExpenses = applySplitPercentage(filterUncategorized(expenseTransactions));
 
   // Calculate expenses without investments for breakdown
-  const expensesWithoutInvestments = sumAmount(filterNotInvestment(expenseTransactions, categories));
-  const uncategorizedExpensesOnly = sumAmount(
+  const expensesWithoutInvestments = applySplitPercentage(filterNotInvestment(expenseTransactions, categories));
+  const uncategorizedExpensesOnly = applySplitPercentage(
     filterUncategorized(filterNotInvestment(expenseTransactions, categories))
   );
 

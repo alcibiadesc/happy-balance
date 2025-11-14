@@ -102,6 +102,12 @@
         selectedReimbursementId,
         splitPercentage
       );
+
+      // Refresh transactions to update stats immediately
+      console.log('[SplitModal] Reloading transactions after link...');
+      await apiTransactions.load();
+      console.log('[SplitModal] Transactions reloaded');
+
       onClose();
     } catch (err) {
       console.error('Error al vincular transacción:', err);
