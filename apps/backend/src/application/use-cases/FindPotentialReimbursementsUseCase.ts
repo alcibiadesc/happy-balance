@@ -2,6 +2,7 @@ import { Result } from "@domain/shared/Result";
 import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
 import { Transaction } from "@domain/entities/Transaction";
 import { TransactionType } from "@domain/entities/TransactionType";
+import { TransactionDate } from "@domain/value-objects/TransactionDate";
 
 export interface PotentialReimbursementQuery {
   transactionId: string; // The transaction to find matches for (expense -> income OR income -> expense)
@@ -61,10 +62,21 @@ export class FindPotentialReimbursementsUseCase {
       const endDate = new Date(sourceDate);
       endDate.setDate(endDate.getDate() + toleranceDays);
 
+      // Convert dates to TransactionDate value objects
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+
+      const startDateResult = TransactionDate.fromString(startDateStr);
+      const endDateResult = TransactionDate.fromString(endDateStr);
+
+      if (startDateResult.isFailure() || endDateResult.isFailure()) {
+        return Result.failWithMessage('Invalid date range');
+      }
+
       const allTransactionsResult = await this.transactionRepository.findWithFilters(
         {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: endDate.toISOString().split('T')[0],
+          startDate: startDateResult.getValue(),
+          endDate: endDateResult.getValue(),
           includeHidden: false,
         },
         { offset: 0, limit: 10000 },
