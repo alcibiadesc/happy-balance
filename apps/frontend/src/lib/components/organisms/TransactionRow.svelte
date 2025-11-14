@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Tag, Eye, EyeOff, Trash2 } from 'lucide-svelte';
+  import { Tag, Eye, EyeOff, Trash2, Split } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
   import type { Transaction, Category } from '$lib/types/transaction';
 
@@ -18,6 +18,7 @@
     onUpdateObservationsText: (text: string) => void;
     onToggleHide: () => void;
     onDelete: () => void;
+    onOpenSplitModal?: () => void;
     formatAmount: (amount: number) => string;
   }
 
@@ -36,6 +37,7 @@
     onUpdateObservationsText,
     onToggleHide,
     onDelete,
+    onOpenSplitModal,
     formatAmount
   }: TransactionRowProps = $props();
 
@@ -112,8 +114,21 @@
           <span>{transaction.time}</span>
         </div>
       </div>
-      <div class="transaction-amount" class:income={transaction.amount > 0}>
-        {formatAmount(transaction.amount)}
+      <div class="transaction-amount-wrapper">
+        <div class="transaction-amount" class:income={transaction.amount > 0}>
+          {formatAmount(transaction.amount)}
+        </div>
+        {#if transaction.linkedTransactionId && transaction.splitPercentage !== undefined}
+          <div class="split-indicator" title={transaction.amount < 0 ? `Gasto compartido - Pagas el ${transaction.splitPercentage}%` : `Reembolso vinculado - Cubre el ${transaction.splitPercentage}%`}>
+            <Split size={12} />
+            <span>{transaction.splitPercentage}%</span>
+          </div>
+        {:else if transaction.splitPercentage !== undefined}
+          <div class="split-indicator split-unlinked" title={transaction.amount < 0 ? `Gasto compartido - Pagas el ${transaction.splitPercentage}% (sin vincular)` : `Reembolso - Cubre el ${transaction.splitPercentage}% (sin vincular)`}>
+            <Split size={12} />
+            <span>{transaction.splitPercentage}%</span>
+          </div>
+        {/if}
       </div>
     </div>
 
@@ -141,6 +156,21 @@
   </div>
 
   <div class="transaction-actions">
+    {#if onOpenSplitModal}
+      <button
+        class="action-btn split-btn"
+        class:linked={transaction.linkedTransactionId}
+        title={transaction.linkedTransactionId
+          ? (transaction.amount < 0 ? 'Gasto compartido vinculado' : 'Reembolso vinculado')
+          : (transaction.amount < 0 ? 'Marcar como gasto compartido' : 'Vincular con gasto compartido')}
+        onclick={(e) => {
+          e.stopPropagation();
+          onOpenSplitModal();
+        }}
+      >
+        <Split size={14} />
+      </button>
+    {/if}
     <button
       class="action-btn"
       class:hidden={transaction.hidden}
@@ -201,6 +231,10 @@
   .transaction-card.hidden {
     opacity: 0.5;
     background: var(--surface-muted);
+  }
+
+  .transaction-card:has(.split-indicator) {
+    border-left: 3px solid var(--primary);
   }
 
   .transaction-details {
@@ -265,6 +299,13 @@
     margin-top: 4px;
   }
 
+  .transaction-amount-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+  }
+
   .transaction-amount {
     font-weight: 600;
     color: var(--froly);
@@ -272,6 +313,39 @@
 
   .transaction-amount.income {
     color: var(--acapulco);
+  }
+
+  .split-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    background: var(--primary-alpha-10);
+    border: 1px solid var(--primary);
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--primary);
+    cursor: help;
+    transition: all 0.2s ease;
+  }
+
+  .split-indicator:hover {
+    background: var(--primary-alpha-20);
+    transform: scale(1.05);
+  }
+
+  .split-indicator.split-unlinked {
+    background: var(--surface-muted);
+    border-color: var(--text-secondary);
+    color: var(--text-secondary);
+    border-style: dashed;
+  }
+
+  .split-indicator.split-unlinked:hover {
+    background: var(--surface-hover);
+    border-color: var(--text-primary);
+    color: var(--text-primary);
   }
 
   .category-selector {
@@ -345,6 +419,16 @@
   .delete-btn:hover {
     background: var(--error-alpha-10);
     color: var(--error);
+  }
+
+  .split-btn.linked {
+    color: var(--primary);
+    background: var(--primary-alpha-10);
+  }
+
+  .split-btn:hover {
+    background: var(--primary-alpha-10);
+    color: var(--primary);
   }
 
   input[type="checkbox"] {

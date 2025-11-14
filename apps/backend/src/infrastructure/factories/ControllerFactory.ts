@@ -19,6 +19,9 @@ import { ImportSelectedTransactionsUseCase } from '@application/use-cases/Import
 import { SmartCategorizeTransactionUseCase } from '@application/use-cases/SmartCategorizeTransactionUseCase';
 import { FindSimilarTransactionsUseCase } from '@application/use-cases/FindSimilarTransactionsUseCase';
 import { GetDashboardMetricsUseCase } from '@application/use-cases/GetDashboardMetricsUseCase';
+import { FindPotentialReimbursementsUseCase } from '@application/use-cases/FindPotentialReimbursementsUseCase';
+import { LinkSplitTransactionsUseCase } from '@application/use-cases/LinkSplitTransactionsUseCase';
+import { UnlinkSplitTransactionsUseCase } from '@application/use-cases/UnlinkSplitTransactionsUseCase';
 import { DuplicateDetectionService } from '@domain/services/DuplicateDetectionService';
 import { CategorizationService } from '@domain/services/CategorizationService';
 import { FinancialCalculationService } from '@domain/services/FinancialCalculationService';
@@ -93,12 +96,27 @@ export class ControllerFactory {
       categoryRepository,
     );
 
+    const findPotentialReimbursementsUseCase = new FindPotentialReimbursementsUseCase(
+      transactionRepository,
+    );
+
+    const linkSplitTransactionsUseCase = new LinkSplitTransactionsUseCase(
+      transactionRepository,
+    );
+
+    const unlinkSplitTransactionsUseCase = new UnlinkSplitTransactionsUseCase(
+      transactionRepository,
+    );
+
     return new TransactionController(
       transactionRepository,
       getDashboardDataUseCase,
       smartCategorizeUseCase,
       findSimilarTransactionsUseCase,
       getDashboardMetricsUseCase,
+      findPotentialReimbursementsUseCase,
+      linkSplitTransactionsUseCase,
+      unlinkSplitTransactionsUseCase,
     );
   }
 

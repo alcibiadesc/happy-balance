@@ -92,6 +92,14 @@ class TransactionsPageStore {
     this.modals = modalActions.closeDeleteSingleModal(this.modals);
   };
 
+  openSplitModal = (transaction: any) => {
+    this.modals = modalActions.openSplitModal(this.modals, transaction);
+  };
+
+  closeSplitModal = () => {
+    this.modals = modalActions.closeSplitModal(this.modals);
+  };
+
   // Filter actions
   setSearchQuery = (query: string) => {
     this.filters = filterActions.setSearchQuery(this.filters, query);

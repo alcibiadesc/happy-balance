@@ -18,6 +18,8 @@ export interface ModalState {
   showDeleteSelectedModal: boolean;
   showDeleteSingleModal: boolean;
   transactionToDelete: string | null;
+  showSplitModal: boolean;
+  splitModalTransaction: Transaction | null;
 }
 
 export const createInitialModalState = (): ModalState => ({
@@ -32,7 +34,9 @@ export const createInitialModalState = (): ModalState => ({
   smartSuggestions: [],
   showDeleteSelectedModal: false,
   showDeleteSingleModal: false,
-  transactionToDelete: null
+  transactionToDelete: null,
+  showSplitModal: false,
+  splitModalTransaction: null
 });
 
 export const modalActions = {
@@ -105,5 +109,17 @@ export const modalActions = {
     ...state,
     showDeleteSingleModal: false,
     transactionToDelete: null
+  }),
+
+  openSplitModal: (state: ModalState, transaction: Transaction): ModalState => ({
+    ...state,
+    showSplitModal: true,
+    splitModalTransaction: transaction
+  }),
+
+  closeSplitModal: (state: ModalState): ModalState => ({
+    ...state,
+    showSplitModal: false,
+    splitModalTransaction: null
   })
 };

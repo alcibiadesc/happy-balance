@@ -51,7 +51,7 @@ function createUserPreferencesStore() {
 
       try {
         // Try to load from database first
-        const response = await fetch(`${API_BASE}/preferences/default`, {
+        const response = await fetch(`${API_BASE}/preferences`, {
           headers: getAuthHeaders(),
         });
         if (response.ok) {
@@ -88,8 +88,9 @@ function createUserPreferencesStore() {
     // Save preferences to both database and localStorage
     async save(preferences: Partial<UserPreferences>) {
       try {
-        // Update database
-        const response = await fetch(`${API_BASE}/preferences/default`, {
+        // Update database - use authenticated user's ID from token
+        const userId = authStore.userId || 'default';
+        const response = await fetch(`${API_BASE}/preferences/${userId}`, {
           method: "PUT",
           headers: getAuthHeaders(),
           body: JSON.stringify(preferences),

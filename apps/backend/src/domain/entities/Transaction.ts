@@ -18,6 +18,9 @@ export class Transaction {
   private _observations?: string;
   private _isSelected: boolean = true;
   private _hash?: string;
+  private _splitPercentage?: number; // % you pay (0-100, undefined = 100%)
+  private _linkedTransactionId?: TransactionId; // ID of linked reimbursement
+  private _isReimbursement: boolean = false; // This is a reimbursement (not real income)
 
   private constructor(
     private readonly _id: TransactionId,
@@ -29,9 +32,15 @@ export class Transaction {
     private readonly _createdAt: Date = new Date(),
     hash?: string,
     observations?: string,
+    splitPercentage?: number,
+    linkedTransactionId?: TransactionId,
+    isReimbursement?: boolean,
   ) {
     this._description = description;
     this._observations = observations;
+    this._splitPercentage = splitPercentage;
+    this._linkedTransactionId = linkedTransactionId;
+    this._isReimbursement = isReimbursement ?? false;
     // Only generate hash if not provided (for new transactions)
     this._hash = hash || this.generateHash();
   }
@@ -129,6 +138,87 @@ export class Transaction {
 
   get hash(): string | undefined {
     return this._hash;
+  }
+
+  get splitPercentage(): number | undefined {
+    return this._splitPercentage;
+  }
+
+  get linkedTransactionId(): TransactionId | undefined {
+    return this._linkedTransactionId;
+  }
+
+  get isReimbursement(): boolean {
+    return this._isReimbursement;
+  }
+
+  // Business methods
+
+  /**
+   * Get effective amount for calculations considering split percentage
+   * For expenses with split: amount * (splitPercentage / 100)
+   * For reimbursements: 0 (they don't count as real income)
+   * Returns absolute value Money (positive amounts)
+   */
+  getEffectiveSplitAmount(): Money {
+    // Reimbursements don't count as real income
+    if (this._isReimbursement) {
+      return Money.create(0, this._amount.currency).getValue();
+    }
+
+    // If no split, use full amount
+    if (this._splitPercentage === undefined) {
+      return this._amount;
+    }
+
+    // Apply split percentage
+    const splitMultiplier = this._splitPercentage / 100;
+    return this._amount.multiply(splitMultiplier).getValue();
+  }
+
+  /**
+   * Set split percentage (0-100)
+   */
+  setSplitPercentage(percentage: number | null | undefined): Result<void> {
+    if (percentage === null || percentage === undefined) {
+      this._splitPercentage = undefined;
+      return Result.ok(undefined);
+    }
+
+    if (percentage < 0 || percentage > 100) {
+      return Result.failWithMessage("Split percentage must be between 0 and 100");
+    }
+
+    this._splitPercentage = percentage;
+    return Result.ok(undefined);
+  }
+
+  /**
+   * Link this transaction to a reimbursement
+   */
+  linkToTransaction(transactionId: TransactionId): void {
+    this._linkedTransactionId = transactionId;
+  }
+
+  /**
+   * Unlink from reimbursement
+   */
+  unlinkTransaction(): void {
+    this._linkedTransactionId = undefined;
+  }
+
+  /**
+   * Mark as reimbursement
+   */
+  markAsReimbursement(): void {
+    this._isReimbursement = true;
+  }
+
+  /**
+   * Unmark as reimbursement
+   */
+  unmarkAsReimbursement(): void {
+    this._isReimbursement = false;
   }
 
   // Business methods
@@ -251,7 +341,9 @@ export class Transaction {
    */
   getEffectiveAmount(): Money {
     if (this._type === TransactionType.EXPENSE) {
-      return this._amount.multiply(-1).getValue();
+      // Create negative money directly instead of using multiply(-1)
+      // since multiply() doesn't accept negative multipliers
+      return Money.create(-this._amount.amount, this._amount.currency).getValue();
     }
     return this._amount;
   }
@@ -323,6 +415,9 @@ export class Transaction {
       isSelected: this._isSelected,
       hash: this._hash,
       createdAt: this._createdAt.toISOString(),
+      splitPercentage: this._splitPercentage,
+      linkedTransactionId: this._linkedTransactionId?.value,
+      isReimbursement: this._isReimbursement,
     };
   }
 
@@ -348,6 +443,15 @@ export class Transaction {
       return Result.fail(merchantResult.getError());
     }
 
+    // Reconstruct linked transaction ID if present
+    let linkedTransactionId: TransactionId | undefined;
+    if (snapshot.linkedTransactionId) {
+      const linkedIdResult = TransactionId.create(snapshot.linkedTransactionId);
+      if (linkedIdResult.isSuccess()) {
+        linkedTransactionId = linkedIdResult.getValue();
+      }
+    }
+
     // Create transaction with preserved hash
     const transaction = new Transaction(
       idResult.getValue(),
@@ -359,6 +463,9 @@ export class Transaction {
       new Date(snapshot.createdAt),
       snapshot.hash, // Preserve the hash from snapshot
       snapshot.observations,
+      snapshot.splitPercentage,
+      linkedTransactionId,
+      snapshot.isReimbursement,
     );
 
     // Set optional fields
@@ -389,4 +496,7 @@ export interface TransactionSnapshot {
   isSelected?: boolean;
   hash?: string;
   createdAt: string;
+  splitPercentage?: number;
+  linkedTransactionId?: string;
+  isReimbursement?: boolean;
 }

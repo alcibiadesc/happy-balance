@@ -35,24 +35,31 @@ model User {
 }
 
 model Transaction {
-  id           String    @id @db.VarChar(36)
-  amount       Decimal   @db.Decimal(15, 2)
-  currency     String    @db.VarChar(3)
-  date         DateTime  @db.Date
-  merchant     String    @db.VarChar(200)
-  type         String    @db.VarChar(20)
-  description  String    @default("")
-  categoryId   String?   @db.VarChar(36)
-  isSelected   Boolean   @default(true)
-  hidden       Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  hash         String?   @db.VarChar(50)
-  observations String?   @db.VarChar(500)
-  userId       String    @db.VarChar(36)
+  id                  String    @id @db.VarChar(36)
+  amount              Decimal   @db.Decimal(15, 2)
+  currency            String    @db.VarChar(3)
+  date                DateTime  @db.Date
+  merchant            String    @db.VarChar(200)
+  type                String    @db.VarChar(20)
+  description         String    @default("")
+  categoryId          String?   @db.VarChar(36)
+  isSelected          Boolean   @default(true)
+  hidden              Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  hash                String?   @db.VarChar(50)
+  observations        String?   @db.VarChar(500)
+  userId              String    @db.VarChar(36)
 
-  category     Category? @relation(fields: [categoryId], references: [id])
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Split transaction fields
+  splitPercentage     Decimal?  @db.Decimal(5, 2) // % you pay (0-100, null = 100%)
+  linkedTransactionId String?   @db.VarChar(36)    // ID of linked reimbursement
+  isReimbursement     Boolean   @default(false)    // This is a reimbursement (not real income)
+
+  category            Category?     @relation(fields: [categoryId], references: [id])
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedTransaction   Transaction?  @relation("LinkedTransactions", fields: [linkedTransactionId], references: [id], onDelete: SetNull)
+  reimbursements      Transaction[] @relation("LinkedTransactions")
 
   @@index([date])
   @@index([merchant])
@@ -64,6 +71,8 @@ model Transaction {
   @@index([hidden])
   @@index([userId])
   @@index([userId, date])
+  @@index([linkedTransactionId])
+  @@index([isReimbursement])
   @@map("transactions")
 }
 

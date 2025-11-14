@@ -69,6 +69,41 @@ function checkAndInstallDependencies() {
   return needsInstall;
 }
 
+// Check if database container is running
+async function isDatabaseRunning() {
+  try {
+    execSync('docker ps --format "table {{.Names}}" | grep -q happy-balance-db', {
+      stdio: "pipe",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Start database container if not running
+async function ensureDatabaseRunning() {
+  const isRunning = await isDatabaseRunning();
+  if (!isRunning) {
+    log("🗄️  Starting PostgreSQL database...", "yellow");
+    try {
+      execSync("node scripts/db-manager.js start", {
+        cwd: rootDir,
+        stdio: "inherit",
+      });
+      log("✅ Database started successfully", "green");
+      // Wait a bit for database to be fully ready
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    } catch (error) {
+      log("❌ Failed to start database", "red");
+      log("   Please start it manually: pnpm db:start", "yellow");
+      throw error;
+    }
+  } else {
+    log("✅ Database is already running", "green");
+  }
+}
+
 // Setup and configure database
 function setupDatabase() {
   const backendPath = resolve(rootDir, "apps", "backend");
@@ -82,20 +117,13 @@ function setupDatabase() {
     });
     log("✅ Prisma client ready", "green");
 
-    // Try to push database schema if PostgreSQL is running
-    try {
-      execSync("pg_isready", { stdio: "pipe" });
-
-      // Push schema to database
-      log("🔄 Pushing database schema...", "cyan");
-      execSync("npx prisma db push --skip-generate", {
-        cwd: backendPath,
-        stdio: "pipe",
-      });
-      log("✅ Database schema synchronized", "green");
-    } catch (error) {
-      // PostgreSQL not running or schema push failed
-    }
+    // Push database schema
+    log("🔄 Pushing database schema...", "cyan");
+    execSync("npx prisma db push --skip-generate", {
+      cwd: backendPath,
+      stdio: "pipe",
+    });
+    log("✅ Database schema synchronized", "green");
   } catch (error) {
     log("⚠️  Database setup warning (non-critical)", "yellow");
   }
@@ -183,6 +211,10 @@ async function main() {
 
   // Create required directories
   createRequiredDirs();
+
+  // Ensure database is running
+  log("\n🗄️  Checking database...", "yellow");
+  await ensureDatabaseRunning();
 
   // Setup database (generate client and push schema)
   if (installed || !existsSync(resolve(rootDir, "apps", "backend", ".prisma"))) {

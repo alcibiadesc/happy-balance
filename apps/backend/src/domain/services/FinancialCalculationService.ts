@@ -70,9 +70,30 @@ export class FinancialCalculationService {
     let totalDebtPayments = zero;
 
     for (const transaction of filteredTransactions) {
+      // Use getEffectiveSplitAmount to handle split transactions and reimbursements
+      const effectiveAmount = transaction.getEffectiveSplitAmount();
+      const absoluteAmount = Money.create(
+        Math.abs(effectiveAmount.amount),
+        effectiveAmount.currency
+      ).getValue();
+
+      // Debug: Log split transactions
+      if ((transaction as any).isReimbursement || (transaction as any).splitPercentage) {
+        console.log('[FinancialCalc] Split/Reimb transaction:', {
+          id: transaction.id.value,
+          type: transaction.type,
+          originalAmount: transaction.amount.amount,
+          effectiveAmount: effectiveAmount.amount,
+          isReimbursement: (transaction as any).isReimbursement,
+          splitPercentage: (transaction as any).splitPercentage,
+          linkedTransactionId: (transaction as any).linkedTransactionId?.value
+        });
+      }
+
       switch (transaction.type) {
         case TransactionType.INCOME:
-          const incomeResult = totalIncome.add(transaction.amount);
+          // Reimbursements return 0 from getEffectiveSplitAmount, so they won't count as income
+          const incomeResult = totalIncome.add(absoluteAmount);
           if (incomeResult.isFailure())
             return Result.fail(incomeResult.getError());
           totalIncome = incomeResult.getValue();
@@ -87,12 +108,12 @@ export class FinancialCalculationService {
               "debt_payment";
 
           if (isDebtPayment) {
-            const debtResult = totalDebtPayments.add(transaction.amount);
+            const debtResult = totalDebtPayments.add(absoluteAmount);
             if (debtResult.isFailure())
               return Result.fail(debtResult.getError());
             totalDebtPayments = debtResult.getValue();
           } else {
-            const expenseResult = totalExpenses.add(transaction.amount);
+            const expenseResult = totalExpenses.add(absoluteAmount);
             if (expenseResult.isFailure())
               return Result.fail(expenseResult.getError());
             totalExpenses = expenseResult.getValue();
@@ -100,7 +121,7 @@ export class FinancialCalculationService {
           break;
 
         case TransactionType.INVESTMENT:
-          const investmentResult = totalInvestments.add(transaction.amount);
+          const investmentResult = totalInvestments.add(absoluteAmount);
           if (investmentResult.isFailure())
             return Result.fail(investmentResult.getError());
           totalInvestments = investmentResult.getValue();

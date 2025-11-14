@@ -20,7 +20,12 @@ export class UserPreferencesController {
 
   async getUserPreferences(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.params.userId || "default";
+      const userId = req.params.userId || req.user?.userId;
+
+      if (!userId) {
+        res.status(400).json({ error: "User ID is required" });
+        return;
+      }
 
       const result = await this.getUserPreferencesUseCase.execute(userId);
 
@@ -37,7 +42,13 @@ export class UserPreferencesController {
 
   async createUserPreferences(req: Request, res: Response): Promise<void> {
     try {
-      const { userId = "default", currency, language, theme } = req.body;
+      const userId = req.body.userId || req.user?.userId;
+      const { currency, language, theme } = req.body;
+
+      if (!userId) {
+        res.status(400).json({ error: "User ID is required" });
+        return;
+      }
 
       const result = await this.userPreferencesRepository.create({
         userId,
@@ -59,8 +70,13 @@ export class UserPreferencesController {
 
   async updateUserPreferences(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.params.userId || "default";
+      const userId = req.params.userId || req.user?.userId;
       const { currency, language, theme } = req.body;
+
+      if (!userId) {
+        res.status(400).json({ error: "User ID is required" });
+        return;
+      }
 
       const result = await this.updateUserPreferencesUseCase.execute(userId, {
         currency,
@@ -81,7 +97,12 @@ export class UserPreferencesController {
 
   async deleteUserPreferences(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.params.userId || "default";
+      const userId = req.params.userId || req.user?.userId;
+
+      if (!userId) {
+        res.status(400).json({ error: "User ID is required" });
+        return;
+      }
 
       const result = await this.userPreferencesRepository.delete(userId);
 

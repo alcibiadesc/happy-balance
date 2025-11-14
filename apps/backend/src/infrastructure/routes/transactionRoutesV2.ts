@@ -67,6 +67,25 @@ export const createTransactionRoutesV2 = (
     await controller.findSimilarTransactions(req, res);
   });
 
+  // Split transaction routes
+  router.get("/:id/potential-reimbursements", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || 'default';
+    const controller = controllerFactory.createTransactionController(userId);
+    await controller.findPotentialReimbursements(req, res);
+  });
+
+  router.post("/:id/link-split", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || 'default';
+    const controller = controllerFactory.createTransactionController(userId);
+    await controller.linkSplitTransactions(req, res);
+  });
+
+  router.delete("/:id/unlink-split", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || 'default';
+    const controller = controllerFactory.createTransactionController(userId);
+    await controller.unlinkSplitTransactions(req, res);
+  });
+
   // Single transaction operations
   router.get("/:id", async (req: Request, res: Response) => {
     const userId = req.user?.userId || 'default';

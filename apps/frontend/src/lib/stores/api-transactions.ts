@@ -145,6 +145,7 @@ function createApiTransactionStore() {
         // Allow null to be sent for categoryId to remove category
         if ('categoryId' in updates) payload.categoryId = updates.categoryId;
         if (updates.observations !== undefined) payload.observations = updates.observations;
+        if (updates.splitPercentage !== undefined) payload.splitPercentage = updates.splitPercentage;
 
         // If amount is being updated, handle the type change
         if (updates.amount !== undefined) {
@@ -462,6 +463,104 @@ function createApiTransactionStore() {
         };
       }
     },
+
+    // Find potential reimbursements for a transaction
+    async findPotentialReimbursements(
+      transactionId: string,
+      toleranceDays = 30,
+      amountTolerancePercent = 5
+    ) {
+      try {
+        const params = new URLSearchParams({
+          toleranceDays: toleranceDays.toString(),
+          amountTolerancePercent: amountTolerancePercent.toString(),
+        });
+
+        const response = await fetch(
+          `${API_BASE}/transactions/${transactionId}/potential-reimbursements?${params}`,
+          {
+            headers: getAuthHeaders(),
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to find potential reimbursements");
+        }
+
+        const result = await response.json();
+        return result.data || [];
+      } catch (error) {
+        console.error("Failed to find potential reimbursements:", error);
+        throw error;
+      }
+    },
+
+    // Link a split transaction (bidirectional: expense<->income)
+    async linkSplitTransaction(
+      sourceTransactionId: string,
+      targetTransactionId: string,
+      splitPercentage: number
+    ) {
+      try {
+        const response = await fetch(
+          `${API_BASE}/transactions/${sourceTransactionId}/link-split`,
+          {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              targetTransactionId,
+              splitPercentage,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to link split transaction");
+        }
+
+        // Reload transactions to get updated data
+        await this.load();
+      } catch (error) {
+        console.error("Failed to link split transaction:", error);
+        throw error;
+      }
+    },
+
+    // Update split percentage without linking to a reimbursement
+    async updateSplitPercentage(transactionId: string, splitPercentage: number) {
+      try {
+        await this.update(transactionId, { splitPercentage });
+      } catch (error) {
+        console.error("Failed to update split percentage:", error);
+        throw error;
+      }
+    },
+
+    // Unlink a split transaction
+    async unlinkSplitTransaction(transactionId: string) {
+      try {
+        const response = await fetch(
+          `${API_BASE}/transactions/${transactionId}/unlink-split`,
+          {
+            method: "DELETE",
+            headers: getAuthHeaders(),
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to unlink split transaction");
+        }
+
+        // Reload transactions to get updated data
+        await this.load();
+      } catch (error) {
+        console.error("Failed to unlink split transaction:", error);
+        throw error;
+      }
+    },
   };
 }
 
@@ -503,6 +602,9 @@ function mapApiToTransaction(apiTransaction: any): Transaction {
     updatedAt: new Date(apiTransaction.updatedAt || apiTransaction.createdAt),
     hidden: apiTransaction.hidden || false,
     observations: apiTransaction.observations || undefined,
+    splitPercentage: apiTransaction.splitPercentage,
+    linkedTransactionId: apiTransaction.linkedTransactionId,
+    isReimbursement: apiTransaction.isReimbursement || false,
   };
 }
 

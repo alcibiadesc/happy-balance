@@ -23,7 +23,11 @@ export const createUserPreferencesRoutesV2 = (
    *         description: User preferences retrieved successfully
    */
   router.get("/", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
+    if (!req.user?.userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const userId = req.user.userId;
     const controller = controllerFactory.createUserPreferencesController(userId);
     await controller.getUserPreferences(req, res);
   });
@@ -47,8 +51,15 @@ export const createUserPreferencesRoutesV2 = (
    *         description: User preferences retrieved successfully
    */
   router.get("/:userId", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createUserPreferencesController(userId);
+    if (!req.user?.userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    // Use the path param for the target user, but validate auth
+    const targetUserId = req.params.userId;
+    const controller = controllerFactory.createUserPreferencesController(req.user.userId);
+    // Override the param to use target user
+    req.params.userId = targetUserId;
     await controller.getUserPreferences(req, res);
   });
 
@@ -78,7 +89,11 @@ export const createUserPreferencesRoutesV2 = (
    *         description: User preferences created successfully
    */
   router.post("/", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
+    if (!req.user?.userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const userId = req.user.userId;
     const controller = controllerFactory.createUserPreferencesController(userId);
     await controller.createUserPreferences(req, res);
   });
@@ -115,8 +130,11 @@ export const createUserPreferencesRoutesV2 = (
    *         description: User preferences updated successfully
    */
   router.put("/:userId", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createUserPreferencesController(userId);
+    if (!req.user?.userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const controller = controllerFactory.createUserPreferencesController(req.user.userId);
     await controller.updateUserPreferences(req, res);
   });
 
@@ -139,8 +157,11 @@ export const createUserPreferencesRoutesV2 = (
    *         description: User preferences deleted successfully
    */
   router.delete("/:userId", async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createUserPreferencesController(userId);
+    if (!req.user?.userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const controller = controllerFactory.createUserPreferencesController(req.user.userId);
     await controller.deleteUserPreferences(req, res);
   });
 

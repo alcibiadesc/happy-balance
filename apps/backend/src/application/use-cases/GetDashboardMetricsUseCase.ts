@@ -201,24 +201,28 @@ export class GetDashboardMetricsUseCase {
       }
     }
 
-
     for (const transaction of transactions) {
+      // Use getEffectiveSplitAmount() to handle splits and reimbursements correctly
+      // This method returns 0 for reimbursements and applies split % for expenses
+      const effectiveAmount = transaction.getEffectiveSplitAmount();
+      const amount = Math.abs(effectiveAmount.amount);
       const snapshot = transaction.toSnapshot();
 
       if (snapshot.type === TransactionType.INCOME) {
-        income += snapshot.amount;
+        // Reimbursements will have effectiveAmount = 0, so won't add to income
+        income += amount;
       } else if (snapshot.type === TransactionType.EXPENSE) {
         // Check if this expense is actually an investment based on category
         const categoryType = snapshot.categoryId ? categoryTypeMap.get(snapshot.categoryId) : null;
 
         if (categoryType === CategoryType.INVESTMENT) {
-          investments += snapshot.amount;
+          investments += amount;
         } else {
-          expenses += snapshot.amount;
+          // Split expenses will use the effective amount (e.g., 50% of total)
+          expenses += amount;
         }
       }
     }
-
 
     return {
       income,
@@ -273,6 +277,9 @@ export class GetDashboardMetricsUseCase {
     );
 
     for (const transaction of transactions) {
+      // Use getEffectiveSplitAmount() to handle splits correctly
+      const effectiveAmount = transaction.getEffectiveSplitAmount();
+      const amount = Math.abs(effectiveAmount.amount);
       const snapshot = transaction.toSnapshot();
 
       if (snapshot.type === TransactionType.EXPENSE) {
@@ -283,11 +290,11 @@ export class GetDashboardMetricsUseCase {
         }
 
         if (!snapshot.categoryId) {
-          uncategorized += snapshot.amount;
+          uncategorized += amount;
         } else if (essentialCategoryIds.has(snapshot.categoryId)) {
-          essential += snapshot.amount;
+          essential += amount;
         } else {
-          discretionary += snapshot.amount;
+          discretionary += amount;
         }
       }
     }
@@ -336,6 +343,9 @@ export class GetDashboardMetricsUseCase {
     // Calculate totals per category, grouped by TRANSACTION type and CATEGORY
     // We only count the transaction amount for each category once, based on the transaction's own type
     for (const transaction of transactions) {
+      // Use getEffectiveSplitAmount() to handle splits and reimbursements
+      const effectiveAmount = transaction.getEffectiveSplitAmount();
+      const amount = Math.abs(effectiveAmount.amount);
       const snapshot = transaction.toSnapshot();
       const categoryId = snapshot.categoryId || "uncategorized";
 
@@ -375,8 +385,8 @@ export class GetDashboardMetricsUseCase {
         );
 
         if (isIncomeMatch || isExpenseMatch || isInvestmentMatch) {
-          // Add absolute value of amount
-          categoryData.amount += Math.abs(snapshot.amount);
+          // Add effective amount (handles splits and reimbursements)
+          categoryData.amount += amount;
           categoryData.count += 1;
         }
       }

@@ -27,6 +27,15 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     try {
       const snapshot = transaction.toSnapshot();
 
+      console.log('[PrismaRepo] Saving transaction:', {
+        id: snapshot.id,
+        type: snapshot.type,
+        amount: snapshot.amount,
+        splitPercentage: snapshot.splitPercentage,
+        linkedTransactionId: snapshot.linkedTransactionId,
+        isReimbursement: snapshot.isReimbursement
+      });
+
       await this.prisma.transaction.upsert({
         where: { id: snapshot.id },
         update: {
@@ -41,6 +50,9 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           isSelected: snapshot.isSelected,
           hash: snapshot.hash,
           hidden: (transaction as any).hidden || false,
+          splitPercentage: snapshot.splitPercentage ?? null,
+          linkedTransactionId: snapshot.linkedTransactionId || null,
+          isReimbursement: snapshot.isReimbursement ?? false,
         },
         create: {
           id: snapshot.id,
@@ -57,6 +69,9 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           hidden: (transaction as any).hidden || false,
           createdAt: new Date(snapshot.createdAt),
           userId: this.userId || 'default', // Use provided userId or default
+          splitPercentage: snapshot.splitPercentage ?? null,
+          linkedTransactionId: snapshot.linkedTransactionId || null,
+          isReimbursement: snapshot.isReimbursement ?? false,
         },
       });
 
@@ -93,6 +108,9 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 hidden: false,
                 createdAt: new Date(snapshot.createdAt),
                 userId: this.userId || 'default', // Ensure user isolation
+                splitPercentage: snapshot.splitPercentage ?? null,
+                linkedTransactionId: snapshot.linkedTransactionId || null,
+                isReimbursement: snapshot.isReimbursement ?? false,
               },
             });
             savedCount++;
@@ -290,6 +308,9 @@ export class PrismaTransactionRepository implements ITransactionRepository {
         isSelected: snapshot.isSelected,
         hash: snapshot.hash,
         hidden: (transaction as any).hidden || false,
+        splitPercentage: snapshot.splitPercentage ?? null,
+        linkedTransactionId: snapshot.linkedTransactionId || null,
+        isReimbursement: snapshot.isReimbursement ?? false,
         updatedAt: new Date(),
       };
 
@@ -773,7 +794,21 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       isSelected: prismaTransaction.isSelected,
       hash: prismaTransaction.hash || undefined,
       createdAt: prismaTransaction.createdAt.toISOString(),
+      splitPercentage: prismaTransaction.splitPercentage ? Number(prismaTransaction.splitPercentage) : undefined,
+      linkedTransactionId: prismaTransaction.linkedTransactionId || undefined,
+      isReimbursement: prismaTransaction.isReimbursement,
     };
+
+    if (snapshot.isReimbursement || snapshot.splitPercentage) {
+      console.log('[PrismaRepo] Mapped split/reimbursement transaction:', {
+        id: snapshot.id,
+        type: snapshot.type,
+        amount: snapshot.amount,
+        splitPercentage: snapshot.splitPercentage,
+        linkedTransactionId: snapshot.linkedTransactionId,
+        isReimbursement: snapshot.isReimbursement
+      });
+    }
 
     const result = Transaction.fromSnapshot(snapshot);
     if (result.isSuccess()) {

@@ -11,6 +11,7 @@
     isSelectionMode: boolean;
     selectedIds: Set<string>;
     editingObservationsId: string | null;
+    onOpenSplitModal?: (transaction: Transaction) => void;
     observationsText: string;
     onToggleGroup: () => void;
     onToggleSelection: (id: string) => void;
@@ -32,6 +33,7 @@
     isSelectionMode,
     selectedIds,
     editingObservationsId,
+    onOpenSplitModal,
     observationsText,
     onToggleGroup,
     onToggleSelection,
@@ -95,6 +97,7 @@
         onUpdateObservationsText={onUpdateObservationsText}
         onSaveObservations={onSaveObservations}
         onCancelEditingObservations={onCancelObservations}
+        onOpenSplitModal={onOpenSplitModal ? () => onOpenSplitModal(transaction) : undefined}
         {formatAmount}
       />
     {/each}

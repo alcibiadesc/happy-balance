@@ -14,6 +14,9 @@ import { TransactionListQuery } from "@application/queries/TransactionListQuery"
 import { SmartCategorizeTransactionUseCase } from "@application/use-cases/SmartCategorizeTransactionUseCase";
 import { FindSimilarTransactionsUseCase } from "@application/use-cases/FindSimilarTransactionsUseCase";
 import { GetDashboardMetricsUseCase } from "@application/use-cases/GetDashboardMetricsUseCase";
+import { FindPotentialReimbursementsUseCase } from "@application/use-cases/FindPotentialReimbursementsUseCase";
+import { LinkSplitTransactionsUseCase } from "@application/use-cases/LinkSplitTransactionsUseCase";
+import { UnlinkSplitTransactionsUseCase } from "@application/use-cases/UnlinkSplitTransactionsUseCase";
 
 const CreateTransactionSchema = z.object({
   amount: z.number().positive(),
@@ -30,6 +33,7 @@ const UpdateTransactionSchema = z.object({
   observations: z.string().max(500).optional(),
   categoryId: z.string().nullable().optional(),
   hidden: z.boolean().optional(),
+  splitPercentage: z.number().min(0).max(100).optional(),
 });
 
 const TransactionFiltersSchema = z.object({
@@ -95,6 +99,16 @@ const MetricsQuerySchema = z.object({
   periodOffset: z.coerce.number().min(0).optional().default(0),
 });
 
+const FindReimbursementsSchema = z.object({
+  toleranceDays: z.coerce.number().min(1).max(90).optional().default(30),
+  amountTolerancePercent: z.coerce.number().min(0).max(50).optional().default(5),
+});
+
+const LinkSplitTransactionsSchema = z.object({
+  targetTransactionId: z.string(),
+  splitPercentage: z.number().min(0).max(100),
+});
+
 const PaginatedTransactionSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(200).default(50),
@@ -118,6 +132,9 @@ export class TransactionController {
     private readonly smartCategorizeUseCase?: SmartCategorizeTransactionUseCase,
     private readonly findSimilarTransactionsUseCase?: FindSimilarTransactionsUseCase,
     private readonly getDashboardMetricsUseCase?: GetDashboardMetricsUseCase,
+    private readonly findPotentialReimbursementsUseCase?: FindPotentialReimbursementsUseCase,
+    private readonly linkSplitTransactionsUseCase?: LinkSplitTransactionsUseCase,
+    private readonly unlinkSplitTransactionsUseCase?: UnlinkSplitTransactionsUseCase,
   ) {}
 
   async createTransaction(req: Request, res: Response) {
@@ -531,8 +548,10 @@ export class TransactionController {
         console.log('🔧 Controller: categoryId not provided in update data');
       }
 
-      // TODO: Add support for updating other fields if needed
-      // For now, we support updating description, observations, hidden, and categoryId
+      // Update splitPercentage if provided
+      if (data.splitPercentage !== undefined) {
+        (existingTransaction as any).splitPercentage = data.splitPercentage;
+      }
 
       const saveResult =
         await this.transactionRepository.update(existingTransaction);
@@ -540,10 +559,13 @@ export class TransactionController {
         return res.status(500).json({ error: saveResult.getError() });
       }
 
-      // Include hidden field in the response
+      // Include hidden field and splitPercentage in the response
       const responseData = {
         ...existingTransaction.toSnapshot(),
         hidden: (existingTransaction as any).hidden || false,
+        splitPercentage: (existingTransaction as any).splitPercentage,
+        linkedTransactionId: (existingTransaction as any).linkedTransactionId,
+        isReimbursement: (existingTransaction as any).isReimbursement || false,
       };
 
       res.json({
@@ -878,6 +900,123 @@ export class TransactionController {
       res.json({
         success: true,
         data: metrics,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  async findPotentialReimbursements(req: Request, res: Response) {
+    try {
+      if (!this.findPotentialReimbursementsUseCase) {
+        return res.status(501).json({ error: "Feature not implemented" });
+      }
+
+      const { id } = req.params;
+      const validationResult = FindReimbursementsSchema.safeParse(req.query);
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validationResult.error.errors,
+        });
+      }
+
+      const query = validationResult.data;
+
+      const result = await this.findPotentialReimbursementsUseCase.execute({
+        transactionId: id,
+        toleranceDays: query.toleranceDays,
+        amountTolerancePercent: query.amountTolerancePercent,
+      });
+
+      if (result.isFailure()) {
+        return res.status(400).json({ error: result.getError() });
+      }
+
+      const potentialReimbursements = result.getValue();
+
+      // Convert to plain objects for JSON response
+      const reimbursements = potentialReimbursements.map((r) => ({
+        transaction: r.transaction.toSnapshot(),
+        matchScore: r.matchScore,
+        matchReasons: r.matchReasons,
+      }));
+
+      res.json({
+        success: true,
+        data: reimbursements,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  async linkSplitTransactions(req: Request, res: Response) {
+    try {
+      if (!this.linkSplitTransactionsUseCase) {
+        return res.status(501).json({ error: "Feature not implemented" });
+      }
+
+      const { id } = req.params; // Source transaction ID (can be expense or income)
+      const validationResult = LinkSplitTransactionsSchema.safeParse(req.body);
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validationResult.error.errors,
+        });
+      }
+
+      const data = validationResult.data;
+
+      const result = await this.linkSplitTransactionsUseCase.execute({
+        sourceTransactionId: id,
+        targetTransactionId: data.targetTransactionId,
+        splitPercentage: data.splitPercentage,
+      });
+
+      if (result.isFailure()) {
+        return res.status(400).json({ error: result.getError() });
+      }
+
+      res.json({
+        success: true,
+        message: "Transactions linked successfully",
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  async unlinkSplitTransactions(req: Request, res: Response) {
+    try {
+      if (!this.unlinkSplitTransactionsUseCase) {
+        return res.status(501).json({ error: "Feature not implemented" });
+      }
+
+      const { id } = req.params;
+
+      const result = await this.unlinkSplitTransactionsUseCase.execute({
+        transactionId: id,
+      });
+
+      if (result.isFailure()) {
+        return res.status(400).json({ error: result.getError() });
+      }
+
+      res.json({
+        success: true,
+        message: "Transactions unlinked successfully",
       });
     } catch (error) {
       res.status(500).json({

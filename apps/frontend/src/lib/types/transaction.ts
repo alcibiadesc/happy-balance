@@ -15,6 +15,16 @@ export interface Transaction {
   updatedAt: Date;
   hidden?: boolean;
   observations?: string;
+  // Split transaction fields
+  splitPercentage?: number; // % you pay (0-100, undefined = 100%)
+  linkedTransactionId?: string; // ID of linked reimbursement/expense
+  isReimbursement?: boolean; // This is a reimbursement (not real income)
+}
+
+export interface PotentialReimbursement {
+  transaction: Transaction;
+  matchScore: number;
+  matchReasons: string[];
 }
 
 export interface Category {

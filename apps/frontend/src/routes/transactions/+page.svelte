@@ -8,6 +8,7 @@
   import AddTransactionModal from "$lib/components/organisms/AddTransactionModal.svelte";
   import SmartCategorizationModal from "$lib/components/organisms/SmartCategorizationModal.svelte";
   import CategorySelectionModal from "$lib/components/organisms/CategorySelectionModal.svelte";
+  import SplitTransactionModal from "$lib/components/organisms/SplitTransactionModal.svelte";
   import PeriodStats from "$lib/components/molecules/PeriodStats.svelte";
   import DateSelector from "$lib/components/molecules/DateSelector.svelte";
   import SearchBar from "$lib/components/molecules/SearchBar.svelte";
@@ -486,6 +487,7 @@
           startEditingObservations(transaction)}
         onUpdateObservationsText={(text) =>
           pageStore.updateObservationsText(text)}
+        onOpenSplitModal={(transaction) => pageStore.openSplitModal(transaction)}
         onSaveObservations={async () => {
           const transaction = group.items.find(
             (t) => t.id === pageStore.observationsState.editingTransactionId,
@@ -521,6 +523,16 @@
   suggestions={pageStore.modalState.smartSuggestions}
   onConfirm={handleSmartCategorization}
   onCancel={handleSmartCategorizationCancel}
+/>
+
+<SplitTransactionModal
+  isOpen={pageStore.modalState.showSplitModal}
+  transaction={pageStore.modalState.splitModalTransaction}
+  onClose={async () => {
+    pageStore.closeSplitModal();
+    // Refresh transactions to update period stats after linking
+    await apiTransactions.load();
+  }}
 />
 
 <ConfirmModal
