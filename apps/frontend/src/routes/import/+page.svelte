@@ -5,15 +5,21 @@
   import { apiTransactions } from "$lib/stores/api-transactions";
   import { parseCSV } from "$lib/utils/csv-parser";
 
-  // Import types from the parser
   import type { ParsedTransaction } from "$lib/utils/csv-parser";
 
-  // Constants
-  const PREVIEW_SETTING_KEY = "import-preview-enabled";
+  // ===== TYPES & CONSTANTS =====
+  type ViewMode = 'all' | 'duplicates' | 'new';
+  type ImportStep = 1 | 2 | 3;
 
-  // State management
-  let step = 1; // 1: upload, 2: preview, 3: complete
-  let selectedFile: File | null = null;
+  const PREVIEW_SETTING_KEY = "import-preview-enabled";
+  const MAX_FILE_SIZE_MB = 10;
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+  const IMPORT_COMPLETE_DELAY_MS = 1500;
+  const DEBOUNCE_DELAY_MS = 300;
+
+  // ===== STATE MANAGEMENT =====
+  let step: ImportStep = 1;
+  let selectedFiles: File[] = [];
   let transactions: ParsedTransaction[] = [];
   let loading = false;
   let error = "";
@@ -21,95 +27,142 @@
   let showAllTransactions = false;
   let mounted = false;
   let importedCount = 0;
-
-  // View modes: 'all' | 'duplicates' | 'new'
-  let viewMode: 'all' | 'duplicates' | 'new' = 'all';
-
-  // Search functionality
+  let importProgress = 0;
+  let totalFilesToProcess = 0;
+  let viewMode: ViewMode = 'all';
   let searchQuery = '';
   let searchTimeout: ReturnType<typeof setTimeout>;
 
-  // Load preview preference from localStorage
+  // ===== UTILITY FUNCTIONS =====
+
+  /**
+   * Check if localStorage is available
+   */
+  function isLocalStorageAvailable(): boolean {
+    return typeof localStorage !== 'undefined';
+  }
+
+  /**
+   * Load preview preference from localStorage with default fallback
+   */
   function loadPreviewPreference(): boolean {
-    if (typeof localStorage !== 'undefined') {
+    if (!isLocalStorageAvailable()) return true;
+    try {
       const saved = localStorage.getItem(PREVIEW_SETTING_KEY);
-      return saved !== null ? JSON.parse(saved) : true; // Default to true
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      console.warn('Failed to load preview preference from localStorage');
+      return true;
     }
-    return true;
   }
 
-  // Save preview preference to localStorage
+  /**
+   * Save preview preference to localStorage
+   */
   function savePreviewPreference(enabled: boolean): void {
-    if (typeof localStorage !== 'undefined') {
+    if (!isLocalStorageAvailable()) return;
+    try {
       localStorage.setItem(PREVIEW_SETTING_KEY, JSON.stringify(enabled));
+    } catch {
+      console.warn('Failed to save preview preference to localStorage');
     }
   }
 
-  // Initialize preview preference on mount
+  /**
+   * Validate individual file
+   */
+  function validateFile(file: File): { valid: boolean; errorKey?: string } {
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      return { valid: false, errorKey: "import.errors.invalid_file" };
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return { valid: false, errorKey: "import.errors.file_too_large" };
+    }
+    return { valid: true };
+  }
+
+  /**
+   * Validate all selected files
+   */
+  function validateFiles(files: File[]): { valid: boolean; errorKey?: string } {
+    if (files.length === 0) return { valid: false };
+
+    for (const file of files) {
+      const validation = validateFile(file);
+      if (!validation.valid) return validation;
+    }
+    return { valid: true };
+  }
+
+  // ===== LIFECYCLE =====
+
   onMount(() => {
     previewEnabled = loadPreviewPreference();
     mounted = true;
   });
 
-  // React to previewEnabled changes and save to localStorage (only after mount)
-  $: if (mounted && typeof localStorage !== 'undefined') {
+  // ===== REACTIVE DECLARATIONS =====
+
+  $: if (mounted && isLocalStorageAvailable()) {
     savePreviewPreference(previewEnabled);
   }
 
-  // Parse CSV and check for duplicates using new DDD endpoints
+  // ===== CSV PROCESSING =====
+
+  /**
+   * Parse CSV file and enrich with hash and duplicate information
+   * @param file - CSV file to process
+   * @returns Array of transactions with duplicate detection
+   */
   async function getCSVPreview(file: File): Promise<ParsedTransaction[]> {
-    // Parse the CSV file using the centralized parser
+    // Step 1: Parse CSV file
     const fileText = await file.text();
     const parseResult = parseCSV(fileText);
 
-    // Check for parsing errors
+    // Log any parsing warnings
     if (parseResult.errors.length > 0) {
-      console.warn('CSV parsing errors:', parseResult.errors);
-      // Continue with parsed transactions, but log errors
       parseResult.errors.forEach(error => {
-        console.warn(`Row ${error.row}: ${error.message}`);
+        console.warn(`CSV parsing - Row ${error.row}: ${error.message}`);
       });
     }
 
-
     if (parseResult.transactions.length === 0) {
-      throw new Error('No valid transactions found in CSV file');
+      throw new Error('import.errors.no_transactions');
     }
 
-    // Generate hashes using backend service for consistency
-    // IMPORTANT: Always use EUR for hash generation when amount is in EUR
-    // This ensures consistent duplicate detection regardless of originalCurrency
+    // Step 2: Generate hashes for duplicate detection
     const transactionsForHashing = parseResult.transactions.map(tx => ({
       date: tx.date,
       merchant: tx.partner,
       amount: tx.amount,
-      currency: 'EUR' // Always use EUR for hash to ensure consistent duplicate detection
+      currency: 'EUR' // Always EUR for consistent hash generation
     }));
 
-    const hashResult = await apiTransactions.generateHashes(transactionsForHashing);
+    const { hashes: hashResults } = await apiTransactions.generateHashes(transactionsForHashing);
 
-    // Update transactions with backend-generated hashes
-    const transactionsWithHashes = parseResult.transactions.map((tx, index) => {
-      const hashInfo = hashResult.hashes.find(h => h.index === index);
-      return {
-        ...tx,
-        hash: hashInfo?.hash || tx.hash // Use backend hash if available
-      };
-    });
+    // Attach hashes to transactions
+    const transactionsWithHashes = parseResult.transactions.map((tx, index) => ({
+      ...tx,
+      hash: hashResults[index]?.hash || tx.hash
+    }));
 
-    // Check for duplicates using backend-generated hashes
-    const hashes = transactionsWithHashes.map(tx => tx.hash);
-    const duplicateCheckResult = await apiTransactions.checkDuplicates(hashes);
+    // Step 3: Check for duplicates in database
+    const transactionHashes = transactionsWithHashes.map(tx => tx.hash);
+    const { results: duplicateResults } = await apiTransactions.checkDuplicates(transactionHashes);
 
-    // Update transactions based on duplicate check results
+    // Step 4: Enrich with duplicate information
     const transactionsWithDuplicateInfo = transactionsWithHashes.map(tx => {
-      const duplicateInfo = duplicateCheckResult.results.find(r => r.hash === tx.hash);
+      const duplicateInfo = duplicateResults.find(r => r.hash === tx.hash);
+      const isDuplicate = duplicateInfo?.isDuplicate || tx.isDuplicate;
+
       return {
         ...tx,
-        isDuplicate: duplicateInfo?.isDuplicate || tx.isDuplicate, // Keep local duplicates too
-        selected: !(duplicateInfo?.isDuplicate || tx.isDuplicate), // Don't select any duplicates by default
-        duplicateReason: duplicateInfo?.isDuplicate ? $t("import.duplicate_reasons.database") : tx.duplicateReason,
-        isSuspectedDuplicate: duplicateInfo?.isDuplicate // Mark as suspected duplicate for UI
+        isDuplicate,
+        selected: !isDuplicate, // Don't select duplicates by default
+        duplicateReason: isDuplicate
+          ? $t("import.duplicate_reasons.database")
+          : tx.duplicateReason,
+        isSuspectedDuplicate: duplicateInfo?.isDuplicate
       };
     });
 
@@ -117,163 +170,274 @@
   }
 
 
-  async function handleFileUpload(event: Event) {
+  /**
+   * Handle file upload from input element
+   */
+  async function handleFileUpload(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
+    const files = input.files ? Array.from(input.files) : [];
 
-    if (!file) return;
-
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      error = $t("import.errors.invalid_file");
+    const validation = validateFiles(files);
+    if (!validation.valid) {
+      error = validation.errorKey ? $t(validation.errorKey) : $t("import.errors.invalid_file");
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      error = $t("import.errors.file_too_large");
-      return;
-    }
-
-    selectedFile = file;
+    selectedFiles = files;
     error = "";
 
     if (previewEnabled) {
       await generatePreview();
     } else {
-      await importTransactions();
+      await importDirectly();
     }
   }
 
-  async function generatePreview() {
-    if (!selectedFile) return;
+  /**
+   * Reset import UI state
+   */
+  function resetImportState(): void {
+    step = 1;
+    selectedFiles = [];
+    transactions = [];
+    error = "";
+    importedCount = 0;
+    importProgress = 0;
+    totalFilesToProcess = 0;
+  }
+
+  /**
+   * Process multiple files and combine all transactions
+   */
+  async function processAllFiles(): Promise<ParsedTransaction[]> {
+    const allTransactions: ParsedTransaction[] = [];
+
+    for (let i = 0; i < selectedFiles.length; i++) {
+      importProgress = i + 1;
+      const fileTransactions = await getCSVPreview(selectedFiles[i]);
+      allTransactions.push(...fileTransactions);
+    }
+
+    return allTransactions;
+  }
+
+  /**
+   * Generate preview by processing all files
+   */
+  async function generatePreview(): Promise<void> {
+    if (selectedFiles.length === 0) return;
 
     loading = true;
     error = "";
+    totalFilesToProcess = selectedFiles.length;
+    importProgress = 0;
 
     try {
-      // Use backend preview endpoint to get transactions with duplicate detection
-      transactions = await getCSVPreview(selectedFile);
+      transactions = await processAllFiles();
 
       if (transactions.length === 0) {
         error = $t("import.errors.no_transactions");
         return;
       }
 
-      // Show message if duplicates were detected
-      const duplicateCount = transactions.filter(tx => tx.isDuplicate).length;
-      if (duplicateCount > 0) {
-      }
-
       step = 2;
     } catch (err) {
-      error = err instanceof Error ? err.message : $t("import.errors.parse_failed");
-      console.error(err);
+      const errorMessage = err instanceof Error ? err.message : "import.errors.parse_failed";
+      error = $t(errorMessage);
+      console.error('Preview generation failed:', err);
     } finally {
       loading = false;
+      importProgress = 0;
+      totalFilesToProcess = 0;
     }
   }
 
 
-  async function importTransactions() {
-    if (!selectedFile) return;
+  /**
+   * Import transactions without preview (directly from files)
+   */
+  async function importDirectly(): Promise<void> {
+    if (selectedFiles.length === 0) return;
 
     loading = true;
     step = 3;
+    totalFilesToProcess = selectedFiles.length;
+    importProgress = 0;
 
     try {
-      let result;
+      let totalImported = 0;
+      let totalDuplicatesSkipped = 0;
 
-      if (transactions.length === 0) {
-        // Preview was disabled - import directly from file
-        result = await apiTransactions.importFile(selectedFile, {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        importProgress = i + 1;
+        const result = await apiTransactions.importFile(selectedFiles[i], {
           currency: "EUR",
           duplicateDetectionEnabled: true,
           skipDuplicates: true,
           autoCategorizationEnabled: true,
         });
 
-        // Store counts for success message
-        importedCount = result.imported || 0;
-        (window as any).lastImportDuplicates = result.duplicatesSkipped || 0;
-        (window as any).lastImportDuplicatesForced = 0;
-      } else {
-        // Preview was enabled - import selected transactions
-        const selectedTransactions = transactions.filter(tx => tx.selected);
-        const duplicatesSkipped = transactions.filter(tx => tx.isDuplicate && !tx.selected).length;
-        const duplicatesImported = transactions.filter(tx => tx.isDuplicate && tx.selected).length;
-
-        if (selectedTransactions.length === 0) {
-          throw new Error('No transactions selected for import');
-        }
-
-        result = await apiTransactions.importSelectedTransactions(selectedTransactions);
-
-        // Store duplicate counts for success message
-        importedCount = selectedTransactions.length;
-        (window as any).lastImportDuplicates = duplicatesSkipped;
-        (window as any).lastImportDuplicatesForced = duplicatesImported;
+        totalImported += result.imported || 0;
+        totalDuplicatesSkipped += result.duplicatesSkipped || 0;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      loading = false;
+      await finalizeImport(totalImported, totalDuplicatesSkipped, 0);
     } catch (err) {
-      error = $t("import.errors.import_failed");
-      console.error(err);
-      step = 2;
-      loading = false;
+      handleImportError();
+    } finally {
+      cleanupImportProgress();
     }
   }
 
-  function toggleTransaction(id: string) {
-    transactions = transactions.map((tx) =>
-      tx.id === id ? { ...tx, selected: !tx.selected } : tx,
+  /**
+   * Import transactions with preview (from selected transactions)
+   */
+  async function importFromPreview(): Promise<void> {
+    const selectedTransactions = transactions.filter(tx => tx.selected);
+    const duplicatesSkipped = transactions.filter(tx => tx.isDuplicate && !tx.selected).length;
+    const duplicatesImported = transactions.filter(tx => tx.isDuplicate && tx.selected).length;
+
+    if (selectedTransactions.length === 0) {
+      throw new Error('import.errors.no_transactions_selected');
+    }
+
+    const result = await apiTransactions.importSelectedTransactions(selectedTransactions);
+    await finalizeImport(selectedTransactions.length, duplicatesSkipped, duplicatesImported);
+  }
+
+  /**
+   * Finalize import process and reload transactions
+   */
+  async function finalizeImport(
+    imported: number,
+    duplicatesSkipped: number,
+    duplicatesImported: number
+  ): Promise<void> {
+    importedCount = imported;
+
+    // Store counts in window for success message display
+    (window as any).lastImportDuplicates = duplicatesSkipped;
+    (window as any).lastImportDuplicatesForced = duplicatesImported;
+
+    // Wait for animation before reloading
+    await new Promise(resolve => setTimeout(resolve, IMPORT_COMPLETE_DELAY_MS));
+
+    // Auto-load updated transactions list
+    await apiTransactions.load();
+  }
+
+  /**
+   * Handle import errors
+   */
+  function handleImportError(): void {
+    error = $t("import.errors.import_failed");
+    step = 2;
+  }
+
+  /**
+   * Cleanup import progress indicators
+   */
+  function cleanupImportProgress(): void {
+    loading = false;
+    importProgress = 0;
+    totalFilesToProcess = 0;
+  }
+
+  /**
+   * Main import orchestrator
+   */
+  async function importTransactions(): Promise<void> {
+    if (selectedFiles.length === 0) return;
+
+    loading = true;
+    step = 3;
+    totalFilesToProcess = selectedFiles.length;
+    importProgress = 0;
+
+    try {
+      if (transactions.length === 0) {
+        // No preview - import directly from files
+        await importDirectly();
+      } else {
+        // Preview enabled - import selected transactions
+        await importFromPreview();
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "import.errors.import_failed";
+      error = $t(errorMessage);
+      console.error('Import failed:', err);
+      handleImportError();
+    } finally {
+      cleanupImportProgress();
+    }
+  }
+
+  // ===== TRANSACTION MANAGEMENT =====
+
+  /**
+   * Toggle selection state of a single transaction
+   */
+  function toggleTransaction(id: string): void {
+    transactions = transactions.map(tx =>
+      tx.id === id ? { ...tx, selected: !tx.selected } : tx
     );
   }
 
-  function toggleAllTransactions() {
+  /**
+   * Toggle selection state of all visible transactions
+   */
+  function toggleAllTransactions(): void {
     const currentVisible = visibleTransactions;
-    const allSelected = currentVisible.every((tx) => tx.selected);
+    const allSelected = currentVisible.every(tx => tx.selected);
 
-    transactions = transactions.map((tx) => {
-      // Toggle only visible transactions based on current view mode
+    transactions = transactions.map(tx => {
       const isVisible = currentVisible.some(v => v.id === tx.id);
-      if (isVisible) {
-        return { ...tx, selected: !allSelected };
-      }
-      return tx;
+      return isVisible ? { ...tx, selected: !allSelected } : tx;
     });
   }
 
-  function goBack() {
+  /**
+   * Navigate back to upload step
+   */
+  function goBack(): void {
     if (step === 2) {
       step = 1;
-      selectedFile = null;
+      selectedFiles = [];
       transactions = [];
       error = "";
       importedCount = 0;
     }
   }
 
-  function handleClose() {
+  /**
+   * Close import dialog and navigate to home
+   */
+  function handleClose(): void {
     goto("/");
   }
 
-  // Search functionality
-  function handleSearch(event: Event) {
+  // ===== SEARCH FUNCTIONALITY =====
+
+  /**
+   * Handle search input with debounce
+   */
+  function handleSearch(event: Event): void {
     const target = event.target as HTMLInputElement;
     const value = target.value;
 
-    // Debounce search
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       searchQuery = value.toLowerCase();
-    }, 300);
+    }, DEBOUNCE_DELAY_MS);
   }
 
-  function matchesSearch(transaction: any): boolean {
+  /**
+   * Check if transaction matches search query
+   */
+  function matchesSearch(transaction: ParsedTransaction): boolean {
     if (!searchQuery) return true;
 
-    const searchFields = [
+    const searchableFields = [
       transaction.partner,
       transaction.description,
       transaction.date,
@@ -281,46 +445,57 @@
       transaction.hash
     ];
 
-    return searchFields.some(field =>
+    return searchableFields.some(field =>
       field?.toString().toLowerCase().includes(searchQuery)
     );
   }
 
+  // ===== REACTIVE STATE COMPUTATIONS =====
+
+  /** Count of selected transactions */
   $: selectedCount = transactions.filter(tx => tx.selected).length;
-  $: duplicateCount = transactions.filter((tx) => tx.isDuplicate).length;
-  $: selectedDuplicatesCount = transactions.filter((tx) => tx.isDuplicate && tx.selected).length;
-  $: newTransactionsCount = transactions.filter((tx) => !tx.isDuplicate).length;
+
+  /** Count of duplicate transactions */
+  $: duplicateCount = transactions.filter(tx => tx.isDuplicate).length;
+
+  /** Count of selected duplicates */
+  $: selectedDuplicatesCount = transactions.filter(tx => tx.isDuplicate && tx.selected).length;
+
+  /** Count of new (non-duplicate) transactions */
+  $: newTransactionsCount = transactions.filter(tx => !tx.isDuplicate).length;
+
+  /**
+   * Filter transactions based on view mode and search query
+   */
   $: visibleTransactions = (() => {
     let filtered = transactions;
 
     // Apply view mode filter
     switch (viewMode) {
       case 'duplicates':
-        filtered = filtered.filter((tx) => tx.isDuplicate);
+        filtered = filtered.filter(tx => tx.isDuplicate);
         break;
       case 'new':
-        filtered = filtered.filter((tx) => !tx.isDuplicate);
+        filtered = filtered.filter(tx => !tx.isDuplicate);
         break;
       case 'all':
       default:
-        // Show all transactions
         break;
     }
 
     // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter(matchesSearch);
-    }
-
-    return filtered;
+    return searchQuery ? filtered.filter(matchesSearch) : filtered;
   })();
+
+  /** Display limited or all transactions based on toggle */
   $: displayedTransactions = showAllTransactions
     ? visibleTransactions
     : visibleTransactions.slice(0, 10);
-  $: importButtonText =
-    selectedCount === 1
-      ? $t("import.actions.import_count", { count: selectedCount })
-      : $t("import.actions.import_count_plural", { count: selectedCount });
+
+  /** Generate import button label based on selected count */
+  $: importButtonText = selectedCount === 1
+    ? $t("import.actions.import_count", { count: selectedCount })
+    : $t("import.actions.import_count_plural", { count: selectedCount });
 </script>
 
 <svelte:head>
@@ -473,6 +648,7 @@
             <input
               type="file"
               accept=".csv"
+              multiple
               on:change={handleFileUpload}
               class="upload-input"
               id="file-upload"
@@ -510,28 +686,44 @@
             </label>
           </div>
 
-          {#if selectedFile && !loading}
-            <div class="file-info">
-              <div class="file-details">
-                <div class="file-icon">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                </div>
-                <div class="file-text">
-                  <p class="file-name">{selectedFile.name}</p>
-                  <p class="file-size">
-                    {(selectedFile.size / 1024).toFixed(1)} KB
+          {#if selectedFiles.length > 0 && !loading}
+            <div class="files-container">
+              {#if totalFilesToProcess > 0 && importProgress > 0}
+                <div class="progress-info">
+                  <p class="progress-text">
+                    Procesando archivo {importProgress} de {totalFilesToProcess}...
                   </p>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width: {(importProgress / totalFilesToProcess) * 100}%"></div>
+                  </div>
                 </div>
-              </div>
-              <div class="file-badge">
-                {$t("import.upload.ready")}
+              {/if}
+              <div class="files-list">
+                {#each selectedFiles as file}
+                  <div class="file-info">
+                    <div class="file-details">
+                      <div class="file-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      </div>
+                      <div class="file-text">
+                        <p class="file-name">{file.name}</p>
+                        <p class="file-size">
+                          {(file.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                    </div>
+                    <div class="file-badge">
+                      {$t("import.upload.ready")}
+                    </div>
+                  </div>
+                {/each}
               </div>
             </div>
           {/if}
@@ -898,12 +1090,7 @@
             {:else if step === 3 && !loading}
               <button
                 class="btn-secondary"
-                on:click={() => {
-                  selectedFile = null;
-                  transactions = [];
-                  step = 1;
-                  importedCount = 0;
-                }}
+                on:click={resetImportState}
               >
                 {$t("import.complete.import_another")}
               </button>
@@ -1249,9 +1436,49 @@
     color: var(--text-muted);
   }
 
+  /* Files Container */
+  .files-container {
+    margin-top: 2rem;
+  }
+
+  .progress-info {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(122, 186, 165, 0.05);
+    border: 1px solid rgba(122, 186, 165, 0.2);
+    border-radius: 0.75rem;
+  }
+
+  .progress-text {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--surface-muted);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--acapulco), rgba(122, 186, 165, 0.7));
+    transition: width 0.3s ease;
+    border-radius: 3px;
+  }
+
+  .files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
   /* File Info */
   .file-info {
-    margin-top: 2rem;
     padding: 1rem;
     background: rgba(122, 186, 165, 0.05);
     border: 1px solid rgba(122, 186, 165, 0.2);
