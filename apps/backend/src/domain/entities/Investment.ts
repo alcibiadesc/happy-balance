@@ -153,6 +153,14 @@ export class InvestmentHistory {
     this._notes = newNotes;
   }
 
+  updateDate(newDate: Date): void {
+    this._date = new Date(newDate.getTime());
+  }
+
+  updateType(newType: InvestmentHistoryType): void {
+    this._type = newType;
+  }
+
   linkToTransaction(transactionId: string): void {
     this._transactionId = transactionId;
   }

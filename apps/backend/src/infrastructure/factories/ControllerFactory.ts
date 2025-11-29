@@ -31,6 +31,7 @@ import { FinancialCalculationService } from '@domain/services/FinancialCalculati
 import { SmartCategorizationService } from '@domain/services/SmartCategorizationService';
 import { TransactionFactory } from '@domain/factories/TransactionFactory';
 import { SyncInvestmentFromTransactionUseCase } from '@application/use-cases/SyncInvestmentFromTransactionUseCase';
+import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/UnsyncInvestmentFromTransactionUseCase';
 
 /**
  * Factory that creates controller instances with user-specific repositories
@@ -113,10 +114,14 @@ export class ControllerFactory {
       transactionRepository,
     );
 
-    // Investment sync use case
+    // Investment sync use cases
     const syncInvestmentUseCase = new SyncInvestmentFromTransactionUseCase(
       investmentRepository,
       categoryRepository,
+    );
+
+    const unsyncInvestmentUseCase = new UnsyncInvestmentFromTransactionUseCase(
+      investmentRepository,
     );
 
     return new TransactionController(
@@ -129,6 +134,7 @@ export class ControllerFactory {
       linkSplitTransactionsUseCase,
       unlinkSplitTransactionsUseCase,
       syncInvestmentUseCase,
+      unsyncInvestmentUseCase,
       categoryRepository,
       userId,
     );
@@ -242,7 +248,8 @@ export class ControllerFactory {
   createInvestmentController(userId: string): InvestmentController {
     const investmentRepository = new PrismaInvestmentRepository(this.prisma, userId);
     const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
-    return new InvestmentController(investmentRepository, categoryRepository, userId);
+    const transactionRepository = new PrismaTransactionRepository(this.prisma, userId);
+    return new InvestmentController(investmentRepository, categoryRepository, transactionRepository, userId);
   }
 
   /**

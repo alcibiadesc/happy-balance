@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { IInvestmentRepository } from "@domain/repositories/IInvestmentRepository";
 import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
+import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
+import { TransactionId } from "@domain/value-objects/TransactionId";
 import {
   Investment,
   InvestmentId,
@@ -82,6 +84,7 @@ export class InvestmentController {
   constructor(
     private readonly investmentRepository: IInvestmentRepository,
     private readonly categoryRepository?: ICategoryRepository,
+    private readonly transactionRepository?: ITransactionRepository,
     private readonly userId?: string
   ) {
     this.getPortfolioSummaryUseCase = new GetPortfolioSummaryUseCase(investmentRepository);
@@ -701,6 +704,25 @@ export class InvestmentController {
         await this.investmentRepository.update(investment);
       }
 
+      // If history entry was linked to a transaction, remove the category from that transaction
+      if (historyEntry.transactionId && this.transactionRepository) {
+        try {
+          const txIdResult = TransactionId.create(historyEntry.transactionId);
+          if (txIdResult.isSuccess()) {
+            const transactionResult = await this.transactionRepository.findById(txIdResult.getValue());
+            if (transactionResult.isSuccess() && transactionResult.getValue()) {
+              const transaction = transactionResult.getValue()!;
+              // Remove the category from the transaction
+              transaction.setCategoryId(null);
+              await this.transactionRepository.update(transaction);
+            }
+          }
+        } catch (e) {
+          console.warn(`Failed to remove category from linked transaction ${historyEntry.transactionId}:`, e);
+          // Continue anyway, the history entry is already deleted
+        }
+      }
+
       res.json({
         success: true,
         message: "History entry deleted successfully",
@@ -865,6 +887,217 @@ export class InvestmentController {
       res.status(500).json({
         success: false,
         error: "Failed to sync investments with categories",
+      });
+    }
+  }
+
+  /**
+   * Import from Gofire backup format
+   */
+  async importFromGofire(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({ success: false, error: "User not authenticated" });
+        return;
+      }
+
+      const { data } = req.body;
+      if (!Array.isArray(data)) {
+        res.status(400).json({ success: false, error: "Invalid Gofire format" });
+        return;
+      }
+
+      let imported = 0;
+      let historyCount = 0;
+
+      for (const item of data) {
+        // Create investment
+        const investmentResult = Investment.create(
+          item.title,
+          item.number || 0,
+          "EUR",
+          userId,
+          {
+            highlight: item.hightlight || false,
+            color: "#3B82F6",
+            icon: "📈",
+          }
+        );
+
+        if (investmentResult.isFailure()) {
+          console.warn(`Failed to create investment ${item.title}:`, investmentResult.getError());
+          continue;
+        }
+
+        const investment = investmentResult.getValue();
+        const saveResult = await this.investmentRepository.save(investment);
+
+        if (saveResult.isFailure()) {
+          console.warn(`Failed to save investment ${item.title}:`, saveResult.getError());
+          continue;
+        }
+
+        imported++;
+
+        // Import history (savings)
+        if (Array.isArray(item.saving)) {
+          for (const saving of item.saving) {
+            const historyType = saving.amount < 0
+              ? InvestmentHistoryType.WITHDRAWAL
+              : InvestmentHistoryType.CONTRIBUTION;
+
+            const historyResult = InvestmentHistory.create(
+              investment.id,
+              Math.abs(saving.amount),
+              historyType,
+              new Date(saving.today),
+              `Imported from Gofire`
+            );
+
+            if (historyResult.isSuccess()) {
+              await this.investmentRepository.addHistoryEntry(historyResult.getValue());
+              historyCount++;
+            }
+          }
+        }
+
+        // Auto-create category if sync service available
+        if (this.syncService) {
+          await this.syncService.onInvestmentCreated(investment);
+        }
+      }
+
+      res.json({
+        success: true,
+        data: { imported, historyCount },
+        message: `Imported ${imported} investments with ${historyCount} history entries`,
+      });
+    } catch (error) {
+      console.error("Error importing from Gofire:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to import from Gofire",
+      });
+    }
+  }
+
+  /**
+   * Export portfolio data
+   */
+  async exportPortfolio(req: Request, res: Response): Promise<void> {
+    try {
+      const investmentsResult = await this.investmentRepository.findAll();
+      if (investmentsResult.isFailure()) {
+        res.status(500).json({ success: false, error: investmentsResult.getError() });
+        return;
+      }
+
+      const investments = investmentsResult.getValue();
+      const exportData = [];
+
+      for (const inv of investments) {
+        const withHistoryResult = await this.investmentRepository.findByIdWithHistory(inv.id);
+        if (withHistoryResult.isSuccess() && withHistoryResult.getValue()) {
+          const fullInv = withHistoryResult.getValue()!;
+          exportData.push(fullInv.toSnapshot());
+        }
+      }
+
+      res.json({
+        success: true,
+        data: {
+          investments: exportData,
+          exportDate: new Date().toISOString(),
+          version: "1.0.0",
+        },
+      });
+    } catch (error) {
+      console.error("Error exporting portfolio:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to export portfolio",
+      });
+    }
+  }
+
+  /**
+   * Update history entry
+   */
+  async updateHistoryEntry(req: Request, res: Response): Promise<void> {
+    try {
+      const { id, historyId } = req.params;
+      const { amount, date, notes, type } = req.body;
+
+      const historyIdResult = InvestmentHistoryId.create(historyId);
+      if (historyIdResult.isFailure()) {
+        res.status(400).json({ success: false, error: "Invalid history ID" });
+        return;
+      }
+
+      const historyResult = await this.investmentRepository.findHistoryById(historyIdResult.getValue());
+      if (historyResult.isFailure()) {
+        res.status(500).json({ success: false, error: historyResult.getError() });
+        return;
+      }
+
+      const history = historyResult.getValue();
+      if (!history) {
+        res.status(404).json({ success: false, error: "History entry not found" });
+        return;
+      }
+
+      // Update fields
+      if (amount !== undefined) {
+        history.updateAmount(amount);
+      }
+      if (date !== undefined) {
+        history.updateDate(new Date(date));
+      }
+      if (notes !== undefined) {
+        history.updateNotes(notes);
+      }
+      if (type !== undefined) {
+        const newType = InvestmentHistoryTypeHelper.fromString(type);
+        if (newType) {
+          history.updateType(newType);
+        }
+      }
+
+      await this.investmentRepository.updateHistoryEntry(history);
+
+      // Recalculate investment value
+      const investmentIdResult = InvestmentId.create(id);
+      if (investmentIdResult.isSuccess()) {
+        const investmentResult = await this.investmentRepository.findByIdWithHistory(investmentIdResult.getValue());
+        if (investmentResult.isSuccess() && investmentResult.getValue()) {
+          const investment = investmentResult.getValue()!;
+          // Recalculate from history
+          const historyEntries = investment.history || [];
+          let value = 0;
+          for (const h of historyEntries) {
+            if (h.type === InvestmentHistoryType.CONTRIBUTION) {
+              value += h.amount;
+            } else if (h.type === InvestmentHistoryType.WITHDRAWAL) {
+              value -= h.amount;
+            } else if (h.type === InvestmentHistoryType.VALUE_UPDATE) {
+              value = h.amount;
+            }
+          }
+          investment.updateCurrentValue(Math.max(0, value));
+          await this.investmentRepository.update(investment);
+        }
+      }
+
+      res.json({
+        success: true,
+        data: history.toSnapshot(),
+      });
+    } catch (error) {
+      console.error("Error updating history entry:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to update history entry",
       });
     }
   }

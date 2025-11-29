@@ -15,6 +15,13 @@ export function createExportRoutes(controllerFactory: ControllerFactory): Router
     await controller.exportAll(req, res);
   });
 
+  // Import all data (transactions, categories, investments, history)
+  router.post("/import-all", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || "default";
+    const controller = controllerFactory.createExportController(userId);
+    await controller.importAll(req, res);
+  });
+
   // Export only transactions
   router.get("/transactions", async (req: Request, res: Response) => {
     const userId = req.user?.userId || "default";

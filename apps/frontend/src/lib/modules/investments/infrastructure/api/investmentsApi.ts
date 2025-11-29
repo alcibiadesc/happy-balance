@@ -146,4 +146,36 @@ export const investmentsApi = {
     });
     return handleResponse<{ total: number; synced: number; skipped: number }>(response);
   },
+
+  async updateHistoryEntry(
+    investmentId: string,
+    historyId: string,
+    data: { amount?: number; date?: string; notes?: string; type?: string }
+  ): Promise<void> {
+    const response = await fetch(`${API_BASE}/${investmentId}/history/${historyId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(true),
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    await handleResponse<void>(response);
+  },
+
+  async importFromGofire(data: { data: any[] }): Promise<{ imported: number; historyCount: number }> {
+    const response = await fetch(`${API_BASE}/import/gofire`, {
+      method: 'POST',
+      headers: getAuthHeaders(true),
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    return handleResponse<{ imported: number; historyCount: number }>(response);
+  },
+
+  async exportPortfolio(): Promise<{ investments: any[]; exportDate: string; version: string }> {
+    const response = await fetch(`${API_BASE}/export`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse<{ investments: any[]; exportDate: string; version: string }>(response);
+  },
 };

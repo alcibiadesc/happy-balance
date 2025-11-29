@@ -2,6 +2,10 @@ import { Request, Response } from "express";
 import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
 import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
 import { IInvestmentRepository } from "@domain/repositories/IInvestmentRepository";
+import { Transaction } from "@domain/entities/Transaction";
+import { Category } from "@domain/entities/Category";
+import { Investment, InvestmentId, InvestmentHistory, InvestmentHistoryId } from "@domain/entities/Investment";
+import { InvestmentHistoryType } from "@domain/entities/InvestmentHistoryType";
 
 export interface ExportData {
   exportDate: string;
@@ -217,6 +221,159 @@ export class ExportController {
       res.status(500).json({
         success: false,
         error: "Failed to export investments",
+      });
+    }
+  }
+
+  /**
+   * Import all user data from JSON backup
+   */
+  async importAll(req: Request, res: Response): Promise<void> {
+    try {
+      const importData = req.body as ExportData;
+
+      if (!importData.data) {
+        res.status(400).json({
+          success: false,
+          error: "Invalid import data format",
+        });
+        return;
+      }
+
+      const results = {
+        categories: { imported: 0, failed: 0 },
+        transactions: { imported: 0, failed: 0 },
+        investments: { imported: 0, failed: 0 },
+        investmentHistory: { imported: 0, failed: 0 },
+      };
+
+      // 1. Import categories first (transactions depend on them)
+      if (importData.data.categories && Array.isArray(importData.data.categories)) {
+        for (const catSnapshot of importData.data.categories) {
+          try {
+            // Update userId to current user
+            const categoryData = { ...catSnapshot, userId: this.userId };
+            const categoryResult = Category.fromSnapshot(categoryData);
+
+            if (categoryResult.isSuccess()) {
+              const category = categoryResult.getValue();
+              // Check if category already exists
+              const existingResult = await this.categoryRepository.findById(category.id);
+
+              if (existingResult.isSuccess() && existingResult.getValue()) {
+                // Update existing
+                await this.categoryRepository.update(category);
+              } else {
+                // Save new
+                await this.categoryRepository.save(category);
+              }
+              results.categories.imported++;
+            } else {
+              console.warn("Failed to import category:", categoryResult.getError());
+              results.categories.failed++;
+            }
+          } catch (error) {
+            console.warn("Error importing category:", error);
+            results.categories.failed++;
+          }
+        }
+      }
+
+      // 2. Import transactions
+      if (importData.data.transactions && Array.isArray(importData.data.transactions)) {
+        for (const txSnapshot of importData.data.transactions) {
+          try {
+            // Update userId to current user
+            const transactionData = { ...txSnapshot, userId: this.userId };
+            const transactionResult = Transaction.fromSnapshot(transactionData);
+
+            if (transactionResult.isSuccess()) {
+              const transaction = transactionResult.getValue();
+              // Check if transaction already exists
+              const existingResult = await this.transactionRepository.findById(transaction.id);
+
+              if (existingResult.isSuccess() && existingResult.getValue()) {
+                // Update existing
+                await this.transactionRepository.update(transaction);
+              } else {
+                // Save new
+                await this.transactionRepository.save(transaction);
+              }
+              results.transactions.imported++;
+            } else {
+              console.warn("Failed to import transaction:", transactionResult.getError());
+              results.transactions.failed++;
+            }
+          } catch (error) {
+            console.warn("Error importing transaction:", error);
+            results.transactions.failed++;
+          }
+        }
+      }
+
+      // 3. Import investments
+      if (importData.data.investments && Array.isArray(importData.data.investments)) {
+        for (const invSnapshot of importData.data.investments) {
+          try {
+            // Update userId to current user
+            const investmentData = { ...invSnapshot, userId: this.userId };
+            const investmentResult = Investment.fromSnapshot(investmentData);
+
+            if (investmentResult.isSuccess()) {
+              const investment = investmentResult.getValue();
+              // Check if investment already exists
+              const existingResult = await this.investmentRepository.findById(investment.id);
+
+              if (existingResult.isSuccess() && existingResult.getValue()) {
+                // Update existing
+                await this.investmentRepository.update(investment);
+              } else {
+                // Save new
+                await this.investmentRepository.save(investment);
+              }
+              results.investments.imported++;
+            } else {
+              console.warn("Failed to import investment:", investmentResult.getError());
+              results.investments.failed++;
+            }
+          } catch (error) {
+            console.warn("Error importing investment:", error);
+            results.investments.failed++;
+          }
+        }
+      }
+
+      // 4. Import investment history separately if provided
+      if (importData.data.investmentHistory && Array.isArray(importData.data.investmentHistory)) {
+        for (const histSnapshot of importData.data.investmentHistory) {
+          try {
+            const historyResult = InvestmentHistory.fromSnapshot(histSnapshot);
+
+            if (historyResult.isSuccess()) {
+              const history = historyResult.getValue();
+              await this.investmentRepository.addHistoryEntry(history);
+              results.investmentHistory.imported++;
+            } else {
+              console.warn("Failed to import history entry:", historyResult.getError());
+              results.investmentHistory.failed++;
+            }
+          } catch (error) {
+            console.warn("Error importing history entry:", error);
+            results.investmentHistory.failed++;
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        data: results,
+        message: `Import complete: ${results.categories.imported} categories, ${results.transactions.imported} transactions, ${results.investments.imported} investments, ${results.investmentHistory.imported} history entries`,
+      });
+    } catch (error) {
+      console.error("Error importing data:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to import data",
       });
     }
   }

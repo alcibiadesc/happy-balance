@@ -45,6 +45,20 @@ export const createInvestmentRoutesV2 = (
     await controller.updateSortOrder(req, res);
   });
 
+  // Import from Gofire (must be before /:id)
+  router.post("/import/gofire", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || "default";
+    const controller = controllerFactory.createInvestmentController(userId);
+    await controller.importFromGofire(req, res);
+  });
+
+  // Export portfolio (must be before /:id)
+  router.get("/export", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || "default";
+    const controller = controllerFactory.createInvestmentController(userId);
+    await controller.exportPortfolio(req, res);
+  });
+
   // Get all investments
   router.get("/", async (req: Request, res: Response) => {
     const userId = req.user?.userId || "default";
@@ -92,6 +106,13 @@ export const createInvestmentRoutesV2 = (
     const userId = req.user?.userId || "default";
     const controller = controllerFactory.createInvestmentController(userId);
     await controller.deleteHistoryEntry(req, res);
+  });
+
+  // Update history entry
+  router.put("/:id/history/:historyId", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || "default";
+    const controller = controllerFactory.createInvestmentController(userId);
+    await controller.updateHistoryEntry(req, res);
   });
 
   return router;

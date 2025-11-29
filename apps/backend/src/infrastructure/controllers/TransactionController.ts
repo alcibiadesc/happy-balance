@@ -20,6 +20,7 @@ import { FindPotentialReimbursementsUseCase } from "@application/use-cases/FindP
 import { LinkSplitTransactionsUseCase } from "@application/use-cases/LinkSplitTransactionsUseCase";
 import { UnlinkSplitTransactionsUseCase } from "@application/use-cases/UnlinkSplitTransactionsUseCase";
 import { SyncInvestmentFromTransactionUseCase } from "@application/use-cases/SyncInvestmentFromTransactionUseCase";
+import { UnsyncInvestmentFromTransactionUseCase } from "@application/use-cases/UnsyncInvestmentFromTransactionUseCase";
 
 const CreateTransactionSchema = z.object({
   amount: z.number().positive(),
@@ -139,6 +140,7 @@ export class TransactionController {
     private readonly linkSplitTransactionsUseCase?: LinkSplitTransactionsUseCase,
     private readonly unlinkSplitTransactionsUseCase?: UnlinkSplitTransactionsUseCase,
     private readonly syncInvestmentUseCase?: SyncInvestmentFromTransactionUseCase,
+    private readonly unsyncInvestmentUseCase?: UnsyncInvestmentFromTransactionUseCase,
     private readonly categoryRepository?: ICategoryRepository,
     private readonly userId?: string,
   ) {}
@@ -648,6 +650,15 @@ export class TransactionController {
       const transactionIdResult = TransactionId.create(id);
       if (transactionIdResult.isFailure()) {
         return res.status(400).json({ error: transactionIdResult.getError() });
+      }
+
+      // First unsync any linked investment history entries
+      if (this.unsyncInvestmentUseCase) {
+        const unsyncResult = await this.unsyncInvestmentUseCase.execute(id);
+        if (unsyncResult.isFailure()) {
+          console.warn(`Failed to unsync investment for transaction ${id}:`, unsyncResult.getError());
+          // Continue with deletion even if unsync fails
+        }
       }
 
       const result = await this.transactionRepository.delete(

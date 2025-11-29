@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { afterNavigate, goto } from "$app/navigation";
   import Chart from "chart.js/auto";
   import {
     TrendingUp,
@@ -19,6 +20,8 @@
     LayoutGrid,
     List,
     Calendar,
+    Link2,
+    ExternalLink,
   } from "lucide-svelte";
   import { t } from "$lib/stores/i18n";
   import { currentCurrency, formatCurrency } from "$lib/stores/currency";
@@ -328,6 +331,10 @@
     store.selectedInvestment = null;
   }
 
+  function navigateToTransaction(transactionId: string) {
+    goto(`/transactions?search=${transactionId}`);
+  }
+
   // Goal progress
   const goalProgress = $derived(
     Math.min(100, (store.totalPortfolioValue / goal) * 100)
@@ -349,6 +356,11 @@
   onMount(async () => {
     await store.loadAll();
     await store.loadTimeline("month");
+  });
+
+  // Reload data when navigating to this page (handles sync from other pages)
+  afterNavigate(async () => {
+    await store.loadAll();
   });
 
   onDestroy(() => {
@@ -596,8 +608,28 @@
                       <span class="row-symbol">{investment.symbol}</span>
                     {/if}
                   </div>
-                  <div class="row-value">
-                    <span class="value">{store.formatCurrency(investment.currentValue)}</span>
+                  <div class="row-value" onclick={(e) => e.stopPropagation()}>
+                    {#if store.inlineEditingId === investment.id}
+                      <input
+                        type="number"
+                        class="inline-edit-input"
+                        bind:value={store.inlineEditValue}
+                        onblur={() => store.saveInlineEdit()}
+                        onkeydown={(e) => {
+                          if (e.key === 'Enter') store.saveInlineEdit();
+                          if (e.key === 'Escape') store.cancelInlineEdit();
+                        }}
+                        step="0.01"
+                      />
+                    {:else}
+                      <span
+                        class="value editable"
+                        onclick={() => store.startInlineEdit(investment)}
+                        title="Click para editar"
+                      >
+                        {store.formatCurrency(investment.currentValue)}
+                      </span>
+                    {/if}
                     <span
                       class="profit"
                       class:positive={investment.profit >= 0}
@@ -768,19 +800,89 @@
         {#if store.selectedInvestment.history && store.selectedInvestment.history.length > 0}
           <div class="history-list">
             {#each store.selectedInvestment.history as entry (entry.id)}
-              <div class="history-item">
-                <div class="history-date">{store.formatDate(entry.date)}</div>
-                <div class="history-type">{store.getHistoryTypeLabel(entry.type)}</div>
-                <div class="history-amount {store.getHistoryTypeColor(entry.type)}">
-                  {entry.type === "WITHDRAWAL" ? "-" : "+"}{store.formatCurrency(entry.amount)}
+              {#if store.editingHistoryEntry?.historyId === entry.id}
+                <!-- Editing Mode -->
+                <div class="history-item editing">
+                  <div class="history-edit-row">
+                    <input
+                      type="date"
+                      class="form-input small"
+                      bind:value={store.editingHistoryEntry.date}
+                    />
+                    <select
+                      class="form-input small"
+                      bind:value={store.editingHistoryEntry.type}
+                    >
+                      <option value="CONTRIBUTION">Aportación</option>
+                      <option value="WITHDRAWAL">Retirada</option>
+                      <option value="VALUE_UPDATE">Actualización</option>
+                    </select>
+                    <input
+                      type="number"
+                      class="form-input small"
+                      bind:value={store.editingHistoryEntry.amount}
+                      step="0.01"
+                    />
+                  </div>
+                  <div class="history-edit-row">
+                    <input
+                      type="text"
+                      class="form-input small flex-1"
+                      bind:value={store.editingHistoryEntry.notes}
+                      placeholder="Notas (opcional)"
+                    />
+                    <button class="btn-icon small" onclick={() => store.cancelHistoryEntryEdit()}>
+                      <X size={12} />
+                    </button>
+                    <button class="btn-icon primary small" onclick={() => store.saveHistoryEntryEdit()}>
+                      <Plus size={12} />
+                    </button>
+                  </div>
                 </div>
-                <button
-                  class="btn-icon danger small"
-                  onclick={() => store.deleteHistoryEntry(store.selectedInvestment?.id || '', entry.id)}
+              {:else}
+                <!-- Display Mode -->
+                <div
+                  class="history-item"
+                  class:linked={entry.transactionId}
+                  onclick={() => entry.transactionId && navigateToTransaction(entry.transactionId)}
+                  role={entry.transactionId ? "button" : undefined}
+                  tabindex={entry.transactionId ? 0 : undefined}
                 >
-                  <Trash2 size={12} />
-                </button>
-              </div>
+                  <div class="history-date">{store.formatDate(entry.date)}</div>
+                  <div class="history-type">
+                    {store.getHistoryTypeLabel(entry.type)}
+                    {#if entry.transactionId}
+                      <span class="linked-badge" title="Vinculado a transacción">
+                        <Link2 size={10} />
+                      </span>
+                    {/if}
+                  </div>
+                  <div class="history-amount {store.getHistoryTypeColor(entry.type)}">
+                    {entry.type === "WITHDRAWAL" ? "-" : "+"}{store.formatCurrency(entry.amount)}
+                  </div>
+                  {#if entry.transactionId}
+                    <button
+                      class="btn-icon small link-btn"
+                      onclick={(e) => { e.stopPropagation(); navigateToTransaction(entry.transactionId!); }}
+                      title="Ver transacción"
+                    >
+                      <ExternalLink size={12} />
+                    </button>
+                  {/if}
+                  <button
+                    class="btn-icon small"
+                    onclick={(e) => { e.stopPropagation(); store.startEditHistoryEntry(store.selectedInvestment?.id || '', entry); }}
+                  >
+                    <Pencil size={12} />
+                  </button>
+                  <button
+                    class="btn-icon danger small"
+                    onclick={(e) => { e.stopPropagation(); store.deleteHistoryEntry(store.selectedInvestment?.id || '', entry.id); }}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              {/if}
             {/each}
           </div>
         {:else}
@@ -818,32 +920,39 @@
           <X size={18} />
         </button>
       </div>
-      <div class="modal-body">
+      <form class="modal-body" onsubmit={(e) => { e.preventDefault(); store.saveHistoryEntry(); }}>
         <div class="form-group">
-          <label>Tipo</label>
-          <select bind:value={store.addHistoryForm.type}>
+          <label for="history-type">Tipo</label>
+          <select id="history-type" bind:value={store.addHistoryForm.type}>
             <option value="CONTRIBUTION">Aportación</option>
             <option value="WITHDRAWAL">Retirada</option>
             <option value="VALUE_UPDATE">Actualización</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Cantidad</label>
-          <input type="number" step="0.01" bind:value={store.addHistoryForm.amount} />
+          <label for="history-amount">Cantidad</label>
+          <input
+            id="history-amount"
+            type="number"
+            step="0.01"
+            min="0.01"
+            required
+            bind:value={store.addHistoryForm.amount}
+          />
         </div>
         <div class="form-group">
-          <label>Fecha</label>
-          <input type="date" bind:value={store.addHistoryForm.date} />
+          <label for="history-date">Fecha</label>
+          <input id="history-date" type="date" required bind:value={store.addHistoryForm.date} />
         </div>
         <div class="form-group">
-          <label>Notas</label>
-          <input type="text" bind:value={store.addHistoryForm.notes} placeholder="Opcional" />
+          <label for="history-notes">Notas</label>
+          <input id="history-notes" type="text" bind:value={store.addHistoryForm.notes} placeholder="Opcional" />
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick={store.cancelAddHistory}>Cancelar</button>
-        <button class="btn-save" onclick={store.saveHistoryEntry}>Guardar</button>
-      </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick={store.cancelAddHistory}>Cancelar</button>
+          <button type="submit" class="btn-save">Guardar</button>
+        </div>
+      </form>
     </div>
   </div>
 {/if}
@@ -1506,6 +1615,34 @@
     color: var(--text-primary);
   }
 
+  .row-value .value.editable {
+    cursor: pointer;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    transition: background 0.2s ease;
+  }
+
+  .row-value .value.editable:hover {
+    background: var(--surface-elevated);
+  }
+
+  .inline-edit-input {
+    width: 90px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid var(--acapulco);
+    border-radius: 0.25rem;
+    background: var(--surface);
+    color: var(--text-primary);
+    text-align: right;
+  }
+
+  .inline-edit-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(75, 192, 169, 0.2);
+  }
+
   .row-value .profit {
     font-size: 0.75rem;
   }
@@ -1712,6 +1849,75 @@
     padding: 0.75rem;
     background: var(--surface);
     border-radius: 0.375rem;
+    transition: all 0.2s ease;
+  }
+
+  .history-item.linked {
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .history-item.linked:hover {
+    border-color: var(--acapulco);
+    background: rgba(75, 192, 169, 0.05);
+  }
+
+  .linked-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.25rem;
+    padding: 0.125rem;
+    background: rgba(75, 192, 169, 0.15);
+    color: var(--acapulco);
+    border-radius: 0.25rem;
+    vertical-align: middle;
+  }
+
+  .btn-icon.link-btn {
+    color: var(--acapulco);
+    border-color: var(--acapulco);
+  }
+
+  .btn-icon.link-btn:hover {
+    background: var(--acapulco);
+    color: white;
+  }
+
+  .history-item.editing {
+    flex-direction: column;
+    align-items: stretch;
+    border: 1px solid var(--acapulco);
+    padding: 0.75rem;
+  }
+
+  .history-edit-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .history-edit-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .form-input.small {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .form-input.small:focus {
+    outline: none;
+    border-color: var(--acapulco);
+  }
+
+  .flex-1 {
+    flex: 1;
   }
 
   .history-date {
@@ -1793,7 +1999,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 200;
+    z-index: 9999;
     padding: 1rem;
   }
 
@@ -1832,6 +2038,15 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  form.modal-body {
+    padding-bottom: 0;
+  }
+
+  form.modal-body .modal-footer {
+    margin: 1rem -1.25rem 0;
+    padding: 1rem 1.25rem;
   }
 
   .form-group {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { afterNavigate } from "$app/navigation";
   import {
     TrendingUp,
     TrendingDown,
@@ -88,6 +89,11 @@
   }
 
   onMount(async () => {
+    await store.loadCategories();
+  });
+
+  // Reload data when navigating to this page (handles sync from Portfolio)
+  afterNavigate(async () => {
     await store.loadCategories();
   });
 </script>

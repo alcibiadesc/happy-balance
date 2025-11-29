@@ -84,6 +84,13 @@ export function createInvestmentsStore() {
   let showDeleteModal = $state(false);
   let investmentToDelete = $state<Investment | null>(null);
 
+  // Inline value editing
+  let inlineEditingId = $state<string | null>(null);
+  let inlineEditValue = $state<number>(0);
+
+  // History entry editing
+  let editingHistoryEntry = $state<{ investmentId: string; historyId: string; amount: number; date: string; notes: string; type: string } | null>(null);
+
   // Constants
   const availableColors = [
     '#10B981', '#3B82F6', '#8B5CF6', '#EC4899',
@@ -325,6 +332,77 @@ export function createInvestmentsStore() {
     }
   }
 
+  // Inline value editing
+  function startInlineEdit(investment: Investment) {
+    inlineEditingId = investment.id;
+    inlineEditValue = investment.currentValue;
+  }
+
+  async function saveInlineEdit() {
+    if (!inlineEditingId) return;
+
+    try {
+      await investmentsApi.update(inlineEditingId, { currentValue: inlineEditValue });
+      await loadAll();
+
+      // Refresh selected investment if viewing details
+      if (selectedInvestment?.id === inlineEditingId) {
+        await loadInvestmentDetails(inlineEditingId);
+      }
+
+      inlineEditingId = null;
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Failed to update investment value';
+    }
+  }
+
+  function cancelInlineEdit() {
+    inlineEditingId = null;
+  }
+
+  // History entry editing
+  function startEditHistoryEntry(investmentId: string, entry: { id: string; amount: number; date: string; notes?: string; type: string }) {
+    editingHistoryEntry = {
+      investmentId,
+      historyId: entry.id,
+      amount: entry.amount,
+      date: typeof entry.date === 'string' ? entry.date.split('T')[0] : new Date(entry.date).toISOString().split('T')[0],
+      notes: entry.notes || '',
+      type: entry.type,
+    };
+  }
+
+  async function saveHistoryEntryEdit() {
+    if (!editingHistoryEntry) return;
+
+    try {
+      await investmentsApi.updateHistoryEntry(
+        editingHistoryEntry.investmentId,
+        editingHistoryEntry.historyId,
+        {
+          amount: editingHistoryEntry.amount,
+          date: editingHistoryEntry.date,
+          notes: editingHistoryEntry.notes,
+          type: editingHistoryEntry.type,
+        }
+      );
+      await loadAll();
+
+      // Refresh selected investment if viewing details
+      if (selectedInvestment?.id === editingHistoryEntry.investmentId) {
+        await loadInvestmentDetails(editingHistoryEntry.investmentId);
+      }
+
+      editingHistoryEntry = null;
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Failed to update history entry';
+    }
+  }
+
+  function cancelHistoryEntryEdit() {
+    editingHistoryEntry = null;
+  }
+
   // Reorder investments (drag-and-drop)
   async function reorderInvestments(fromIndex: number, toIndex: number) {
     if (fromIndex === toIndex) return;
@@ -435,6 +513,15 @@ export function createInvestmentsStore() {
     set showDeleteModal(value: boolean) { showDeleteModal = value; },
     get investmentToDelete() { return investmentToDelete; },
 
+    // Inline value editing
+    get inlineEditingId() { return inlineEditingId; },
+    get inlineEditValue() { return inlineEditValue; },
+    set inlineEditValue(value: number) { inlineEditValue = value; },
+
+    // History entry editing
+    get editingHistoryEntry() { return editingHistoryEntry; },
+    set editingHistoryEntry(value: typeof editingHistoryEntry) { editingHistoryEntry = value; },
+
     // Constants
     availableColors,
     availableIcons,
@@ -457,6 +544,12 @@ export function createInvestmentsStore() {
     cancelAddHistory,
     deleteHistoryEntry,
     reorderInvestments,
+    startInlineEdit,
+    saveInlineEdit,
+    cancelInlineEdit,
+    startEditHistoryEntry,
+    saveHistoryEntryEdit,
+    cancelHistoryEntryEdit,
 
     // Utilities
     formatCurrency,
