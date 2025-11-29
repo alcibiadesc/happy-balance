@@ -2,10 +2,12 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { CategoryId } from "@domain/entities/Category";
 import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
+import { IInvestmentRepository } from "@domain/repositories/IInvestmentRepository";
 import {
   CategoryType,
   CategoryTypeHelper,
 } from "@domain/entities/CategoryType";
+import { CategoryInvestmentSyncService } from "@domain/services/CategoryInvestmentSyncService";
 
 const CreateCategorySchema = z.object({
   name: z.string().min(1).max(100),
@@ -52,7 +54,21 @@ const CategoryFiltersSchema = z.object({
 });
 
 export class CategoryController {
-  constructor(private readonly categoryRepository: ICategoryRepository) {}
+  private syncService: CategoryInvestmentSyncService | null = null;
+
+  constructor(
+    private readonly categoryRepository: ICategoryRepository,
+    private readonly investmentRepository?: IInvestmentRepository,
+    private readonly userId?: string
+  ) {
+    if (investmentRepository && userId) {
+      this.syncService = new CategoryInvestmentSyncService(
+        investmentRepository,
+        categoryRepository,
+        userId
+      );
+    }
+  }
 
   async getCategories(req: Request, res: Response): Promise<void> {
     try {
@@ -233,6 +249,14 @@ export class CategoryController {
         return;
       }
 
+      // Auto-create Investment if category type is INVESTMENT
+      if (this.syncService && categoryType === CategoryType.INVESTMENT) {
+        const syncResult = await this.syncService.onCategoryCreated(category);
+        if (syncResult.isFailure()) {
+          console.warn("Failed to sync investment from category:", syncResult.getError());
+        }
+      }
+
       res.status(201).json({
         success: true,
         data: category.toSnapshot(),
@@ -321,6 +345,11 @@ export class CategoryController {
         return;
       }
 
+      // Sync updates to linked investments
+      if (this.syncService) {
+        await this.syncService.onCategoryUpdated(updatedCategory);
+      }
+
       res.json({
         success: true,
         data: updatedCategory.toSnapshot(),
@@ -375,6 +404,11 @@ export class CategoryController {
           error: "Category not found",
         });
         return;
+      }
+
+      // Deactivate linked investments first
+      if (this.syncService) {
+        await this.syncService.onCategoryDeleted(id);
       }
 
       // Soft delete (set isActive to false)

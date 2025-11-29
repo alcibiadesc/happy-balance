@@ -7,11 +7,14 @@ import { MetricsController } from '../controllers/MetricsController';
 import { ImportController } from '../controllers/ImportController';
 import { UserPreferencesController } from '../controllers/UserPreferencesController';
 import { SeedController } from '../controllers/SeedController';
+import { InvestmentController } from '../controllers/InvestmentController';
+import { ExportController } from '../controllers/ExportController';
 import { PrismaTransactionRepository } from '../repositories/PrismaTransactionRepository';
 import { PrismaCategoryRepository } from '../repositories/PrismaCategoryRepository';
 import { PrismaDashboardRepository } from '../repositories/PrismaDashboardRepository';
 import { PrismaUserPreferencesRepository } from '../repositories/PrismaUserPreferencesRepository';
 import { CategoryPatternRepository } from '../repositories/CategoryPatternRepository';
+import { PrismaInvestmentRepository } from '../repositories/PrismaInvestmentRepository';
 import { GetDashboardDataUseCase } from '@application/use-cases/GetDashboardDataUseCase';
 import { ImportTransactionsUseCase } from '@application/use-cases/ImportTransactionsUseCase';
 import { CheckDuplicateHashesUseCase } from '@application/use-cases/CheckDuplicateHashesUseCase';
@@ -27,6 +30,7 @@ import { CategorizationService } from '@domain/services/CategorizationService';
 import { FinancialCalculationService } from '@domain/services/FinancialCalculationService';
 import { SmartCategorizationService } from '@domain/services/SmartCategorizationService';
 import { TransactionFactory } from '@domain/factories/TransactionFactory';
+import { SyncInvestmentFromTransactionUseCase } from '@application/use-cases/SyncInvestmentFromTransactionUseCase';
 
 /**
  * Factory that creates controller instances with user-specific repositories
@@ -46,6 +50,7 @@ export class ControllerFactory {
     const transactionRepository = new PrismaTransactionRepository(this.prisma, userId);
     const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
     const categoryPatternRepository = new CategoryPatternRepository(this.prisma, userId);
+    const investmentRepository = new PrismaInvestmentRepository(this.prisma, userId);
 
     // Domain services
     const financialCalculationService = new FinancialCalculationService();
@@ -108,6 +113,12 @@ export class ControllerFactory {
       transactionRepository,
     );
 
+    // Investment sync use case
+    const syncInvestmentUseCase = new SyncInvestmentFromTransactionUseCase(
+      investmentRepository,
+      categoryRepository,
+    );
+
     return new TransactionController(
       transactionRepository,
       getDashboardDataUseCase,
@@ -117,6 +128,9 @@ export class ControllerFactory {
       findPotentialReimbursementsUseCase,
       linkSplitTransactionsUseCase,
       unlinkSplitTransactionsUseCase,
+      syncInvestmentUseCase,
+      categoryRepository,
+      userId,
     );
   }
 
@@ -125,9 +139,9 @@ export class ControllerFactory {
    */
   createCategoryController(userId: string): CategoryController {
     const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
-    const transactionRepository = new PrismaTransactionRepository(this.prisma, userId);
+    const investmentRepository = new PrismaInvestmentRepository(this.prisma, userId);
 
-    return new CategoryController(categoryRepository);
+    return new CategoryController(categoryRepository, investmentRepository, userId);
   }
 
   /**
@@ -220,5 +234,30 @@ export class ControllerFactory {
     const userPreferencesRepository = new PrismaUserPreferencesRepository(this.prisma);
 
     return new SeedController(categoryRepository, userPreferencesRepository, userId);
+  }
+
+  /**
+   * Creates an InvestmentController with user-specific repositories
+   */
+  createInvestmentController(userId: string): InvestmentController {
+    const investmentRepository = new PrismaInvestmentRepository(this.prisma, userId);
+    const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
+    return new InvestmentController(investmentRepository, categoryRepository, userId);
+  }
+
+  /**
+   * Creates an ExportController with user-specific repositories
+   */
+  createExportController(userId: string): ExportController {
+    const transactionRepository = new PrismaTransactionRepository(this.prisma, userId);
+    const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
+    const investmentRepository = new PrismaInvestmentRepository(this.prisma, userId);
+
+    return new ExportController(
+      transactionRepository,
+      categoryRepository,
+      investmentRepository,
+      userId,
+    );
   }
 }

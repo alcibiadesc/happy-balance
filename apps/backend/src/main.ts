@@ -15,6 +15,8 @@ import { createImportRoutesV2 } from "@infrastructure/routes/importRoutesV2";
 import { createMetricsRoutesV2 } from "@infrastructure/routes/metricsRoutesV2";
 import { createUserPreferencesRoutesV2 } from "@infrastructure/routes/userPreferencesRoutesV2";
 import { createSeedRoutesV2 } from "@infrastructure/routes/seedRoutesV2";
+import { createInvestmentRoutesV2 } from "@infrastructure/routes/investmentRoutesV2";
+import { createExportRoutes } from "@infrastructure/routes/exportRoutesV2";
 import { ControllerFactory } from "@infrastructure/factories/ControllerFactory";
 import { createAuthRoutes } from "@infrastructure/routes/authRoutes";
 import { createUserManagementRoutes } from "@infrastructure/routes/userManagementRoutes";
@@ -310,6 +312,18 @@ class App {
       createUserPreferencesRoutesV2(this.controllerFactory),
     );
     this.app.use("/api/seed", createSeedRoutesV2(this.controllerFactory));
+
+    // Investment/Portfolio routes
+    this.app.use(
+      "/api/investments",
+      createInvestmentRoutesV2(this.controllerFactory),
+    );
+
+    // Export routes
+    this.app.use(
+      "/api/export",
+      createExportRoutes(this.controllerFactory),
+    );
 
     // 404 handler
     this.app.use("*", (req, res) => {

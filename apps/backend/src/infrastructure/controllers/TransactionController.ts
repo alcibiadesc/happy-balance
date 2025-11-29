@@ -6,8 +6,10 @@ import { Money } from "@domain/value-objects/Money";
 import { Merchant } from "@domain/value-objects/Merchant";
 import { TransactionType } from "@domain/entities/TransactionType";
 import { Transaction } from "@domain/entities/Transaction";
+import { CategoryType } from "@domain/entities/CategoryType";
 import { CreateTransactionCommand } from "@application/commands/CreateTransactionCommand";
 import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
+import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
 import { GetDashboardDataUseCase } from "@application/use-cases/GetDashboardDataUseCase";
 import { DashboardQuery } from "@application/queries/DashboardQuery";
 import { TransactionListQuery } from "@application/queries/TransactionListQuery";
@@ -17,6 +19,7 @@ import { GetDashboardMetricsUseCase } from "@application/use-cases/GetDashboardM
 import { FindPotentialReimbursementsUseCase } from "@application/use-cases/FindPotentialReimbursementsUseCase";
 import { LinkSplitTransactionsUseCase } from "@application/use-cases/LinkSplitTransactionsUseCase";
 import { UnlinkSplitTransactionsUseCase } from "@application/use-cases/UnlinkSplitTransactionsUseCase";
+import { SyncInvestmentFromTransactionUseCase } from "@application/use-cases/SyncInvestmentFromTransactionUseCase";
 
 const CreateTransactionSchema = z.object({
   amount: z.number().positive(),
@@ -135,7 +138,55 @@ export class TransactionController {
     private readonly findPotentialReimbursementsUseCase?: FindPotentialReimbursementsUseCase,
     private readonly linkSplitTransactionsUseCase?: LinkSplitTransactionsUseCase,
     private readonly unlinkSplitTransactionsUseCase?: UnlinkSplitTransactionsUseCase,
+    private readonly syncInvestmentUseCase?: SyncInvestmentFromTransactionUseCase,
+    private readonly categoryRepository?: ICategoryRepository,
+    private readonly userId?: string,
   ) {}
+
+  /**
+   * Sync investment portfolio when transaction is categorized with investment category
+   */
+  private async syncInvestmentIfNeeded(
+    transaction: Transaction,
+    categoryId: string | undefined,
+  ): Promise<void> {
+    if (!this.syncInvestmentUseCase || !this.categoryRepository || !categoryId || !this.userId) {
+      return;
+    }
+
+    try {
+      // Get category to check its type
+      const categoryResult = await this.categoryRepository.findById({ value: categoryId } as any);
+      if (categoryResult.isFailure() || !categoryResult.getValue()) {
+        return;
+      }
+
+      const category = categoryResult.getValue()!;
+
+      // Only sync if category is of type INVESTMENT
+      if (category.type !== CategoryType.INVESTMENT) {
+        return;
+      }
+
+      const snapshot = transaction.toSnapshot();
+
+      await this.syncInvestmentUseCase.execute({
+        transactionId: snapshot.id,
+        amount: snapshot.amount,
+        date: new Date(snapshot.date),
+        categoryId: categoryId,
+        categoryName: category.name,
+        userId: this.userId,
+        transactionDescription: snapshot.description || undefined,
+        transactionCounterparty: snapshot.merchant || undefined,
+      });
+
+      console.log(`📈 Investment synced for transaction ${snapshot.id} → category ${category.name}`);
+    } catch (error) {
+      console.error('Failed to sync investment from transaction:', error);
+      // Don't throw - this is a non-critical operation
+    }
+  }
 
   async createTransaction(req: Request, res: Response) {
     try {
@@ -189,6 +240,11 @@ export class TransactionController {
       const saveResult = await this.transactionRepository.save(transaction);
       if (saveResult.isFailure()) {
         return res.status(500).json({ error: saveResult.getError() });
+      }
+
+      // Sync investment if transaction has investment category
+      if (data.categoryId) {
+        await this.syncInvestmentIfNeeded(transaction, data.categoryId);
       }
 
       // Include hidden field in the response (new transactions are not hidden)
@@ -557,6 +613,11 @@ export class TransactionController {
         await this.transactionRepository.update(existingTransaction);
       if (saveResult.isFailure()) {
         return res.status(500).json({ error: saveResult.getError() });
+      }
+
+      // Sync investment if category was changed to an investment category
+      if (data.categoryId !== undefined && data.categoryId !== null) {
+        await this.syncInvestmentIfNeeded(existingTransaction, data.categoryId);
       }
 
       // Include hidden field and splitPercentage in the response

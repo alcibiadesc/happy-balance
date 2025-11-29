@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { LayoutDashboard, Settings, Receipt, Tag } from 'lucide-svelte';
+  import { LayoutDashboard, Settings, Receipt, Tag, TrendingUp } from 'lucide-svelte';
 
   interface Props {
     href: string;
@@ -24,6 +24,7 @@
     'layout-dashboard': LayoutDashboard,
     'receipt': Receipt,
     'tag': Tag,
+    'trending-up': TrendingUp,
     'settings': Settings
   };
 

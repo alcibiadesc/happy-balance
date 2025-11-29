@@ -16,6 +16,7 @@
     { href: '/', icon: 'layout-dashboard', labelKey: 'navigation.dashboard' },
     { href: '/transactions', icon: 'receipt', labelKey: 'navigation.transactions' },
     { href: '/categories', icon: 'tag', labelKey: 'navigation.categories' },
+    { href: '/portfolio', icon: 'trending-up', labelKey: 'navigation.portfolio' },
     { href: '/settings', icon: 'settings', labelKey: 'navigation.settings' }
   ];
   

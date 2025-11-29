@@ -14,6 +14,13 @@ export default defineConfig({
       usePolling: true,
       interval: 1000,
     },
+    proxy: {
+      "/api": {
+        target: "http://localhost:14040",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   build: {
     target: "esnext",

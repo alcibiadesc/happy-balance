@@ -27,6 +27,7 @@ model User {
   categories      Category[]
   importLogs      ImportLog[]
   userPreferences UserPreferences?
+  investments     Investment[]
 
   @@index([username])
   @@index([role])
@@ -94,6 +95,7 @@ model Category {
   children     Category[]        @relation("CategoryHierarchy")
   patterns     CategoryPattern[]
   transactions Transaction[]
+  investments  Investment[]
   user         User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([name, type, userId])
@@ -173,4 +175,55 @@ model CategoryPattern {
   @@index([isActive])
   @@index([priority])
   @@map("category_patterns")
+}
+
+// Portfolio Investment Holdings
+model Investment {
+  id              String              @id @db.VarChar(36)
+  name            String              @db.VarChar(100)         // "Apple Stock", "Bitcoin", "Indexa Capital"
+  symbol          String?             @db.VarChar(20)          // "AAPL", "BTC", optional
+  currentValue    Decimal             @db.Decimal(15, 2)       // Current total value
+  currency        String              @default("EUR") @db.VarChar(3)
+  categoryId      String?             @db.VarChar(36)          // Link to investment category
+  highlight       Boolean             @default(false)          // Featured/pinned
+  color           String              @default("#10B981") @db.VarChar(7)
+  icon            String              @default("📈") @db.VarChar(10)
+  notes           String?             @db.VarChar(500)
+  isActive        Boolean             @default(true)
+  sortOrder       Int                 @default(0)
+  userId          String              @db.VarChar(36)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category        Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  history         InvestmentHistory[]
+
+  @@unique([name, userId])
+  @@index([userId])
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("investments")
+}
+
+// Investment History - tracks contributions and value changes
+model InvestmentHistory {
+  id              String      @id @db.VarChar(36)
+  investmentId    String      @db.VarChar(36)
+  amount          Decimal     @db.Decimal(15, 2)       // Amount of the entry
+  type            String      @db.VarChar(20)          // CONTRIBUTION, WITHDRAWAL, VALUE_UPDATE
+  date            DateTime    @db.Date
+  notes           String?     @db.VarChar(200)
+  transactionId   String?     @db.VarChar(36)          // Link to transaction if created from one
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  investment      Investment  @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  @@index([investmentId])
+  @@index([date])
+  @@index([type])
+  @@index([transactionId])
+  @@map("investment_history")
 }
