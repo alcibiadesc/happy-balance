@@ -67,10 +67,8 @@ export function createEnhancedDashboardStore(apiBase: string) {
       const periods = await repository.getAvailablePeriods();
       availablePeriods = periods;
 
-      // Start at current month (September 2025)
+      // Start at current month
       periodOffset = 0;
-
-      console.log('[Dashboard] Available periods:', periods.length);
     } catch (error) {
       console.error('[Dashboard] Error loading periods:', error);
       availablePeriods = [];
@@ -86,29 +84,15 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
       if (data) {
         dashboardData = data;
-        console.log('[Dashboard] Data loaded successfully:', {
-          metrics: data.metrics ? 'present' : 'missing',
-          categories: data.categories?.length || 0,
-          period: currentPeriod.getLabel()
-        });
-
-        // El endpoint enhanced ya incluye el categoryBreakdown
         categoryBreakdown = data.categoryBreakdown || [];
-        console.log('[Store] Category breakdown loaded:', categoryBreakdown.length, 'categories');
-        console.log('[Store] Raw categoryBreakdown data:', categoryBreakdown);
-        if (categoryBreakdown.length > 0) {
-          console.log('[Store] First category in breakdown:', categoryBreakdown[0]);
-        }
 
         // ALWAYS load last 12 months for charts
         let historicalData: any[] = [];
         let loadHistoricalData = false;
 
         if (selectedPeriodType === 'overview') {
-          // For overview, ALWAYS show last 12 months
           historicalData = await repository.getHistory(12);
           loadHistoricalData = true;
-          console.log('[Dashboard] Overview mode: loaded 12 months history');
         } else if (selectedPeriodType === 'month') {
           const now = new Date();
           const targetDate = new Date(now.getFullYear(), now.getMonth() + periodOffset, 1);
@@ -134,9 +118,6 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
         // Update monthlyTrend with historical data if available
         if (loadHistoricalData && historicalData && historicalData.length > 0) {
-          console.log('[Store] Historical data received:', historicalData.length, 'items');
-          console.log('[Store] First item:', historicalData[0]);
-
           dashboardData.monthlyTrend = historicalData.map((item: any) => {
             // Backend returns data in item.summary
             const summary = item.summary || item;
@@ -151,30 +132,23 @@ export function createEnhancedDashboardStore(apiBase: string) {
             };
           });
 
-          // Also update monthlyBarData based on historical data
+          // Use the same data for bar chart - no fake estimates
           dashboardData.monthlyBarData = historicalData.map((item: any) => {
             const summary = item.summary || item;
             const monthLabel = item.monthName || item.label || item.month || 'Unknown';
-            const totalExpenses = summary.expenses || 0;
 
             return {
               month: monthLabel,
               income: summary.income || 0,
-              essentialExpenses: item.essentialExpenses || (totalExpenses * 0.6),
-              discretionaryExpenses: item.discretionaryExpenses || (totalExpenses * 0.4),
-              debtPayments: item.debtPayments || 0,
+              expenses: summary.expenses || 0,
               investments: summary.investments || 0
             };
           });
-
-          console.log('[Store] Mapped monthlyTrend:', dashboardData.monthlyTrend);
         }
       } else {
-        console.error('[Dashboard] No data received');
         dashboardData = null;
       }
     } catch (error) {
-      console.error('[Dashboard] Error loading data:', error);
       dashboardData = null;
     } finally {
       loading = false;
@@ -282,19 +256,13 @@ export function createEnhancedDashboardStore(apiBase: string) {
     get comparison() { return comparison; },
     get savingsMetrics() { return savingsMetrics; },
     get categoryBreakdown() {
-      console.log('[Store] Getting categoryBreakdown, raw data:', categoryBreakdown);
       // Convert Category objects to plain objects if needed
-      const result = categoryBreakdown.map((cat: any) => {
+      return categoryBreakdown.map((cat: any) => {
         if (typeof cat.toJSON === 'function') {
-          const json = cat.toJSON();
-          console.log('[Store] Converting category to JSON:', cat.name, json);
-          return json;
+          return cat.toJSON();
         }
-        console.log('[Store] Category already plain:', cat);
         return cat;
       });
-      console.log('[Store] Final categoryBreakdown result:', result);
-      return result;
     },
 
     // Methods

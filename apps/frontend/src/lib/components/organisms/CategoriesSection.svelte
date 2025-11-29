@@ -13,13 +13,14 @@
     budgetUsage?: number | null;
     type?: string;
     total?: number;
+    categoryName?: string;
   }
 
   interface Props {
     title: string;
-    categories: Category[];
-    categoryBreakdown?: any[];
-    expenseDistribution?: any;
+    categories?: Category[];
+    categoryBreakdown?: Category[];
+    expenseDistribution?: Record<string, number>;
     totalExpenses?: number;
     totalIncome?: number;
     totalInvestments?: number;
@@ -28,9 +29,8 @@
 
   let {
     title,
-    categories,
+    categories = [],
     categoryBreakdown = [],
-    expenseDistribution = {},
     totalExpenses = 0,
     totalIncome = 0,
     totalInvestments = 0,
@@ -39,126 +39,81 @@
 
   type BreakdownType = 'expenses' | 'income' | 'investments';
   let selectedType = $state<BreakdownType>('expenses');
-
   let expanded = $state(false);
-  let containerRef: HTMLDivElement;
-  let cardsPerRow = $state(4);
-  let isMobile = $state(false);
 
-  // Number of categories to show on mobile before expanding
-  const MOBILE_INITIAL_SHOW = 3;
+  // Initial items to show before expanding
+  const INITIAL_SHOW = 6;
 
-  // Get expense categories from categoryBreakdown (individual categories like "Alquiler", "Comida", etc.)
-  const expenseCategories = $derived.by(() => {
-    const filtered = categoryBreakdown.filter(cat =>
-      cat.type === 'essential' ||
-      cat.type === 'discretionary' ||
-      cat.type === 'debt_payment'
-    );
-
-    console.log('[CategoriesSection] Filtered expense categories:', filtered);
-
-    const mapped = filtered
-      .filter(cat => (cat.amount || cat.total) && Math.abs(cat.amount || cat.total || 0) > 0.01)
-      .sort((a, b) => Math.abs(b.amount || b.total || 0) - Math.abs(a.amount || a.total || 0))
-      .map(cat => ({
-        name: cat.categoryName || cat.name,
-        amount: Math.abs(cat.amount || cat.total || 0),
-        percentage: cat.percentage || (totalExpenses > 0 ? Math.round((Math.abs(cat.amount || cat.total || 0) / totalExpenses) * 100) : 0),
-        color: cat.color || (cat.type === 'essential' ? '#60a5fa' : cat.type === 'debt_payment' ? '#ef4444' : '#f59e0b'),
-        icon: cat.icon || (cat.type === 'essential' ? '🏠' : cat.type === 'debt_payment' ? '💳' : '🛍️')
-      }));
-
-    console.log('[CategoriesSection] Final expense categories:', mapped);
-    return mapped;
-  });
-
-  // Get income categories from categoryBreakdown
-  const incomeCategories = $derived.by(() => {
-    console.log('[CategoriesSection] Full categoryBreakdown:', JSON.stringify(categoryBreakdown, null, 2));
-    console.log('[CategoriesSection] totalIncome:', totalIncome);
-
-    const filtered = categoryBreakdown.filter(cat => {
-      console.log('[CategoriesSection] Category:', cat.categoryName || cat.name, 'type:', cat.type, 'amount:', cat.amount, 'total:', cat.total);
-      return cat.type === 'income';
-    });
-
-    console.log('[CategoriesSection] Filtered income categories:', filtered);
-
-    const mapped = filtered
-      .filter(cat => (cat.amount || cat.total) && Math.abs(cat.amount || cat.total || 0) > 0.01)
-      .sort((a, b) => Math.abs(b.amount || b.total || 0) - Math.abs(a.amount || a.total || 0))
-      .map(cat => ({
-        name: cat.categoryName || cat.name,
-        amount: Math.abs(cat.amount || cat.total || 0),
-        percentage: cat.percentage || (totalIncome > 0 ? Math.round((Math.abs(cat.amount || cat.total || 0) / totalIncome) * 100) : 0),
-        color: cat.color || '#34d399',
-        icon: cat.icon || '💰'
-      }));
-
-    console.log('[CategoriesSection] Final income categories:', mapped);
-    return mapped;
-  });
-
-  // Get investment categories from categoryBreakdown
-  const investmentCategories = $derived.by(() => {
-    const filtered = categoryBreakdown.filter(cat => cat.type === 'investment');
-    console.log('[CategoriesSection] Filtered investment categories:', filtered);
-
-    const mapped = filtered
-      .filter(cat => (cat.amount || cat.total) && Math.abs(cat.amount || cat.total || 0) > 0.01)
-      .sort((a, b) => Math.abs(b.amount || b.total || 0) - Math.abs(a.amount || a.total || 0))
-      .map(cat => ({
-        name: cat.categoryName || cat.name,
-        amount: Math.abs(cat.amount || cat.total || 0),
-        percentage: cat.percentage || (totalInvestments > 0 ? Math.round((Math.abs(cat.amount || cat.total || 0) / totalInvestments) * 100) : 0),
-        color: cat.color || '#60a5fa',
-        icon: cat.icon || '📈'
-      }));
-
-    console.log('[CategoriesSection] Final investment categories:', mapped);
-    return mapped;
-  });
-
-  // Current categories based on selected type
-  const currentCategories = $derived(
-    selectedType === 'expenses' ? expenseCategories :
-    selectedType === 'income' ? incomeCategories :
-    investmentCategories
-  );
-
-  // Calculate how many cards fit in a row and detect mobile
-  $effect(() => {
-    if (containerRef) {
-      const updateCardsPerRow = () => {
-        const containerWidth = containerRef.clientWidth;
-        const windowWidth = window.innerWidth;
-        isMobile = windowWidth <= 768;
-
-        if (isMobile) {
-          cardsPerRow = MOBILE_INITIAL_SHOW; // Show limited cards on mobile initially
-        } else {
-          const minCardWidth = 200; // Minimum width per card in pixels
-          const gap = 16; // Gap between cards in pixels
-          const calculatedCards = Math.floor((containerWidth + gap) / (minCardWidth + gap));
-          cardsPerRow = Math.max(1, calculatedCards);
-        }
-      };
-
-      updateCardsPerRow();
-      window.addEventListener('resize', updateCardsPerRow);
-
-      return () => {
-        window.removeEventListener('resize', updateCardsPerRow);
-      };
+  // Type configuration for filtering and styling
+  const typeConfig: Record<BreakdownType, {
+    types: string[];
+    total: number;
+    defaultColor: string;
+    defaultIcon: string;
+  }> = $derived({
+    expenses: {
+      types: ['essential', 'discretionary', 'debt_payment'],
+      total: totalExpenses,
+      defaultColor: '#ef4444',
+      defaultIcon: '🛍️'
+    },
+    income: {
+      types: ['income'],
+      total: totalIncome,
+      defaultColor: '#34d399',
+      defaultIcon: '💰'
+    },
+    investments: {
+      types: ['investment'],
+      total: totalInvestments,
+      defaultColor: '#60a5fa',
+      defaultIcon: '📈'
     }
   });
 
+  // Filter and map categories based on selected type
+  function filterCategories(type: BreakdownType): Category[] {
+    const config = typeConfig[type];
+
+    return categoryBreakdown
+      .filter(cat => config.types.includes(cat.type || ''))
+      .filter(cat => {
+        const amount = cat.amount || cat.total || 0;
+        return Math.abs(amount) > 0.01;
+      })
+      .sort((a, b) => Math.abs(b.amount || b.total || 0) - Math.abs(a.amount || a.total || 0))
+      .map(cat => {
+        const amount = Math.abs(cat.amount || cat.total || 0);
+        const total = config.total;
+
+        return {
+          name: cat.categoryName || cat.name || 'Sin nombre',
+          amount,
+          percentage: cat.percentage || (total > 0 ? Math.round((amount / total) * 100) : 0),
+          color: cat.color || config.defaultColor,
+          icon: cat.icon || config.defaultIcon,
+          monthlyBudget: cat.monthlyBudget,
+          budgetUsage: cat.budgetUsage
+        };
+      });
+  }
+
+  // Current categories based on selected type
+  const currentCategories = $derived(filterCategories(selectedType));
+
+  // Visible categories (limited or all)
   const visibleCategories = $derived(
-    expanded ? currentCategories : currentCategories.slice(0, cardsPerRow)
+    expanded ? currentCategories : currentCategories.slice(0, INITIAL_SHOW)
   );
-  const hiddenCount = $derived(currentCategories.length - cardsPerRow);
-  const hasHiddenCategories = $derived(currentCategories.length > cardsPerRow);
+
+  const hiddenCount = $derived(Math.max(0, currentCategories.length - INITIAL_SHOW));
+  const hasMore = $derived(currentCategories.length > INITIAL_SHOW);
+
+  // Reset expanded state when switching tabs
+  function selectType(type: BreakdownType) {
+    selectedType = type;
+    expanded = false;
+  }
 </script>
 
 <section class="categories-section">
@@ -169,63 +124,78 @@
     <button
       class="type-tab"
       class:active={selectedType === 'expenses'}
-      onclick={() => { selectedType = 'expenses'; expanded = false; }}
+      onclick={() => selectType('expenses')}
     >
       {$t("dashboard.metrics.expenses")}
+      {#if filterCategories('expenses').length > 0}
+        <span class="tab-count">{filterCategories('expenses').length}</span>
+      {/if}
     </button>
     <button
       class="type-tab"
       class:active={selectedType === 'income'}
-      onclick={() => { selectedType = 'income'; expanded = false; }}
+      onclick={() => selectType('income')}
     >
       {$t("dashboard.metrics.income")}
+      {#if filterCategories('income').length > 0}
+        <span class="tab-count">{filterCategories('income').length}</span>
+      {/if}
     </button>
     <button
       class="type-tab"
       class:active={selectedType === 'investments'}
-      onclick={() => { selectedType = 'investments'; expanded = false; }}
+      onclick={() => selectType('investments')}
     >
       {$t("dashboard.metrics.investments")}
+      {#if filterCategories('investments').length > 0}
+        <span class="tab-count">{filterCategories('investments').length}</span>
+      {/if}
     </button>
   </div>
 
-  <div class="categories-container" bind:this={containerRef}>
-    <div class="categories-grid">
-      {#each visibleCategories as category}
-        <CategoryCard
-          name={category.name}
-          amount={formatCurrency(category.amount)}
-          percentage={category.percentage}
-          color={category.color}
-          icon={category.icon || "📊"}
-          monthlyBudget={category.monthlyBudget ? formatCurrency(category.monthlyBudget) : null}
-          budgetUsage={category.budgetUsage}
-        />
-      {/each}
-    </div>
+  <!-- Categories Grid -->
+  <div class="categories-container">
+    {#if currentCategories.length === 0}
+      <div class="empty-state">
+        <p>{$t("dashboard.categories.no_data")}</p>
+      </div>
+    {:else}
+      <div class="categories-grid" class:has-few={currentCategories.length <= 2}>
+        {#each visibleCategories as category (category.name)}
+          <CategoryCard
+            name={category.name}
+            amount={formatCurrency(category.amount)}
+            percentage={category.percentage}
+            color={category.color}
+            icon={category.icon || "📊"}
+            monthlyBudget={category.monthlyBudget ? formatCurrency(category.monthlyBudget) : null}
+            budgetUsage={category.budgetUsage}
+          />
+        {/each}
+      </div>
 
-    {#if hasHiddenCategories}
-      <button
-        class="expand-button"
-        onclick={() => expanded = !expanded}
-        aria-expanded={expanded}
-        aria-label={expanded ? "Mostrar menos categorías" : `Mostrar ${hiddenCount} categorías más`}
-      >
-        <span class="expand-text">
-          {#if expanded}
-            Mostrar menos
-          {:else}
-            +{hiddenCount} más
-          {/if}
-        </span>
-        <span class="expand-icon">
-          {#if expanded}
-            <ChevronUp size={16} />
-          {:else}
-            <ChevronDown size={16} />
-          {/if}
-        </span>
-      </button>
+      {#if hasMore}
+        <button
+          class="expand-button"
+          onclick={() => expanded = !expanded}
+          aria-expanded={expanded}
+        >
+          <span class="expand-text">
+            {#if expanded}
+              {$t("common.show_less") || "Mostrar menos"}
+            {:else}
+              +{hiddenCount} {$t("common.more") || "más"}
+            {/if}
+          </span>
+          <span class="expand-icon">
+            {#if expanded}
+              <ChevronUp size={16} />
+            {:else}
+              <ChevronDown size={16} />
+            {/if}
+          </span>
+        </button>
+      {/if}
     {/if}
   </div>
 </section>
@@ -256,10 +226,13 @@
     padding: 0.25rem;
     background: var(--surface-muted);
     border-radius: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .type-tab {
     flex: 1;
+    min-width: 0;
     padding: 0.5rem 0.75rem;
     border: none;
     background: transparent;
@@ -269,6 +242,11 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    white-space: nowrap;
   }
 
   .type-tab:hover {
@@ -283,18 +261,57 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
+  .tab-count {
+    font-size: 0.6875rem;
+    background: var(--primary);
+    color: white;
+    padding: 0.125rem 0.375rem;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
   .categories-container {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
+  /* Grid that fills available space properly */
   .categories-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 1rem;
   }
 
+  /* When only 1-2 items, limit their width */
+  .categories-grid.has-few {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 320px));
+    justify-content: start;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .empty-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.6;
+  }
+
+  .empty-state p {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  /* Expand button */
   .expand-button {
     align-self: center;
     display: flex;
@@ -332,21 +349,52 @@
     align-items: center;
     justify-content: center;
     opacity: 0.7;
-    transition: transform 0.2s ease;
   }
 
-  /* Responsive - Show all cards in single column on mobile */
-  @media (max-width: 768px) {
+  /* Responsive */
+  @media (max-width: 640px) {
+    .categories-section {
+      padding: 1rem;
+    }
+
     .categories-grid {
       grid-template-columns: 1fr;
+    }
+
+    .categories-grid.has-few {
+      grid-template-columns: 1fr;
+    }
+
+    .type-tab {
+      padding: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .tab-count {
+      font-size: 0.625rem;
+      padding: 0.0625rem 0.25rem;
     }
 
     .expand-button {
       width: 100%;
       justify-content: center;
-      padding: 0.75rem 1.5rem;
-      font-size: 0.875rem;
-      margin-top: 1rem;
+      padding: 0.75rem;
+    }
+  }
+
+  @media (min-width: 641px) and (max-width: 900px) {
+    .categories-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .categories-grid.has-few {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 280px));
+    }
+  }
+
+  @media (min-width: 901px) and (max-width: 1100px) {
+    .categories-grid {
+      grid-template-columns: repeat(3, 1fr);
     }
   }
 </style>

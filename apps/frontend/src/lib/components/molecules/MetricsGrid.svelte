@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { TrendingUp, Wallet, PiggyBank } from 'lucide-svelte';
+  import { TrendingUp, PiggyBank } from 'lucide-svelte';
   import MetricCard from '../atoms/MetricCard.svelte';
   import ExpensesCard from './ExpensesCard.svelte';
 
@@ -86,16 +86,6 @@
       {loading}
       trend={formatTrend(trends.investments)}
       trendColor={getTrendColor(trends.investments, 'investments')}
-    />
-
-    <!-- Balance Card -->
-    <MetricCard
-      icon={Wallet}
-      iconClass="balance"
-      label={labels.balance}
-      value={formatCurrency(metrics.balance)}
-      {loading}
-      subtext={labels.savedPercentage.replace('{percentage}', metrics.savingsRate.toFixed(1))}
     />
   </div>
 </section>

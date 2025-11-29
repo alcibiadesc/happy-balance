@@ -9,10 +9,11 @@
   interface DataPoint {
     month: string;
     income: number;
-    essentialExpenses: number;
-    discretionaryExpenses: number;
-    debtPayments: number;
+    essentialExpenses?: number;
+    discretionaryExpenses?: number;
+    debtPayments?: number;
     investments: number;
+    expenses?: number;
   }
 
   interface Props {
@@ -28,24 +29,24 @@
   let chart: Chart | null = null;
   let cleanupThemeObserver: (() => void) | null = null;
 
-  // Reactive data processing
+  // Reactive data processing - simplified to show real data only
   let chartData = $derived(() => {
     if (!data?.length) return {
       labels: [],
       income: [],
-      essentialExpenses: [],
-      discretionaryExpenses: [],
-      debtPayments: [],
+      expenses: [],
       investments: []
     };
 
     return {
       labels: data.map(d => d.month),
-      income: data.map(d => Math.abs(d.income)),
-      essentialExpenses: data.map(d => Math.abs(d.essentialExpenses)),
-      discretionaryExpenses: data.map(d => Math.abs(d.discretionaryExpenses)),
-      debtPayments: data.map(d => Math.abs(d.debtPayments)),
-      investments: data.map(d => Math.abs(d.investments))
+      income: data.map(d => Math.abs(d.income || 0)),
+      // Use total expenses (sum of essential + discretionary or the expenses field)
+      expenses: data.map(d => {
+        if (d.expenses !== undefined) return Math.abs(d.expenses);
+        return Math.abs((d.essentialExpenses || 0) + (d.discretionaryExpenses || 0) + (d.debtPayments || 0));
+      }),
+      investments: data.map(d => Math.abs(d.investments || 0))
     };
   });
 
@@ -54,7 +55,7 @@
     return formatCurrency(value, $currentCurrency);
   }
 
-  // Chart configuration
+  // Chart configuration - simplified to 3 datasets
   function getChartConfig() {
     const colors = getChartThemeColors();
 
@@ -73,28 +74,10 @@
             borderSkipped: false
           },
           {
-            label: $t('dashboard.metrics.essential_expenses'),
-            data: chartData().essentialExpenses,
+            label: $t('dashboard.metrics.expenses'),
+            data: chartData().expenses,
             backgroundColor: colors.expenses + '80',
             borderColor: colors.expenses,
-            borderWidth: 1,
-            borderRadius: 4,
-            borderSkipped: false
-          },
-          {
-            label: $t('dashboard.metrics.discretionary_expenses'),
-            data: chartData().discretionaryExpenses,
-            backgroundColor: '#f59e0b80',
-            borderColor: '#f59e0b',
-            borderWidth: 1,
-            borderRadius: 4,
-            borderSkipped: false
-          },
-          {
-            label: $t('dashboard.metrics.debt_payments'),
-            data: chartData().debtPayments,
-            backgroundColor: '#dc262680',
-            borderColor: '#dc2626',
             borderWidth: 1,
             borderRadius: 4,
             borderSkipped: false
@@ -224,10 +207,8 @@
     const newData = chartData();
     chart.data.labels = newData.labels;
     chart.data.datasets[0].data = newData.income;
-    chart.data.datasets[1].data = newData.essentialExpenses;
-    chart.data.datasets[2].data = newData.discretionaryExpenses;
-    chart.data.datasets[3].data = newData.debtPayments;
-    chart.data.datasets[4].data = newData.investments;
+    chart.data.datasets[1].data = newData.expenses;
+    chart.data.datasets[2].data = newData.investments;
 
     chart.update('none');
   }
@@ -262,11 +243,11 @@
 
   // Watch for theme changes and update chart colors
   $effect(() => {
-    const theme = $effectiveTheme;
-    console.log('[FinancialBarCharts] Theme changed to:', theme);
+    // Reference effectiveTheme to trigger reactivity
+    $effectiveTheme;
     if (chart) {
       updateChartTheme(chart);
-      updateChartDatasetColors(chart, 4, 'investments');
+      updateChartDatasetColors(chart, 2, 'investments');
     }
   });
 
@@ -278,7 +259,7 @@
     // Setup theme observer (only after chart is created)
     if (chart) {
       cleanupThemeObserver = setupChartThemeObserver(chart, () => {
-        updateChartDatasetColors(chart, 2, 'investments');
+        updateChartDatasetColors(chart!, 2, 'investments');
       });
     }
   });

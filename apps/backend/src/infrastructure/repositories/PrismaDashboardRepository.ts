@@ -40,25 +40,32 @@ export class PrismaDashboardRepository {
 
   /**
    * Obtiene métricas agregadas para un período usando SQL nativo
-   * Mucho más eficiente que cargar todas las transacciones
+   * Incluye transacciones con categoría tipo 'investment' como inversiones
    */
   async getAggregatedMetrics(startDate: Date, endDate: Date) {
     const result = await this.prisma.$queryRaw<any[]>`
       SELECT
-        type,
-        SUM(amount)::float as total,
+        CASE
+          WHEN c.type = 'investment' THEN 'INVESTMENT'
+          ELSE t.type
+        END as effective_type,
+        SUM(t.amount)::float as total,
         COUNT(*)::int as count,
-        AVG(amount)::float as average,
-        MIN(amount)::float as min_amount,
-        MAX(amount)::float as max_amount
-      FROM transactions
+        AVG(t.amount)::float as average,
+        MIN(t.amount)::float as min_amount,
+        MAX(t.amount)::float as max_amount
+      FROM transactions t
+      LEFT JOIN categories c ON t."categoryId" = c.id
       WHERE
-        date >= ${startDate}
-        AND date <= ${endDate}
-        AND hidden = false
-        AND "userId" = ${this.userId}
-        AND "userId" = ${this.userId}
-      GROUP BY type
+        t.date >= ${startDate}
+        AND t.date <= ${endDate}
+        AND t.hidden = false
+        AND t."userId" = ${this.userId}
+      GROUP BY
+        CASE
+          WHEN c.type = 'investment' THEN 'INVESTMENT'
+          ELSE t.type
+        END
     `;
 
     const typeMetrics = result.reduce((acc, row) => {
@@ -73,11 +80,11 @@ export class PrismaDashboardRepository {
         'DEBT_PAYMENT': 'debtPayments'
       };
 
-      const metricKey = typeMap[row.type] || 'expenses';
+      const metricKey = typeMap[row.effective_type] || 'expenses';
 
       return {
         ...acc,
-        [metricKey]: total,
+        [metricKey]: acc[metricKey] + total,
         transactionCount: acc.transactionCount + count,
         largestTransaction: Math.max(acc.largestTransaction, maxAmount)
       };
@@ -149,25 +156,33 @@ export class PrismaDashboardRepository {
 
   /**
    * Obtiene histórico mensual agregado en una sola consulta
+   * Incluye transacciones con categoría tipo 'investment' como inversiones
    */
   async getMonthlyHistory(startDate: Date, endDate: Date): Promise<MonthlyMetrics[]> {
     const result = await this.prisma.$queryRaw<any[]>`
       SELECT
         EXTRACT(YEAR FROM date)::int as year,
         EXTRACT(MONTH FROM date)::int as month,
-        type,
-        SUM(amount)::float as total,
+        CASE
+          WHEN c.type = 'investment' THEN 'INVESTMENT'
+          ELSE t.type
+        END as effective_type,
+        SUM(t.amount)::float as total,
         COUNT(*)::int as count
-      FROM transactions
+      FROM transactions t
+      LEFT JOIN categories c ON t."categoryId" = c.id
       WHERE
-        date >= ${startDate}
-        AND date <= ${endDate}
-        AND hidden = false
-        AND "userId" = ${this.userId}
+        t.date >= ${startDate}
+        AND t.date <= ${endDate}
+        AND t.hidden = false
+        AND t."userId" = ${this.userId}
       GROUP BY
-        EXTRACT(YEAR FROM date),
-        EXTRACT(MONTH FROM date),
-        type
+        EXTRACT(YEAR FROM t.date),
+        EXTRACT(MONTH FROM t.date),
+        CASE
+          WHEN c.type = 'investment' THEN 'INVESTMENT'
+          ELSE t.type
+        END
       ORDER BY year DESC, month DESC
     `;
 
@@ -192,7 +207,7 @@ export class PrismaDashboardRepository {
         'INVESTMENT': 'investments'
       };
 
-      const metricKey = typeMap[row.type];
+      const metricKey = typeMap[row.effective_type];
       if (metricKey) {
         existing[metricKey] = total;
       }

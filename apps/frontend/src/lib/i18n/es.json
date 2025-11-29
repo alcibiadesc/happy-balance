@@ -14,7 +14,9 @@
     "yes": "Sí",
     "no": "No",
     "back": "Atrás",
-    "done": "Hecho"
+    "done": "Hecho",
+    "show_less": "Mostrar menos",
+    "more": "mas"
   },
   "navigation": {
     "transactions": "Transacciones",
@@ -60,6 +62,7 @@
     },
     "categories": {
       "title": "Desglose",
+      "no_data": "No hay datos para este tipo",
       "food": "Alimentación",
       "transport": "Transporte",
       "utilities": "Servicios",

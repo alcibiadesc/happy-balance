@@ -14,7 +14,9 @@
     "yes": "Yes",
     "no": "No",
     "back": "Back",
-    "done": "Done"
+    "done": "Done",
+    "show_less": "Show less",
+    "more": "more"
   },
   "navigation": {
     "transactions": "Transactions",
@@ -60,6 +62,7 @@
     },
     "categories": {
       "title": "Breakdown",
+      "no_data": "No data for this type",
       "food": "Food",
       "transport": "Transport",
       "utilities": "Utilities",

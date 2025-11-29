@@ -77,31 +77,22 @@ export class ModernApiDashboardRepository implements DashboardRepository {
   async getDashboardData(period: Period, currency: string): Promise<DashboardData> {
     try {
       const url = this.buildModernUrl(period);
-      console.log('[Modern Dashboard API] Fetching:', url);
-
       const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
 
       if (!response.ok) {
-        console.error('[Dashboard] HTTP Error:', response.status);
         return this.getEmptyDashboardData(period, currency);
       }
 
       const result: ApiResponse<any> = await response.json();
 
       if (!result.success || !result.data) {
-        console.error('[Dashboard] API Error:', result.error);
         return this.getEmptyDashboardData(period, currency);
       }
 
-      console.log('[Dashboard] Categories in response:', result.data.categoryBreakdown?.length || result.data.categories?.length || 0);
-      console.log('[Dashboard] First category:', result.data.categoryBreakdown?.[0] || result.data.categories?.[0]);
-      console.log('[Dashboard] Raw API response categoryBreakdown:', result.data.categoryBreakdown);
-
       return this.mapToDomainModel(result.data, period, currency);
     } catch (error) {
-      console.error('[Dashboard] Network Error:', error);
       return this.getEmptyDashboardData(period, currency);
     }
   }
@@ -430,15 +421,6 @@ export class ModernApiDashboardRepository implements DashboardRepository {
         // Convertir a formato API (1-4)
         const apiQuarter = targetQuarter + 1;
 
-        console.log('[Quarter Calculation]', {
-          offset,
-          currentQuarter,
-          currentYear,
-          targetYear,
-          apiQuarter
-        });
-
-        // Usar el endpoint quarter específico
         return `${this.apiBase}/dashboard/quarter/${targetYear}/${apiQuarter}`;
       }
 
@@ -546,16 +528,11 @@ export class ModernApiDashboardRepository implements DashboardRepository {
   private generateMonthlyBarData(trends: TrendData[], distribution: any): any[] {
     if (!trends || trends.length === 0) return [];
 
-    const totalExpenses = (distribution.essential || 0) + (distribution.discretionary || 0);
-    const essentialRatio = totalExpenses > 0 ? distribution.essential / totalExpenses : 0.5;
-    const discretionaryRatio = totalExpenses > 0 ? distribution.discretionary / totalExpenses : 0.5;
-
+    // Use real data without fake estimates
     return trends.map(trend => ({
       month: trend.month,
       income: trend.income,
-      essentialExpenses: trend.expenses * essentialRatio,
-      discretionaryExpenses: trend.expenses * discretionaryRatio,
-      debtPayments: 0,
+      expenses: trend.expenses,
       investments: trend.investments || 0
     }));
   }

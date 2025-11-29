@@ -266,8 +266,8 @@
 
   // Watch for theme changes and update chart colors
   $effect(() => {
-    const theme = $effectiveTheme;
-    console.log('[FinancialChart] Theme changed to:', theme);
+    // Reference effectiveTheme to trigger reactivity
+    $effectiveTheme;
     if (chart) {
       updateChartTheme(chart);
       updateChartDatasetColors(chart, 0, 'income');
