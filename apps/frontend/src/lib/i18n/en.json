@@ -74,6 +74,53 @@
       "excellent_control": "Excellent control",
       "moderate_control": "Moderate control",
       "high_spending": "High spending"
+    },
+    "config": {
+      "title": "Configure Dashboard",
+      "metrics_section": "Metrics",
+      "metrics_desc": "Select and order the metrics to display",
+      "sections_section": "Sections",
+      "sections_desc": "Select and order dashboard sections",
+      "spending_indicator": "Spending indicator",
+      "metrics_cards": "Metrics",
+      "edit_hint": "Drag to reorder. Click X to hide.",
+      "hidden_items": "Hidden items",
+      "savings_goal": "Savings goal",
+      "top_merchants": "Top expenses",
+      "fire_indicator": "FIRE"
+    },
+    "savings": {
+      "title": "Monthly savings",
+      "target": "Target: 20% of income",
+      "daily_avg": "Daily spending"
+    },
+    "top_categories": {
+      "title": "Top expenses",
+      "subtitle": "Categories with highest spending",
+      "total": "Total expenses"
+    },
+    "fire": {
+      "title": "FIRE Indicator",
+      "subtitle": "Financial Independence, Retire Early",
+      "fire_number": "FIRE Number",
+      "based_on_4_percent": "Based on the 4% rule",
+      "progress": "Progress",
+      "runway": "Current runway",
+      "years_to_fire": "Years to FIRE",
+      "safe_withdrawal": "Safe withdrawal",
+      "savings_rate": "Savings rate",
+      "years": "years",
+      "months": "months",
+      "runway_helper": "Without new income",
+      "at_current_rate": "At current rate",
+      "four_percent_rule": "4% annual rule",
+      "achieved": "Achieved",
+      "needs_savings": "Increase savings",
+      "excellent": "Excellent",
+      "good": "Good",
+      "moderate": "Moderate",
+      "needs_improvement": "Needs improvement",
+      "disclaimer": "Calculation based on the 4% rule. Your actual situation may vary depending on inflation, returns, and personal circumstances."
     }
   },
   "import": {

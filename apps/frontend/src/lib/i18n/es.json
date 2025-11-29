@@ -74,6 +74,53 @@
       "excellent_control": "Control excelente",
       "moderate_control": "Control moderado",
       "high_spending": "Gasto elevado"
+    },
+    "config": {
+      "title": "Configurar Dashboard",
+      "metrics_section": "Metricas",
+      "metrics_desc": "Selecciona y ordena las metricas a mostrar",
+      "sections_section": "Secciones",
+      "sections_desc": "Selecciona y ordena las secciones del dashboard",
+      "spending_indicator": "Indicador de gasto",
+      "metrics_cards": "Metricas",
+      "edit_hint": "Arrastra para reordenar. Haz clic en X para ocultar.",
+      "hidden_items": "Elementos ocultos",
+      "savings_goal": "Meta de ahorro",
+      "top_merchants": "Top gastos",
+      "fire_indicator": "FIRE"
+    },
+    "savings": {
+      "title": "Ahorro mensual",
+      "target": "Meta: 20% de ingresos",
+      "daily_avg": "Gasto diario"
+    },
+    "top_categories": {
+      "title": "Top gastos",
+      "subtitle": "Categorías con mayor gasto",
+      "total": "Total gastos"
+    },
+    "fire": {
+      "title": "Indicador FIRE",
+      "subtitle": "Independencia Financiera, Retiro Anticipado",
+      "fire_number": "Número FIRE",
+      "based_on_4_percent": "Basado en la regla del 4%",
+      "progress": "Progreso",
+      "runway": "Autonomía actual",
+      "years_to_fire": "Años hasta FIRE",
+      "safe_withdrawal": "Retiro seguro",
+      "savings_rate": "Tasa de ahorro",
+      "years": "años",
+      "months": "meses",
+      "runway_helper": "Sin nuevos ingresos",
+      "at_current_rate": "Al ritmo actual",
+      "four_percent_rule": "Regla del 4% anual",
+      "achieved": "Logrado",
+      "needs_savings": "Aumenta ahorro",
+      "excellent": "Excelente",
+      "good": "Bueno",
+      "moderate": "Moderado",
+      "needs_improvement": "Mejorar",
+      "disclaimer": "Cálculo basado en la regla del 4%. Tu situación real puede variar según inflación, retornos y circunstancias personales."
     }
   },
   "import": {

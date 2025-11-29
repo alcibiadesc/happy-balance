@@ -292,18 +292,11 @@
   /* Empty state */
   .empty-state {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 2rem 1rem;
     color: var(--text-muted);
     text-align: center;
-  }
-
-  .empty-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    opacity: 0.6;
   }
 
   .empty-state p {

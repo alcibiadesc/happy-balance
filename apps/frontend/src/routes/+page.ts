@@ -45,13 +45,10 @@ export const load: PageLoad = async ({ fetch, depends }) => {
         }),
         monthlyBarData: history.map((item: any) => {
           const summary = item.summary || item;
-          const totalExpenses = summary.expenses || 0;
           return {
             month: item.monthName || item.label || item.month || 'Unknown',
             income: summary.income || 0,
-            essentialExpenses: item.essentialExpenses || (totalExpenses * 0.6),
-            discretionaryExpenses: item.discretionaryExpenses || (totalExpenses * 0.4),
-            debtPayments: item.debtPayments || 0,
+            expenses: summary.expenses || 0,
             investments: summary.investments || 0
           };
         })

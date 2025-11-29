@@ -89,7 +89,7 @@ function createUserPreferencesStore() {
     async save(preferences: Partial<UserPreferences>) {
       try {
         // Update database - use authenticated user's ID from token
-        const userId = authStore.userId || 'default';
+        const userId = authStore.currentUser?.id?.value || 'default';
         const response = await fetch(`${API_BASE}/preferences/${userId}`, {
           method: "PUT",
           headers: getAuthHeaders(),

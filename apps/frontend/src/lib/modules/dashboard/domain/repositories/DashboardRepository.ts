@@ -7,14 +7,13 @@ export interface MonthlyTrendData {
   income: number;
   expenses: number;
   balance: number;
+  investments: number;
 }
 
 export interface MonthlyBarData {
   month: string;
   income: number;
-  essentialExpenses: number;
-  discretionaryExpenses: number;
-  debtPayments: number;
+  expenses: number;
   investments: number;
 }
 

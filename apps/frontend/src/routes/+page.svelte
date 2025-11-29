@@ -1,99 +1,42 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { CalendarRange } from "lucide-svelte";
-  import { t } from "$lib/stores/i18n";
-  import { currentCurrency } from "$lib/stores/currency";
+  import { onMount } from 'svelte';
+  import { Pencil, Check } from 'lucide-svelte';
+  import { t } from '$lib/stores/i18n';
+  import { currentCurrency } from '$lib/stores/currency';
+  import { dashboardConfig } from '$lib/stores/dashboardConfig';
 
   // Components
-  import SpendingIndicator from "$lib/components/molecules/SpendingIndicator.svelte";
-  import FinancialBarCharts from "$lib/components/molecules/FinancialBarCharts.svelte";
-  import DateRangePicker from "$lib/components/molecules/DateRangePicker.svelte";
-  import DashboardHeader from "$lib/components/organisms/DashboardHeader.svelte";
-  import CategoriesSection from "$lib/components/organisms/CategoriesSection.svelte";
-  import ChartSection from "$lib/components/organisms/ChartSection.svelte";
-  import MetricsGrid from "$lib/components/molecules/MetricsGrid.svelte";
-  import CleanPeriodNav from "$lib/components/molecules/CleanPeriodNav.svelte";
+  import CleanPeriodNav from '$lib/components/molecules/CleanPeriodNav.svelte';
+  import DateRangePicker from '$lib/components/molecules/DateRangePicker.svelte';
+  import HiddenItemsBar from '$lib/components/molecules/HiddenItemsBar.svelte';
+  import DashboardSections from '$lib/components/organisms/DashboardSections.svelte';
 
-  // Domain Store - Usar el enhanced store que detecta el último período con datos
-  import { createEnhancedDashboardStore } from "$lib/modules/dashboard/presentation/stores/enhancedDashboardStore.svelte.ts";
-  import { getApiUrl } from "$lib/utils/api-url";
+  // Domain Store
+  import { createEnhancedDashboardStore } from '$lib/modules/dashboard/presentation/stores/enhancedDashboardStore.svelte.ts';
+  import { getApiUrl } from '$lib/utils/api-url';
 
-  // Initialize store with API configuration
-  const API_BASE = getApiUrl();
-  console.log('[Dashboard] Using API base:', API_BASE);
-  const store = createEnhancedDashboardStore(API_BASE);
+  // Initialize store
+  const store = createEnhancedDashboardStore(getApiUrl());
 
-  // Reactive bindings
+  // State
   let showDateRangePicker = $state(false);
 
-  // Period options with i18n
-  const periods = $derived([
-    { value: "week", label: $t("dashboard.periods.week") },
-    { value: "month", label: $t("dashboard.periods.month") },
-    { value: "quarter", label: $t("dashboard.periods.quarter") },
-    { value: "year", label: $t("dashboard.periods.year") },
-    {
-      value: "custom",
-      label: $t("dashboard.periods.custom"),
-      icon: CalendarRange,
+  // Computed data for sections
+  const dashboardData = $derived({
+    metrics: {
+      income: store.metrics?.getIncome().getValue() || 0,
+      expenses: store.metrics?.getExpenses().getValue() || 0,
+      investments: store.metrics?.getInvestments().getValue() || 0,
+      balance: store.metrics?.getBalance().getValue() || 0,
+      spendingRate: store.metrics?.getSpendingRate() || 0,
+      savingsRate: store.metrics?.getSavingsRate() || 0,
     },
-  ]);
-
-  // Event handlers
-  const handlePeriodChange = async (period: string) => {
-    if (period === "custom") {
-      showDateRangePicker = true;
-    } else {
-      await store.changePeriod(period as any);
-    }
-  };
-
-  const handlePeriodNavigation = async (relativeOffset: number) => {
-    // relativeOffset is -1 for past, +1 for future
-    await store.navigatePeriod(store.periodOffset + relativeOffset);
-  };
-
-  const handlePeriodTypeChange = async (type: string) => {
-    await store.changePeriod(type as any);
-  };
-
-  const handleCustomDateRange = async (event: CustomEvent) => {
-    const { startDate, endDate } = event.detail;
-    await store.setCustomDateRange(startDate, endDate);
-  };
-
-  // Helper functions
-  const getCustomDateRangeLabel = (): string => {
-    if (store.customStartDate && store.customEndDate) {
-      const start = new Date(store.customStartDate).toLocaleDateString();
-      const end = new Date(store.customEndDate).toLocaleDateString();
-      return `${start} - ${end}`;
-    }
-    return $t("dashboard.periods.custom");
-  };
-
-  const getCurrentPeriodLabel = (): string => {
-    return store.getCurrentPeriodLabel();
-  };
-
-  // Computed values for components
-  const metricsData = $derived({
-    income: store.metrics?.getIncome().getValue() || 0,
-    expenses: store.metrics?.getExpenses().getValue() || 0,
-    investments: store.metrics?.getInvestments().getValue() || 0,
-    balance: store.metrics?.getBalance().getValue() || 0,
-    spendingRate: store.metrics?.getSpendingRate() || 0,
-    savingsRate: store.metrics?.getSavingsRate() || 0,
-  });
-
-  const trendsData = $derived({
-    income: store.trends?.income.getPercentageChange() || 0,
-    expenses: store.trends?.expenses.getPercentageChange() || 0,
-    investments: store.trends?.investments.getPercentageChange() || 0,
-  });
-
-  const categoriesData = $derived(
-    store.categories.map(cat => ({
+    trends: {
+      income: store.trends?.income.getPercentageChange() || 0,
+      expenses: store.trends?.expenses.getPercentageChange() || 0,
+      investments: store.trends?.investments.getPercentageChange() || 0,
+    },
+    categories: store.categories.map(cat => ({
       name: cat.getName(),
       amount: cat.getAmount().getValue(),
       percentage: cat.getPercentage(),
@@ -101,115 +44,88 @@
       icon: cat.getIcon(),
       monthlyBudget: cat.getMonthlyBudget(),
       budgetUsage: cat.getBudgetUsage()
-    }))
-  );
+    })),
+    categoryBreakdown: store.categoryBreakdown,
+    expenseDistribution: store.expenseDistribution,
+    monthlyTrendData: store.monthlyTrendData,
+    monthlyBarData: store.monthlyBarData,
+    selectedPeriodType: store.selectedPeriodType,
+    loading: store.loading,
+    formatCurrency: store.formatCurrency,
+  });
 
-  // Format functions that use the store
-  const formatTrendValue = (value: number): string => {
-    const sign = value >= 0 ? "+" : "";
-    return `${sign}${value.toFixed(1)}%`;
-  };
+  // Event handlers
+  async function handlePeriodNavigation(relativeOffset: number) {
+    await store.navigatePeriod(store.periodOffset + relativeOffset);
+  }
 
-  const getTrendColor = (value: number, type: string): string => {
-    if (type === "expenses") {
-      return value <= 0 ? "var(--success)" : "var(--accent)";
-    }
-    return value >= 0 ? "var(--success)" : "var(--accent)";
-  };
+  async function handlePeriodTypeChange(type: string) {
+    await store.changePeriod(type as any);
+  }
+
+  async function handleCustomDateRange(event: CustomEvent) {
+    const { startDate, endDate } = event.detail;
+    await store.setCustomDateRange(startDate, endDate);
+  }
 
   // Lifecycle
   onMount(async () => {
-    // Watch for currency changes
     $effect(() => {
       if ($currentCurrency !== store.currentCurrency) {
         store.changeCurrency($currentCurrency);
       }
     });
 
-    // Initial load
     await store.loadDashboard();
   });
 </script>
 
 <svelte:head>
-  <title>{$t("dashboard.title")} - Expense Tracker</title>
+  <title>{$t('dashboard.title')} - Expense Tracker</title>
 </svelte:head>
 
-<main class="dashboard">
-  <!-- Simplified Header -->
-  <div class="dashboard-header">
-    <h1>{$t("dashboard.title")}</h1>
-    <CleanPeriodNav
-      currentPeriod={getCurrentPeriodLabel()}
-      selectedPeriodType={store.selectedPeriodType}
-      periodOffset={store.periodOffset}
-      availablePeriods={store.availablePeriods}
-      loading={store.loading}
-      onNavigate={handlePeriodNavigation}
-      onPeriodTypeChange={handlePeriodTypeChange}
-    />
-  </div>
+<main class="dashboard" class:edit-mode={$dashboardConfig.editMode}>
+  <!-- Header -->
+  <header class="dashboard-header">
+    <h1>{$t('dashboard.title')}</h1>
+    <div class="header-actions">
+      <CleanPeriodNav
+        currentPeriod={store.getCurrentPeriodLabel()}
+        selectedPeriodType={store.selectedPeriodType}
+        periodOffset={store.periodOffset}
+        availablePeriods={store.availablePeriods}
+        loading={store.loading}
+        onNavigate={handlePeriodNavigation}
+        onPeriodTypeChange={handlePeriodTypeChange}
+      />
+      <button
+        class="edit-btn"
+        class:active={$dashboardConfig.editMode}
+        onclick={() => dashboardConfig.toggleEditMode()}
+        aria-label={$dashboardConfig.editMode ? $t('common.done') : $t('common.edit')}
+      >
+        {#if $dashboardConfig.editMode}
+          <Check size={18} />
+        {:else}
+          <Pencil size={16} />
+        {/if}
+      </button>
+    </div>
+  </header>
 
+  {#if $dashboardConfig.editMode}
+    <div class="edit-hint">
+      {$t('dashboard.config.edit_hint')}
+    </div>
+  {/if}
 
-  <!-- Simple Spending Summary -->
-  <SpendingIndicator
-    income={metricsData.income}
-    expenses={metricsData.expenses}
-  />
-
-  <!-- Main Metrics Grid -->
-  <MetricsGrid
-    metrics={metricsData}
-    trends={trendsData}
-    expenseDistribution={store.expenseDistribution}
-    categoryBreakdown={store.categoryBreakdown}
-    loading={store.loading}
-    labels={{
-      income: $t("dashboard.metrics.income"),
-      expenses: $t("dashboard.metrics.expenses"),
-      investments: $t("dashboard.metrics.investments"),
-      balance: $t("dashboard.metrics.balance"),
-      savedPercentage: $t("dashboard.metrics.saved_percentage", {
-        percentage: "{percentage}"
-      })
-    }}
-    formatCurrency={store.formatCurrency}
-    formatTrend={formatTrendValue}
-    {getTrendColor}
-  />
-
-  <!-- Category Breakdown -->
-  <CategoriesSection
-    title={$t("dashboard.categories.title")}
-    categories={categoriesData}
-    categoryBreakdown={store.categoryBreakdown}
-    expenseDistribution={store.expenseDistribution}
-    totalExpenses={metricsData.expenses}
-    totalIncome={metricsData.income}
-    totalInvestments={metricsData.investments}
-    formatCurrency={store.formatCurrency}
-  />
-
-  <!-- Financial Line Chart -->
-  <ChartSection
-    title={$t("dashboard.charts.temporal_evolution")}
-    subtitle={$t("dashboard.charts.temporal_evolution_subtitle")}
-    data={store.monthlyTrendData}
-    height={280}
-    period={store.selectedPeriodType}
-    loading={store.loading}
-  />
-
-  <!-- Bar Charts Section -->
-  <FinancialBarCharts
-    data={store.monthlyBarData}
-    height={250}
-    period={store.selectedPeriodType}
-    loading={store.loading}
-  />
+  <!-- Dashboard Sections -->
+  <DashboardSections data={dashboardData} />
 </main>
 
-<!-- Date Range Picker Modal -->
+<!-- Floating UI -->
+<HiddenItemsBar />
+
 <DateRangePicker
   bind:isOpen={showDateRangePicker}
   startDate={store.customStartDate}
@@ -218,16 +134,19 @@
 />
 
 <style>
-  /* Dashboard Layout */
   .dashboard {
     max-width: 1200px;
     margin: 0 auto;
     padding: 1.5rem;
     min-height: 100vh;
     background: var(--surface);
+    transition: padding-bottom 0.2s ease;
   }
 
-  /* Simplified Header */
+  .dashboard.edit-mode {
+    padding-bottom: 5rem;
+  }
+
   .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -244,22 +163,76 @@
     flex-shrink: 0;
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
 
-  /* Responsive */
+  .edit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-elevated);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .edit-btn:hover {
+    background: var(--surface-muted);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+  }
+
+  .edit-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+
+  .edit-hint {
+    text-align: center;
+    padding: 0.75rem;
+    margin-bottom: 1.5rem;
+    background: var(--primary-alpha, rgba(99, 102, 241, 0.08));
+    border: 1px dashed var(--primary);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: var(--primary);
+  }
+
   @media (max-width: 768px) {
     .dashboard {
       padding: 1rem;
     }
 
+    .dashboard.edit-mode {
+      padding-bottom: 6rem;
+    }
+
     .dashboard-header {
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1rem;
       align-items: stretch;
     }
 
     .dashboard-header h1 {
       font-size: 1.25rem;
       text-align: center;
+    }
+
+    .header-actions {
+      justify-content: center;
+    }
+
+    .edit-hint {
+      font-size: 0.75rem;
+      padding: 0.5rem;
     }
   }
 </style>
