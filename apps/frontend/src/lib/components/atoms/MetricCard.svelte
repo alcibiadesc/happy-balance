@@ -98,6 +98,11 @@
     color: var(--warning);
   }
 
+  .metric-icon.expenses {
+    background: rgba(245, 121, 108, 0.1);
+    color: var(--accent);
+  }
+
   .metric-label {
     font-size: 0.875rem;
     color: var(--text-secondary);

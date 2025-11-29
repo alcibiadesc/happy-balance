@@ -6,7 +6,7 @@
   import { setLanguage } from "$lib/stores/i18n";
   import { setCurrency } from "$lib/stores/currency";
   import { setTheme, applyTheme } from "$lib/stores/theme";
-  import { transactions, categories } from "$lib/stores/transactions";
+  import { transactions } from "$lib/stores/transactions";
   import { sidebarCollapsed } from "$lib/stores/sidebar";
   import { userPreferences } from "$lib/stores/user-preferences";
   import { authStore } from "$lib/modules/auth/presentation/stores/authStore.svelte";

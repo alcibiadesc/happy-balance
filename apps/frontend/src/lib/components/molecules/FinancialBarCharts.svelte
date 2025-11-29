@@ -2,9 +2,10 @@
   import { onMount, onDestroy } from 'svelte';
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
-  import { currentLanguage, t } from '$lib/stores/i18n';
+  import { t } from '$lib/stores/i18n';
   import { effectiveTheme } from '$lib/stores/theme';
   import { getChartThemeColors, updateChartTheme, updateChartDatasetColors, setupChartThemeObserver } from '$lib/utils/chartTheme';
+  import LoadingSpinner from '$lib/components/atoms/LoadingSpinner.svelte';
 
   interface DataPoint {
     month: string;
@@ -281,10 +282,7 @@
 
   <div class="chart-wrapper" style="height: {height}px;">
     {#if loading}
-      <div class="chart-loading">
-        <div class="loading-spinner"></div>
-        <span>Loading chart data...</span>
-      </div>
+      <LoadingSpinner message="Loading chart data..." />
     {:else if !data?.length}
       <div class="chart-empty">
         <span>No data available for the selected period</span>
@@ -325,7 +323,6 @@
     position: relative;
   }
 
-  .chart-loading,
   .chart-empty {
     display: flex;
     flex-direction: column;
@@ -333,21 +330,6 @@
     justify-content: center;
     height: 100%;
     color: var(--text-secondary);
-    gap: 0.5rem;
-  }
-
-  .loading-spinner {
-    width: 24px;
-    height: 24px;
-    border: 2px solid var(--border-color);
-    border-top: 2px solid var(--primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
   }
 
   canvas {
