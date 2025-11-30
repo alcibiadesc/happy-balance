@@ -23,7 +23,7 @@
     type = 'warning',
     onConfirm = () => {},
     onCancel = () => {},
-    children
+    children,
   }: Props = $props();
 
   // Use i18n for default values
@@ -69,7 +69,7 @@
       </button>
 
       <!-- Icon based on type -->
-      <div class="flex justify-center mb-4">
+      <div class="mb-4 flex justify-center">
         <div class="icon-container {type}">
           {#if type === 'danger'}
             <AlertTriangle size={32} />
@@ -82,10 +82,10 @@
       </div>
 
       <!-- Title -->
-      <h3 class="font-bold text-lg text-center mb-2">{finalTitle}</h3>
+      <h3 class="mb-2 text-center text-lg font-bold">{finalTitle}</h3>
 
       <!-- Message -->
-      <p class="text-center text-base-content/80 mb-6">{finalMessage}</p>
+      <p class="text-base-content/80 mb-6 text-center">{finalMessage}</p>
 
       <!-- Slot for additional content -->
       {#if children}
@@ -93,12 +93,16 @@
       {/if}
 
       <!-- Action buttons -->
-      <div class="modal-action flex gap-3 justify-center">
+      <div class="modal-action flex justify-center gap-3">
         <button class="btn btn-outline" onclick={closeModal}>
           {finalCancelText}
         </button>
         <button
-          class="btn {type === 'danger' ? 'btn-error' : type === 'warning' ? 'btn-warning' : 'btn-primary'}"
+          class="btn {type === 'danger'
+            ? 'btn-error'
+            : type === 'warning'
+              ? 'btn-warning'
+              : 'btn-primary'}"
           onclick={confirm}
         >
           {finalConfirmText}

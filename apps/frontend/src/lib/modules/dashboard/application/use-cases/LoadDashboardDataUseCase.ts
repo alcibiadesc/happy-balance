@@ -1,4 +1,7 @@
-import type { DashboardRepository, DashboardData } from '../../domain/repositories/DashboardRepository';
+import type {
+  DashboardRepository,
+  DashboardData,
+} from '../../domain/repositories/DashboardRepository';
 import { Period } from '../../domain/value-objects/Period';
 
 export class LoadDashboardDataUseCase {

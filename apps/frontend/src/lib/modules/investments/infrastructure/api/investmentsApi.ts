@@ -161,7 +161,9 @@ export const investmentsApi = {
     await handleResponse<void>(response);
   },
 
-  async importFromGofire(data: { data: any[] }): Promise<{ imported: number; historyCount: number }> {
+  async importFromGofire(data: {
+    data: any[];
+  }): Promise<{ imported: number; historyCount: number }> {
     const response = await fetch(`${API_BASE}/import/gofire`, {
       method: 'POST',
       headers: getAuthHeaders(true),

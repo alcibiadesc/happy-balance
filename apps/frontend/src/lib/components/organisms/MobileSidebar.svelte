@@ -20,28 +20,16 @@
 
 <!-- Mobile Overlay -->
 {#if isOpen}
-  <div
-    class="mobile-overlay"
-    onclick={onClose}
-    aria-hidden="true"
-  ></div>
+  <div class="mobile-overlay" onclick={onClose} aria-hidden="true"></div>
 {/if}
 
 <!-- Mobile Sidebar -->
-<aside
-  class="mobile-sidebar"
-  class:mobile-sidebar--open={isOpen}
-  aria-hidden={!isOpen}
->
+<aside class="mobile-sidebar" class:mobile-sidebar--open={isOpen} aria-hidden={!isOpen}>
   <div class="mobile-sidebar-container">
     <!-- Mobile Header -->
     <header class="mobile-sidebar-header">
       <Brand size="md" />
-      <button
-        class="mobile-sidebar-close"
-        onclick={onClose}
-        aria-label="Close menu"
-      >
+      <button class="mobile-sidebar-close" onclick={onClose} aria-label="Close menu">
         <X size={20} strokeWidth={2} />
       </button>
     </header>

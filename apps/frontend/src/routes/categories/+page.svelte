@@ -1,25 +1,18 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { afterNavigate } from "$app/navigation";
-  import {
-    TrendingUp,
-    TrendingDown,
-    Wallet,
-    Coins,
-    ArrowRightLeft,
-    Info,
-  } from "lucide-svelte";
-  import { t } from "$lib/stores/i18n";
+  import { onMount } from 'svelte';
+  import { afterNavigate } from '$app/navigation';
+  import { TrendingUp, TrendingDown, Wallet, Coins, ArrowRightLeft, Info } from 'lucide-svelte';
+  import { t } from '$lib/stores/i18n';
 
   // Components
-  import CategoryListItem from "$lib/components/molecules/CategoryListItem.svelte";
-  import CategoryEditListItem from "$lib/components/molecules/CategoryEditListItem.svelte";
-  import CategorySection from "$lib/components/organisms/CategorySection.svelte";
-  import CategoryIconPicker from "$lib/components/organisms/CategoryIconPicker.svelte";
-  import ConfirmModal from "$lib/components/organisms/ConfirmModal.svelte";
+  import CategoryListItem from '$lib/components/molecules/CategoryListItem.svelte';
+  import CategoryEditListItem from '$lib/components/molecules/CategoryEditListItem.svelte';
+  import CategorySection from '$lib/components/organisms/CategorySection.svelte';
+  import CategoryIconPicker from '$lib/components/organisms/CategoryIconPicker.svelte';
+  import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
 
   // Store
-  import { createCategoriesStore } from "$lib/modules/categories/presentation/stores/categoriesStore.svelte.ts";
+  import { createCategoriesStore } from '$lib/modules/categories/presentation/stores/categoriesStore.svelte.ts';
 
   const store = createCategoriesStore();
 
@@ -40,17 +33,17 @@
     let top, left, position;
 
     if (spaceBelow >= tooltipHeight + spacing) {
-      position = "bottom";
+      position = 'bottom';
       top = rect.bottom + spacing;
     } else if (spaceAbove >= tooltipHeight + spacing) {
-      position = "top";
+      position = 'top';
       top = rect.top - tooltipHeight - spacing;
     } else {
       if (spaceAbove > spaceBelow) {
-        position = "top";
+        position = 'top';
         top = rect.top - tooltipHeight - spacing;
       } else {
-        position = "bottom";
+        position = 'bottom';
         top = rect.bottom + spacing;
       }
     }
@@ -59,8 +52,8 @@
       spacing,
       Math.min(
         rect.left + rect.width / 2 - tooltipWidth / 2,
-        viewportWidth - tooltipWidth - spacing,
-      ),
+        viewportWidth - tooltipWidth - spacing
+      )
     );
 
     return { top, left, position };
@@ -68,9 +61,7 @@
 
   function handleHelperClick(e: Event) {
     tooltipButtonElement = e.currentTarget as HTMLElement;
-    store.tooltipPosition = calculateTooltipPosition(
-      e.currentTarget as HTMLElement,
-    );
+    store.tooltipPosition = calculateTooltipPosition(e.currentTarget as HTMLElement);
     store.showHelperTooltip = !store.showHelperTooltip;
   }
 
@@ -82,9 +73,7 @@
       store.showIconPickerNew = !store.showIconPickerNew;
     } else {
       store.showIconPickerEdit =
-        store.showIconPickerEdit === store.editingCategory
-          ? null
-          : store.editingCategory;
+        store.showIconPickerEdit === store.editingCategory ? null : store.editingCategory;
     }
   }
 
@@ -99,7 +88,7 @@
 </script>
 
 <svelte:head>
-  <title>{$t("categories.title")} - Happy Balance</title>
+  <title>{$t('categories.title')} - Happy Balance</title>
 </svelte:head>
 
 <div class="categories-container full-width-page">
@@ -107,15 +96,15 @@
     <header class="page-header">
       <div class="header-content">
         <div>
-          <h1 class="page-title">{$t("categories.title")}</h1>
-          <p class="page-subtitle">{$t("categories.subtitle")}</p>
+          <h1 class="page-title">{$t('categories.title')}</h1>
+          <p class="page-subtitle">{$t('categories.subtitle')}</p>
         </div>
         <button
           class="selection-mode-btn"
           class:active={store.isSelectionMode}
           onclick={store.toggleSelectionMode}
         >
-          {store.isSelectionMode ? $t("common.cancel") : $t("categories.select_multiple")}
+          {store.isSelectionMode ? $t('common.cancel') : $t('categories.select_multiple')}
         </button>
       </div>
     </header>
@@ -125,21 +114,21 @@
         <CategorySection
           title={$t(type.getTitleKey())}
           description={$t(type.getDescriptionKey())}
-          icon={value === "income"
+          icon={value === 'income'
             ? TrendingUp
-            : value === "essential"
+            : value === 'essential'
               ? Wallet
-              : value === "discretionary"
+              : value === 'discretionary'
                 ? Coins
-                : value === "investment"
+                : value === 'investment'
                   ? TrendingDown
-                  : value === "debt_payment"
+                  : value === 'debt_payment'
                     ? ArrowRightLeft
                     : Wallet}
           iconClass={type.getIconClass()}
           categories={store.categoriesByType[value]}
           onAddNew={() => store.startNewCategory(value)}
-          showHelperButton={value === "no_compute"}
+          showHelperButton={value === 'no_compute'}
           onHelperClick={handleHelperClick}
           isSelectionMode={store.isSelectionMode}
           selectedCount={store.selectedCount}
@@ -201,7 +190,7 @@
 {#if store.showHelperTooltip && tooltipButtonElement}
   <div
     class="helper-tooltip"
-    class:position-top={store.tooltipPosition.position === "top"}
+    class:position-top={store.tooltipPosition.position === 'top'}
     style="
       top: {store.tooltipPosition.top}px;
       left: {store.tooltipPosition.left}px;
@@ -210,13 +199,10 @@
   >
     <div class="tooltip-content">
       <p class="tooltip-text">
-        {$t("categories.helpers.no_compute")}
+        {$t('categories.helpers.no_compute')}
       </p>
     </div>
-    <button
-      class="tooltip-close"
-      onclick={() => (store.showHelperTooltip = false)}>×</button
-    >
+    <button class="tooltip-close" onclick={() => (store.showHelperTooltip = false)}>×</button>
   </div>
 {/if}
 
@@ -224,21 +210,21 @@
 <ConfirmModal
   isOpen={store.showDeleteModal}
   title={store.categoriesToDelete.length > 1
-    ? $t("categories.delete_categories", { count: store.categoriesToDelete.length })
-    : $t("categories.delete_category")}
+    ? $t('categories.delete_categories', { count: store.categoriesToDelete.length })
+    : $t('categories.delete_category')}
   message={store.transactionsWithCategory > 0
-    ? $t("categories.delete_with_transactions", {
+    ? $t('categories.delete_with_transactions', {
         count: store.transactionsWithCategory,
       })
     : store.categoriesToDelete.length > 1
-      ? $t("categories.delete_multiple_confirmation", {
+      ? $t('categories.delete_multiple_confirmation', {
           count: store.categoriesToDelete.length,
         })
-      : $t("categories.delete_confirmation", {
+      : $t('categories.delete_confirmation', {
           name: store.categoryToDelete?.getName(),
         })}
-  confirmText={$t("common.delete")}
-  cancelText={$t("common.cancel")}
+  confirmText={$t('common.delete')}
+  cancelText={$t('common.cancel')}
   type="danger"
   onConfirm={store.categoriesToDelete.length > 1 ? store.confirmBulkDelete : store.confirmDelete}
   onCancel={() => (store.showDeleteModal = false)}
@@ -252,12 +238,10 @@
           value="remove"
           bind:group={store.recategorizeTarget}
         />
-        <span>{$t("categories.leave_uncategorized")}</span>
+        <span>{$t('categories.leave_uncategorized')}</span>
       </label>
       {#each store.categories as cat}
-        {#if store.categoriesToDelete.length > 1
-          ? !store.categoriesToDelete.some(c => c.getId() === cat.getId())
-          : cat.getId() !== store.categoryToDelete?.getId()}
+        {#if store.categoriesToDelete.length > 1 ? !store.categoriesToDelete.some((c) => c.getId() === cat.getId()) : cat.getId() !== store.categoryToDelete?.getId()}
           <label class="radio-option">
             <input
               type="radio"
@@ -265,7 +249,7 @@
               value={cat.getId()}
               bind:group={store.recategorizeTarget}
             />
-            <span>{$t("categories.move_to", { name: cat.getName() })}</span>
+            <span>{$t('categories.move_to', { name: cat.getName() })}</span>
           </label>
         {/if}
       {/each}

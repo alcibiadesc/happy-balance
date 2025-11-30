@@ -13,7 +13,11 @@
     reason: string;
     potentialMatches: number;
   }> = [];
-  export let onConfirm: (scope: 'single' | 'pattern' | 'all', applyToFuture: boolean, selectedTransactionIds?: string[]) => void = () => {};
+  export let onConfirm: (
+    scope: 'single' | 'pattern' | 'all',
+    applyToFuture: boolean,
+    selectedTransactionIds?: string[]
+  ) => void = () => {};
   export let onCancel: () => void = () => {};
 
   // State
@@ -25,7 +29,7 @@
 
   // Reset selected transactions when modal opens or matching transactions change
   $: if (isOpen) {
-    selectedTransactionIds = new Set(matchingTransactions.map(t => t.id));
+    selectedTransactionIds = new Set(matchingTransactions.map((t) => t.id));
   }
 
   function handleConfirm() {
@@ -39,7 +43,7 @@
   function formatAmount(amount: number): string {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'EUR',
     }).format(Math.abs(amount));
   }
 
@@ -48,8 +52,13 @@
   }
 
   function getTotalAmount(): string {
-    const selectedTransactions = matchingTransactions.filter(t => selectedTransactionIds.has(t.id));
-    const total = selectedTransactions.reduce((sum, t) => sum + Math.abs(t.amount), Math.abs(transaction?.amount || 0));
+    const selectedTransactions = matchingTransactions.filter((t) =>
+      selectedTransactionIds.has(t.id)
+    );
+    const total = selectedTransactions.reduce(
+      (sum, t) => sum + Math.abs(t.amount),
+      Math.abs(transaction?.amount || 0)
+    );
     return formatAmount(total);
   }
 
@@ -67,7 +76,7 @@
     if (selectedTransactionIds.size === matchingTransactions.length) {
       selectedTransactionIds = new Set();
     } else {
-      selectedTransactionIds = new Set(matchingTransactions.map(t => t.id));
+      selectedTransactionIds = new Set(matchingTransactions.map((t) => t.id));
     }
   }
 
@@ -102,12 +111,7 @@
         <div class="scope-options">
           <!-- Single transaction option -->
           <label class="scope-option" class:selected={selectedScope === 'single'}>
-            <input
-              type="radio"
-              bind:group={selectedScope}
-              value="single"
-              name="scope"
-            />
+            <input type="radio" bind:group={selectedScope} value="single" name="scope" />
             <div class="option-content">
               <div class="option-info">
                 <span class="option-title">Solo esta transacción</span>
@@ -120,12 +124,7 @@
           <!-- Similar transactions option -->
           {#if hasMatches}
             <label class="scope-option" class:selected={selectedScope === 'pattern'}>
-              <input
-                type="radio"
-                bind:group={selectedScope}
-                value="pattern"
-                name="scope"
-              />
+              <input type="radio" bind:group={selectedScope} value="pattern" name="scope" />
               <div class="option-content">
                 <div class="option-info">
                   <span class="option-title">Transacciones similares</span>
@@ -140,7 +139,9 @@
               <div class="future-option">
                 <label class="checkbox-option">
                   <input type="checkbox" bind:checked={applyToFuture} />
-                  <span class="checkbox-label">Aplicar automáticamente a futuras transacciones similares</span>
+                  <span class="checkbox-label"
+                    >Aplicar automáticamente a futuras transacciones similares</span
+                  >
                 </label>
               </div>
             {/if}
@@ -153,12 +154,10 @@
             <div class="preview-header">
               <div class="preview-header-left">
                 <span class="preview-title">Se aplicará también a:</span>
-                <button
-                  type="button"
-                  class="toggle-all-btn"
-                  on:click={toggleAll}
-                >
-                  {selectedTransactionIds.size === matchingTransactions.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
+                <button type="button" class="toggle-all-btn" on:click={toggleAll}>
+                  {selectedTransactionIds.size === matchingTransactions.length
+                    ? 'Deseleccionar todas'
+                    : 'Seleccionar todas'}
                 </button>
               </div>
               <span class="preview-total">{getTotalAmount()}</span>
@@ -173,7 +172,11 @@
                   />
                   <div class="preview-item-content">
                     <span class="preview-merchant">{match.merchant}</span>
-                    <span class="preview-amount" class:income={match.amount > 0} class:expense={match.amount < 0}>{formatAmount(match.amount)}</span>
+                    <span
+                      class="preview-amount"
+                      class:income={match.amount > 0}
+                      class:expense={match.amount < 0}>{formatAmount(match.amount)}</span
+                    >
                   </div>
                 </label>
               {/each}
@@ -184,9 +187,7 @@
 
       <!-- Action buttons -->
       <div class="modal-actions">
-        <button class="btn-secondary" on:click={onCancel}>
-          Cancelar
-        </button>
+        <button class="btn-secondary" on:click={onCancel}> Cancelar </button>
         <button
           class="btn-primary"
           on:click={handleConfirm}
@@ -337,7 +338,7 @@
     cursor: pointer;
   }
 
-  .scope-option input[type="radio"] {
+  .scope-option input[type='radio'] {
     display: none;
   }
 
@@ -410,7 +411,7 @@
     cursor: pointer;
   }
 
-  .checkbox-option input[type="checkbox"] {
+  .checkbox-option input[type='checkbox'] {
     margin: 2px 0 0 0;
     accent-color: #059669;
   }
@@ -505,7 +506,7 @@
     border-color: #059669;
   }
 
-  .preview-item input[type="checkbox"] {
+  .preview-item input[type='checkbox'] {
     margin: 0;
     accent-color: #059669;
     cursor: pointer;

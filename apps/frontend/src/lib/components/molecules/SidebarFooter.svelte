@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { Upload } from "lucide-svelte";
-  import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
-  import UserMenu from "./UserMenu.svelte";
-  import { getApiUrl } from "$lib/utils/api-url";
+  import { Upload } from 'lucide-svelte';
+  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import UserMenu from './UserMenu.svelte';
+  import { getApiUrl } from '$lib/utils/api-url';
 
   interface Props {
     collapsed: boolean;
@@ -11,7 +11,9 @@
 
   let { collapsed }: Props = $props();
 
-  let versionInfo = $state<{version: string, commit: string, buildTimestamp: string} | null>(null);
+  let versionInfo = $state<{ version: string; commit: string; buildTimestamp: string } | null>(
+    null
+  );
 
   onMount(async () => {
     try {
@@ -31,7 +33,7 @@
   }
 
   function handleImportClick() {
-    goto("/import");
+    goto('/import');
   }
 </script>
 
@@ -49,7 +51,10 @@
       <UserMenu />
     </div>
     {#if versionInfo}
-      <div class="version-badge" title="Build: {versionInfo.buildTimestamp}&#10;Commit: {versionInfo.commit}">
+      <div
+        class="version-badge"
+        title="Build: {versionInfo.buildTimestamp}&#10;Commit: {versionInfo.commit}"
+      >
         {formatTimestamp(versionInfo.buildTimestamp)}
       </div>
     {/if}

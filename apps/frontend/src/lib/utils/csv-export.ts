@@ -1,4 +1,4 @@
-import type { Transaction, Category } from "$lib/types/transaction";
+import type { Transaction, Category } from '$lib/types/transaction';
 
 export interface ExportOptions {
   includeHidden?: boolean;
@@ -11,11 +11,7 @@ export interface ExportOptions {
 function escapeCSVField(field: string | number): string {
   const stringField = String(field);
   // If field contains comma, quotes, or newlines, wrap in quotes and escape quotes
-  if (
-    stringField.includes(",") ||
-    stringField.includes('"') ||
-    stringField.includes("\n")
-  ) {
+  if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
     return `"${stringField.replace(/"/g, '""')}"`;
   }
   return stringField;
@@ -28,7 +24,7 @@ function formatAmount(amount: number): string {
 export function exportTransactionsToCSV(
   transactions: Transaction[],
   categories: Category[],
-  options: ExportOptions = {},
+  options: ExportOptions = {}
 ): string {
   // Filter transactions based on options
   let filteredTransactions = [...transactions];
@@ -54,49 +50,47 @@ export function exportTransactionsToCSV(
 
   // CSV Headers
   const headers = [
-    "Fecha",
-    "Hora",
-    "Descripción",
-    "Comercio",
-    "Categoría",
-    "Tipo de Categoría",
-    "Importe",
-    "Estado",
+    'Fecha',
+    'Hora',
+    'Descripción',
+    'Comercio',
+    'Categoría',
+    'Tipo de Categoría',
+    'Importe',
+    'Estado',
   ];
 
   // Build CSV content
-  const csvLines = [headers.map((h) => escapeCSVField(h)).join(",")];
+  const csvLines = [headers.map((h) => escapeCSVField(h)).join(',')];
 
   filteredTransactions.forEach((transaction) => {
-    const category = transaction.categoryId
-      ? categoryLookup.get(transaction.categoryId)
-      : null;
+    const category = transaction.categoryId ? categoryLookup.get(transaction.categoryId) : null;
 
     const row = [
       transaction.date,
-      transaction.time || "",
+      transaction.time || '',
       transaction.description,
       transaction.merchant,
-      category?.name || "",
-      category?.type || "",
+      category?.name || '',
+      category?.type || '',
       formatAmount(transaction.amount),
-      transaction.hidden ? "Oculto" : "Visible",
+      transaction.hidden ? 'Oculto' : 'Visible',
     ];
 
-    csvLines.push(row.map((field) => escapeCSVField(field)).join(","));
+    csvLines.push(row.map((field) => escapeCSVField(field)).join(','));
   });
 
-  return csvLines.join("\n");
+  return csvLines.join('\n');
 }
 
 export function downloadCSV(csvContent: string, filename: string): void {
   // Create blob with BOM for proper Excel encoding
-  const BOM = "\uFEFF";
-  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8" });
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' });
 
   // Create download link
   const url = window.URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  const link = document.createElement('a');
   link.href = url;
   link.download = filename;
 
@@ -109,16 +103,13 @@ export function downloadCSV(csvContent: string, filename: string): void {
   window.URL.revokeObjectURL(url);
 }
 
-export function generateFilename(dateRange?: {
-  start: string;
-  end: string;
-}): string {
+export function generateFilename(dateRange?: { start: string; end: string }): string {
   const now = new Date();
-  const timestamp = now.toISOString().split("T")[0];
+  const timestamp = now.toISOString().split('T')[0];
 
   if (dateRange) {
-    const startDate = dateRange.start.replace(/-/g, "");
-    const endDate = dateRange.end.replace(/-/g, "");
+    const startDate = dateRange.start.replace(/-/g, '');
+    const endDate = dateRange.end.replace(/-/g, '');
     return `transacciones_${startDate}_${endDate}.csv`;
   }
 

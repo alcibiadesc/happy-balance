@@ -58,7 +58,7 @@ export class TransactionDate {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
     return formatter.format(this.date);
   }
@@ -67,7 +67,7 @@ export class TransactionDate {
     const formatter = new Intl.DateTimeFormat('es-ES', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
     return formatter.format(this.date);
   }
@@ -75,7 +75,7 @@ export class TransactionDate {
   formatMonthYear(): string {
     const formatter = new Intl.DateTimeFormat('es-ES', {
       year: 'numeric',
-      month: 'long'
+      month: 'long',
     });
     return formatter.format(this.date);
   }

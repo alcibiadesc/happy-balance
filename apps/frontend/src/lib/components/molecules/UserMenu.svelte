@@ -71,7 +71,7 @@
           bg: 'var(--error-bg)',
           border: 'var(--error-border)',
           icon: 'shield',
-          label: 'Admin'
+          label: 'Admin',
         };
       case 'user':
         return {
@@ -79,7 +79,7 @@
           bg: 'var(--info-bg)',
           border: 'var(--info-border)',
           icon: 'user',
-          label: 'User'
+          label: 'User',
         };
       case 'viewer':
         return {
@@ -87,7 +87,7 @@
           bg: 'var(--warning-bg)',
           border: 'var(--warning-border)',
           icon: 'eye',
-          label: 'Viewer'
+          label: 'Viewer',
         };
       default:
         return {
@@ -95,12 +95,14 @@
           bg: 'var(--surface-muted)',
           border: 'var(--border-color)',
           icon: 'user',
-          label: 'User'
+          label: 'User',
         };
     }
   }
 
-  let roleConfig = $derived(authStore.currentUser ? getRoleConfig(authStore.currentUser.role) : null);
+  let roleConfig = $derived(
+    authStore.currentUser ? getRoleConfig(authStore.currentUser.role) : null
+  );
 </script>
 
 {#if authStore.currentUser}
@@ -147,42 +149,60 @@
         <div class="menu-divider"></div>
 
         {#if authStore.isAdmin}
-          <a
-            href="/admin/users"
-            onclick={closeMenu}
-            class="menu-item"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          <a href="/admin/users" onclick={closeMenu} class="menu-item">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
             <span>Manage Users</span>
           </a>
           <div class="menu-divider"></div>
         {/if}
 
-        <a
-          href="/settings"
-          onclick={closeMenu}
-          class="menu-item"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 1v6m0 6v6m4.22-13.22l4.24 4.24M1.54 1.54l4.24 4.24M20.46 20.46l-4.24-4.24M1.54 20.46l4.24-4.24M22 12h-6m-6 0H1"/>
+        <a href="/settings" onclick={closeMenu} class="menu-item">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M12 1v6m0 6v6m4.22-13.22l4.24 4.24M1.54 1.54l4.24 4.24M20.46 20.46l-4.24-4.24M1.54 20.46l4.24-4.24M22 12h-6m-6 0H1"
+            />
           </svg>
           <span>Settings</span>
         </a>
 
-        <button
-          onclick={handleLogout}
-          class="menu-item menu-item--danger"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
+        <button onclick={handleLogout} class="menu-item menu-item--danger">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
           <span>Sign Out</span>
         </button>
@@ -265,8 +285,6 @@
     color: var(--text-primary);
     letter-spacing: -0.01em;
   }
-
-
 
   .menu-divider {
     height: 1px;

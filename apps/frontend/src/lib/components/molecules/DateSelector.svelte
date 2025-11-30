@@ -7,7 +7,7 @@
     CalendarRange,
     Layers,
     Eye,
-    EyeOff
+    EyeOff,
   } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
 
@@ -46,7 +46,7 @@
     onToggleDatePicker,
     onUpdatePeriod,
     onUpdateCustomStartDate,
-    onUpdateCustomEndDate
+    onUpdateCustomEndDate,
   }: DateSelectorProps = $props();
 
   function formatPeriodDisplay(period: string): string {
@@ -75,7 +75,9 @@
     class:active={showAllTransactions}
     onclick={onToggleAllTransactions}
     title={showAllTransactions ? 'Mostrar período seleccionado' : 'Mostrar todas las transacciones'}
-    aria-label={showAllTransactions ? $t('accessibility.show_period') : $t('accessibility.show_all')}
+    aria-label={showAllTransactions
+      ? $t('accessibility.show_period')
+      : $t('accessibility.show_all')}
   >
     <Layers size={14} />
   </button>
@@ -131,7 +133,11 @@
     class="date-mode-btn"
     class:disabled={showAllTransactions}
     onclick={showAllTransactions ? null : onToggleDateRangeMode}
-    title={showAllTransactions ? 'Deshabilitado al mostrar todas las transacciones' : (dateRangeMode === 'month' ? 'Cambiar a rango personalizado' : 'Cambiar a selección de mes')}
+    title={showAllTransactions
+      ? 'Deshabilitado al mostrar todas las transacciones'
+      : dateRangeMode === 'month'
+        ? 'Cambiar a rango personalizado'
+        : 'Cambiar a selección de mes'}
   >
     <CalendarRange size={14} />
   </button>

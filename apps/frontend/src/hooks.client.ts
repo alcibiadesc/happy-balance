@@ -8,15 +8,15 @@ export const handle: Handle = async ({ event, resolve }) => {
   const path = event.url.pathname;
 
   // Check if route is public
-  const isPublicRoute = publicRoutes.some(route => path.startsWith(route));
+  const isPublicRoute = publicRoutes.some((route) => path.startsWith(route));
 
   if (!isPublicRoute && !authStore.isAuthenticated) {
     // Redirect to login if not authenticated
     return new Response(null, {
       status: 302,
       headers: {
-        location: '/login'
-      }
+        location: '/login',
+      },
     });
   }
 

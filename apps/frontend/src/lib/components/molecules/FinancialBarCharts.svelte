@@ -4,7 +4,12 @@
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import { t } from '$lib/stores/i18n';
   import { effectiveTheme } from '$lib/stores/theme';
-  import { getChartThemeColors, updateChartTheme, updateChartDatasetColors, setupChartThemeObserver } from '$lib/utils/chartTheme';
+  import {
+    getChartThemeColors,
+    updateChartTheme,
+    updateChartDatasetColors,
+    setupChartThemeObserver,
+  } from '$lib/utils/chartTheme';
   import LoadingSpinner from '$lib/components/atoms/LoadingSpinner.svelte';
 
   interface DataPoint {
@@ -32,22 +37,25 @@
 
   // Reactive data processing - simplified to show real data only
   let chartData = $derived(() => {
-    if (!data?.length) return {
-      labels: [],
-      income: [],
-      expenses: [],
-      investments: []
-    };
+    if (!data?.length)
+      return {
+        labels: [],
+        income: [],
+        expenses: [],
+        investments: [],
+      };
 
     return {
-      labels: data.map(d => d.month),
-      income: data.map(d => Math.abs(d.income || 0)),
+      labels: data.map((d) => d.month),
+      income: data.map((d) => Math.abs(d.income || 0)),
       // Use total expenses (sum of essential + discretionary or the expenses field)
-      expenses: data.map(d => {
+      expenses: data.map((d) => {
         if (d.expenses !== undefined) return Math.abs(d.expenses);
-        return Math.abs((d.essentialExpenses || 0) + (d.discretionaryExpenses || 0) + (d.debtPayments || 0));
+        return Math.abs(
+          (d.essentialExpenses || 0) + (d.discretionaryExpenses || 0) + (d.debtPayments || 0)
+        );
       }),
-      investments: data.map(d => Math.abs(d.investments || 0))
+      investments: data.map((d) => Math.abs(d.investments || 0)),
     };
   });
 
@@ -72,7 +80,7 @@
             borderColor: colors.income,
             borderWidth: 1,
             borderRadius: 4,
-            borderSkipped: false
+            borderSkipped: false,
           },
           {
             label: $t('dashboard.metrics.expenses'),
@@ -81,7 +89,7 @@
             borderColor: colors.expenses,
             borderWidth: 1,
             borderRadius: 4,
-            borderSkipped: false
+            borderSkipped: false,
           },
           {
             label: $t('dashboard.metrics.investments'),
@@ -90,16 +98,16 @@
             borderColor: colors.investments,
             borderWidth: 1,
             borderRadius: 4,
-            borderSkipped: false
-          }
-        ]
+            borderSkipped: false,
+          },
+        ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         interaction: {
           intersect: false,
-          mode: 'index' as const
+          mode: 'index' as const,
         },
         plugins: {
           legend: {
@@ -108,12 +116,12 @@
               color: colors.text,
               font: {
                 size: 11,
-                weight: '600'
+                weight: '600',
               },
               usePointStyle: true,
               pointStyle: 'rect',
-              padding: 15
-            }
+              padding: 15,
+            },
           },
           tooltip: {
             backgroundColor: 'rgba(17, 24, 39, 0.95)',
@@ -128,9 +136,9 @@
                 const label = context.dataset.label || '';
                 const value = formatTooltipValue(context.parsed.y);
                 return `${label}: ${value}`;
-              }
-            }
-          }
+              },
+            },
+          },
         },
         scales: {
           x: {
@@ -138,48 +146,48 @@
             grid: {
               color: colors.grid,
               drawBorder: false,
-              lineWidth: 1
+              lineWidth: 1,
             },
             ticks: {
               color: colors.text,
               font: {
                 size: 11,
-                weight: '600'
+                weight: '600',
               },
-              maxRotation: 45
+              maxRotation: 45,
             },
             border: {
-              display: false
-            }
+              display: false,
+            },
           },
           y: {
             beginAtZero: true,
             grid: {
               color: colors.grid,
               drawBorder: false,
-              lineWidth: 1
+              lineWidth: 1,
             },
             ticks: {
               color: colors.text,
               font: {
                 size: 11,
-                weight: '600'
+                weight: '600',
               },
-              callback: function(value: any) {
+              callback: function (value: any) {
                 return formatCurrency(value, $currentCurrency);
-              }
+              },
             },
             border: {
-              display: false
-            }
-          }
+              display: false,
+            },
+          },
         },
         elements: {
           bar: {
-            borderRadius: 4
-          }
-        }
-      }
+            borderRadius: 4,
+          },
+        },
+      },
     };
   }
 
@@ -225,7 +233,7 @@
   // Watch for currency changes to update tooltips
   $effect(() => {
     if (chart && $currentCurrency) {
-      chart.options.scales!.y!.ticks!.callback = function(value: any) {
+      chart.options.scales!.y!.ticks!.callback = function (value: any) {
         return formatCurrency(value, $currentCurrency);
       };
       chart.update('none');

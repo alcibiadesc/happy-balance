@@ -103,36 +103,15 @@ export class CategoryEntity {
 
   // Immutable update methods
   updateName(name: string): CategoryEntity {
-    return new CategoryEntity(
-      this.id,
-      name,
-      this.icon,
-      this.color,
-      this.type,
-      this.budget
-    );
+    return new CategoryEntity(this.id, name, this.icon, this.color, this.type, this.budget);
   }
 
   updateIcon(icon: string): CategoryEntity {
-    return new CategoryEntity(
-      this.id,
-      this.name,
-      icon,
-      this.color,
-      this.type,
-      this.budget
-    );
+    return new CategoryEntity(this.id, this.name, icon, this.color, this.type, this.budget);
   }
 
   updateColor(color: string): CategoryEntity {
-    return new CategoryEntity(
-      this.id,
-      this.name,
-      this.icon,
-      color,
-      this.type,
-      this.budget
-    );
+    return new CategoryEntity(this.id, this.name, this.icon, color, this.type, this.budget);
   }
 
   updateBudget(annualBudget: number): CategoryEntity {
@@ -175,7 +154,7 @@ export class CategoryEntity {
       icon: this.icon,
       color: this.color,
       type: this.type.getValue(),
-      annualBudget: this.budget.getValue()
+      annualBudget: this.budget.getValue(),
     };
   }
 

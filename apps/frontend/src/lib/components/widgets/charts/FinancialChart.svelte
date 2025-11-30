@@ -3,7 +3,12 @@
   import Chart from 'chart.js/auto';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import { effectiveTheme } from '$lib/stores/theme';
-  import { getChartThemeColors, updateChartTheme, updateChartDatasetColors, setupChartThemeObserver } from '$lib/utils/chartTheme';
+  import {
+    getChartThemeColors,
+    updateChartTheme,
+    updateChartDatasetColors,
+    setupChartThemeObserver,
+  } from '$lib/utils/chartTheme';
   import LoadingSpinner from '$lib/components/atoms/LoadingSpinner.svelte';
 
   interface DataPoint {
@@ -31,10 +36,10 @@
     if (!data?.length) return { labels: [], income: [], expenses: [], balance: [] };
 
     return {
-      labels: data.map(d => d.month),
-      income: data.map(d => Math.abs(d.income)),
-      expenses: data.map(d => Math.abs(d.expenses)),
-      balance: data.map(d => d.balance)
+      labels: data.map((d) => d.month),
+      income: data.map((d) => Math.abs(d.income)),
+      expenses: data.map((d) => Math.abs(d.expenses)),
+      balance: data.map((d) => d.balance),
     };
   });
 
@@ -46,10 +51,14 @@
   // Get month labels based on period
   function getTimeUnit() {
     switch (period) {
-      case 'week': return 'week';
-      case 'quarter': return 'quarter';
-      case 'year': return 'year';
-      default: return 'month';
+      case 'week':
+        return 'week';
+      case 'quarter':
+        return 'quarter';
+      case 'year':
+        return 'year';
+      default:
+        return 'month';
     }
   }
 
@@ -78,7 +87,7 @@
             pointHoverRadius: 6,
             segment: {
               borderColor: colors.income,
-            }
+            },
           },
           {
             label: 'Expenses',
@@ -95,7 +104,7 @@
             pointHoverRadius: 6,
             segment: {
               borderColor: colors.expenses,
-            }
+            },
           },
           {
             label: 'Balance',
@@ -112,16 +121,16 @@
             pointHoverRadius: 6,
             segment: {
               borderColor: colors.balance,
-            }
-          }
-        ]
+            },
+          },
+        ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         interaction: {
           intersect: false,
-          mode: 'index' as const
+          mode: 'index' as const,
         },
         plugins: {
           legend: {
@@ -130,12 +139,12 @@
               color: colors.text,
               font: {
                 size: 13,
-                weight: '600'
+                weight: '600',
               },
               usePointStyle: true,
               pointStyle: 'circle',
-              padding: 20
-            }
+              padding: 20,
+            },
           },
           tooltip: {
             backgroundColor: 'rgba(17, 24, 39, 0.95)',
@@ -150,9 +159,9 @@
                 const label = context.dataset.label || '';
                 const value = formatTooltipValue(context.parsed.y);
                 return `${label}: ${value}`;
-              }
-            }
-          }
+              },
+            },
+          },
         },
         scales: {
           x: {
@@ -160,48 +169,48 @@
             grid: {
               color: colors.grid,
               drawBorder: false,
-              lineWidth: 1
+              lineWidth: 1,
             },
             ticks: {
               color: colors.text,
               font: {
                 size: 12,
-                weight: '600'
+                weight: '600',
               },
-              maxRotation: 45
+              maxRotation: 45,
             },
             border: {
-              display: false
-            }
+              display: false,
+            },
           },
           y: {
             beginAtZero: true,
             grid: {
               color: colors.grid,
               drawBorder: false,
-              lineWidth: 1
+              lineWidth: 1,
             },
             ticks: {
               color: colors.text,
               font: {
                 size: 12,
-                weight: '600'
+                weight: '600',
               },
-              callback: function(value: any) {
+              callback: function (value: any) {
                 return formatCurrency(value, $currentCurrency);
-              }
+              },
             },
             border: {
-              display: false
-            }
-          }
+              display: false,
+            },
+          },
         },
         elements: {
           point: {
-            hoverBorderWidth: 3
-          }
-        }
-      }
+            hoverBorderWidth: 3,
+          },
+        },
+      },
     };
   }
 
@@ -247,7 +256,7 @@
   // Watch for currency changes to update tooltips
   $effect(() => {
     if (chart && $currentCurrency) {
-      chart.options.scales!.y!.ticks!.callback = function(value: any) {
+      chart.options.scales!.y!.ticks!.callback = function (value: any) {
         return formatCurrency(value, $currentCurrency);
       };
       chart.update('none');

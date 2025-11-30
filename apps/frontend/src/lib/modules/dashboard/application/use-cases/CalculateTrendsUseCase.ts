@@ -11,7 +11,7 @@ export class CalculateTrendsUseCase {
       return {
         income: Trend.zero(),
         expenses: Trend.zero(),
-        investments: Trend.zero()
+        investments: Trend.zero(),
       };
     }
 
@@ -21,7 +21,7 @@ export class CalculateTrendsUseCase {
     return {
       income: Trend.calculate(current.income, previous.income),
       expenses: Trend.calculate(current.expenses, previous.expenses),
-      investments: Trend.calculate(current.investments, previous.investments)
+      investments: Trend.calculate(current.investments, previous.investments),
     };
   }
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import CategoryCard from "$lib/components/atoms/CategoryCard.svelte";
-  import { ChevronDown, ChevronUp } from "lucide-svelte";
-  import { t } from "$lib/stores/i18n";
+  import CategoryCard from '$lib/components/atoms/CategoryCard.svelte';
+  import { ChevronDown, ChevronUp } from 'lucide-svelte';
+  import { t } from '$lib/stores/i18n';
 
   interface Category {
     name: string;
@@ -34,7 +34,7 @@
     totalExpenses = 0,
     totalIncome = 0,
     totalInvestments = 0,
-    formatCurrency
+    formatCurrency,
   }: Props = $props();
 
   type BreakdownType = 'expenses' | 'income' | 'investments';
@@ -45,30 +45,33 @@
   const INITIAL_SHOW = 6;
 
   // Type configuration for filtering and styling
-  const typeConfig: Record<BreakdownType, {
-    types: string[];
-    total: number;
-    defaultColor: string;
-    defaultIcon: string;
-  }> = $derived({
+  const typeConfig: Record<
+    BreakdownType,
+    {
+      types: string[];
+      total: number;
+      defaultColor: string;
+      defaultIcon: string;
+    }
+  > = $derived({
     expenses: {
       types: ['essential', 'discretionary', 'debt_payment'],
       total: totalExpenses,
       defaultColor: '#ef4444',
-      defaultIcon: '🛍️'
+      defaultIcon: '🛍️',
     },
     income: {
       types: ['income'],
       total: totalIncome,
       defaultColor: '#34d399',
-      defaultIcon: '💰'
+      defaultIcon: '💰',
     },
     investments: {
       types: ['investment'],
       total: totalInvestments,
       defaultColor: '#60a5fa',
-      defaultIcon: '📈'
-    }
+      defaultIcon: '📈',
+    },
   });
 
   // Filter and map categories based on selected type
@@ -76,13 +79,13 @@
     const config = typeConfig[type];
 
     return categoryBreakdown
-      .filter(cat => config.types.includes(cat.type || ''))
-      .filter(cat => {
+      .filter((cat) => config.types.includes(cat.type || ''))
+      .filter((cat) => {
         const amount = cat.amount || cat.total || 0;
         return Math.abs(amount) > 0.01;
       })
       .sort((a, b) => Math.abs(b.amount || b.total || 0) - Math.abs(a.amount || a.total || 0))
-      .map(cat => {
+      .map((cat) => {
         const amount = Math.abs(cat.amount || cat.total || 0);
         const total = config.total;
 
@@ -93,7 +96,7 @@
           color: cat.color || config.defaultColor,
           icon: cat.icon || config.defaultIcon,
           monthlyBudget: cat.monthlyBudget,
-          budgetUsage: cat.budgetUsage
+          budgetUsage: cat.budgetUsage,
         };
       });
   }
@@ -126,7 +129,7 @@
       class:active={selectedType === 'expenses'}
       onclick={() => selectType('expenses')}
     >
-      {$t("dashboard.metrics.expenses")}
+      {$t('dashboard.metrics.expenses')}
       {#if filterCategories('expenses').length > 0}
         <span class="tab-count">{filterCategories('expenses').length}</span>
       {/if}
@@ -136,7 +139,7 @@
       class:active={selectedType === 'income'}
       onclick={() => selectType('income')}
     >
-      {$t("dashboard.metrics.income")}
+      {$t('dashboard.metrics.income')}
       {#if filterCategories('income').length > 0}
         <span class="tab-count">{filterCategories('income').length}</span>
       {/if}
@@ -146,7 +149,7 @@
       class:active={selectedType === 'investments'}
       onclick={() => selectType('investments')}
     >
-      {$t("dashboard.metrics.investments")}
+      {$t('dashboard.metrics.investments')}
       {#if filterCategories('investments').length > 0}
         <span class="tab-count">{filterCategories('investments').length}</span>
       {/if}
@@ -157,7 +160,7 @@
   <div class="categories-container">
     {#if currentCategories.length === 0}
       <div class="empty-state">
-        <p>{$t("dashboard.categories.no_data")}</p>
+        <p>{$t('dashboard.categories.no_data')}</p>
       </div>
     {:else}
       <div class="categories-grid" class:has-few={currentCategories.length <= 2}>
@@ -167,7 +170,7 @@
             amount={formatCurrency(category.amount)}
             percentage={category.percentage}
             color={category.color}
-            icon={category.icon || "📊"}
+            icon={category.icon || '📊'}
             monthlyBudget={category.monthlyBudget ? formatCurrency(category.monthlyBudget) : null}
             budgetUsage={category.budgetUsage}
           />
@@ -177,14 +180,14 @@
       {#if hasMore}
         <button
           class="expand-button"
-          onclick={() => expanded = !expanded}
+          onclick={() => (expanded = !expanded)}
           aria-expanded={expanded}
         >
           <span class="expand-text">
             {#if expanded}
-              {$t("common.show_less") || "Mostrar menos"}
+              {$t('common.show_less') || 'Mostrar menos'}
             {:else}
-              +{hiddenCount} {$t("common.more") || "más"}
+              +{hiddenCount} {$t('common.more') || 'más'}
             {/if}
           </span>
           <span class="expand-icon">

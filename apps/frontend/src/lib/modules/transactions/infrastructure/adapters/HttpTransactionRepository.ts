@@ -1,18 +1,15 @@
-import { Result } from "../../domain/shared/Result";
-import {
-  Transaction,
-  type TransactionSnapshot,
-} from "../../domain/entities/Transaction";
-import { TransactionId } from "../../domain/value-objects/TransactionId";
-import { TransactionDate } from "../../domain/value-objects/TransactionDate";
-import { TransactionType } from "../../domain/entities/TransactionType";
+import { Result } from '../../domain/shared/Result';
+import { Transaction, type TransactionSnapshot } from '../../domain/entities/Transaction';
+import { TransactionId } from '../../domain/value-objects/TransactionId';
+import { TransactionDate } from '../../domain/value-objects/TransactionDate';
+import { TransactionType } from '../../domain/entities/TransactionType';
 import {
   type ITransactionRepository,
   type TransactionFilters,
   type PaginationOptions,
   type TransactionQueryResult,
-} from "../../domain/repositories/ITransactionRepository";
-import { getApiUrl } from "$lib/utils/api-url";
+} from '../../domain/repositories/ITransactionRepository';
+import { getApiUrl } from '$lib/utils/api-url';
 
 /**
  * HTTP API implementation of Transaction Repository
@@ -21,9 +18,7 @@ import { getApiUrl } from "$lib/utils/api-url";
 export class HttpTransactionRepository implements ITransactionRepository {
   private readonly baseUrl: string;
 
-  constructor(
-    baseUrl = getApiUrl(),
-  ) {
+  constructor(baseUrl = getApiUrl()) {
     this.baseUrl = baseUrl;
   }
 
@@ -32,9 +27,9 @@ export class HttpTransactionRepository implements ITransactionRepository {
       const snapshot = transaction.toSnapshot();
 
       const response = await fetch(`${this.baseUrl}/transactions`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           amount: snapshot.amount,
@@ -49,15 +44,13 @@ export class HttpTransactionRepository implements ITransactionRepository {
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to save transaction",
-        );
+        return Result.failWithMessage(error.error || 'Failed to save transaction');
       }
 
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save transaction: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to save transaction: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
@@ -77,7 +70,7 @@ export class HttpTransactionRepository implements ITransactionRepository {
       return Result.ok(savedCount);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save transactions: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to save transactions: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
@@ -92,9 +85,7 @@ export class HttpTransactionRepository implements ITransactionRepository {
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to find transaction",
-        );
+        return Result.failWithMessage(error.error || 'Failed to find transaction');
       }
 
       const result = await response.json();
@@ -102,7 +93,7 @@ export class HttpTransactionRepository implements ITransactionRepository {
       return transactionResult;
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find transaction: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to find transaction: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
@@ -113,9 +104,7 @@ export class HttpTransactionRepository implements ITransactionRepository {
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to find transactions",
-        );
+        return Result.failWithMessage(error.error || 'Failed to find transactions');
       }
 
       const result = await response.json();
@@ -131,64 +120,58 @@ export class HttpTransactionRepository implements ITransactionRepository {
       return Result.ok(transactions);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find all transactions: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to find all transactions: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
 
   async findWithFilters(
     filters?: TransactionFilters,
-    pagination?: PaginationOptions,
+    pagination?: PaginationOptions
   ): Promise<Result<TransactionQueryResult>> {
     try {
       const queryParams = new URLSearchParams();
 
       if (pagination) {
         queryParams.append(
-          "page",
-          Math.floor(
-            pagination.offset / (pagination.limit || 20) + 1,
-          ).toString(),
+          'page',
+          Math.floor(pagination.offset / (pagination.limit || 20) + 1).toString()
         );
-        queryParams.append("limit", pagination.limit.toString());
+        queryParams.append('limit', pagination.limit.toString());
       }
 
       if (filters) {
         if (filters.startDate) {
-          queryParams.append("startDate", filters.startDate.toString());
+          queryParams.append('startDate', filters.startDate.toString());
         }
         if (filters.endDate) {
-          queryParams.append("endDate", filters.endDate.toString());
+          queryParams.append('endDate', filters.endDate.toString());
         }
         if (filters.type) {
-          queryParams.append("type", filters.type);
+          queryParams.append('type', filters.type);
         }
         if (filters.categoryId) {
-          queryParams.append("categoryId", filters.categoryId);
+          queryParams.append('categoryId', filters.categoryId);
         }
         if (filters.merchantName) {
-          queryParams.append("merchantName", filters.merchantName);
+          queryParams.append('merchantName', filters.merchantName);
         }
         if (filters.minAmount !== undefined) {
-          queryParams.append("minAmount", filters.minAmount.toString());
+          queryParams.append('minAmount', filters.minAmount.toString());
         }
         if (filters.maxAmount !== undefined) {
-          queryParams.append("maxAmount", filters.maxAmount.toString());
+          queryParams.append('maxAmount', filters.maxAmount.toString());
         }
         if (filters.currency) {
-          queryParams.append("currency", filters.currency);
+          queryParams.append('currency', filters.currency);
         }
       }
 
-      const response = await fetch(
-        `${this.baseUrl}/transactions?${queryParams}`,
-      );
+      const response = await fetch(`${this.baseUrl}/transactions?${queryParams}`);
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to find transactions with filters",
-        );
+        return Result.failWithMessage(error.error || 'Failed to find transactions with filters');
       }
 
       const result = await response.json();
@@ -207,14 +190,14 @@ export class HttpTransactionRepository implements ITransactionRepository {
       });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find transactions with filters: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to find transactions with filters: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
 
   async findByDateRange(
     startDate: TransactionDate,
-    endDate: TransactionDate,
+    endDate: TransactionDate
   ): Promise<Result<Transaction[]>> {
     const filters: TransactionFilters = { startDate, endDate };
     const result = await this.findWithFilters(filters);
@@ -263,31 +246,26 @@ export class HttpTransactionRepository implements ITransactionRepository {
     try {
       const snapshot = transaction.toSnapshot();
 
-      const response = await fetch(
-        `${this.baseUrl}/transactions/${snapshot.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            description: snapshot.description,
-            // Add other updatable fields as needed
-          }),
+      const response = await fetch(`${this.baseUrl}/transactions/${snapshot.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          description: snapshot.description,
+          // Add other updatable fields as needed
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to update transaction",
-        );
+        return Result.failWithMessage(error.error || 'Failed to update transaction');
       }
 
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to update transaction: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to update transaction: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
@@ -295,20 +273,18 @@ export class HttpTransactionRepository implements ITransactionRepository {
   async delete(id: TransactionId): Promise<Result<void>> {
     try {
       const response = await fetch(`${this.baseUrl}/transactions/${id.value}`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to delete transaction",
-        );
+        return Result.failWithMessage(error.error || 'Failed to delete transaction');
       }
 
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to delete transaction: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to delete transaction: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
@@ -328,7 +304,7 @@ export class HttpTransactionRepository implements ITransactionRepository {
       return Result.ok(deletedCount);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to delete transactions: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to delete transactions: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
@@ -354,7 +330,7 @@ export class HttpTransactionRepository implements ITransactionRepository {
   async getStatistics(
     startDate: TransactionDate,
     endDate: TransactionDate,
-    currency: string,
+    currency: string
   ): Promise<
     Result<{
       totalIncome: number;
@@ -370,58 +346,50 @@ export class HttpTransactionRepository implements ITransactionRepository {
         currency,
       });
 
-      const response = await fetch(
-        `${this.baseUrl}/transactions/statistics?${queryParams}`,
-      );
+      const response = await fetch(`${this.baseUrl}/transactions/statistics?${queryParams}`);
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to get statistics",
-        );
+        return Result.failWithMessage(error.error || 'Failed to get statistics');
       }
 
       const result = await response.json();
       return Result.ok(result.data);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get statistics: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to get statistics: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
 
   async findPotentialDuplicates(
     transaction: Transaction,
-    toleranceHours = 24,
+    toleranceHours = 24
   ): Promise<Result<Transaction[]>> {
     try {
       // This would require a specialized endpoint on the backend
       // For now, we'll implement this client-side by finding similar transactions
-      const similarResult = await this.findByMerchant(
-        transaction.merchant.name,
-      );
+      const similarResult = await this.findByMerchant(transaction.merchant.name);
       if (similarResult.isFailure()) {
         return Result.fail(similarResult.getError());
       }
 
       const similar = similarResult.getValue();
       const duplicates = similar.filter(
-        (t) =>
-          t.isDuplicateOf(transaction, toleranceHours) &&
-          !t.equals(transaction),
+        (t) => t.isDuplicateOf(transaction, toleranceHours) && !t.equals(transaction)
       );
 
       return Result.ok(duplicates);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find duplicates: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to find duplicates: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
 
   async bulkImport(
     transactions: Transaction[],
-    conflictStrategy: "skip" | "update" | "fail",
+    conflictStrategy: 'skip' | 'update' | 'fail'
   ): Promise<
     Result<{
       imported: number;
@@ -438,22 +406,19 @@ export class HttpTransactionRepository implements ITransactionRepository {
       const csvContent = this.snapshotsToCsv(snapshots);
 
       const formData = new FormData();
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      formData.append("file", blob, "transactions.csv");
-      formData.append("duplicateDetectionEnabled", "true");
-      formData.append(
-        "skipDuplicates",
-        (conflictStrategy === "skip").toString(),
-      );
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      formData.append('file', blob, 'transactions.csv');
+      formData.append('duplicateDetectionEnabled', 'true');
+      formData.append('skipDuplicates', (conflictStrategy === 'skip').toString());
 
       const response = await fetch(`${this.baseUrl}/import/csv`, {
-        method: "POST",
+        method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(error.error || "Failed to bulk import");
+        return Result.failWithMessage(error.error || 'Failed to bulk import');
       }
 
       const result = await response.json();
@@ -464,19 +429,17 @@ export class HttpTransactionRepository implements ITransactionRepository {
       });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to bulk import: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to bulk import: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
 
   async clear(): Promise<Result<void>> {
     // This would require a specialized endpoint or deleting all transactions
-    return Result.failWithMessage("Clear operation not supported via API");
+    return Result.failWithMessage('Clear operation not supported via API');
   }
 
-  async export(
-    filters?: TransactionFilters,
-  ): Promise<Result<TransactionSnapshot[]>> {
+  async export(filters?: TransactionFilters): Promise<Result<TransactionSnapshot[]>> {
     const result = await this.findWithFilters(filters);
     if (result.isFailure()) {
       return Result.fail(result.getError());
@@ -501,33 +464,30 @@ export class HttpTransactionRepository implements ITransactionRepository {
       return result;
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to import: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to import: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
 
   async updateTags(id: TransactionId, tags: string[]): Promise<Result<void>> {
     try {
-      const response = await fetch(
-        `${this.baseUrl}/transactions/${id.value}/tags`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ tags }),
+      const response = await fetch(`${this.baseUrl}/transactions/${id.value}/tags`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({ tags }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(error.error || "Failed to update tags");
+        return Result.failWithMessage(error.error || 'Failed to update tags');
       }
 
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to update tags: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to update tags: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
@@ -535,14 +495,12 @@ export class HttpTransactionRepository implements ITransactionRepository {
   async findByPatternHash(patternHash: string): Promise<Result<Transaction[]>> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/transactions/pattern/${encodeURIComponent(patternHash)}`,
+        `${this.baseUrl}/transactions/pattern/${encodeURIComponent(patternHash)}`
       );
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to find transactions by pattern",
-        );
+        return Result.failWithMessage(error.error || 'Failed to find transactions by pattern');
       }
 
       const result = await response.json();
@@ -558,74 +516,62 @@ export class HttpTransactionRepository implements ITransactionRepository {
       return Result.ok(transactions);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find by pattern: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to find by pattern: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
 
   async applyCategoryToPattern(
     sourceTransaction: Transaction,
-    categoryId: string,
+    categoryId: string
   ): Promise<Result<number>> {
     try {
       const snapshot = sourceTransaction.toSnapshot();
 
-      const response = await fetch(
-        `${this.baseUrl}/transactions/apply-category-pattern`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sourceTransactionId: snapshot.id,
-            categoryId,
-          }),
+      const response = await fetch(`${this.baseUrl}/transactions/apply-category-pattern`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          sourceTransactionId: snapshot.id,
+          categoryId,
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to apply category to pattern",
-        );
+        return Result.failWithMessage(error.error || 'Failed to apply category to pattern');
       }
 
       const result = await response.json();
       return Result.ok(result.data.updatedCount || 0);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to apply category pattern: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to apply category pattern: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
 
-  async findMatchingPattern(
-    sourceTransaction: Transaction,
-  ): Promise<Result<Transaction[]>> {
+  async findMatchingPattern(sourceTransaction: Transaction): Promise<Result<Transaction[]>> {
     try {
       const snapshot = sourceTransaction.toSnapshot();
 
-      const response = await fetch(
-        `${this.baseUrl}/transactions/matching-pattern`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            merchant: snapshot.merchant,
-            amount: snapshot.amount,
-            description: snapshot.description,
-          }),
+      const response = await fetch(`${this.baseUrl}/transactions/matching-pattern`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          merchant: snapshot.merchant,
+          amount: snapshot.amount,
+          description: snapshot.description,
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        return Result.failWithMessage(
-          error.error || "Failed to find matching pattern",
-        );
+        return Result.failWithMessage(error.error || 'Failed to find matching pattern');
       }
 
       const result = await response.json();
@@ -641,31 +587,25 @@ export class HttpTransactionRepository implements ITransactionRepository {
       return Result.ok(transactions);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find matching pattern: ${error instanceof Error ? error.message : "Network error"}`,
+        `Failed to find matching pattern: ${error instanceof Error ? error.message : 'Network error'}`
       );
     }
   }
 
   // Helper method to convert snapshots to CSV
   private snapshotsToCsv(snapshots: TransactionSnapshot[]): string {
-    if (snapshots.length === 0) return "";
+    if (snapshots.length === 0) return '';
 
-    const headers = [
-      "Booking Date",
-      "Partner Name",
-      "Amount EUR",
-      "Payment Reference",
-    ];
+    const headers = ['Booking Date', 'Partner Name', 'Amount EUR', 'Payment Reference'];
     const rows = snapshots.map((s) => [
       s.date,
       s.merchant,
       s.type === TransactionType.EXPENSE ? `-${s.amount}` : s.amount.toString(),
-      s.description || "",
+      s.description || '',
     ]);
 
-    return [
-      headers.join(","),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-    ].join("\n");
+    return [headers.join(','), ...rows.map((row) => row.map((cell) => `"${cell}"`).join(','))].join(
+      '\n'
+    );
   }
 }

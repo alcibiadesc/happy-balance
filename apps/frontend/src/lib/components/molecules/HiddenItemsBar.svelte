@@ -5,26 +5,20 @@
   import { dashboardConfig, type MetricType, type SectionType } from '$lib/stores/dashboardConfig';
   import { getMetricDefinition, getSectionDefinition } from '$lib/config/dashboardSections';
 
-  const hiddenMetrics = $derived(
-    $dashboardConfig.metrics.filter(m => !m.visible)
-  );
+  const hiddenMetrics = $derived($dashboardConfig.metrics.filter((m) => !m.visible));
 
-  const hiddenSections = $derived(
-    $dashboardConfig.sections.filter(s => !s.visible)
-  );
+  const hiddenSections = $derived($dashboardConfig.sections.filter((s) => !s.visible));
 
-  const hasHiddenItems = $derived(
-    hiddenMetrics.length > 0 || hiddenSections.length > 0
-  );
+  const hasHiddenItems = $derived(hiddenMetrics.length > 0 || hiddenSections.length > 0);
 
   function getMetricLabel(id: MetricType): string {
     const def = getMetricDefinition(id);
-    return def ? ($t(def.i18nKey) || id) : id;
+    return def ? $t(def.i18nKey) || id : id;
   }
 
   function getSectionLabel(id: SectionType): string {
     const def = getSectionDefinition(id);
-    return def ? ($t(def.i18nKey) || id) : id;
+    return def ? $t(def.i18nKey) || id : id;
   }
 
   function handleReset() {

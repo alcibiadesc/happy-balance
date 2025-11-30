@@ -17,7 +17,7 @@
     monthlyInvestments,
     totalInvestments = 0,
     loading = false,
-    formatCurrency
+    formatCurrency,
   }: Props = $props();
 
   // Core calculations
@@ -39,9 +39,7 @@
     fireNumber > 0 ? Math.min((totalInvestments / fireNumber) * 100, 100) : 0
   );
 
-  const savingsRate = $derived(
-    monthlyIncome > 0 ? (monthlySavings / monthlyIncome) * 100 : 0
-  );
+  const savingsRate = $derived(monthlyIncome > 0 ? (monthlySavings / monthlyIncome) * 100 : 0);
 
   const statusLevel = $derived(() => {
     if (fireProgress >= 100) return 'achieved';
@@ -69,12 +67,14 @@
     </div>
     <div class="progress-ring">
       <svg viewBox="0 0 36 36" class="circular-chart">
-        <path class="circle-bg"
+        <path
+          class="circle-bg"
           d="M18 2.0845
             a 15.9155 15.9155 0 0 1 0 31.831
             a 15.9155 15.9155 0 0 1 0 -31.831"
         />
-        <path class="circle"
+        <path
+          class="circle"
           class:achieved={statusLevel() === 'achieved'}
           class:good={statusLevel() === 'good'}
           class:progress={statusLevel() === 'progress'}
@@ -101,8 +101,8 @@
         </span>
         <span class="stat-label">
           {yearsOfRunway >= 1
-            ? ($t('dashboard.fire.years') || 'años')
-            : ($t('dashboard.fire.months') || 'meses')}
+            ? $t('dashboard.fire.years') || 'años'
+            : $t('dashboard.fire.months') || 'meses'}
         </span>
       </div>
     </div>
@@ -126,7 +126,11 @@
     <div class="stat-item">
       <Percent size={14} strokeWidth={1.5} />
       <div class="stat-content">
-        <span class="stat-value" class:positive={savingsRate >= 20} class:negative={savingsRate < 0}>
+        <span
+          class="stat-value"
+          class:positive={savingsRate >= 20}
+          class:negative={savingsRate < 0}
+        >
           {savingsRate.toFixed(0)}%
         </span>
         <span class="stat-label">{$t('dashboard.fire.savings_rate') || 'tasa ahorro'}</span>

@@ -4,7 +4,16 @@
   import type { Transaction, Category } from '$lib/types/transaction';
   import { paginatedTransactions, type PaginatedQuery } from '$lib/stores/paginated-transactions';
   import { apiCategories } from '$lib/stores/api-transactions';
-  import { ChevronDown, TrendingUp, TrendingDown, Eye, EyeOff, Trash2, Tag, MoreVertical } from 'lucide-svelte';
+  import {
+    ChevronDown,
+    TrendingUp,
+    TrendingDown,
+    Eye,
+    EyeOff,
+    Trash2,
+    Tag,
+    MoreVertical,
+  } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
 
   // Props
@@ -29,7 +38,7 @@
     onCategoryAssign = undefined,
     isSelectionMode = false,
     selectedTransactions = new Set(),
-    showHiddenTransactions = true
+    showHiddenTransactions = true,
   }: Props = $props();
 
   // Internal state
@@ -57,14 +66,16 @@
     if (showHiddenTransactions) {
       return transactions;
     }
-    return transactions.filter(t => !t.hidden);
+    return transactions.filter((t) => !t.hidden);
   });
 
   // Virtual scrolling calculations
   let scrollTop = $state(0);
   let containerHeight = $state(600);
   let visibleStart = $derived(Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_SIZE);
-  let visibleEnd = $derived(visibleStart + Math.ceil(containerHeight / ITEM_HEIGHT) + BUFFER_SIZE * 2);
+  let visibleEnd = $derived(
+    visibleStart + Math.ceil(containerHeight / ITEM_HEIGHT) + BUFFER_SIZE * 2
+  );
   let visibleTransactions = $derived(() => {
     const start = Math.max(0, visibleStart);
     const end = Math.min(filteredTransactions.length, visibleEnd);
@@ -130,7 +141,7 @@
   // Helper functions
   function getCategoryById(categoryId: string | undefined): Category | undefined {
     if (!categoryId) return undefined;
-    return categories.find(c => c.id === categoryId);
+    return categories.find((c) => c.id === categoryId);
   }
 
   function formatAmount(amount: number): string {
@@ -208,10 +219,7 @@
       <p>{$t('transactions.noResults')}</p>
     </div>
   {:else}
-    <div
-      class="virtual-scroll-container"
-      onscroll={handleScroll}
-    >
+    <div class="virtual-scroll-container" onscroll={handleScroll}>
       <!-- Virtual spacer for items above visible area -->
       <div style="height: {Math.max(0, visibleStart) * ITEM_HEIGHT}px;"></div>
 
@@ -249,13 +257,20 @@
 
                 <div class="category-info">
                   {#if category}
-                    <span class="category-badge" style="background-color: {category.color}20; color: {category.color};">
-                      {category.icon} {category.name}
+                    <span
+                      class="category-badge"
+                      style="background-color: {category.color}20; color: {category.color};"
+                    >
+                      {category.icon}
+                      {category.name}
                     </span>
                   {:else}
                     <button
                       class="assign-category-btn"
-                      onclick={(e) => { e.stopPropagation(); handleCategoryAssign(transaction); }}
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        handleCategoryAssign(transaction);
+                      }}
                     >
                       <Tag size={14} />
                       {$t('transactions.assignCategory')}
@@ -265,7 +280,11 @@
               </div>
 
               <div class="transaction-amount">
-                <span class="amount" class:positive={transaction.amount > 0} class:negative={transaction.amount < 0}>
+                <span
+                  class="amount"
+                  class:positive={transaction.amount > 0}
+                  class:negative={transaction.amount < 0}
+                >
                   {transaction.amount > 0 ? '+' : ''}{formatAmount(transaction.amount)}
                 </span>
 
@@ -280,7 +299,10 @@
                 <div class="transaction-actions">
                   <button
                     class="action-btn"
-                    onclick={(e) => { e.stopPropagation(); handleToggleHidden(transaction); }}
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      handleToggleHidden(transaction);
+                    }}
                     title={transaction.hidden ? $t('transactions.show') : $t('transactions.hide')}
                   >
                     {#if transaction.hidden}
@@ -292,7 +314,10 @@
 
                   <button
                     class="action-btn"
-                    onclick={(e) => { e.stopPropagation(); handleEdit(transaction); }}
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(transaction);
+                    }}
                     title={$t('transactions.edit')}
                   >
                     <MoreVertical size={16} />
@@ -300,7 +325,10 @@
 
                   <button
                     class="action-btn delete"
-                    onclick={(e) => { e.stopPropagation(); handleDelete(transaction); }}
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(transaction);
+                    }}
                     title={$t('transactions.delete')}
                   >
                     <Trash2 size={16} />
@@ -313,7 +341,9 @@
       </div>
 
       <!-- Virtual spacer for items below visible area -->
-      <div style="height: {Math.max(0, filteredTransactions.length - visibleEnd) * ITEM_HEIGHT}px;"></div>
+      <div
+        style="height: {Math.max(0, filteredTransactions.length - visibleEnd) * ITEM_HEIGHT}px;"
+      ></div>
 
       <!-- Loading indicator for infinite scroll -->
       {#if isLoadingMore}
@@ -604,8 +634,12 @@
   }
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
   /* Mobile responsive adjustments */

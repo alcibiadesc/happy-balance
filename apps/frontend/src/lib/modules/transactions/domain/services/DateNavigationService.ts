@@ -30,6 +30,6 @@ export const createDateNavigationService = (): DateNavigationService => {
   return {
     previousPeriod,
     nextPeriod,
-    getCurrentPeriod
+    getCurrentPeriod,
   };
 };

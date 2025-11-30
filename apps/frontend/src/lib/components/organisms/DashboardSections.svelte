@@ -68,9 +68,9 @@
   // Get visible sections sorted by order
   const visibleSections = $derived(
     [...$dashboardConfig.sections]
-      .filter(s => s.visible)
+      .filter((s) => s.visible)
       .sort((a, b) => a.order - b.order)
-      .map(s => s.id)
+      .map((s) => s.id)
   );
 
   // Labels for metrics grid
@@ -79,17 +79,14 @@
     expenses: $t('dashboard.metrics.expenses'),
     investments: $t('dashboard.metrics.investments'),
     balance: $t('dashboard.metrics.balance'),
-    savedPercentage: $t('dashboard.metrics.saved_percentage', { percentage: '{percentage}' })
+    savedPercentage: $t('dashboard.metrics.saved_percentage', { percentage: '{percentage}' }),
   });
 </script>
 
 {#each visibleSections as sectionId (sectionId)}
   <EditableSection {sectionId}>
     {#if sectionId === 'spending'}
-      <SpendingIndicator
-        income={data.metrics.income}
-        expenses={data.metrics.expenses}
-      />
+      <SpendingIndicator income={data.metrics.income} expenses={data.metrics.expenses} />
     {:else if sectionId === 'metrics'}
       <MetricsGrid
         metrics={data.metrics}

@@ -8,12 +8,7 @@
     children?: any;
   }
 
-  let {
-    title,
-    icon: Icon,
-    iconClass = '',
-    children
-  }: Props = $props();
+  let { title, icon: Icon, iconClass = '', children }: Props = $props();
 </script>
 
 <div class="settings-card">

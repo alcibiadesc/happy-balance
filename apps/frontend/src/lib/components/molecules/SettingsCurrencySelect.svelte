@@ -11,18 +11,10 @@
     onChange: (event: Event) => void;
   }
 
-  let {
-    value,
-    options,
-    onChange
-  }: Props = $props();
+  let { value, options, onChange }: Props = $props();
 </script>
 
-<select 
-  class="currency-select"
-  {value}
-  onchange={onChange}
->
+<select class="currency-select" {value} onchange={onChange}>
   {#each options as currency}
     <option value={currency.value}>{currency.label}</option>
   {/each}
@@ -41,7 +33,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
   }
-  
+
   .currency-select:hover,
   .currency-select:focus {
     border-color: var(--acapulco);

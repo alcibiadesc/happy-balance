@@ -39,10 +39,19 @@
 <form onsubmit={handleSubmit} class="login-form">
   {#if error}
     <div class="error-message" in:fade={{ duration: 200 }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
       <span>{error}</span>
     </div>
@@ -51,9 +60,19 @@
   <div class="form-field">
     <label for="username" class="form-label">Username</label>
     <div class="input-wrapper" class:focused={focusedField === 'username'}>
-      <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
+      <svg
+        class="input-icon"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
       </svg>
       <input
         id="username"
@@ -62,8 +81,8 @@
         placeholder="Enter your username"
         bind:value={username}
         oninput={handleUsernameInput}
-        onfocus={() => focusedField = 'username'}
-        onblur={() => focusedField = null}
+        onfocus={() => (focusedField = 'username')}
+        onblur={() => (focusedField = null)}
         required
         disabled={isLoading}
         autocomplete="username"
@@ -74,9 +93,19 @@
   <div class="form-field">
     <label for="password" class="form-label">Password</label>
     <div class="input-wrapper" class:focused={focusedField === 'password'}>
-      <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      <svg
+        class="input-icon"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
       <input
         id="password"
@@ -85,8 +114,8 @@
         placeholder="Enter your password"
         bind:value={password}
         oninput={handlePasswordInput}
-        onfocus={() => focusedField = 'password'}
-        onblur={() => focusedField = null}
+        onfocus={() => (focusedField = 'password')}
+        onblur={() => (focusedField = null)}
         required
         disabled={isLoading}
         autocomplete="current-password"
@@ -94,11 +123,7 @@
     </div>
   </div>
 
-  <button
-    type="submit"
-    class="submit-button"
-    disabled={isLoading || !username || !password}
-  >
+  <button type="submit" class="submit-button" disabled={isLoading || !username || !password}>
     {#if isLoading}
       <span class="loading-spinner"></span>
       Logging in...
@@ -106,7 +131,6 @@
       Sign In
     {/if}
   </button>
-
 </form>
 
 <style>
@@ -190,9 +214,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    background: linear-gradient(135deg,
-      rgba(239, 68, 68, 0.05) 0%,
-      rgba(239, 68, 68, 0.02) 100%);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
     color: rgb(239, 68, 68);
     padding: 0.875rem 1rem;
     border-radius: 12px;
@@ -251,5 +273,4 @@
       transform: rotate(360deg);
     }
   }
-
 </style>

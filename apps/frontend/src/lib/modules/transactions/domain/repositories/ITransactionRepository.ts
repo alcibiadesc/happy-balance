@@ -1,8 +1,8 @@
-import { Result } from "../shared/Result";
-import { Transaction, type TransactionSnapshot } from "../entities/Transaction";
-import { TransactionId } from "../value-objects/TransactionId";
-import { TransactionDate } from "../value-objects/TransactionDate";
-import { TransactionType } from "../entities/TransactionType";
+import { Result } from '../shared/Result';
+import { Transaction, type TransactionSnapshot } from '../entities/Transaction';
+import { TransactionId } from '../value-objects/TransactionId';
+import { TransactionDate } from '../value-objects/TransactionDate';
+import { TransactionType } from '../entities/TransactionType';
 
 export interface TransactionFilters {
   startDate?: TransactionDate;
@@ -55,7 +55,7 @@ export interface ITransactionRepository {
    */
   findWithFilters(
     filters?: TransactionFilters,
-    pagination?: PaginationOptions,
+    pagination?: PaginationOptions
   ): Promise<Result<TransactionQueryResult>>;
 
   /**
@@ -63,7 +63,7 @@ export interface ITransactionRepository {
    */
   findByDateRange(
     startDate: TransactionDate,
-    endDate: TransactionDate,
+    endDate: TransactionDate
   ): Promise<Result<Transaction[]>>;
 
   /**
@@ -112,7 +112,7 @@ export interface ITransactionRepository {
   getStatistics(
     startDate: TransactionDate,
     endDate: TransactionDate,
-    currency: string,
+    currency: string
   ): Promise<
     Result<{
       totalIncome: number;
@@ -127,7 +127,7 @@ export interface ITransactionRepository {
    */
   findPotentialDuplicates(
     transaction: Transaction,
-    toleranceHours?: number,
+    toleranceHours?: number
   ): Promise<Result<Transaction[]>>;
 
   /**
@@ -135,7 +135,7 @@ export interface ITransactionRepository {
    */
   bulkImport(
     transactions: Transaction[],
-    conflictStrategy: "skip" | "update" | "fail",
+    conflictStrategy: 'skip' | 'update' | 'fail'
   ): Promise<
     Result<{
       imported: number;
@@ -174,13 +174,11 @@ export interface ITransactionRepository {
    */
   applyCategoryToPattern(
     sourceTransaction: Transaction,
-    categoryId: string,
+    categoryId: string
   ): Promise<Result<number>>;
 
   /**
    * Find transactions that match patterns extracted from a source transaction
    */
-  findMatchingPattern(
-    sourceTransaction: Transaction,
-  ): Promise<Result<Transaction[]>>;
+  findMatchingPattern(sourceTransaction: Transaction): Promise<Result<Transaction[]>>;
 }

@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+.svelte-kit/
+**/.svelte-kit/
+
+# Package manager
+pnpm-lock.yaml
+package-lock.json
+
+# Generated files
+*.generated.*
+prisma/migrations/
+
+# Assets
+*.min.js
+*.min.css
+
+# Docker
+Dockerfile*
+
+# Misc
+.git/
+.env*
+*.md

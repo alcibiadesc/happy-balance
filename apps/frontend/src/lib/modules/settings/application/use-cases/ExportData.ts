@@ -33,13 +33,13 @@ export class ExportDataUseCase {
         language: settings.getLanguage().getCode(),
         theme: settings.getTheme().getValue(),
         exportDate: new Date().toISOString(),
-        version: '1.0.0'
+        version: '1.0.0',
       },
       metadata: {
         appName: 'Happy Balance',
         exportedBy: 'Settings Export',
-        totalTransactions: transactions.length
-      }
+        totalTransactions: transactions.length,
+      },
     };
   }
 

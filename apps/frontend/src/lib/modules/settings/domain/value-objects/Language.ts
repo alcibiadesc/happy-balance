@@ -53,7 +53,7 @@ export class Language {
     return {
       code: this.code,
       name: this.name,
-      flag: this.flag
+      flag: this.flag,
     };
   }
 

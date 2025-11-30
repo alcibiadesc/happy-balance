@@ -4,26 +4,19 @@
     onToggle: () => void;
   }
 
-  let {
-    isDark,
-    onToggle
-  }: Props = $props();
+  let { isDark, onToggle }: Props = $props();
 </script>
 
 <!-- DaisyUI Toggle with custom styling -->
 <div class="theme-toggle-container">
-  <div class="theme-option {!isDark ? 'active' : ''}">
-    ☀️
-  </div>
+  <div class="theme-option {!isDark ? 'active' : ''}">☀️</div>
   <input
     type="checkbox"
     checked={isDark}
     onchange={onToggle}
     class="toggle toggle-primary toggle-lg"
   />
-  <div class="theme-option {isDark ? 'active' : ''}">
-    🌙
-  </div>
+  <div class="theme-option {isDark ? 'active' : ''}">🌙</div>
 </div>
 
 <style>
@@ -66,6 +59,8 @@
   }
 
   :global(.toggle:focus) {
-    box-shadow: 0 0 0 2px var(--acapulco), 0 0 0 4px rgba(122, 186, 165, 0.2);
+    box-shadow:
+      0 0 0 2px var(--acapulco),
+      0 0 0 4px rgba(122, 186, 165, 0.2);
   }
 </style>

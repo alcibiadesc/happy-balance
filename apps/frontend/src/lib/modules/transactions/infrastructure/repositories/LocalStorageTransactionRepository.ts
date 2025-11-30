@@ -1,28 +1,23 @@
-import { Result } from "../../domain/shared/Result";
-import {
-  Transaction,
-  type TransactionSnapshot,
-} from "../../domain/entities/Transaction";
-import { TransactionId } from "../../domain/value-objects/TransactionId";
-import { TransactionDate } from "../../domain/value-objects/TransactionDate";
-import { TransactionType } from "../../domain/entities/TransactionType";
+import { Result } from '../../domain/shared/Result';
+import { Transaction, type TransactionSnapshot } from '../../domain/entities/Transaction';
+import { TransactionId } from '../../domain/value-objects/TransactionId';
+import { TransactionDate } from '../../domain/value-objects/TransactionDate';
+import { TransactionType } from '../../domain/entities/TransactionType';
 import {
   type ITransactionRepository,
   type TransactionFilters,
   type PaginationOptions,
   type TransactionQueryResult,
-} from "../../domain/repositories/ITransactionRepository";
-import type { IStorageAdapter } from "../adapters/StorageAdapter";
+} from '../../domain/repositories/ITransactionRepository';
+import type { IStorageAdapter } from '../adapters/StorageAdapter';
 
 /**
  * LocalStorage implementation of Transaction Repository
  * Adapter pattern - implements domain repository interface using storage adapter
  */
-export class LocalStorageTransactionRepository
-  implements ITransactionRepository
-{
-  private readonly TRANSACTIONS_KEY = "transactions";
-  private readonly TRANSACTION_INDEX_KEY = "transaction_index";
+export class LocalStorageTransactionRepository implements ITransactionRepository {
+  private readonly TRANSACTIONS_KEY = 'transactions';
+  private readonly TRANSACTION_INDEX_KEY = 'transaction_index';
 
   constructor(private readonly storageAdapter: IStorageAdapter) {}
 
@@ -57,7 +52,7 @@ export class LocalStorageTransactionRepository
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save transaction: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to save transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -97,7 +92,7 @@ export class LocalStorageTransactionRepository
       return Result.ok(savedCount);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to save transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -109,9 +104,7 @@ export class LocalStorageTransactionRepository
         return Result.fail(transactionsResult.getError());
       }
 
-      const snapshot = transactionsResult
-        .getValue()
-        .find((t) => t.id === id.value);
+      const snapshot = transactionsResult.getValue().find((t) => t.id === id.value);
       if (!snapshot) {
         return Result.ok(null);
       }
@@ -124,7 +117,7 @@ export class LocalStorageTransactionRepository
       return Result.ok(transactionResult.getValue());
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find transaction: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -146,21 +139,19 @@ export class LocalStorageTransactionRepository
       }
 
       // Sort by date (newest first)
-      transactions.sort(
-        (a, b) => b.date.getDate().getTime() - a.date.getDate().getTime(),
-      );
+      transactions.sort((a, b) => b.date.getDate().getTime() - a.date.getDate().getTime());
 
       return Result.ok(transactions);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find all transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find all transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async findWithFilters(
     filters?: TransactionFilters,
-    pagination?: PaginationOptions,
+    pagination?: PaginationOptions
   ): Promise<Result<TransactionQueryResult>> {
     try {
       const allResult = await this.findAll();
@@ -190,14 +181,14 @@ export class LocalStorageTransactionRepository
       });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find transactions with filters: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find transactions with filters: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async findByDateRange(
     startDate: TransactionDate,
-    endDate: TransactionDate,
+    endDate: TransactionDate
   ): Promise<Result<Transaction[]>> {
     const filters: TransactionFilters = {
       startDate,
@@ -276,7 +267,7 @@ export class LocalStorageTransactionRepository
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to delete transaction: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to delete transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -305,7 +296,7 @@ export class LocalStorageTransactionRepository
       return Result.ok(deletedCount);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to delete transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to delete transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -331,7 +322,7 @@ export class LocalStorageTransactionRepository
   async getStatistics(
     startDate: TransactionDate,
     endDate: TransactionDate,
-    currency: string,
+    currency: string
   ): Promise<
     Result<{
       totalIncome: number;
@@ -374,14 +365,14 @@ export class LocalStorageTransactionRepository
       });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get statistics: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to get statistics: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async findPotentialDuplicates(
     transaction: Transaction,
-    toleranceHours = 24,
+    toleranceHours = 24
   ): Promise<Result<Transaction[]>> {
     try {
       const allResult = await this.findAll();
@@ -393,21 +384,20 @@ export class LocalStorageTransactionRepository
         .getValue()
         .filter(
           (existing) =>
-            existing.isDuplicateOf(transaction, toleranceHours) &&
-            !existing.equals(transaction),
+            existing.isDuplicateOf(transaction, toleranceHours) && !existing.equals(transaction)
         );
 
       return Result.ok(duplicates);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find duplicates: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find duplicates: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async bulkImport(
     transactions: Transaction[],
-    conflictStrategy: "skip" | "update" | "fail",
+    conflictStrategy: 'skip' | 'update' | 'fail'
   ): Promise<
     Result<{
       imported: number;
@@ -434,15 +424,15 @@ export class LocalStorageTransactionRepository
 
         if (exists) {
           switch (conflictStrategy) {
-            case "skip":
+            case 'skip':
               skipped++;
               break;
-            case "update":
+            case 'update':
               const index = existing.findIndex((t) => t.id === snapshot.id);
               existing[index] = snapshot;
               imported++;
               break;
-            case "fail":
+            case 'fail':
               errors.push(`Transaction ${snapshot.id} already exists`);
               break;
           }
@@ -452,7 +442,7 @@ export class LocalStorageTransactionRepository
         }
       }
 
-      if (errors.length > 0 && conflictStrategy === "fail") {
+      if (errors.length > 0 && conflictStrategy === 'fail') {
         return Result.ok({ imported: 0, skipped: 0, errors });
       }
 
@@ -466,7 +456,7 @@ export class LocalStorageTransactionRepository
       return Result.ok({ imported, skipped, errors });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to bulk import: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to bulk import: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -481,22 +471,18 @@ export class LocalStorageTransactionRepository
     return Result.ok(undefined);
   }
 
-  async export(
-    filters?: TransactionFilters,
-  ): Promise<Result<TransactionSnapshot[]>> {
+  async export(filters?: TransactionFilters): Promise<Result<TransactionSnapshot[]>> {
     try {
       const result = await this.findWithFilters(filters);
       if (result.isFailure()) {
         return Result.fail(result.getError());
       }
 
-      const snapshots = result
-        .getValue()
-        .transactions.map((t) => t.toSnapshot());
+      const snapshots = result.getValue().transactions.map((t) => t.toSnapshot());
       return Result.ok(snapshots);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to export: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to export: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -516,7 +502,7 @@ export class LocalStorageTransactionRepository
       return result;
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to import: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to import: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -532,7 +518,7 @@ export class LocalStorageTransactionRepository
       const transactionIndex = transactions.findIndex((t) => t.id === id.value);
 
       if (transactionIndex === -1) {
-        return Result.failWithMessage("Transaction not found");
+        return Result.failWithMessage('Transaction not found');
       }
 
       // Update tags
@@ -550,7 +536,7 @@ export class LocalStorageTransactionRepository
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to update tags: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to update tags: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -565,8 +551,7 @@ export class LocalStorageTransactionRepository
       const transactions = allResult.getValue();
       // Simple pattern matching based on merchant and description similarity
       const matches = transactions.filter((t) => {
-        const transactionPattern =
-          `${t.merchant.name}-${t.description || ""}`.toLowerCase();
+        const transactionPattern = `${t.merchant.name}-${t.description || ''}`.toLowerCase();
         return (
           transactionPattern.includes(patternHash.toLowerCase()) ||
           patternHash.toLowerCase().includes(transactionPattern)
@@ -576,14 +561,14 @@ export class LocalStorageTransactionRepository
       return Result.ok(matches);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find by pattern: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find by pattern: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async applyCategoryToPattern(
     sourceTransaction: Transaction,
-    categoryId: string,
+    categoryId: string
   ): Promise<Result<number>> {
     try {
       const matchingResult = await this.findMatchingPattern(sourceTransaction);
@@ -612,14 +597,12 @@ export class LocalStorageTransactionRepository
       return Result.ok(updatedCount);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to apply category pattern: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to apply category pattern: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
-  async findMatchingPattern(
-    sourceTransaction: Transaction,
-  ): Promise<Result<Transaction[]>> {
+  async findMatchingPattern(sourceTransaction: Transaction): Promise<Result<Transaction[]>> {
     try {
       const allResult = await this.findAll();
       if (allResult.isFailure()) {
@@ -648,7 +631,7 @@ export class LocalStorageTransactionRepository
       return Result.ok(matches);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find matching pattern: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find matching pattern: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -656,9 +639,7 @@ export class LocalStorageTransactionRepository
   // Private helper methods
 
   private async loadTransactions(): Promise<Result<TransactionSnapshot[]>> {
-    const result = await this.storageAdapter.getItem<TransactionSnapshot[]>(
-      this.TRANSACTIONS_KEY,
-    );
+    const result = await this.storageAdapter.getItem<TransactionSnapshot[]>(this.TRANSACTIONS_KEY);
     if (result.isFailure()) {
       return Result.fail(result.getError());
     }
@@ -666,15 +647,11 @@ export class LocalStorageTransactionRepository
     return Result.ok(result.getValue() || []);
   }
 
-  private async saveTransactions(
-    transactions: TransactionSnapshot[],
-  ): Promise<Result<void>> {
+  private async saveTransactions(transactions: TransactionSnapshot[]): Promise<Result<void>> {
     return this.storageAdapter.setItem(this.TRANSACTIONS_KEY, transactions);
   }
 
-  private async updateIndex(
-    transactions: TransactionSnapshot[],
-  ): Promise<void> {
+  private async updateIndex(transactions: TransactionSnapshot[]): Promise<void> {
     // Create simple index for faster lookups
     const index = {
       byDate: new Map<string, string[]>(),
@@ -715,10 +692,7 @@ export class LocalStorageTransactionRepository
     });
   }
 
-  private applyFilters(
-    transactions: Transaction[],
-    filters: TransactionFilters,
-  ): Transaction[] {
+  private applyFilters(transactions: Transaction[], filters: TransactionFilters): Transaction[] {
     return transactions.filter((transaction) => {
       // Date range filter
       if (filters.startDate && transaction.date.isBefore(filters.startDate)) {
@@ -735,10 +709,7 @@ export class LocalStorageTransactionRepository
       }
 
       // Category filter
-      if (
-        filters.categoryId &&
-        transaction.categoryId?.value !== filters.categoryId
-      ) {
+      if (filters.categoryId && transaction.categoryId?.value !== filters.categoryId) {
         return false;
       }
 
@@ -751,17 +722,11 @@ export class LocalStorageTransactionRepository
       }
 
       // Amount filters
-      if (
-        filters.minAmount !== undefined &&
-        transaction.amount.getValue() < filters.minAmount
-      ) {
+      if (filters.minAmount !== undefined && transaction.amount.getValue() < filters.minAmount) {
         return false;
       }
 
-      if (
-        filters.maxAmount !== undefined &&
-        transaction.amount.getValue() > filters.maxAmount
-      ) {
+      if (filters.maxAmount !== undefined && transaction.amount.getValue() > filters.maxAmount) {
         return false;
       }
 

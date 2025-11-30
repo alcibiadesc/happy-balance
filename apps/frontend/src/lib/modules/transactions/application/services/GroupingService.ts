@@ -12,7 +12,7 @@ export interface TransactionGroup {
 
 export const createInitialGroupingState = (): GroupingState => ({
   collapsedGroups: new Set(),
-  allExpanded: true
+  allExpanded: true,
 });
 
 export const groupingActions = {
@@ -27,27 +27,25 @@ export const groupingActions = {
 
     return {
       collapsedGroups: newCollapsed,
-      allExpanded: newCollapsed.size === 0
+      allExpanded: newCollapsed.size === 0,
     };
   },
 
   collapseAll: (state: GroupingState, dates: string[]): GroupingState => ({
     collapsedGroups: new Set(dates),
-    allExpanded: false
+    allExpanded: false,
   }),
 
   expandAll: (): GroupingState => ({
     collapsedGroups: new Set(),
-    allExpanded: true
-  })
+    allExpanded: true,
+  }),
 };
 
-export const groupTransactionsByDate = (
-  transactions: Transaction[]
-): TransactionGroup[] => {
+export const groupTransactionsByDate = (transactions: Transaction[]): TransactionGroup[] => {
   const groups = new Map<string, Transaction[]>();
 
-  transactions.forEach(transaction => {
+  transactions.forEach((transaction) => {
     const date = transaction.date;
     if (!groups.has(date)) {
       groups.set(date, []);
@@ -63,7 +61,7 @@ export const groupTransactionsByDate = (
         const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return bTime - aTime;
-      })
+      }),
     }));
 };
 
@@ -85,7 +83,7 @@ export const formatDate = (dateString: string): string => {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
-      year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+      year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
     };
     return date.toLocaleDateString('es-ES', options);
   }

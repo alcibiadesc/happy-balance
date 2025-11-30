@@ -24,7 +24,7 @@
     name = '',
     autocomplete = 'off',
     oninput,
-    onblur
+    onblur,
   }: Props = $props();
 </script>
 
@@ -50,7 +50,9 @@
     bind:value
     {oninput}
     {onblur}
-    class="input input-bordered w-full {error ? 'input-error' : ''} {disabled ? 'opacity-50 cursor-not-allowed' : ''}"
+    class="input input-bordered w-full {error ? 'input-error' : ''} {disabled
+      ? 'cursor-not-allowed opacity-50'
+      : ''}"
   />
 
   {#if error}

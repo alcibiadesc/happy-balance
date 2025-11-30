@@ -1,7 +1,13 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
-export type NavItemId = 'dashboard' | 'transactions' | 'categories' | 'portfolio' | 'settings' | 'import';
+export type NavItemId =
+  | 'dashboard'
+  | 'transactions'
+  | 'categories'
+  | 'portfolio'
+  | 'settings'
+  | 'import';
 
 export interface NavItemConfig {
   id: NavItemId;
@@ -20,11 +26,49 @@ export interface SidebarConfig {
 
 // Default configuration for sidebar navigation items
 const DEFAULT_NAV_ITEMS: NavItemConfig[] = [
-  { id: 'dashboard', href: '/', icon: 'layout-dashboard', labelKey: 'navigation.dashboard', visible: true, order: 0, required: true },
-  { id: 'transactions', href: '/transactions', icon: 'receipt', labelKey: 'navigation.transactions', visible: true, order: 1, required: true },
-  { id: 'categories', href: '/categories', icon: 'tag', labelKey: 'navigation.categories', visible: true, order: 2 },
-  { id: 'portfolio', href: '/portfolio', icon: 'trending-up', labelKey: 'navigation.portfolio', visible: true, order: 3 },
-  { id: 'settings', href: '/settings', icon: 'settings', labelKey: 'navigation.settings', visible: true, order: 4, required: true },
+  {
+    id: 'dashboard',
+    href: '/',
+    icon: 'layout-dashboard',
+    labelKey: 'navigation.dashboard',
+    visible: true,
+    order: 0,
+    required: true,
+  },
+  {
+    id: 'transactions',
+    href: '/transactions',
+    icon: 'receipt',
+    labelKey: 'navigation.transactions',
+    visible: true,
+    order: 1,
+    required: true,
+  },
+  {
+    id: 'categories',
+    href: '/categories',
+    icon: 'tag',
+    labelKey: 'navigation.categories',
+    visible: true,
+    order: 2,
+  },
+  {
+    id: 'portfolio',
+    href: '/portfolio',
+    icon: 'trending-up',
+    labelKey: 'navigation.portfolio',
+    visible: true,
+    order: 3,
+  },
+  {
+    id: 'settings',
+    href: '/settings',
+    icon: 'settings',
+    labelKey: 'navigation.settings',
+    visible: true,
+    order: 4,
+    required: true,
+  },
 ];
 
 const DEFAULT_CONFIG: SidebarConfig = {
@@ -42,7 +86,7 @@ function loadConfig(): SidebarConfig {
       const parsed = JSON.parse(stored);
       // Merge with defaults to handle new items
       return {
-        items: DEFAULT_NAV_ITEMS.map(defaultItem => {
+        items: DEFAULT_NAV_ITEMS.map((defaultItem) => {
           const saved = parsed.items?.find((item: NavItemConfig) => item.id === defaultItem.id);
           return saved ? { ...defaultItem, ...saved, required: defaultItem.required } : defaultItem;
         }),
@@ -69,13 +113,13 @@ function createSidebarConfigStore() {
      * Toggle visibility of a nav item
      */
     toggleItem(id: NavItemId) {
-      update(config => {
-        const item = config.items.find(i => i.id === id);
+      update((config) => {
+        const item = config.items.find((i) => i.id === id);
         if (item?.required) return config; // Cannot hide required items
 
         const newConfig = {
           ...config,
-          items: config.items.map(item =>
+          items: config.items.map((item) =>
             item.id === id ? { ...item, visible: !item.visible } : item
           ),
         };
@@ -88,12 +132,10 @@ function createSidebarConfigStore() {
      * Show a specific nav item
      */
     showItem(id: NavItemId) {
-      update(config => {
+      update((config) => {
         const newConfig = {
           ...config,
-          items: config.items.map(item =>
-            item.id === id ? { ...item, visible: true } : item
-          ),
+          items: config.items.map((item) => (item.id === id ? { ...item, visible: true } : item)),
         };
         saveConfig(newConfig);
         return newConfig;
@@ -104,15 +146,13 @@ function createSidebarConfigStore() {
      * Hide a specific nav item
      */
     hideItem(id: NavItemId) {
-      update(config => {
-        const item = config.items.find(i => i.id === id);
+      update((config) => {
+        const item = config.items.find((i) => i.id === id);
         if (item?.required) return config; // Cannot hide required items
 
         const newConfig = {
           ...config,
-          items: config.items.map(item =>
-            item.id === id ? { ...item, visible: false } : item
-          ),
+          items: config.items.map((item) => (item.id === id ? { ...item, visible: false } : item)),
         };
         saveConfig(newConfig);
         return newConfig;
@@ -123,15 +163,13 @@ function createSidebarConfigStore() {
      * Set visibility for a specific nav item
      */
     setItemVisibility(id: NavItemId, visible: boolean) {
-      update(config => {
-        const item = config.items.find(i => i.id === id);
+      update((config) => {
+        const item = config.items.find((i) => i.id === id);
         if (!visible && item?.required) return config; // Cannot hide required items
 
         const newConfig = {
           ...config,
-          items: config.items.map(item =>
-            item.id === id ? { ...item, visible } : item
-          ),
+          items: config.items.map((item) => (item.id === id ? { ...item, visible } : item)),
         };
         saveConfig(newConfig);
         return newConfig;
@@ -142,9 +180,7 @@ function createSidebarConfigStore() {
      * Get visible items sorted by order
      */
     getVisibleItems(config: SidebarConfig): NavItemConfig[] {
-      return config.items
-        .filter(item => item.visible)
-        .sort((a, b) => a.order - b.order);
+      return config.items.filter((item) => item.visible).sort((a, b) => a.order - b.order);
     },
 
     /**

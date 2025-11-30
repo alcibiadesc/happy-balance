@@ -1,9 +1,7 @@
 export type ThemeType = 'light' | 'dark' | 'system';
 
 export class Theme {
-  private constructor(
-    private readonly value: ThemeType
-  ) {}
+  private constructor(private readonly value: ThemeType) {}
 
   static create(theme: ThemeType): Theme {
     return new Theme(theme);

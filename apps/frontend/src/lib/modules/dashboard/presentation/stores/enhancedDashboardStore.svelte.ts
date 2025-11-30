@@ -33,12 +33,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
   // Computed values (usando $derived rune)
   const currentPeriod = $derived(
-    Period.create(
-      selectedPeriodType,
-      periodOffset,
-      customStartDate,
-      customEndDate
-    )
+    Period.create(selectedPeriodType, periodOffset, customStartDate, customEndDate)
   );
 
   const navigationOptions = $derived(
@@ -46,9 +41,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
   );
 
   const trends = $derived<{ income: Trend; expenses: Trend; investments: Trend } | null>(
-    dashboardData
-      ? calculateTrendsUseCase.execute(dashboardData.monthlyTrend)
-      : null
+    dashboardData ? calculateTrendsUseCase.execute(dashboardData.monthlyTrend) : null
   );
 
   const metrics = $derived(dashboardData?.metrics || null);
@@ -103,7 +96,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
           const [comparisonData, savings, history] = await Promise.all([
             repository.getComparison(year, month),
             repository.getSavingsMetrics(year, month),
-            repository.getHistory(12) // Last 12 months
+            repository.getHistory(12), // Last 12 months
           ]);
 
           comparison = comparisonData;
@@ -127,8 +120,8 @@ export function createEnhancedDashboardStore(apiBase: string) {
               month: monthLabel,
               income: summary.income || 0,
               expenses: summary.expenses || 0,
-              balance: summary.balance || ((summary.income || 0) - (summary.expenses || 0)),
-              investments: summary.investments || 0
+              balance: summary.balance || (summary.income || 0) - (summary.expenses || 0),
+              investments: summary.investments || 0,
             };
           });
 
@@ -141,7 +134,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
               month: monthLabel,
               income: summary.income || 0,
               expenses: summary.expenses || 0,
-              investments: summary.investments || 0
+              investments: summary.investments || 0,
             };
           });
         }
@@ -177,10 +170,16 @@ export function createEnhancedDashboardStore(apiBase: string) {
     // etc.
 
     const maxFuture = 0; // Can't go beyond current period
-    const maxPast = selectedPeriodType === 'month' ? -24 :     // 2 years back
-                    selectedPeriodType === 'quarter' ? -8 :     // 2 years back (8 quarters)
-                    selectedPeriodType === 'year' ? -5 :        // 5 years back
-                    selectedPeriodType === 'week' ? -52 : -24;  // 1 year back
+    const maxPast =
+      selectedPeriodType === 'month'
+        ? -24 // 2 years back
+        : selectedPeriodType === 'quarter'
+          ? -8 // 2 years back (8 quarters)
+          : selectedPeriodType === 'year'
+            ? -5 // 5 years back
+            : selectedPeriodType === 'week'
+              ? -52
+              : -24; // 1 year back
 
     // Apply limits
     newOffset = Math.min(maxFuture, Math.max(maxPast, newOffset));
@@ -228,33 +227,69 @@ export function createEnhancedDashboardStore(apiBase: string) {
       style: 'currency',
       currency: currentCurrency,
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(amount);
   }
 
   // Return public API
   return {
     // State
-    get selectedPeriodType() { return selectedPeriodType; },
-    get periodOffset() { return periodOffset; },
-    get customStartDate() { return customStartDate; },
-    get customEndDate() { return customEndDate; },
-    get loading() { return loading; },
-    get currentCurrency() { return currentCurrency; },
-    get currentPeriod() { return currentPeriod; },
-    get navigationOptions() { return navigationOptions; },
-    get availablePeriods() { return availablePeriods; },
+    get selectedPeriodType() {
+      return selectedPeriodType;
+    },
+    get periodOffset() {
+      return periodOffset;
+    },
+    get customStartDate() {
+      return customStartDate;
+    },
+    get customEndDate() {
+      return customEndDate;
+    },
+    get loading() {
+      return loading;
+    },
+    get currentCurrency() {
+      return currentCurrency;
+    },
+    get currentPeriod() {
+      return currentPeriod;
+    },
+    get navigationOptions() {
+      return navigationOptions;
+    },
+    get availablePeriods() {
+      return availablePeriods;
+    },
 
     // Data
-    get metrics() { return metrics; },
-    get trends() { return trends; },
-    get categories() { return categories; },
-    get monthlyTrend() { return monthlyTrend; },
-    get monthlyTrendData() { return monthlyTrend; },
-    get monthlyBarData() { return monthlyBarData; },
-    get expenseDistribution() { return expenseDistribution; },
-    get comparison() { return comparison; },
-    get savingsMetrics() { return savingsMetrics; },
+    get metrics() {
+      return metrics;
+    },
+    get trends() {
+      return trends;
+    },
+    get categories() {
+      return categories;
+    },
+    get monthlyTrend() {
+      return monthlyTrend;
+    },
+    get monthlyTrendData() {
+      return monthlyTrend;
+    },
+    get monthlyBarData() {
+      return monthlyBarData;
+    },
+    get expenseDistribution() {
+      return expenseDistribution;
+    },
+    get comparison() {
+      return comparison;
+    },
+    get savingsMetrics() {
+      return savingsMetrics;
+    },
     get categoryBreakdown() {
       // Convert Category objects to plain objects if needed
       return categoryBreakdown.map((cat: any) => {
@@ -287,7 +322,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
           const targetDate = new Date(now.getFullYear(), now.getMonth() + periodOffset, 1);
           const monthName = targetDate.toLocaleDateString('es-ES', {
             month: 'long',
-            year: 'numeric'
+            year: 'numeric',
           });
           // Capitalize first letter
           return monthName.charAt(0).toUpperCase() + monthName.slice(1);
@@ -330,12 +365,12 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
       // Different limits based on period type
       const limits: Record<PeriodType, number> = {
-        overview: 0,  // No navigation for overview
-        month: -24,   // 2 years back
-        quarter: -8,  // 2 years back (8 quarters)
-        year: -5,     // 5 years back
-        week: -52,    // 1 year back
-        custom: 0
+        overview: 0, // No navigation for overview
+        month: -24, // 2 years back
+        quarter: -8, // 2 years back (8 quarters)
+        year: -5, // 5 years back
+        week: -52, // 1 year back
+        custom: 0,
       };
       return periodOffset > (limits[selectedPeriodType] || -24);
     },
@@ -347,7 +382,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
       const year = targetDate.getFullYear();
       const month = targetDate.getMonth() + 1;
 
-      return availablePeriods.some(p => p.year === year && p.month === month);
-    }
+      return availablePeriods.some((p) => p.year === year && p.month === month);
+    },
   };
 }

@@ -20,7 +20,7 @@
     loading = false,
     navigationOptions,
     currentPeriodLabel,
-    onPeriodNavigation
+    onPeriodNavigation,
   }: Props = $props();
 </script>
 

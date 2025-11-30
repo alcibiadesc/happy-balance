@@ -38,7 +38,7 @@
   let newUser = $state({
     username: '',
     password: '',
-    role: 'user' as 'admin' | 'user' | 'viewer'
+    role: 'user' as 'admin' | 'user' | 'viewer',
   });
 
   // Check if user is admin
@@ -60,9 +60,9 @@
       const token = authStore.getAccessToken();
       const response = await fetch(`${getApiUrl()}/admin/users`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -95,7 +95,7 @@
       }
 
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       };
 
       if (token) {
@@ -105,7 +105,7 @@
       const requestData = {
         username: newUser.username,
         role: newUser.role,
-        tempPassword: newUser.password || undefined // Only send if not empty
+        tempPassword: newUser.password || undefined, // Only send if not empty
       };
 
       console.log('Sending request data:', requestData);
@@ -113,7 +113,7 @@
       const response = await fetch(`${getApiUrl()}/admin/users`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(requestData),
       });
 
       console.log('Response status:', response.status);
@@ -127,7 +127,9 @@
           const errorData = JSON.parse(responseText);
           throw new Error(errorData.message || `Failed to create user: ${response.status}`);
         } catch (parseError) {
-          throw new Error(`Failed to create user: ${response.status} - ${responseText.substring(0, 100)}`);
+          throw new Error(
+            `Failed to create user: ${response.status} - ${responseText.substring(0, 100)}`
+          );
         }
       }
 
@@ -136,7 +138,9 @@
 
       // Show success message
       if (result.data && result.data.tempPassword) {
-        successMessage = $t('admin.users.user_created_with_password', { password: result.data.tempPassword });
+        successMessage = $t('admin.users.user_created_with_password', {
+          password: result.data.tempPassword,
+        });
       } else {
         successMessage = $t('admin.users.user_created');
       }
@@ -167,14 +171,14 @@
       const response = await fetch(`${getApiUrl()}/admin/users/${user.id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           displayName: user.displayName,
           role: user.role,
-          isActive: user.isActive
-        })
+          isActive: user.isActive,
+        }),
       });
 
       if (!response.ok) {
@@ -201,7 +205,6 @@
   }
 
   async function performDeleteUser(userId: string) {
-
     loading = true;
     error = null;
 
@@ -210,9 +213,9 @@
       const response = await fetch(`${getApiUrl()}/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -238,7 +241,6 @@
   }
 
   async function performResetPassword(userId: string, username: string) {
-
     loading = true;
     error = null;
 
@@ -247,10 +249,10 @@
       const response = await fetch(`${getApiUrl()}/admin/users/reset-password`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId })
+        body: JSON.stringify({ userId }),
       });
 
       if (!response.ok) {
@@ -279,19 +281,27 @@
 
   function getRoleVariant(role: string): 'danger' | 'info' | 'warning' | 'default' {
     switch (role) {
-      case 'admin': return 'danger';
-      case 'user': return 'info';
-      case 'viewer': return 'warning';
-      default: return 'default';
+      case 'admin':
+        return 'danger';
+      case 'user':
+        return 'info';
+      case 'viewer':
+        return 'warning';
+      default:
+        return 'default';
     }
   }
 
   function getRoleIcon(role: string) {
     switch (role) {
-      case 'admin': return Shield;
-      case 'user': return User;
-      case 'viewer': return Eye;
-      default: return User;
+      case 'admin':
+        return Shield;
+      case 'user':
+        return User;
+      case 'viewer':
+        return Eye;
+      default:
+        return User;
     }
   }
 
@@ -311,13 +321,13 @@
       const response = await fetch(`${getApiUrl()}/admin/users/${user.id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           role: user.role,
-          isActive: newStatus
-        })
+          isActive: newStatus,
+        }),
       });
 
       if (!response.ok) {
@@ -359,7 +369,7 @@
       show: true,
       title,
       message,
-      action
+      action,
     };
   }
 
@@ -384,11 +394,7 @@
         <h1 class="page-title">{$t('admin.users.title')}</h1>
         <p class="page-subtitle">{$t('admin.users.subtitle')}</p>
       </div>
-      <Button
-        variant="primary"
-        onclick={handleCreateUserClick}
-        disabled={loading}
-      >
+      <Button variant="primary" onclick={handleCreateUserClick} disabled={loading}>
         <Plus size={16} strokeWidth={2} />
         {$t('admin.users.add_user')}
       </Button>
@@ -399,7 +405,7 @@
       <div class="notification error">
         <div class="notification-content">
           <span class="notification-text">{error}</span>
-          <button onclick={() => error = null} class="notification-close">
+          <button onclick={() => (error = null)} class="notification-close">
             <X size={16} />
           </button>
         </div>
@@ -410,7 +416,7 @@
       <div class="notification success">
         <div class="notification-content">
           <span class="notification-text">{successMessage}</span>
-          <button onclick={() => successMessage = null} class="notification-close">
+          <button onclick={() => (successMessage = null)} class="notification-close">
             <X size={16} />
           </button>
         </div>
@@ -424,89 +430,111 @@
           <div class="spinner"></div>
           <span>{$t('admin.users.loading')}</span>
         </div>
-      {:else}
-        {#if users.length === 0}
-          <div class="empty-state">
-            <div class="empty-icon">
-              <Users size={48} strokeWidth={1} />
-            </div>
-            <h3>{$t('admin.users.no_users')}</h3>
-            <p>{$t('admin.users.no_users_desc')}</p>
-            <Button variant="outline" onclick={handleCreateUserClick}>
-              <Plus size={16} />
-              {$t('admin.users.create_user_button')}
-            </Button>
+      {:else if users.length === 0}
+        <div class="empty-state">
+          <div class="empty-icon">
+            <Users size={48} strokeWidth={1} />
           </div>
-        {:else}
-          <div class="users-grid">
-            {#each users as user (user.id)}
-              <div class="user-card">
-                <div class="user-avatar">
-                  {user.displayName.charAt(0).toUpperCase()}
+          <h3>{$t('admin.users.no_users')}</h3>
+          <p>{$t('admin.users.no_users_desc')}</p>
+          <Button variant="outline" onclick={handleCreateUserClick}>
+            <Plus size={16} />
+            {$t('admin.users.create_user_button')}
+          </Button>
+        </div>
+      {:else}
+        <div class="users-grid">
+          {#each users as user (user.id)}
+            <div class="user-card">
+              <div class="user-avatar">
+                {user.displayName.charAt(0).toUpperCase()}
+              </div>
+              <div class="user-info">
+                <div class="user-name">{user.displayName}</div>
+                <div class="user-details">
+                  <span class="username">@{user.username}</span>
+                  <Badge variant={getRoleVariant(user.role)} size="sm">
+                    {#if user.role === 'admin'}
+                      <Shield size={12} />
+                    {:else if user.role === 'user'}
+                      <User size={12} />
+                    {:else}
+                      <Eye size={12} />
+                    {/if}
+                    {user.role}
+                  </Badge>
+                  <Badge variant={user.isActive ? 'success' : 'warning'} size="sm">
+                    {user.isActive ? $t('admin.users.active') : $t('admin.users.inactive')}
+                  </Badge>
                 </div>
-                <div class="user-info">
-                  <div class="user-name">{user.displayName}</div>
-                  <div class="user-details">
-                    <span class="username">@{user.username}</span>
-                    <Badge variant={getRoleVariant(user.role)} size="sm">
-                      {#if user.role === 'admin'}
-                        <Shield size={12} />
-                      {:else if user.role === 'user'}
-                        <User size={12} />
-                      {:else}
-                        <Eye size={12} />
-                      {/if}
-                      {user.role}
-                    </Badge>
-                    <Badge variant={user.isActive ? 'success' : 'warning'} size="sm">
-                      {user.isActive ? $t('admin.users.active') : $t('admin.users.inactive')}
-                    </Badge>
-                  </div>
-                </div>
-                <div class="user-actions">
-                  {#if editingUser?.id === user.id}
-                    <Button variant="primary" size="sm" onclick={() => updateUser(user)}>
-                      {$t('admin.users.save')}
-                    </Button>
-                    <Button variant="ghost" size="sm" onclick={() => editingUser = null}>
-                      {$t('common.cancel')}
-                    </Button>
-                  {:else}
-                    <Button variant="ghost" size="sm" onclick={() => editingUser = user}>
-                      <Edit2 size={14} />
-                    </Button>
-                    <Button variant="ghost" size="sm" onclick={() => resetPassword(user.id, user.username)}>
-                      <RefreshCw size={14} />
-                    </Button>
+              </div>
+              <div class="user-actions">
+                {#if editingUser?.id === user.id}
+                  <Button variant="primary" size="sm" onclick={() => updateUser(user)}>
+                    {$t('admin.users.save')}
+                  </Button>
+                  <Button variant="ghost" size="sm" onclick={() => (editingUser = null)}>
+                    {$t('common.cancel')}
+                  </Button>
+                {:else}
+                  <Button variant="ghost" size="sm" onclick={() => (editingUser = user)}>
+                    <Edit2 size={14} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onclick={() => resetPassword(user.id, user.username)}
+                  >
+                    <RefreshCw size={14} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onclick={() => toggleUserStatus(user)}
+                    title={user.isActive
+                      ? $t('admin.users.deactivate_user')
+                      : $t('admin.users.activate_user')}
+                  >
+                    {#if user.isActive}
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M10 9V6a4 4 0 1 1 8 0v3" />
+                        <rect x="2" y="9" width="20" height="12" rx="2" ry="2" />
+                      </svg>
+                    {:else}
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    {/if}
+                  </Button>
+                  {#if user.id !== authStore.currentUser?.id}
                     <Button
                       variant="ghost"
                       size="sm"
-                      onclick={() => toggleUserStatus(user)}
-                      title={user.isActive ? $t('admin.users.deactivate_user') : $t('admin.users.activate_user')}
+                      onclick={() => deleteUser(user.id, user.username)}
                     >
-                      {#if user.isActive}
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M10 9V6a4 4 0 1 1 8 0v3"/>
-                          <rect x="2" y="9" width="20" height="12" rx="2" ry="2"/>
-                        </svg>
-                      {:else}
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                      {/if}
+                      <Trash2 size={14} />
                     </Button>
-                    {#if user.id !== authStore.currentUser?.id}
-                      <Button variant="ghost" size="sm" onclick={() => deleteUser(user.id, user.username)}>
-                        <Trash2 size={14} />
-                      </Button>
-                    {/if}
                   {/if}
-                </div>
+                {/if}
               </div>
-            {/each}
-          </div>
-        {/if}
+            </div>
+          {/each}
+        </div>
       {/if}
     </div>
 
@@ -541,8 +569,12 @@
           onclick={(e) => e.stopPropagation()}
         >
           <!-- Header -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb;">
-            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 0.5rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb;"
+          >
+            <h2
+              style="margin: 0; font-size: 1.5rem; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 0.5rem;"
+            >
               {$t('admin.users.create_user')}
             </h2>
             <button
@@ -559,15 +591,23 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-              "
-            >×</button>
+              ">×</button
+            >
           </div>
 
           <!-- Form -->
-          <form onsubmit={(e) => { e.preventDefault(); createUser(); }}>
+          <form
+            onsubmit={(e) => {
+              e.preventDefault();
+              createUser();
+            }}
+          >
             <div style="margin-bottom: 1.25rem;">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem;">
-                {$t('admin.users.username')} {$t('admin.users.username_required')}
+              <label
+                style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem;"
+              >
+                {$t('admin.users.username')}
+                {$t('admin.users.username_required')}
               </label>
               <input
                 bind:value={newUser.username}
@@ -592,8 +632,11 @@
             </div>
 
             <div style="margin-bottom: 1.25rem;">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem;">
-                {$t('admin.users.password')} {$t('admin.users.password_required')}
+              <label
+                style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem;"
+              >
+                {$t('admin.users.password')}
+                {$t('admin.users.password_required')}
               </label>
               <input
                 type="password"
@@ -619,7 +662,9 @@
             </div>
 
             <div style="margin-bottom: 2rem;">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem;">
+              <label
+                style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem;"
+              >
                 {$t('admin.users.role')}
               </label>
               <select
@@ -659,7 +704,11 @@
               </button>
               <button
                 type="submit"
-                disabled={loading || !newUser.username || !newUser.password || newUser.username.length < 3 || newUser.password.length < 4}
+                disabled={loading ||
+                  !newUser.username ||
+                  !newUser.password ||
+                  newUser.username.length < 3 ||
+                  newUser.password.length < 4}
                 style="
                   padding: 0.75rem 1.5rem;
                   background: #059669;
@@ -669,7 +718,13 @@
                   cursor: pointer;
                   font-weight: 500;
                   transition: all 0.2s;
-                  opacity: {loading || !newUser.username || !newUser.password || newUser.username.length < 3 || newUser.password.length < 4 ? '0.5' : '1'};
+                  opacity: {loading ||
+                !newUser.username ||
+                !newUser.password ||
+                newUser.username.length < 3 ||
+                newUser.password.length < 4
+                  ? '0.5'
+                  : '1'};
                 "
               >
                 {loading ? $t('admin.users.creating') : $t('admin.users.add_user')}
@@ -835,8 +890,12 @@
   }
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
   /* Users Grid */
@@ -1051,8 +1110,12 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .confirm-modal {
@@ -1091,9 +1154,9 @@
       grid-template-columns: auto 1fr;
       grid-template-rows: auto auto auto;
       grid-template-areas:
-        "avatar name"
-        "avatar details"
-        "actions actions";
+        'avatar name'
+        'avatar details'
+        'actions actions';
       gap: 0.5rem 1rem;
       padding: 1rem;
       align-items: start;

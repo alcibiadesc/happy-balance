@@ -14,9 +14,7 @@
 
   const trendColor = $derived(profit >= 0 ? 'var(--success)' : 'var(--danger)');
   const trendText = $derived(
-    profitPercentage !== 0
-      ? `${profit >= 0 ? '+' : ''}${profitPercentage.toFixed(1)}%`
-      : undefined
+    profitPercentage !== 0 ? `${profit >= 0 ? '+' : ''}${profitPercentage.toFixed(1)}%` : undefined
   );
 </script>
 

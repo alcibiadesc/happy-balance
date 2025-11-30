@@ -32,7 +32,7 @@
     selectedCount = 0,
     onToggleSelectionMode,
     onBulkDelete,
-    children
+    children,
   }: Props = $props();
 </script>
 
@@ -67,7 +67,10 @@
   {#if isSelectionMode && selectedCount > 0}
     <div class="bulk-actions-bar">
       <span class="selected-count">
-        {selectedCount} {selectedCount === 1 ? $t('categories.category_selected') : $t('categories.categories_selected')}
+        {selectedCount}
+        {selectedCount === 1
+          ? $t('categories.category_selected')
+          : $t('categories.categories_selected')}
       </span>
       <div class="bulk-actions">
         <button class="bulk-btn cancel" onclick={onToggleSelectionMode}>

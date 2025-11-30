@@ -21,15 +21,18 @@ export const createInitialFilterState = (): FilterState => ({
   selectedPrimaryTypes: [],
   transactionTypeFilter: 'all',
   showUncategorized: false,
-  showAllTransactions: typeof window !== 'undefined'
-    ? localStorage.getItem('showAllTransactions') === 'true' || localStorage.getItem('showAllTransactions') === null
-    : true,
-  showHiddenTransactions: typeof window !== 'undefined'
-    ? localStorage.getItem('showHiddenTransactions') !== 'false'
-    : true,
+  showAllTransactions:
+    typeof window !== 'undefined'
+      ? localStorage.getItem('showAllTransactions') === 'true' ||
+        localStorage.getItem('showAllTransactions') === null
+      : true,
+  showHiddenTransactions:
+    typeof window !== 'undefined'
+      ? localStorage.getItem('showHiddenTransactions') !== 'false'
+      : true,
   dateRangeMode: 'month',
   customStartDate: '',
-  customEndDate: ''
+  customEndDate: '',
 });
 
 // Normalize string for search: remove accents, lowercase, and normalize spaces
@@ -64,10 +67,7 @@ const matchesSearch = (transaction: Transaction, query: string): boolean => {
   return textMatch;
 };
 
-const matchesPeriod = (
-  transaction: Transaction,
-  filters: FilterState
-): boolean => {
+const matchesPeriod = (transaction: Transaction, filters: FilterState): boolean => {
   if (filters.showAllTransactions) return true;
 
   if (filters.dateRangeMode === 'month' && filters.selectedPeriod) {
@@ -128,7 +128,7 @@ const matchesCategory = (
       // Uncategorized transactions don't match primary type filters
       return matchesTypeFilter && matchesUncategorizedFilter;
     }
-    const category = categories.find(c => c.id === transaction.categoryId);
+    const category = categories.find((c) => c.id === transaction.categoryId);
     if (!category) {
       return false;
     }
@@ -144,7 +144,7 @@ export const filterTransactions = (
   filters: FilterState,
   categories: Category[]
 ): Transaction[] => {
-  return transactions.filter(transaction => {
+  return transactions.filter((transaction) => {
     // Period filter
     if (!matchesPeriod(transaction, filters)) return false;
 
@@ -168,7 +168,7 @@ export const filterTransactions = (
 export const filterActions = {
   setSearchQuery: (state: FilterState, query: string): FilterState => ({
     ...state,
-    searchQuery: query
+    searchQuery: query,
   }),
 
   toggleAllTransactions: (state: FilterState): FilterState => {
@@ -189,7 +189,7 @@ export const filterActions = {
 
   toggleDateRangeMode: (state: FilterState): FilterState => ({
     ...state,
-    dateRangeMode: state.dateRangeMode === 'month' ? 'custom' : 'month'
+    dateRangeMode: state.dateRangeMode === 'month' ? 'custom' : 'month',
   }),
 
   clearFilters: (state: FilterState): FilterState => ({
@@ -197,7 +197,7 @@ export const filterActions = {
     selectedCategories: [],
     selectedPrimaryTypes: [],
     transactionTypeFilter: 'all',
-    showUncategorized: false
+    showUncategorized: false,
   }),
 
   setTransactionTypeFilter: (
@@ -205,12 +205,12 @@ export const filterActions = {
     type: 'all' | 'income' | 'expenses' | 'uncategorized'
   ): FilterState => ({
     ...state,
-    transactionTypeFilter: type
+    transactionTypeFilter: type,
   }),
 
   toggleCategory: (state: FilterState, categoryId: string): FilterState => {
     const newCategories = state.selectedCategories.includes(categoryId)
-      ? state.selectedCategories.filter(id => id !== categoryId)
+      ? state.selectedCategories.filter((id) => id !== categoryId)
       : [...state.selectedCategories, categoryId];
 
     return { ...state, selectedCategories: newCategories };
@@ -218,7 +218,7 @@ export const filterActions = {
 
   togglePrimaryType: (state: FilterState, primaryType: string): FilterState => {
     const newTypes = state.selectedPrimaryTypes.includes(primaryType)
-      ? state.selectedPrimaryTypes.filter(t => t !== primaryType)
+      ? state.selectedPrimaryTypes.filter((t) => t !== primaryType)
       : [...state.selectedPrimaryTypes, primaryType];
 
     return { ...state, selectedPrimaryTypes: newTypes };
@@ -226,6 +226,6 @@ export const filterActions = {
 
   toggleShowUncategorized: (state: FilterState): FilterState => ({
     ...state,
-    showUncategorized: !state.showUncategorized
-  })
+    showUncategorized: !state.showUncategorized,
+  }),
 };

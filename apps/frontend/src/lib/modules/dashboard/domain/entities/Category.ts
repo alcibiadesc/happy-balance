@@ -15,22 +15,11 @@ export class Category {
     private readonly annualBudget?: number | null
   ) {}
 
-  static create(
-    id: string,
-    name: string,
-    amount: Money,
-    totalExpenses: Money
-  ): Category {
-    const percentage = totalExpenses.getValue() > 0
-      ? (amount.getValue() / totalExpenses.getValue()) * 100
-      : 0;
+  static create(id: string, name: string, amount: Money, totalExpenses: Money): Category {
+    const percentage =
+      totalExpenses.getValue() > 0 ? (amount.getValue() / totalExpenses.getValue()) * 100 : 0;
 
-    return new Category(
-      id,
-      name,
-      amount,
-      percentage
-    );
+    return new Category(id, name, amount, percentage);
   }
 
   static createWithPercentage(
@@ -140,7 +129,7 @@ export class Category {
       monthlyBudget: this.monthlyBudget,
       quarterlyBudget: this.quarterlyBudget,
       budgetUsage: this.budgetUsage,
-      annualBudget: this.annualBudget
+      annualBudget: this.annualBudget,
     };
   }
 }

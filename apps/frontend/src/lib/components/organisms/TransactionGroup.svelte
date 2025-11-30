@@ -44,25 +44,19 @@
     onUpdateObservationsText,
     onSaveObservations,
     onCancelObservations,
-    formatAmount
+    formatAmount,
   }: Props = $props();
 
-  const groupTotal = $derived(
-    transactions.reduce((sum, t) => sum + t.amount, 0)
-  );
+  const groupTotal = $derived(transactions.reduce((sum, t) => sum + t.amount, 0));
 
   function getCategoryById(categoryId?: string): Category | undefined {
     if (!categoryId) return undefined;
-    return categories.find(c => c.id === categoryId);
+    return categories.find((c) => c.id === categoryId);
   }
 </script>
 
 <div class="transaction-group" class:collapsed={!isExpanded}>
-  <button
-    class="group-header"
-    onclick={onToggleGroup}
-    aria-expanded={isExpanded}
-  >
+  <button class="group-header" onclick={onToggleGroup} aria-expanded={isExpanded}>
     <div class="group-header-left">
       {#if !isExpanded}
         <ChevronRight size={16} class="group-chevron" />
@@ -94,8 +88,8 @@
         onToggleHide={() => onToggleHide(transaction)}
         onDelete={() => onDelete(transaction.id)}
         onStartEditingObservations={() => onEditObservations(transaction)}
-        onUpdateObservationsText={onUpdateObservationsText}
-        onSaveObservations={onSaveObservations}
+        {onUpdateObservationsText}
+        {onSaveObservations}
         onCancelEditingObservations={onCancelObservations}
         onOpenSplitModal={onOpenSplitModal ? () => onOpenSplitModal(transaction) : undefined}
         {formatAmount}

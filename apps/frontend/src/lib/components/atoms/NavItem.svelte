@@ -10,22 +10,15 @@
     onclick?: () => void;
   }
 
-  let {
-    href,
-    icon,
-    children,
-    isActive = false,
-    isImportant = false,
-    onclick
-  }: Props = $props();
+  let { href, icon, children, isActive = false, isImportant = false, onclick }: Props = $props();
 
   // Icon mapping
   const iconMap = {
     'layout-dashboard': LayoutDashboard,
-    'receipt': Receipt,
-    'tag': Tag,
+    receipt: Receipt,
+    tag: Tag,
     'trending-up': TrendingUp,
-    'settings': Settings
+    settings: Settings,
   };
 
   const IconComponent = iconMap[icon as keyof typeof iconMap];
@@ -73,20 +66,20 @@
     min-height: 44px; /* Touch target */
     font-weight: 400;
   }
-  
+
   .nav-item:hover {
     color: var(--text-primary);
     background-color: var(--surface-muted);
     transform: translateX(2px);
   }
-  
+
   .nav-item--active {
     color: var(--primary);
     background-color: var(--primary-light);
     font-weight: 500;
     box-shadow: var(--shadow-sm);
   }
-  
+
   .nav-item--active::before {
     content: '';
     position: absolute;
@@ -98,19 +91,19 @@
     background: var(--primary);
     border-radius: 0 2px 2px 0;
   }
-  
+
   .nav-item--important {
     border: 1px solid var(--accent-light);
     background: linear-gradient(135deg, var(--accent-light), transparent);
   }
-  
+
   .nav-item--important:hover {
     background: var(--accent-light);
     color: var(--accent);
     border-color: var(--accent);
     transform: translateX(3px) translateY(-1px);
   }
-  
+
   .nav-item__icon {
     display: flex;
     align-items: center;
@@ -119,14 +112,14 @@
     width: 20px;
     height: 20px;
   }
-  
+
   .nav-item__label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     line-height: 1.4;
   }
-  
+
   .nav-item__badge {
     flex-shrink: 0;
     width: 0.5rem;
@@ -136,18 +129,21 @@
     background: var(--accent);
     animation: pulse 2s infinite;
   }
-  
+
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
     }
     50% {
       opacity: 0.6;
     }
   }
-  
+
   .nav-item:focus {
     outline: none;
-    box-shadow: 0 0 0 2px var(--primary-light), 0 0 0 4px var(--primary-light);
+    box-shadow:
+      0 0 0 2px var(--primary-light),
+      0 0 0 4px var(--primary-light);
   }
 </style>

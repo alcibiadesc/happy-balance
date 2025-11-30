@@ -3,29 +3,29 @@
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
   import { theme, setTheme, effectiveTheme } from '$lib/stores/theme';
-  
+
   interface Props {
     size?: 'sm' | 'md';
     collapsed?: boolean;
   }
-  
+
   let { size = 'md', collapsed = false }: Props = $props();
-  
+
   let mounted = $state(false);
-  
+
   const iconSizes = {
     sm: 16,
-    md: 18
+    md: 18,
   };
-  
+
   // Get current effective theme (reactive)
   let isDark = $derived($effectiveTheme === 'dark');
-  
+
   function toggleTheme() {
     // Toggle between light and dark (not system)
     const newTheme = isDark ? 'light' : 'dark';
     setTheme(newTheme);
-    
+
     if (browser && mounted) {
       // Visual feedback - briefly change the button
       const button = document.querySelector('.theme-toggle');
@@ -35,13 +35,13 @@
       }, 200);
     }
   }
-  
+
   onMount(() => {
     mounted = true;
   });
 </script>
 
-<button 
+<button
   class="theme-toggle theme-toggle--{size}"
   class:theme-toggle--collapsed={collapsed}
   onclick={toggleTheme}
@@ -78,29 +78,29 @@
     box-shadow: var(--shadow-sm);
     aspect-ratio: 1 / 1;
   }
-  
+
   .theme-toggle:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   .theme-toggle--sm {
     width: 2rem;
     height: 2rem;
   }
-  
+
   .theme-toggle--md {
     width: 2.5rem;
     height: 2.5rem;
   }
-  
+
   .theme-toggle--collapsed {
     width: 2.5rem !important;
     height: 2.5rem !important;
     border-radius: var(--radius-lg) !important;
     margin: 0 auto;
   }
-  
+
   .theme-toggle:hover:not(:disabled) {
     background: var(--success-light);
     color: var(--success);
@@ -108,43 +108,43 @@
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
   }
-  
+
   .theme-toggle--collapsed:hover:not(:disabled) {
     transform: translateY(-2px) scale(1.05);
     box-shadow: 0 4px 12px rgba(122, 186, 165, 0.25);
   }
-  
+
   .theme-toggle:active:not(:disabled) {
     transform: translateY(0);
     box-shadow: var(--shadow-sm);
   }
-  
+
   .theme-toggle--collapsed:active:not(:disabled) {
     transform: translateY(-1px) scale(1.02);
   }
-  
+
   .theme-toggle--active {
     background: var(--warning-light) !important;
     color: var(--warning) !important;
     border-color: var(--warning) !important;
     transform: scale(1.1) !important;
   }
-  
+
   .theme-toggle__icon {
     display: flex;
     align-items: center;
     justify-content: center;
     transition: transform 0.3s ease;
   }
-  
+
   .theme-toggle:hover:not(:disabled) .theme-toggle__icon {
     transform: rotate(15deg);
   }
-  
+
   .theme-toggle--collapsed:hover:not(:disabled) .theme-toggle__icon {
     transform: rotate(25deg) scale(1.1);
   }
-  
+
   .theme-toggle__loading {
     width: 12px;
     height: 12px;
@@ -153,21 +153,29 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
-  
+
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
-  
+
   /* Focus state */
   .theme-toggle:focus {
     outline: none;
-    box-shadow: 0 0 0 2px var(--primary-light), 0 0 0 4px rgba(2, 60, 70, 0.1);
+    box-shadow:
+      0 0 0 2px var(--primary-light),
+      0 0 0 4px rgba(2, 60, 70, 0.1);
   }
-  
+
   .theme-toggle--collapsed:focus {
-    box-shadow: 0 0 0 2px var(--acapulco), 0 0 0 4px rgba(122, 186, 165, 0.2);
+    box-shadow:
+      0 0 0 2px var(--acapulco),
+      0 0 0 4px rgba(122, 186, 165, 0.2);
   }
-  
+
   /* Removed dark mode specific styles - now handled by CSS custom properties */
 </style>

@@ -92,7 +92,7 @@ export class User {
       createdBy: this.props.createdBy?.value,
       lastLogin: this.props.lastLogin,
       createdAt: this.props.createdAt,
-      updatedAt: this.props.updatedAt
+      updatedAt: this.props.updatedAt,
     };
   }
 }

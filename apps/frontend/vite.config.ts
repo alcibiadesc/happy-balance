@@ -1,10 +1,10 @@
-import { sveltekit } from "@sveltejs/kit/vite";
-import { defineConfig } from "vite";
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [sveltekit()],
   server: {
-    host: "0.0.0.0",
+    host: '0.0.0.0',
     port: 5173,
     strictPort: false,
     hmr: {
@@ -15,25 +15,25 @@ export default defineConfig({
       interval: 1000,
     },
     proxy: {
-      "/api": {
-        target: "http://localhost:14040",
+      '/api': {
+        target: 'http://localhost:14040',
         changeOrigin: true,
         secure: false,
       },
     },
   },
   build: {
-    target: "esnext",
-    outDir: "build",
+    target: 'esnext',
+    outDir: 'build',
     sourcemap: false,
     minify: true,
   },
   preview: {
-    host: "0.0.0.0",
+    host: '0.0.0.0',
     port: 14080,
     strictPort: true,
   },
   optimizeDeps: {
-    include: ["chart.js/auto"]
+    include: ['chart.js/auto'],
   },
 });

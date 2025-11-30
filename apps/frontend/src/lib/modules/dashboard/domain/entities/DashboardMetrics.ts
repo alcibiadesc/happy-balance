@@ -71,7 +71,7 @@ export class DashboardMetrics {
       investments: this.investments.getValue(),
       balance: this.balance.getValue(),
       spendingRate: this.spendingRate,
-      savingsRate: this.savingsRate
+      savingsRate: this.savingsRate,
     };
   }
 }

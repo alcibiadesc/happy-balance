@@ -3,7 +3,12 @@
  * Adapter that implements the auth repository using HTTP API
  */
 
-import type { IAuthRepository, LoginCredentials, LoginResponse, PasswordChangeRequired } from '../../domain/repositories/IAuthRepository';
+import type {
+  IAuthRepository,
+  LoginCredentials,
+  LoginResponse,
+  PasswordChangeRequired,
+} from '../../domain/repositories/IAuthRepository';
 import type { User } from '../../domain/entities/User';
 import { User as UserEntity } from '../../domain/entities/User';
 import { AuthTokens, AccessToken, RefreshToken } from '../../domain/value-objects/AuthToken';
@@ -30,12 +35,12 @@ export class HttpAuthRepository implements IAuthRepository {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         username: credentials.username.value,
-        password: credentials.password
-      })
+        password: credentials.password,
+      }),
     });
 
     if (!response.ok) {
@@ -50,7 +55,7 @@ export class HttpAuthRepository implements IAuthRepository {
       return {
         requiresPasswordChange: true,
         userId: result.data.userId,
-        username: result.data.username
+        username: result.data.username,
       };
     }
 
@@ -65,10 +70,7 @@ export class HttpAuthRepository implements IAuthRepository {
 
     // Map to domain entities
     const user = this.mapToDomainUser(result.data.user);
-    const tokens = AuthTokens.create(
-      result.data.accessToken,
-      result.data.refreshToken
-    );
+    const tokens = AuthTokens.create(result.data.accessToken, result.data.refreshToken);
 
     return { user, tokens };
   }
@@ -79,8 +81,8 @@ export class HttpAuthRepository implements IAuthRepository {
         await fetch(`${API_BASE}/auth/logout`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${this.accessToken}`
-          }
+            Authorization: `Bearer ${this.accessToken}`,
+          },
         });
       } catch (error) {
         console.error('Logout error:', error);
@@ -101,9 +103,9 @@ export class HttpAuthRepository implements IAuthRepository {
     const response = await fetch(`${API_BASE}/auth/refresh`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ refreshToken })
+      body: JSON.stringify({ refreshToken }),
     });
 
     if (!response.ok) {
@@ -121,10 +123,7 @@ export class HttpAuthRepository implements IAuthRepository {
       localStorage.setItem('refreshToken', result.data.refreshToken);
     }
 
-    return AuthTokens.create(
-      result.data.accessToken,
-      result.data.refreshToken
-    );
+    return AuthTokens.create(result.data.accessToken, result.data.refreshToken);
   }
 
   async getCurrentUser(): Promise<User | null> {
@@ -135,8 +134,8 @@ export class HttpAuthRepository implements IAuthRepository {
     try {
       const response = await fetch(`${API_BASE}/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`
-        }
+          Authorization: `Bearer ${this.accessToken}`,
+        },
       });
 
       if (!response.ok) {
@@ -166,9 +165,9 @@ export class HttpAuthRepository implements IAuthRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.accessToken}`
+        Authorization: `Bearer ${this.accessToken}`,
       },
-      body: JSON.stringify({ currentPassword, newPassword })
+      body: JSON.stringify({ currentPassword, newPassword }),
     });
 
     if (!response.ok) {
@@ -177,13 +176,17 @@ export class HttpAuthRepository implements IAuthRepository {
     }
   }
 
-  async resetPasswordChange(userId: string, currentPassword: string, newPassword: string): Promise<LoginResponse> {
+  async resetPasswordChange(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE}/auth/reset-password-change`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ userId, currentPassword, newPassword })
+      body: JSON.stringify({ userId, currentPassword, newPassword }),
     });
 
     if (!response.ok) {
@@ -204,10 +207,7 @@ export class HttpAuthRepository implements IAuthRepository {
 
     // Map to domain entities
     const user = this.mapToDomainUser(result.data.user);
-    const tokens = AuthTokens.create(
-      result.data.accessToken,
-      result.data.refreshToken
-    );
+    const tokens = AuthTokens.create(result.data.accessToken, result.data.refreshToken);
 
     return { user, tokens };
   }
@@ -226,7 +226,7 @@ export class HttpAuthRepository implements IAuthRepository {
       createdBy: data.createdBy ? UserId.create(data.createdBy) : undefined,
       lastLogin: data.lastLogin ? new Date(data.lastLogin) : undefined,
       createdAt: new Date(data.createdAt),
-      updatedAt: new Date(data.updatedAt)
+      updatedAt: new Date(data.updatedAt),
     });
   }
 }

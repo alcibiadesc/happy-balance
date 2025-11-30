@@ -3,7 +3,11 @@
  * Orchestrates the login flow
  */
 
-import type { IAuthRepository, LoginResponse, PasswordChangeRequired } from '../../domain/repositories/IAuthRepository';
+import type {
+  IAuthRepository,
+  LoginResponse,
+  PasswordChangeRequired,
+} from '../../domain/repositories/IAuthRepository';
 import type { User } from '../../domain/entities/User';
 import type { AuthTokens } from '../../domain/value-objects/AuthToken';
 import { Username } from '../../domain/value-objects/Username';
@@ -28,7 +32,7 @@ export class LoginUseCase {
     // Perform login
     const result = await this.authRepository.login({
       username,
-      password: request.password
+      password: request.password,
     });
 
     return result;

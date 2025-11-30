@@ -18,7 +18,7 @@
     availablePeriods,
     loading = false,
     onNavigate,
-    onPeriodTypeChange
+    onPeriodTypeChange,
   }: Props = $props();
 
   let showDropdown = $state(false);
@@ -29,7 +29,7 @@
     { value: 'overview', label: 'General' },
     { value: 'month', label: 'Mensual' },
     { value: 'quarter', label: 'Trimestral' },
-    { value: 'year', label: 'Anual' }
+    { value: 'year', label: 'Anual' },
   ];
 
   // Generate quick navigation options based on period type
@@ -45,23 +45,23 @@
         const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
         options.push({
           offset: i,
-          label: date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+          label: date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
         });
       }
     } else if (selectedPeriodType === 'quarter') {
       for (let i = 0; i > -12; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() + (i * 3), 1);
+        const date = new Date(now.getFullYear(), now.getMonth() + i * 3, 1);
         const quarter = Math.floor(date.getMonth() / 3) + 1;
         options.push({
           offset: i,
-          label: `Q${quarter} ${date.getFullYear()}`
+          label: `Q${quarter} ${date.getFullYear()}`,
         });
       }
     } else if (selectedPeriodType === 'year') {
       for (let i = 0; i > -5; i--) {
         options.push({
           offset: i,
-          label: (now.getFullYear() + i).toString()
+          label: (now.getFullYear() + i).toString(),
         });
       }
     }
@@ -112,22 +112,13 @@
 
 <div class="period-nav">
   {#if selectedPeriodType !== 'overview'}
-    <button
-      class="nav-arrow"
-      onclick={goToPast}
-      disabled={loading}
-      title="Período anterior"
-    >
+    <button class="nav-arrow" onclick={goToPast} disabled={loading} title="Período anterior">
       <ChevronLeft size={18} />
     </button>
   {/if}
 
   <div class="period-selector" bind:this={dropdownRef}>
-    <button
-      class="current-period"
-      onclick={toggleDropdown}
-      disabled={loading}
-    >
+    <button class="current-period" onclick={toggleDropdown} disabled={loading}>
       {currentPeriod}
     </button>
 

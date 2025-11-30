@@ -4,7 +4,7 @@ import {
   METRIC_DEFINITIONS,
   SECTION_DEFINITIONS,
   type MetricType,
-  type SectionType
+  type SectionType,
 } from '$lib/config/dashboardSections';
 
 // Re-export types for convenience
@@ -31,13 +31,13 @@ export interface DashboardConfig {
 
 // Generate default config from definitions
 const DEFAULT_CONFIG: DashboardConfig = {
-  metrics: METRIC_DEFINITIONS.map(m => ({
+  metrics: METRIC_DEFINITIONS.map((m) => ({
     id: m.id,
     visible: m.defaultVisible,
     order: m.defaultOrder,
     size: 'normal' as const,
   })),
-  sections: SECTION_DEFINITIONS.map(s => ({
+  sections: SECTION_DEFINITIONS.map((s) => ({
     id: s.id,
     visible: s.defaultVisible,
     order: s.defaultOrder,
@@ -55,11 +55,11 @@ function loadConfig(): DashboardConfig {
     if (stored) {
       const parsed = JSON.parse(stored);
       return {
-        metrics: DEFAULT_CONFIG.metrics.map(defaultMetric => {
+        metrics: DEFAULT_CONFIG.metrics.map((defaultMetric) => {
           const saved = parsed.metrics?.find((m: MetricConfig) => m.id === defaultMetric.id);
           return saved ? { ...defaultMetric, ...saved } : defaultMetric;
         }),
-        sections: DEFAULT_CONFIG.sections.map(defaultSection => {
+        sections: DEFAULT_CONFIG.sections.map((defaultSection) => {
           const saved = parsed.sections?.find((s: SectionConfig) => s.id === defaultSection.id);
           return saved ? { ...defaultSection, ...saved } : defaultSection;
         }),
@@ -86,7 +86,7 @@ function createDashboardConfigStore() {
     items: T[],
     id: string,
     visible: boolean
-  ): T[] => items.map(item => item.id === id ? { ...item, visible } : item);
+  ): T[] => items.map((item) => (item.id === id ? { ...item, visible } : item));
 
   // Generic reorder function
   const reorderItems = <T extends { id: string; order: number }>(
@@ -95,8 +95,8 @@ function createDashboardConfigStore() {
     toId: string
   ): T[] => {
     const sorted = [...items].sort((a, b) => a.order - b.order);
-    const fromIndex = sorted.findIndex(item => item.id === fromId);
-    const toIndex = sorted.findIndex(item => item.id === toId);
+    const fromIndex = sorted.findIndex((item) => item.id === fromId);
+    const toIndex = sorted.findIndex((item) => item.id === toId);
 
     if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return items;
 
@@ -111,17 +111,17 @@ function createDashboardConfigStore() {
 
     // Edit mode
     toggleEditMode() {
-      update(config => ({ ...config, editMode: !config.editMode }));
+      update((config) => ({ ...config, editMode: !config.editMode }));
     },
 
     setEditMode(value: boolean) {
-      update(config => ({ ...config, editMode: value }));
+      update((config) => ({ ...config, editMode: value }));
     },
 
     // Metrics
     toggleMetric(id: MetricType) {
-      update(config => {
-        const metric = config.metrics.find(m => m.id === id);
+      update((config) => {
+        const metric = config.metrics.find((m) => m.id === id);
         const newConfig = {
           ...config,
           metrics: setItemVisibility(config.metrics, id, !metric?.visible),
@@ -132,7 +132,7 @@ function createDashboardConfigStore() {
     },
 
     showMetric(id: MetricType) {
-      update(config => {
+      update((config) => {
         const newConfig = {
           ...config,
           metrics: setItemVisibility(config.metrics, id, true),
@@ -143,7 +143,7 @@ function createDashboardConfigStore() {
     },
 
     hideMetric(id: MetricType) {
-      update(config => {
+      update((config) => {
         const newConfig = {
           ...config,
           metrics: setItemVisibility(config.metrics, id, false),
@@ -154,10 +154,10 @@ function createDashboardConfigStore() {
     },
 
     toggleMetricSize(id: MetricType) {
-      update(config => {
+      update((config) => {
         const newConfig: DashboardConfig = {
           ...config,
-          metrics: config.metrics.map(m =>
+          metrics: config.metrics.map((m) =>
             m.id === id ? { ...m, size: m.size === 'large' ? 'normal' : 'large' } : m
           ),
         };
@@ -167,7 +167,7 @@ function createDashboardConfigStore() {
     },
 
     reorderMetrics(fromId: MetricType, toId: MetricType) {
-      update(config => {
+      update((config) => {
         const newConfig = {
           ...config,
           metrics: reorderItems(config.metrics, fromId, toId),
@@ -179,8 +179,8 @@ function createDashboardConfigStore() {
 
     // Sections
     toggleSection(id: SectionType) {
-      update(config => {
-        const section = config.sections.find(s => s.id === id);
+      update((config) => {
+        const section = config.sections.find((s) => s.id === id);
         const newConfig = {
           ...config,
           sections: setItemVisibility(config.sections, id, !section?.visible),
@@ -191,7 +191,7 @@ function createDashboardConfigStore() {
     },
 
     showSection(id: SectionType) {
-      update(config => {
+      update((config) => {
         const newConfig = {
           ...config,
           sections: setItemVisibility(config.sections, id, true),
@@ -202,7 +202,7 @@ function createDashboardConfigStore() {
     },
 
     hideSection(id: SectionType) {
-      update(config => {
+      update((config) => {
         const newConfig = {
           ...config,
           sections: setItemVisibility(config.sections, id, false),
@@ -213,7 +213,7 @@ function createDashboardConfigStore() {
     },
 
     reorderSections(fromId: SectionType, toId: SectionType) {
-      update(config => {
+      update((config) => {
         const newConfig = {
           ...config,
           sections: reorderItems(config.sections, fromId, toId),
@@ -225,16 +225,19 @@ function createDashboardConfigStore() {
 
     // Legacy arrow-based reordering (kept for compatibility)
     moveMetric(id: MetricType, direction: 'up' | 'down') {
-      update(config => {
+      update((config) => {
         const metrics = [...config.metrics].sort((a, b) => a.order - b.order);
-        const index = metrics.findIndex(m => m.id === id);
+        const index = metrics.findIndex((m) => m.id === id);
 
         if (index === -1) return config;
         if (direction === 'up' && index === 0) return config;
         if (direction === 'down' && index === metrics.length - 1) return config;
 
         const swapIndex = direction === 'up' ? index - 1 : index + 1;
-        [metrics[index].order, metrics[swapIndex].order] = [metrics[swapIndex].order, metrics[index].order];
+        [metrics[index].order, metrics[swapIndex].order] = [
+          metrics[swapIndex].order,
+          metrics[index].order,
+        ];
 
         const newConfig = { ...config, metrics };
         saveConfig(newConfig);
@@ -243,16 +246,19 @@ function createDashboardConfigStore() {
     },
 
     moveSection(id: SectionType, direction: 'up' | 'down') {
-      update(config => {
+      update((config) => {
         const sections = [...config.sections].sort((a, b) => a.order - b.order);
-        const index = sections.findIndex(s => s.id === id);
+        const index = sections.findIndex((s) => s.id === id);
 
         if (index === -1) return config;
         if (direction === 'up' && index === 0) return config;
         if (direction === 'down' && index === sections.length - 1) return config;
 
         const swapIndex = direction === 'up' ? index - 1 : index + 1;
-        [sections[index].order, sections[swapIndex].order] = [sections[swapIndex].order, sections[index].order];
+        [sections[index].order, sections[swapIndex].order] = [
+          sections[swapIndex].order,
+          sections[index].order,
+        ];
 
         const newConfig = { ...config, sections };
         saveConfig(newConfig);

@@ -9,17 +9,14 @@ export interface ObservationsState {
 export const createInitialObservationsState = (): ObservationsState => ({
   editingTransactionId: null,
   editingText: '',
-  saveTimeoutId: null
+  saveTimeoutId: null,
 });
 
 export const observationsActions = {
-  startEditing: (
-    state: ObservationsState,
-    transaction: Transaction
-  ): ObservationsState => ({
+  startEditing: (state: ObservationsState, transaction: Transaction): ObservationsState => ({
     ...state,
     editingTransactionId: transaction.id,
-    editingText: transaction.observations || ''
+    editingText: transaction.observations || '',
   }),
 
   cancelEditing: (state: ObservationsState): ObservationsState => {
@@ -29,13 +26,13 @@ export const observationsActions = {
     return {
       editingTransactionId: null,
       editingText: '',
-      saveTimeoutId: null
+      saveTimeoutId: null,
     };
   },
 
   updateText: (state: ObservationsState, text: string): ObservationsState => ({
     ...state,
-    editingText: text
+    editingText: text,
   }),
 
   setSaveTimeout: (state: ObservationsState, timeoutId: number): ObservationsState => {
@@ -44,9 +41,9 @@ export const observationsActions = {
     }
     return {
       ...state,
-      saveTimeoutId: timeoutId
+      saveTimeoutId: timeoutId,
     };
-  }
+  },
 };
 
 export const createObservationsHandler = (
@@ -54,10 +51,7 @@ export const createObservationsHandler = (
 ) => {
   let saveTimeoutId: number | null = null;
 
-  const saveObservations = async (
-    transaction: Transaction,
-    text: string
-  ): Promise<boolean> => {
+  const saveObservations = async (transaction: Transaction, text: string): Promise<boolean> => {
     try {
       const trimmedText = text.trim();
       if (trimmedText === transaction.observations?.trim()) {
@@ -65,7 +59,7 @@ export const createObservationsHandler = (
       }
 
       return await updateTransaction(transaction.id, {
-        observations: trimmedText || undefined
+        observations: trimmedText || undefined,
       });
     } catch (error) {
       console.error('Error saving observations:', error);
@@ -98,6 +92,6 @@ export const createObservationsHandler = (
   return {
     saveObservations,
     saveObservationsDebounced,
-    cleanup
+    cleanup,
   };
 };

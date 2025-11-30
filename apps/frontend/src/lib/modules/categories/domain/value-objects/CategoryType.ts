@@ -2,7 +2,13 @@
  * Value Object for Category Type
  * Represents the type/classification of a category
  */
-export type CategoryTypeValue = 'income' | 'essential' | 'discretionary' | 'investment' | 'debt_payment' | 'no_compute';
+export type CategoryTypeValue =
+  | 'income'
+  | 'essential'
+  | 'discretionary'
+  | 'investment'
+  | 'debt_payment'
+  | 'no_compute';
 
 export class CategoryType {
   private constructor(private readonly value: CategoryTypeValue) {}
@@ -61,7 +67,7 @@ export class CategoryType {
       discretionary: 'discretionary',
       investment: 'investment',
       debt_payment: 'debt',
-      no_compute: 'no-compute'
+      no_compute: 'no-compute',
     };
     return iconClasses[this.value];
   }
@@ -82,7 +88,7 @@ export class CategoryType {
       discretionary: 'Discrecionales',
       investment: 'Inversiones',
       debt_payment: 'Pagos de Deuda',
-      no_compute: 'Sin Computar'
+      no_compute: 'Sin Computar',
     };
     return titles[this.value];
   }
@@ -94,7 +100,7 @@ export class CategoryType {
       discretionary: 'Gastos opcionales y deseos',
       investment: 'Ahorros e inversiones',
       debt_payment: 'Pagos de deudas y obligaciones financieras',
-      no_compute: 'Categorías que no afectan el balance'
+      no_compute: 'Categorías que no afectan el balance',
     };
     return descriptions[this.value];
   }
@@ -108,6 +114,13 @@ export class CategoryType {
   }
 
   private static isValid(type: any): type is CategoryTypeValue {
-    return ['income', 'essential', 'discretionary', 'investment', 'debt_payment', 'no_compute'].includes(type);
+    return [
+      'income',
+      'essential',
+      'discretionary',
+      'investment',
+      'debt_payment',
+      'no_compute',
+    ].includes(type);
   }
 }

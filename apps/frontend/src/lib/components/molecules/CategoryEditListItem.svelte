@@ -29,7 +29,7 @@
     onCancel,
     onIconClick,
     onColorSelect,
-    showIconPicker
+    showIconPicker,
   }: Props = $props();
 </script>
 

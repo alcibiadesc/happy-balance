@@ -1,37 +1,37 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
-  import { browser } from "$app/environment";
-  import "$lib/modules/transactions/presentation/styles/transactions-page.css";
+  import { onMount, onDestroy } from 'svelte';
+  import { browser } from '$app/environment';
+  import '$lib/modules/transactions/presentation/styles/transactions-page.css';
 
   // Components
-  import ConfirmModal from "$lib/components/organisms/ConfirmModal.svelte";
-  import AddTransactionModal from "$lib/components/organisms/AddTransactionModal.svelte";
-  import SmartCategorizationModal from "$lib/components/organisms/SmartCategorizationModal.svelte";
-  import CategorySelectionModal from "$lib/components/organisms/CategorySelectionModal.svelte";
-  import SplitTransactionModal from "$lib/components/organisms/SplitTransactionModal.svelte";
-  import PeriodStats from "$lib/components/molecules/PeriodStats.svelte";
-  import DateSelector from "$lib/components/molecules/DateSelector.svelte";
-  import SearchBar from "$lib/components/molecules/SearchBar.svelte";
-  import TransactionRow from "$lib/components/organisms/TransactionRow.svelte";
-  import FiltersPanel from "$lib/components/organisms/FiltersPanel.svelte";
-  import TransactionGroup from "$lib/components/organisms/TransactionGroup.svelte";
+  import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
+  import AddTransactionModal from '$lib/components/organisms/AddTransactionModal.svelte';
+  import SmartCategorizationModal from '$lib/components/organisms/SmartCategorizationModal.svelte';
+  import CategorySelectionModal from '$lib/components/organisms/CategorySelectionModal.svelte';
+  import SplitTransactionModal from '$lib/components/organisms/SplitTransactionModal.svelte';
+  import PeriodStats from '$lib/components/molecules/PeriodStats.svelte';
+  import DateSelector from '$lib/components/molecules/DateSelector.svelte';
+  import SearchBar from '$lib/components/molecules/SearchBar.svelte';
+  import TransactionRow from '$lib/components/organisms/TransactionRow.svelte';
+  import FiltersPanel from '$lib/components/organisms/FiltersPanel.svelte';
+  import TransactionGroup from '$lib/components/organisms/TransactionGroup.svelte';
 
   // Services and utilities
-  import { createTransactionsPageStore } from "$lib/modules/transactions/infrastructure/stores/transactionsPageStore.svelte";
-  import { calculatePeriodStats } from "$lib/modules/transactions/domain/services/PeriodStatsCalculator";
-  import { createDateNavigationService } from "$lib/modules/transactions/domain/services/DateNavigationService";
-  import { filterTransactions } from "$lib/modules/transactions/application/services/FilterService";
+  import { createTransactionsPageStore } from '$lib/modules/transactions/infrastructure/stores/transactionsPageStore.svelte';
+  import { calculatePeriodStats } from '$lib/modules/transactions/domain/services/PeriodStatsCalculator';
+  import { createDateNavigationService } from '$lib/modules/transactions/domain/services/DateNavigationService';
+  import { filterTransactions } from '$lib/modules/transactions/application/services/FilterService';
   import {
     groupTransactionsByDate,
     formatDate,
-  } from "$lib/modules/transactions/application/services/GroupingService";
+  } from '$lib/modules/transactions/application/services/GroupingService';
   import {
     findMatchingTransactions,
     getCategoryById,
     formatAmount,
-  } from "$lib/modules/transactions/application/services/CategoryService";
-  import { createObservationsHandler } from "$lib/modules/transactions/application/services/ObservationsService";
-  import { TransactionOperationsService } from "$lib/modules/transactions/application/services/TransactionOperationsService";
+  } from '$lib/modules/transactions/application/services/CategoryService';
+  import { createObservationsHandler } from '$lib/modules/transactions/application/services/ObservationsService';
+  import { TransactionOperationsService } from '$lib/modules/transactions/application/services/TransactionOperationsService';
 
   // Icons
   import {
@@ -51,59 +51,44 @@
     Minimize2,
     Maximize2,
     EyeOff,
-  } from "lucide-svelte";
+  } from 'lucide-svelte';
 
   // Stores
   import {
     apiTransactions,
     apiCategories,
     apiSelectedTransactions,
-  } from "$lib/stores/api-transactions";
-  import type { Transaction, Category } from "$lib/types/transaction";
-  import { t } from "$lib/stores/i18n";
-  import {
-    exportTransactionsToCSV,
-    downloadCSV,
-    generateFilename,
-  } from "$lib/utils/csv-export";
+  } from '$lib/stores/api-transactions';
+  import type { Transaction, Category } from '$lib/types/transaction';
+  import { t } from '$lib/stores/i18n';
+  import { exportTransactionsToCSV, downloadCSV, generateFilename } from '$lib/utils/csv-export';
 
   // Initialize page store
   const pageStore = createTransactionsPageStore();
   const dateNavigationService = createDateNavigationService();
-  const transactionOps = new TransactionOperationsService(
-    apiTransactions,
-    (id) => getCategoryById($apiCategories, id),
+  const transactionOps = new TransactionOperationsService(apiTransactions, (id) =>
+    getCategoryById($apiCategories, id)
   );
   const observationsHandler = createObservationsHandler((id, updates) =>
-    apiTransactions.update(id, updates),
+    apiTransactions.update(id, updates)
   );
 
   // Reactive computations
   const filteredTransactions = $derived(
-    filterTransactions($apiTransactions, pageStore.filterState, $apiCategories),
+    filterTransactions($apiTransactions, pageStore.filterState, $apiCategories)
   );
 
-  const groupedTransactions = $derived(
-    groupTransactionsByDate(filteredTransactions),
-  );
+  const groupedTransactions = $derived(groupTransactionsByDate(filteredTransactions));
 
-  const periodStats = $derived(
-    calculatePeriodStats(filteredTransactions, $apiCategories),
-  );
+  const periodStats = $derived(calculatePeriodStats(filteredTransactions, $apiCategories));
 
   // Period navigation
   function previousPeriod() {
-    pageStore.setPeriod(
-      dateNavigationService.previousPeriod(
-        pageStore.filterState.selectedPeriod,
-      ),
-    );
+    pageStore.setPeriod(dateNavigationService.previousPeriod(pageStore.filterState.selectedPeriod));
   }
 
   function nextPeriod() {
-    pageStore.setPeriod(
-      dateNavigationService.nextPeriod(pageStore.filterState.selectedPeriod),
-    );
+    pageStore.setPeriod(dateNavigationService.nextPeriod(pageStore.filterState.selectedPeriod));
   }
 
   // Transaction operations
@@ -144,16 +129,13 @@
   }
 
   async function addTransaction(
-    transaction: Omit<
-      Transaction,
-      "id" | "createdAt" | "updatedAt" | "status" | "tags" | "hash"
-    >,
+    transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>
   ) {
     try {
       await transactionOps.add(transaction);
       pageStore.closeAddModal();
     } catch (error) {
-      console.error("Failed to add transaction:", error);
+      console.error('Failed to add transaction:', error);
     }
   }
 
@@ -163,24 +145,17 @@
     if (!transaction) return;
 
     try {
-      if (!categoryId || categoryId === "") {
+      if (!categoryId || categoryId === '') {
         await transactionOps.categorize(transaction, null, false);
         pageStore.closeCategoryModal();
         return;
       }
 
-      const matchingTransactions = await findMatchingTransactions(
-        transaction,
-        $apiTransactions,
-      );
+      const matchingTransactions = await findMatchingTransactions(transaction, $apiTransactions);
       if (matchingTransactions.length > 0) {
         const category = getCategoryById($apiCategories, categoryId);
         if (category) {
-          pageStore.openSmartCategorization(
-            transaction,
-            category,
-            matchingTransactions,
-          );
+          pageStore.openSmartCategorization(transaction, category, matchingTransactions);
         }
       } else {
         await transactionOps.categorize(transaction, categoryId, false);
@@ -188,7 +163,7 @@
 
       pageStore.closeCategoryModal();
     } catch (error) {
-      console.error("Failed to categorize transaction:", error);
+      console.error('Failed to categorize transaction:', error);
       pageStore.closeCategoryModal();
     }
   }
@@ -208,10 +183,7 @@
 
     // Apply to selected related transactions if pattern scope
     if (scope === 'pattern' && selectedTransactionIds && selectedTransactionIds.length > 0) {
-      await transactionOps.categorizeSpecificTransactions(
-        selectedTransactionIds,
-        category.id
-      );
+      await transactionOps.categorizeSpecificTransactions(selectedTransactionIds, category.id);
     }
 
     // TODO: Handle applyToFuture flag to save categorization rule
@@ -236,7 +208,7 @@
   function saveObservationsDebounced(transaction: Transaction) {
     const text = pageStore.observationsState.editingText;
     observationsHandler.saveObservationsDebounced(transaction, text, () =>
-      pageStore.cancelEditingObservations(),
+      pageStore.cancelEditingObservations()
     );
   }
 
@@ -272,18 +244,15 @@
     let dateRange: { start: string; end: string } | undefined;
 
     if (!pageStore.filterState.showAllTransactions) {
-      if (
-        pageStore.filterState.dateRangeMode === "month" &&
-        pageStore.filterState.selectedPeriod
-      ) {
-        const date = new Date(pageStore.filterState.selectedPeriod + "-01");
+      if (pageStore.filterState.dateRangeMode === 'month' && pageStore.filterState.selectedPeriod) {
+        const date = new Date(pageStore.filterState.selectedPeriod + '-01');
         const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
         dateRange = {
-          start: date.toISOString().split("T")[0],
-          end: lastDay.toISOString().split("T")[0],
+          start: date.toISOString().split('T')[0],
+          end: lastDay.toISOString().split('T')[0],
         };
       } else if (
-        pageStore.filterState.dateRangeMode === "custom" &&
+        pageStore.filterState.dateRangeMode === 'custom' &&
         pageStore.filterState.customStartDate &&
         pageStore.filterState.customEndDate
       ) {
@@ -304,17 +273,11 @@
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
 
-    if (
-      pageStore.isShowingCategoryFilterDropdown &&
-      !target.closest(".category-selector")
-    ) {
+    if (pageStore.isShowingCategoryFilterDropdown && !target.closest('.category-selector')) {
       pageStore.closeCategoryFilterDropdown();
     }
 
-    if (
-      pageStore.isShowingDatePicker &&
-      !target.closest(".date-selector-section")
-    ) {
+    if (pageStore.isShowingDatePicker && !target.closest('.date-selector-section')) {
       pageStore.closeDatePicker();
     }
   }
@@ -322,18 +285,15 @@
   // Lifecycle
   onMount(async () => {
     if (browser) {
-      document.addEventListener("click", handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
       // Load transactions and categories
-      await Promise.all([
-        apiTransactions.load(),
-        apiCategories.load()
-      ]);
+      await Promise.all([apiTransactions.load(), apiCategories.load()]);
     }
   });
 
   onDestroy(() => {
     if (browser) {
-      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
       observationsHandler.cleanup();
     }
   });
@@ -353,9 +313,7 @@
       <DateSelector
         bind:selectedPeriod={pageStore.filterState.selectedPeriod}
         bind:showAllTransactions={pageStore.filterState.showAllTransactions}
-        bind:showHiddenTransactions={
-          pageStore.filterState.showHiddenTransactions
-        }
+        bind:showHiddenTransactions={pageStore.filterState.showHiddenTransactions}
         bind:dateRangeMode={pageStore.filterState.dateRangeMode}
         bind:customStartDate={pageStore.filterState.customStartDate}
         bind:customEndDate={pageStore.filterState.customEndDate}
@@ -375,14 +333,14 @@
       <SearchBar
         value={pageStore.filterState.searchQuery}
         onInput={(value) => pageStore.setSearchQuery(value)}
-        onClear={() => pageStore.setSearchQuery("")}
+        onClear={() => pageStore.setSearchQuery('')}
       />
 
       <!-- Action buttons -->
       <div class="toolbar-actions">
         {#if pageStore.selectionState.isSelectionMode}
           <button class="toolbar-btn" onclick={selectAll}>
-            {$t("transactions.select_all")}
+            {$t('transactions.select_all')}
           </button>
           <button class="toolbar-btn danger" onclick={deleteSelected}>
             <Trash2 size={14} />
@@ -391,24 +349,19 @@
             <EyeOff size={14} />
           </button>
           <button class="toolbar-btn" onclick={clearSelection}>
-            {$t("transactions.cancel")}
+            {$t('transactions.cancel')}
           </button>
         {:else}
           {#if groupedTransactions.length > 1}
             <button
               class="toolbar-btn icon-only"
               onclick={pageStore.groupingState.allExpanded
-                ? () =>
-                    pageStore.collapseAll(
-                      groupedTransactions.map((g) => g.date),
-                    )
+                ? () => pageStore.collapseAll(groupedTransactions.map((g) => g.date))
                 : () => pageStore.expandAll()}
-              title={pageStore.groupingState.allExpanded
-                ? "Colapsar todo"
-                : "Expandir todo"}
+              title={pageStore.groupingState.allExpanded ? 'Colapsar todo' : 'Expandir todo'}
               aria-label={pageStore.groupingState.allExpanded
-                ? "Colapsar grupos"
-                : "Expandir grupos"}
+                ? 'Colapsar grupos'
+                : 'Expandir grupos'}
             >
               {#if pageStore.groupingState.allExpanded}
                 <Minimize2 size={14} />
@@ -422,27 +375,27 @@
           <button
             class="toolbar-btn"
             onclick={() => pageStore.toggleSelectionMode()}
-            aria-label={$t("accessibility.select_transactions")}
+            aria-label={$t('accessibility.select_transactions')}
           >
-            {$t("transactions.select")}
+            {$t('transactions.select')}
           </button>
           <button
             class="toolbar-btn"
             class:active={pageStore.modalState.showFilters}
-            class:has-filters={pageStore.filterState.selectedCategories.length >
-              0 || pageStore.filterState.transactionTypeFilter !== "all"}
+            class:has-filters={pageStore.filterState.selectedCategories.length > 0 ||
+              pageStore.filterState.transactionTypeFilter !== 'all'}
             onclick={() => pageStore.toggleFilters()}
-            aria-label={$t("accessibility.show_filters")}
+            aria-label={$t('accessibility.show_filters')}
           >
             <Filter size={14} />
-            {#if pageStore.filterState.selectedCategories.length > 0 || pageStore.filterState.transactionTypeFilter !== "all"}
+            {#if pageStore.filterState.selectedCategories.length > 0 || pageStore.filterState.transactionTypeFilter !== 'all'}
               <span class="filter-badge"></span>
             {/if}
           </button>
           <button
             class="toolbar-btn"
             onclick={downloadTransactionsCSV}
-            aria-label={$t("accessibility.export_transactions")}
+            aria-label={$t('accessibility.export_transactions')}
           >
             <Download size={14} />
           </button>
@@ -457,8 +410,7 @@
       selectedPrimaryTypes={pageStore.filterState.selectedPrimaryTypes}
       showUncategorized={pageStore.filterState.showUncategorized}
       categories={$apiCategories}
-      onTransactionTypeFilter={(type) =>
-        pageStore.setTransactionTypeFilter(type)}
+      onTransactionTypeFilter={(type) => pageStore.setTransactionTypeFilter(type)}
       onToggleCategory={(id) => pageStore.toggleCategory(id)}
       onTogglePrimaryType={(type) => pageStore.togglePrimaryType(type)}
       onToggleShowUncategorized={() => pageStore.toggleShowUncategorized()}
@@ -483,14 +435,12 @@
         onCategorize={(transaction) => pageStore.openCategoryModal(transaction)}
         onToggleHide={(transaction) => toggleHideTransaction(transaction)}
         onDelete={(id) => deleteTransaction(id)}
-        onEditObservations={(transaction) =>
-          startEditingObservations(transaction)}
-        onUpdateObservationsText={(text) =>
-          pageStore.updateObservationsText(text)}
+        onEditObservations={(transaction) => startEditingObservations(transaction)}
+        onUpdateObservationsText={(text) => pageStore.updateObservationsText(text)}
         onOpenSplitModal={(transaction) => pageStore.openSplitModal(transaction)}
         onSaveObservations={async () => {
           const transaction = group.items.find(
-            (t) => t.id === pageStore.observationsState.editingTransactionId,
+            (t) => t.id === pageStore.observationsState.editingTransactionId
           );
           if (transaction) await saveObservations(transaction);
         }}
@@ -537,12 +487,12 @@
 
 <ConfirmModal
   bind:isOpen={pageStore.modalState.showDeleteSelectedModal}
-  title={$t("transactions.delete_selected_title")}
-  message={$t("transactions.delete_selected_message", {
+  title={$t('transactions.delete_selected_title')}
+  message={$t('transactions.delete_selected_message', {
     count: $apiSelectedTransactions.size,
   })}
-  confirmText={$t("transactions.delete_all")}
-  cancelText={$t("common.cancel")}
+  confirmText={$t('transactions.delete_all')}
+  cancelText={$t('common.cancel')}
   type="danger"
   onConfirm={confirmDeleteSelected}
   onCancel={() => pageStore.closeDeleteSelectedModal()}
@@ -550,10 +500,10 @@
 
 <ConfirmModal
   bind:isOpen={pageStore.modalState.showDeleteSingleModal}
-  title={$t("transactions.delete_single_title")}
-  message={$t("transactions.delete_single_message")}
-  confirmText={$t("common.delete")}
-  cancelText={$t("common.cancel")}
+  title={$t('transactions.delete_single_title')}
+  message={$t('transactions.delete_single_message')}
+  confirmText={$t('common.delete')}
+  cancelText={$t('common.cancel')}
   type="danger"
   onConfirm={confirmDeleteSingle}
   onCancel={() => pageStore.closeDeleteSingleModal()}

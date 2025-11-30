@@ -1,19 +1,19 @@
-import { writable, derived } from "svelte/store";
-import type { Transaction, Category } from "$lib/types/transaction";
-import { authStore } from "$lib/modules/auth/presentation/stores/authStore.svelte";
-import { getApiUrl } from "$lib/utils/api-url";
+import { writable, derived } from 'svelte/store';
+import type { Transaction, Category } from '$lib/types/transaction';
+import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
+import { getApiUrl } from '$lib/utils/api-url';
 
 const API_BASE = getApiUrl();
 
 // Helper function to create authenticated headers
 function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   };
 
   const token = authStore.getAccessToken();
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   return headers;
@@ -23,20 +23,20 @@ function getAuthHeaders(): Record<string, string> {
 function createApiTransactionStore() {
   // Start with fake data for debugging
   const fakeTransaction: Transaction = {
-    id: "fake-1",
+    id: 'fake-1',
     amount: -50,
-    date: "2025-01-15",
-    merchant: "Test Store",
-    description: "Test transaction",
-    createdAt: new Date("2025-01-15T00:00:00Z"),
-    time: "12:00:00",
+    date: '2025-01-15',
+    merchant: 'Test Store',
+    description: 'Test transaction',
+    createdAt: new Date('2025-01-15T00:00:00Z'),
+    time: '12:00:00',
     categoryId: undefined,
     category: undefined,
-    status: "completed" as const,
+    status: 'completed' as const,
     tags: [],
     patternHash: undefined,
     hash: undefined,
-    updatedAt: new Date("2025-01-15T00:00:00Z"),
+    updatedAt: new Date('2025-01-15T00:00:00Z'),
     hidden: false,
     observations: undefined,
   };
@@ -51,12 +51,9 @@ function createApiTransactionStore() {
       try {
         // Always load ALL transactions including hidden ones
         // The frontend will handle filtering based on user preference
-        const response = await fetch(
-          `${API_BASE}/transactions?includeHidden=true`,
-          {
-            headers: getAuthHeaders(),
-          }
-        );
+        const response = await fetch(`${API_BASE}/transactions?includeHidden=true`, {
+          headers: getAuthHeaders(),
+        });
         if (!response.ok) {
           throw new Error(`Failed to load transactions: ${response.status}`);
         }
@@ -65,38 +62,36 @@ function createApiTransactionStore() {
         if (result.success && result.data.transactions) {
           const transactions = result.data.transactions
             .map(mapApiToTransaction)
-            .filter(
-              (t: Transaction | undefined): t is Transaction => t !== undefined,
-            );
+            .filter((t: Transaction | undefined): t is Transaction => t !== undefined);
           set(transactions);
         } else {
           set([]);
         }
       } catch (error) {
-        console.error("❌ Failed to load transactions from API:", error);
+        console.error('❌ Failed to load transactions from API:', error);
         set([]);
       }
     },
 
     // Add new transaction
-    async add(transaction: Omit<Transaction, "id" | "createdAt">) {
+    async add(transaction: Omit<Transaction, 'id' | 'createdAt'>) {
       try {
         const response = await fetch(`${API_BASE}/transactions`, {
-          method: "POST",
+          method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify({
             amount: Math.abs(transaction.amount),
-            currency: "EUR", // Default currency
-            date: transaction.date.split("T")[0], // Format as YYYY-MM-DD
+            currency: 'EUR', // Default currency
+            date: transaction.date.split('T')[0], // Format as YYYY-MM-DD
             merchant: transaction.merchant,
-            type: transaction.amount < 0 ? "EXPENSE" : "INCOME",
-            description: transaction.description || "",
+            type: transaction.amount < 0 ? 'EXPENSE' : 'INCOME',
+            description: transaction.description || '',
           }),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to create transaction");
+          throw new Error(error.error || 'Failed to create transaction');
         }
 
         const result = await response.json();
@@ -106,7 +101,7 @@ function createApiTransactionStore() {
           return newTransaction;
         }
       } catch (error) {
-        console.error("Failed to add transaction:", error);
+        console.error('Failed to add transaction:', error);
         throw error;
       }
     },
@@ -127,8 +122,7 @@ function createApiTransactionStore() {
         // Only update fields that are explicitly provided (not undefined)
         Object.keys(updates).forEach((key) => {
           if (updates[key as keyof Transaction] !== undefined) {
-            (updatedTransaction as any)[key] =
-              updates[key as keyof Transaction];
+            (updatedTransaction as any)[key] = updates[key as keyof Transaction];
           }
         });
 
@@ -145,23 +139,24 @@ function createApiTransactionStore() {
         // Allow null to be sent for categoryId to remove category
         if ('categoryId' in updates) payload.categoryId = updates.categoryId;
         if (updates.observations !== undefined) payload.observations = updates.observations;
-        if (updates.splitPercentage !== undefined) payload.splitPercentage = updates.splitPercentage;
+        if (updates.splitPercentage !== undefined)
+          payload.splitPercentage = updates.splitPercentage;
 
         // If amount is being updated, handle the type change
         if (updates.amount !== undefined) {
           payload.amount = Math.abs(updates.amount);
-          payload.type = updates.amount < 0 ? "EXPENSE" : "INCOME";
+          payload.type = updates.amount < 0 ? 'EXPENSE' : 'INCOME';
         }
 
         const response = await fetch(`${API_BASE}/transactions/${id}`, {
-          method: "PUT",
+          method: 'PUT',
           headers: getAuthHeaders(),
           body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to update transaction");
+          throw new Error(error.error || 'Failed to update transaction');
         }
 
         const result = await response.json();
@@ -171,22 +166,17 @@ function createApiTransactionStore() {
         update((transactions) =>
           transactions
             .map((t) => (t.id === id ? updatedTransaction : t))
-            .filter(
-              (t: Transaction | undefined): t is Transaction => t !== undefined,
-            ),
+            .filter((t: Transaction | undefined): t is Transaction => t !== undefined)
         );
       } catch (error) {
-        console.error("Failed to update transaction:", error);
+        console.error('Failed to update transaction:', error);
 
         // Rollback on error
         if (originalTransaction) {
           update((transactions) =>
             transactions
               .map((t) => (t.id === id ? originalTransaction : t))
-              .filter(
-                (t: Transaction | undefined): t is Transaction =>
-                  t !== undefined,
-              ),
+              .filter((t: Transaction | undefined): t is Transaction => t !== undefined)
           );
         }
 
@@ -198,18 +188,18 @@ function createApiTransactionStore() {
     async delete(id: string) {
       try {
         const response = await fetch(`${API_BASE}/transactions/${id}`, {
-          method: "DELETE",
+          method: 'DELETE',
           headers: getAuthHeaders(),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to delete transaction");
+          throw new Error(error.error || 'Failed to delete transaction');
         }
 
         update((transactions) => transactions.filter((t) => t.id !== id));
       } catch (error) {
-        console.error("Failed to delete transaction:", error);
+        console.error('Failed to delete transaction:', error);
         throw error;
       }
     },
@@ -223,7 +213,7 @@ function createApiTransactionStore() {
           await this.update(id, updates);
         }
       } catch (error) {
-        console.error("Failed to bulk update transactions:", error);
+        console.error('Failed to bulk update transactions:', error);
         throw error;
       }
     },
@@ -236,26 +226,23 @@ function createApiTransactionStore() {
         applyToAll?: boolean;
         applyToFuture?: boolean;
         createPattern?: boolean;
-      } = {},
+      } = {}
     ) {
       try {
-        const response = await fetch(
-          `${API_BASE}/transactions/${transactionId}/categorize`,
-          {
-            method: "POST",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({
-              categoryId,
-              applyToAll: options.applyToAll || false,
-              applyToFuture: options.applyToFuture ?? true,
-              createPattern: options.createPattern ?? true,
-            }),
-          },
-        );
+        const response = await fetch(`${API_BASE}/transactions/${transactionId}/categorize`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            categoryId,
+            applyToAll: options.applyToAll || false,
+            applyToFuture: options.applyToFuture ?? true,
+            createPattern: options.createPattern ?? true,
+          }),
+        });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to categorize transaction");
+          throw new Error(error.error || 'Failed to categorize transaction');
         }
 
         const result = await response.json();
@@ -267,7 +254,7 @@ function createApiTransactionStore() {
 
         return result;
       } catch (error) {
-        console.error("Failed to smart categorize:", error);
+        console.error('Failed to smart categorize:', error);
         throw error;
       }
     },
@@ -287,38 +274,35 @@ function createApiTransactionStore() {
         duplicateDetectionEnabled?: boolean;
         skipDuplicates?: boolean;
         autoCategorizationEnabled?: boolean;
-      } = {},
+      } = {}
     ) {
       try {
         const formData = new FormData();
-        formData.append("file", file);
-        formData.append("currency", options.currency || "EUR");
+        formData.append('file', file);
+        formData.append('currency', options.currency || 'EUR');
         formData.append(
-          "duplicateDetectionEnabled",
-          String(options.duplicateDetectionEnabled ?? true),
+          'duplicateDetectionEnabled',
+          String(options.duplicateDetectionEnabled ?? true)
         );
+        formData.append('skipDuplicates', String(options.skipDuplicates ?? true));
         formData.append(
-          "skipDuplicates",
-          String(options.skipDuplicates ?? true),
-        );
-        formData.append(
-          "autoCategorizationEnabled",
-          String(options.autoCategorizationEnabled ?? true),
+          'autoCategorizationEnabled',
+          String(options.autoCategorizationEnabled ?? true)
         );
 
         const authHeaders = getAuthHeaders();
         // Remove Content-Type for FormData - browser will set it automatically with boundary
-        delete authHeaders["Content-Type"];
+        delete authHeaders['Content-Type'];
 
         const response = await fetch(`${API_BASE}/import/csv`, {
-          method: "POST",
+          method: 'POST',
           headers: authHeaders,
           body: formData,
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to import file");
+          throw new Error(error.error || 'Failed to import file');
         }
 
         const result = await response.json();
@@ -328,7 +312,7 @@ function createApiTransactionStore() {
 
         return result.data;
       } catch (error) {
-        console.error("Failed to import file:", error);
+        console.error('Failed to import file:', error);
         throw error;
       }
     },
@@ -340,25 +324,25 @@ function createApiTransactionStore() {
         merchant: string;
         amount: number;
         currency?: string;
-      }>,
+      }>
     ) {
       try {
         const response = await fetch(`${API_BASE}/import/generate-hashes`, {
-          method: "POST",
+          method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify({ transactions }),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to generate hashes");
+          throw new Error(error.error || 'Failed to generate hashes');
         }
 
         const result = await response.json();
 
         return result.data;
       } catch (error) {
-        console.error("❌ Frontend: Failed to generate hashes:", error);
+        console.error('❌ Frontend: Failed to generate hashes:', error);
         throw error;
       }
     },
@@ -367,21 +351,21 @@ function createApiTransactionStore() {
     async checkDuplicates(hashes: string[]) {
       try {
         const response = await fetch(`${API_BASE}/import/check-duplicates`, {
-          method: "POST",
+          method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify({ hashes }),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to check duplicates");
+          throw new Error(error.error || 'Failed to check duplicates');
         }
 
         const result = await response.json();
 
         return result.data;
       } catch (error) {
-        console.error("❌ Frontend: Failed to check duplicates:", error);
+        console.error('❌ Frontend: Failed to check duplicates:', error);
         throw error;
       }
     },
@@ -394,30 +378,26 @@ function createApiTransactionStore() {
             hash: tx.hash,
             date: tx.date,
             merchant:
-              tx.partner && tx.partner.trim().length >= 2
-                ? tx.partner.trim()
-                : "Unknown Merchant",
+              tx.partner && tx.partner.trim().length >= 2 ? tx.partner.trim() : 'Unknown Merchant',
             amount: tx.amount,
-            description: tx.description || "",
-            currency: "EUR",
+            description: tx.description || '',
+            currency: 'EUR',
           })),
-          currency: "EUR",
+          currency: 'EUR',
           duplicateDetectionEnabled: true,
           skipDuplicates: true,
           autoCategorizationEnabled: true,
         };
 
         const response = await fetch(`${API_BASE}/import/selected`, {
-          method: "POST",
+          method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(
-            error.error || "Failed to import selected transactions",
-          );
+          throw new Error(error.error || 'Failed to import selected transactions');
         }
 
         const result = await response.json();
@@ -427,34 +407,31 @@ function createApiTransactionStore() {
 
         return result.data;
       } catch (error) {
-        console.error("Failed to import selected transactions:", error);
+        console.error('Failed to import selected transactions:', error);
         throw error;
       }
     },
 
     // Get statistics
-    async getStats(startDate?: string, endDate?: string, currency = "EUR") {
+    async getStats(startDate?: string, endDate?: string, currency = 'EUR') {
       try {
         const params = new URLSearchParams({
-          startDate: startDate || "2020-01-01",
-          endDate: endDate || "2030-12-31",
+          startDate: startDate || '2020-01-01',
+          endDate: endDate || '2030-12-31',
           currency,
         });
 
-        const response = await fetch(
-          `${API_BASE}/transactions/statistics?${params}`,
-          {
-            headers: getAuthHeaders(),
-          }
-        );
+        const response = await fetch(`${API_BASE}/transactions/statistics?${params}`, {
+          headers: getAuthHeaders(),
+        });
         if (!response.ok) {
-          throw new Error("Failed to get statistics");
+          throw new Error('Failed to get statistics');
         }
 
         const result = await response.json();
         return result.data;
       } catch (error) {
-        console.error("Failed to get statistics:", error);
+        console.error('Failed to get statistics:', error);
         return {
           totalIncome: 0,
           totalExpenses: 0,
@@ -485,13 +462,13 @@ function createApiTransactionStore() {
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to find potential reimbursements");
+          throw new Error(error.error || 'Failed to find potential reimbursements');
         }
 
         const result = await response.json();
         return result.data || [];
       } catch (error) {
-        console.error("Failed to find potential reimbursements:", error);
+        console.error('Failed to find potential reimbursements:', error);
         throw error;
       }
     },
@@ -503,27 +480,24 @@ function createApiTransactionStore() {
       splitPercentage: number
     ) {
       try {
-        const response = await fetch(
-          `${API_BASE}/transactions/${sourceTransactionId}/link-split`,
-          {
-            method: "POST",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({
-              targetTransactionId,
-              splitPercentage,
-            }),
-          }
-        );
+        const response = await fetch(`${API_BASE}/transactions/${sourceTransactionId}/link-split`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            targetTransactionId,
+            splitPercentage,
+          }),
+        });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to link split transaction");
+          throw new Error(error.error || 'Failed to link split transaction');
         }
 
         // Reload transactions to get updated data
         await this.load();
       } catch (error) {
-        console.error("Failed to link split transaction:", error);
+        console.error('Failed to link split transaction:', error);
         throw error;
       }
     },
@@ -533,7 +507,7 @@ function createApiTransactionStore() {
       try {
         await this.update(transactionId, { splitPercentage });
       } catch (error) {
-        console.error("Failed to update split percentage:", error);
+        console.error('Failed to update split percentage:', error);
         throw error;
       }
     },
@@ -541,23 +515,20 @@ function createApiTransactionStore() {
     // Unlink a split transaction
     async unlinkSplitTransaction(transactionId: string) {
       try {
-        const response = await fetch(
-          `${API_BASE}/transactions/${transactionId}/unlink-split`,
-          {
-            method: "DELETE",
-            headers: getAuthHeaders(),
-          }
-        );
+        const response = await fetch(`${API_BASE}/transactions/${transactionId}/unlink-split`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to unlink split transaction");
+          throw new Error(error.error || 'Failed to unlink split transaction');
         }
 
         // Reload transactions to get updated data
         await this.load();
       } catch (error) {
-        console.error("Failed to unlink split transaction:", error);
+        console.error('Failed to unlink split transaction:', error);
         throw error;
       }
     },
@@ -570,8 +541,8 @@ function mapApiToCategory(apiCategory: any): Category {
     id: apiCategory.id,
     name: apiCategory.name,
     type: apiCategory.type,
-    color: apiCategory.color || "#3B82F6",
-    icon: apiCategory.icon || "💰",
+    color: apiCategory.color || '#3B82F6',
+    icon: apiCategory.icon || '💰',
     annualBudget: apiCategory.annualBudget || 0, // Now properly mapping from API
   };
 }
@@ -584,17 +555,14 @@ function mapApiToTransaction(apiTransaction: any): Transaction {
     time: new Date(apiTransaction.createdAt).toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false
+      hour12: false,
     }),
     merchant: apiTransaction.merchant,
-    description: apiTransaction.description || "",
-    amount:
-      apiTransaction.type === "EXPENSE"
-        ? -apiTransaction.amount
-        : apiTransaction.amount,
+    description: apiTransaction.description || '',
+    amount: apiTransaction.type === 'EXPENSE' ? -apiTransaction.amount : apiTransaction.amount,
     categoryId: apiTransaction.categoryId,
     category: undefined, // Will be populated separately if needed
-    status: "completed" as const,
+    status: 'completed' as const,
     tags: [],
     patternHash: undefined,
     hash: apiTransaction.hash,
@@ -630,32 +598,32 @@ function createApiCategoryStore() {
           const categories = result.data.map(mapApiToCategory);
           set(categories);
         } else {
-          console.warn("No categories found, setting empty array");
+          console.warn('No categories found, setting empty array');
           set([]);
         }
       } catch (error) {
-        console.error("❌ Failed to load categories from API:", error);
+        console.error('❌ Failed to load categories from API:', error);
         set([]);
       }
     },
 
-    async add(category: Omit<Category, "id">) {
+    async add(category: Omit<Category, 'id'>) {
       try {
         const response = await fetch(`${API_BASE}/categories`, {
-          method: "POST",
+          method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify({
             name: category.name,
             type: category.type,
-            color: category.color || "#3B82F6",
-            icon: category.icon || "💰",
+            color: category.color || '#3B82F6',
+            icon: category.icon || '💰',
             annualBudget: category.annualBudget || 0,
           }),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to create category");
+          throw new Error(error.error || 'Failed to create category');
         }
 
         const result = await response.json();
@@ -665,7 +633,7 @@ function createApiCategoryStore() {
           return newCategory;
         }
       } catch (error) {
-        console.error("Failed to add category:", error);
+        console.error('Failed to add category:', error);
         throw error;
       }
     },
@@ -673,25 +641,23 @@ function createApiCategoryStore() {
     async update(id: string, updates: Partial<Category>) {
       try {
         const response = await fetch(`${API_BASE}/categories/${id}`, {
-          method: "PUT",
+          method: 'PUT',
           headers: getAuthHeaders(),
           body: JSON.stringify(updates),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to update category");
+          throw new Error(error.error || 'Failed to update category');
         }
 
         const result = await response.json();
         if (result.success) {
           const updatedCategory = mapApiToCategory(result.data);
-          update((categories) =>
-            categories.map((c) => (c.id === id ? updatedCategory : c)),
-          );
+          update((categories) => categories.map((c) => (c.id === id ? updatedCategory : c)));
         }
       } catch (error) {
-        console.error("Failed to update category:", error);
+        console.error('Failed to update category:', error);
         throw error;
       }
     },
@@ -699,18 +665,18 @@ function createApiCategoryStore() {
     async delete(id: string) {
       try {
         const response = await fetch(`${API_BASE}/categories/${id}`, {
-          method: "DELETE",
+          method: 'DELETE',
           headers: getAuthHeaders(),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to delete category");
+          throw new Error(error.error || 'Failed to delete category');
         }
 
         update((categories) => categories.filter((c) => c.id !== id));
       } catch (error) {
-        console.error("Failed to delete category:", error);
+        console.error('Failed to delete category:', error);
         throw error;
       }
     },
@@ -718,18 +684,18 @@ function createApiCategoryStore() {
     async clear() {
       try {
         const response = await fetch(`${API_BASE}/categories`, {
-          method: "DELETE",
+          method: 'DELETE',
           headers: getAuthHeaders(),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Failed to clear categories");
+          throw new Error(error.error || 'Failed to clear categories');
         }
 
         set([]);
       } catch (error) {
-        console.error("Failed to clear categories:", error);
+        console.error('Failed to clear categories:', error);
         throw error;
       }
     },
@@ -750,7 +716,7 @@ export const apiFilteredTransactions = derived(
       all: $transactions,
       selected: $transactions.filter((t) => $selected.has(t.id)),
     };
-  },
+  }
 );
 
 export const apiTransactionStats = derived(apiTransactions, ($transactions) => {

@@ -1,10 +1,6 @@
-import { writable, derived } from "svelte/store";
-import { browser } from "$app/environment";
-import type {
-  Transaction,
-  Category,
-  CategoryRule,
-} from "$lib/types/transaction";
+import { writable, derived } from 'svelte/store';
+import { browser } from '$app/environment';
+import type { Transaction, Category, CategoryRule } from '$lib/types/transaction';
 
 // Transaction Store with persistence
 function createTransactionStore() {
@@ -19,14 +15,14 @@ function createTransactionStore() {
 
       try {
         // Load from localStorage
-        const stored = localStorage.getItem("transactions");
+        const stored = localStorage.getItem('transactions');
         if (stored) {
           const transactions = JSON.parse(stored);
           set(transactions);
           return;
         }
       } catch (error) {
-        console.warn("Failed to load from localStorage:", error);
+        console.warn('Failed to load from localStorage:', error);
       }
 
       // If localStorage fails or is empty, use empty array
@@ -34,7 +30,7 @@ function createTransactionStore() {
     },
 
     // Add new transaction
-    async add(transaction: Omit<Transaction, "id" | "createdAt">) {
+    async add(transaction: Omit<Transaction, 'id' | 'createdAt'>) {
       const newTransaction = {
         ...transaction,
         id: crypto.randomUUID?.() || `tx-${Date.now()}-${Math.random()}`,
@@ -42,15 +38,13 @@ function createTransactionStore() {
       };
 
       try {
-        const existing = JSON.parse(
-          localStorage.getItem("transactions") || "[]",
-        );
+        const existing = JSON.parse(localStorage.getItem('transactions') || '[]');
         const updated = [newTransaction, ...existing];
-        localStorage.setItem("transactions", JSON.stringify(updated));
+        localStorage.setItem('transactions', JSON.stringify(updated));
         update((transactions) => [newTransaction, ...transactions]);
         return newTransaction;
       } catch (error) {
-        console.warn("Failed to save to localStorage:", error);
+        console.warn('Failed to save to localStorage:', error);
         // At least update the store
         update((transactions) => [newTransaction, ...transactions]);
         return newTransaction;
@@ -60,13 +54,11 @@ function createTransactionStore() {
     // Update transaction
     async update(id: string, updates: Partial<Transaction>) {
       update((transactions) => {
-        const updated = transactions.map((t) =>
-          t.id === id ? { ...t, ...updates } : t,
-        );
+        const updated = transactions.map((t) => (t.id === id ? { ...t, ...updates } : t));
         try {
-          localStorage.setItem("transactions", JSON.stringify(updated));
+          localStorage.setItem('transactions', JSON.stringify(updated));
         } catch (error) {
-          console.warn("Failed to save to localStorage:", error);
+          console.warn('Failed to save to localStorage:', error);
         }
         return updated;
       });
@@ -77,9 +69,9 @@ function createTransactionStore() {
       update((transactions) => {
         const updated = transactions.filter((t) => t.id !== id);
         try {
-          localStorage.setItem("transactions", JSON.stringify(updated));
+          localStorage.setItem('transactions', JSON.stringify(updated));
         } catch (error) {
-          console.warn("Failed to save to localStorage:", error);
+          console.warn('Failed to save to localStorage:', error);
         }
         return updated;
       });
@@ -88,13 +80,11 @@ function createTransactionStore() {
     // Bulk actions
     async bulkUpdate(ids: string[], updates: Partial<Transaction>) {
       update((transactions) => {
-        const updated = transactions.map((t) =>
-          ids.includes(t.id) ? { ...t, ...updates } : t,
-        );
+        const updated = transactions.map((t) => (ids.includes(t.id) ? { ...t, ...updates } : t));
         try {
-          localStorage.setItem("transactions", JSON.stringify(updated));
+          localStorage.setItem('transactions', JSON.stringify(updated));
         } catch (error) {
-          console.warn("Failed to save to localStorage:", error);
+          console.warn('Failed to save to localStorage:', error);
         }
         return updated;
       });
@@ -105,12 +95,12 @@ function createTransactionStore() {
       const patternHash = generatePatternHash(transaction);
       update((transactions) => {
         const updated = transactions.map((t) =>
-          generatePatternHash(t) === patternHash ? { ...t, categoryId } : t,
+          generatePatternHash(t) === patternHash ? { ...t, categoryId } : t
         );
         try {
-          localStorage.setItem("transactions", JSON.stringify(updated));
+          localStorage.setItem('transactions', JSON.stringify(updated));
         } catch (error) {
-          console.warn("Failed to save to localStorage:", error);
+          console.warn('Failed to save to localStorage:', error);
         }
         return updated;
       });
@@ -123,47 +113,47 @@ function createCategoryStore() {
   const { subscribe, set, update } = writable<Category[]>([
     // Default categories
     {
-      id: "1",
-      name: "Food & Groceries",
-      type: "essential",
-      color: "#f5796c",
-      icon: "🍽️",
+      id: '1',
+      name: 'Food & Groceries',
+      type: 'essential',
+      color: '#f5796c',
+      icon: '🍽️',
     },
     {
-      id: "2",
-      name: "Transport",
-      type: "essential",
-      color: "#7abaa5",
-      icon: "🚇",
+      id: '2',
+      name: 'Transport',
+      type: 'essential',
+      color: '#7abaa5',
+      icon: '🚇',
     },
     {
-      id: "3",
-      name: "Entertainment",
-      type: "discretionary",
-      color: "#fecd2c",
-      icon: "🎬",
+      id: '3',
+      name: 'Entertainment',
+      type: 'discretionary',
+      color: '#fecd2c',
+      icon: '🎬',
     },
     {
-      id: "4",
-      name: "Utilities",
-      type: "essential",
-      color: "#023c46",
-      icon: "⚡",
+      id: '4',
+      name: 'Utilities',
+      type: 'essential',
+      color: '#023c46',
+      icon: '⚡',
     },
-    { id: "5", name: "Income", type: "income", color: "#7abaa5", icon: "💰" },
+    { id: '5', name: 'Income', type: 'income', color: '#7abaa5', icon: '💰' },
     {
-      id: "6",
-      name: "Investment",
-      type: "investment",
-      color: "#023c46",
-      icon: "📈",
+      id: '6',
+      name: 'Investment',
+      type: 'investment',
+      color: '#023c46',
+      icon: '📈',
     },
   ]);
 
   return {
     subscribe,
 
-    async add(category: Omit<Category, "id">) {
+    async add(category: Omit<Category, 'id'>) {
       const newCategory = {
         ...category,
         id: crypto.randomUUID?.() || `cat-${Date.now()}-${Math.random()}`,
@@ -173,9 +163,7 @@ function createCategoryStore() {
     },
 
     async update(id: string, updates: Partial<Category>) {
-      update((categories) =>
-        categories.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-      );
+      update((categories) => categories.map((c) => (c.id === id ? { ...c, ...updates } : c)));
     },
   };
 }
@@ -192,7 +180,7 @@ function createCategoryRulesStore() {
       set([]);
     },
 
-    async add(rule: Omit<CategoryRule, "id">) {
+    async add(rule: Omit<CategoryRule, 'id'>) {
       const newRule = {
         ...rule,
         id: crypto.randomUUID?.() || `rule-${Date.now()}-${Math.random()}`,
@@ -209,8 +197,8 @@ export function generatePatternHash(transaction: Transaction): string {
   // Remove amounts, dates, and variable parts
   const normalized = `${transaction.merchant.toLowerCase()}_${transaction.description
     .toLowerCase()
-    .replace(/\d+/g, "") // Remove numbers
-    .replace(/\s+/g, "_") // Replace spaces
+    .replace(/\d+/g, '') // Remove numbers
+    .replace(/\s+/g, '_') // Replace spaces
     .trim()}`;
 
   // Simple hash function
@@ -239,13 +227,11 @@ export const filteredTransactions = derived(
       all: $transactions,
       selected: $transactions.filter((t) => $selected.has(t.id)),
     };
-  },
+  }
 );
 
 export const transactionStats = derived(transactions, ($transactions) => {
-  const income = $transactions
-    .filter((t) => t.amount > 0)
-    .reduce((sum, t) => sum + t.amount, 0);
+  const income = $transactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
 
   const expenses = $transactions
     .filter((t) => t.amount < 0)

@@ -17,13 +17,7 @@
     onClose: () => void;
   }
 
-  let {
-    isOpen,
-    position,
-    availableEmojis,
-    onSelect,
-    onClose
-  }: Props = $props();
+  let { isOpen, position, availableEmojis, onSelect, onClose }: Props = $props();
 </script>
 
 {#if isOpen}
@@ -57,11 +51,7 @@
     </div>
 
     <!-- Scrollable grid of emojis -->
-    <div
-      class="emoji-picker-content"
-      role="listbox"
-      aria-label={$t('accessibility.icon_list')}
-    >
+    <div class="emoji-picker-content" role="listbox" aria-label={$t('accessibility.icon_list')}>
       {#each availableEmojis as emoji}
         <button
           class="emoji-option"
@@ -215,8 +205,12 @@
 
   /* Modal animations for different positions */
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes modalSlideIn {

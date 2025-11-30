@@ -20,7 +20,7 @@
     loading = false,
     trend,
     trendColor,
-    subtext
+    subtext,
   }: Props = $props();
 </script>
 
@@ -105,7 +105,7 @@
 
   .metric-icon.portfolio {
     background: rgba(139, 92, 246, 0.1);
-    color: #8B5CF6;
+    color: #8b5cf6;
   }
 
   .metric-label {
@@ -142,15 +142,24 @@
   .metric-skeleton {
     width: 80%;
     height: 1.5rem;
-    background: linear-gradient(90deg, var(--surface-muted) 25%, var(--surface-elevated) 50%, var(--surface-muted) 75%);
+    background: linear-gradient(
+      90deg,
+      var(--surface-muted) 25%,
+      var(--surface-elevated) 50%,
+      var(--surface-muted) 75%
+    );
     background-size: 200% 100%;
     border-radius: 4px;
     animation: skeleton-loading 1.5s infinite;
   }
 
   @keyframes skeleton-loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 
   /* Responsive */

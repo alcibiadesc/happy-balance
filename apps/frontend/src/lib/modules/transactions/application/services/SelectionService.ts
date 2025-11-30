@@ -5,14 +5,14 @@ export interface SelectionState {
 
 export const createInitialSelectionState = (): SelectionState => ({
   isSelectionMode: false,
-  selectedIds: new Set()
+  selectedIds: new Set(),
 });
 
 export const selectionActions = {
   toggleSelectionMode: (state: SelectionState): SelectionState => ({
     ...state,
     isSelectionMode: !state.isSelectionMode,
-    selectedIds: state.isSelectionMode ? new Set() : state.selectedIds
+    selectedIds: state.isSelectionMode ? new Set() : state.selectedIds,
   }),
 
   toggleSelection: (state: SelectionState, id: string): SelectionState => {
@@ -24,17 +24,17 @@ export const selectionActions = {
     }
     return {
       ...state,
-      selectedIds: newSet
+      selectedIds: newSet,
     };
   },
 
   selectAll: (state: SelectionState, ids: string[]): SelectionState => ({
     ...state,
-    selectedIds: new Set(ids)
+    selectedIds: new Set(ids),
   }),
 
   clearSelection: (): SelectionState => ({
     isSelectionMode: false,
-    selectedIds: new Set()
-  })
+    selectedIds: new Set(),
+  }),
 };

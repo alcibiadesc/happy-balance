@@ -45,13 +45,7 @@
 <Sidebar />
 
 <!-- Mobile Header -->
-<MobileHeader
-  onMenuToggle={toggleMobileSidebar}
-  isMenuOpen={isMobileSidebarOpen}
-/>
+<MobileHeader onMenuToggle={toggleMobileSidebar} isMenuOpen={isMobileSidebarOpen} />
 
 <!-- Mobile Sidebar -->
-<MobileSidebar
-  isOpen={isMobileSidebarOpen}
-  onClose={closeMobileSidebar}
-/>
+<MobileSidebar isOpen={isMobileSidebarOpen} onClose={closeMobileSidebar} />

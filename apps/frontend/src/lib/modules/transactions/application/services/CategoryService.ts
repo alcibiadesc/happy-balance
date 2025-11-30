@@ -8,7 +8,9 @@ export const findMatchingTransactions = async (
   try {
     // Call backend API with ultra-strict matching (85% threshold + type validation)
     const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/transactions/${transaction.id}/similar?maxResults=100&includeHidden=false`);
+    const response = await fetch(
+      `${apiUrl}/transactions/${transaction.id}/similar?maxResults=100&includeHidden=false`
+    );
 
     if (!response.ok) {
       console.error('Failed to fetch similar transactions from backend:', response.statusText);
@@ -36,12 +38,9 @@ export const findMatchingTransactions = async (
   }
 };
 
-export const getCategoryById = (
-  categories: Category[],
-  id?: string
-): Category | undefined => {
+export const getCategoryById = (categories: Category[], id?: string): Category | undefined => {
   if (!id) return undefined;
-  return categories.find(c => c.id === id);
+  return categories.find((c) => c.id === id);
 };
 
 export const formatAmount = (amount: number): string => {
@@ -49,7 +48,7 @@ export const formatAmount = (amount: number): string => {
   const abs = Math.abs(amount);
   const formatted = abs.toLocaleString('es-ES', {
     style: 'currency',
-    currency: 'EUR'
+    currency: 'EUR',
   });
   return amount < 0 && abs !== 0 ? `-${formatted}` : formatted;
 };

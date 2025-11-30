@@ -22,7 +22,7 @@
   // Show top 5 expense categories
   const topCategories = $derived(
     [...categories]
-      .filter(c => c.amount > 0)
+      .filter((c) => c.amount > 0)
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5)
   );
@@ -37,7 +37,9 @@
     </div>
     <div class="header-text">
       <h3>{$t('dashboard.top_categories.title') || 'Top gastos'}</h3>
-      <span class="subtitle">{$t('dashboard.top_categories.subtitle') || 'Categorías con mayor gasto'}</span>
+      <span class="subtitle"
+        >{$t('dashboard.top_categories.subtitle') || 'Categorías con mayor gasto'}</span
+      >
     </div>
   </div>
 
@@ -52,10 +54,7 @@
           <div class="category-rank">#{index + 1}</div>
           <div class="category-info">
             <div class="category-header">
-              <span
-                class="category-color"
-                style="background: {category.color}"
-              ></span>
+              <span class="category-color" style="background: {category.color}"></span>
               <span class="category-name">{category.name}</span>
               <span class="category-percentage">{category.percentage.toFixed(1)}%</span>
             </div>

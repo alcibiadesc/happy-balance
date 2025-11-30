@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import { t } from "$lib/stores/i18n";
-  import { onMount } from "svelte";
-  import { apiTransactions } from "$lib/stores/api-transactions";
-  import { parseCSV } from "$lib/utils/csv-parser";
+  import { goto } from '$app/navigation';
+  import { t } from '$lib/stores/i18n';
+  import { onMount } from 'svelte';
+  import { apiTransactions } from '$lib/stores/api-transactions';
+  import { parseCSV } from '$lib/utils/csv-parser';
 
-  import type { ParsedTransaction } from "$lib/utils/csv-parser";
+  import type { ParsedTransaction } from '$lib/utils/csv-parser';
 
   // ===== TYPES & CONSTANTS =====
   type ViewMode = 'all' | 'duplicates' | 'new';
   type ImportStep = 1 | 2 | 3;
 
-  const PREVIEW_SETTING_KEY = "import-preview-enabled";
+  const PREVIEW_SETTING_KEY = 'import-preview-enabled';
   const MAX_FILE_SIZE_MB = 10;
   const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
   const IMPORT_COMPLETE_DELAY_MS = 1500;
@@ -22,7 +22,7 @@
   let selectedFiles: File[] = [];
   let transactions: ParsedTransaction[] = [];
   let loading = false;
-  let error = "";
+  let error = '';
   let previewEnabled = true;
   let showAllTransactions = false;
   let mounted = false;
@@ -72,11 +72,11 @@
    * Validate individual file
    */
   function validateFile(file: File): { valid: boolean; errorKey?: string } {
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      return { valid: false, errorKey: "import.errors.invalid_file" };
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      return { valid: false, errorKey: 'import.errors.invalid_file' };
     }
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      return { valid: false, errorKey: "import.errors.file_too_large" };
+      return { valid: false, errorKey: 'import.errors.file_too_large' };
     }
     return { valid: true };
   }
@@ -121,7 +121,7 @@
 
     // Log any parsing warnings
     if (parseResult.errors.length > 0) {
-      parseResult.errors.forEach(error => {
+      parseResult.errors.forEach((error) => {
         console.warn(`CSV parsing - Row ${error.row}: ${error.message}`);
       });
     }
@@ -131,11 +131,11 @@
     }
 
     // Step 2: Generate hashes for duplicate detection
-    const transactionsForHashing = parseResult.transactions.map(tx => ({
+    const transactionsForHashing = parseResult.transactions.map((tx) => ({
       date: tx.date,
       merchant: tx.partner,
       amount: tx.amount,
-      currency: 'EUR' // Always EUR for consistent hash generation
+      currency: 'EUR', // Always EUR for consistent hash generation
     }));
 
     const { hashes: hashResults } = await apiTransactions.generateHashes(transactionsForHashing);
@@ -143,32 +143,29 @@
     // Attach hashes to transactions
     const transactionsWithHashes = parseResult.transactions.map((tx, index) => ({
       ...tx,
-      hash: hashResults[index]?.hash || tx.hash
+      hash: hashResults[index]?.hash || tx.hash,
     }));
 
     // Step 3: Check for duplicates in database
-    const transactionHashes = transactionsWithHashes.map(tx => tx.hash);
+    const transactionHashes = transactionsWithHashes.map((tx) => tx.hash);
     const { results: duplicateResults } = await apiTransactions.checkDuplicates(transactionHashes);
 
     // Step 4: Enrich with duplicate information
-    const transactionsWithDuplicateInfo = transactionsWithHashes.map(tx => {
-      const duplicateInfo = duplicateResults.find(r => r.hash === tx.hash);
+    const transactionsWithDuplicateInfo = transactionsWithHashes.map((tx) => {
+      const duplicateInfo = duplicateResults.find((r) => r.hash === tx.hash);
       const isDuplicate = duplicateInfo?.isDuplicate || tx.isDuplicate;
 
       return {
         ...tx,
         isDuplicate,
         selected: !isDuplicate, // Don't select duplicates by default
-        duplicateReason: isDuplicate
-          ? $t("import.duplicate_reasons.database")
-          : tx.duplicateReason,
-        isSuspectedDuplicate: duplicateInfo?.isDuplicate
+        duplicateReason: isDuplicate ? $t('import.duplicate_reasons.database') : tx.duplicateReason,
+        isSuspectedDuplicate: duplicateInfo?.isDuplicate,
       };
     });
 
     return transactionsWithDuplicateInfo;
   }
-
 
   /**
    * Handle file upload from input element
@@ -179,12 +176,12 @@
 
     const validation = validateFiles(files);
     if (!validation.valid) {
-      error = validation.errorKey ? $t(validation.errorKey) : $t("import.errors.invalid_file");
+      error = validation.errorKey ? $t(validation.errorKey) : $t('import.errors.invalid_file');
       return;
     }
 
     selectedFiles = files;
-    error = "";
+    error = '';
 
     if (previewEnabled) {
       await generatePreview();
@@ -200,7 +197,7 @@
     step = 1;
     selectedFiles = [];
     transactions = [];
-    error = "";
+    error = '';
     importedCount = 0;
     importProgress = 0;
     totalFilesToProcess = 0;
@@ -228,7 +225,7 @@
     if (selectedFiles.length === 0) return;
 
     loading = true;
-    error = "";
+    error = '';
     totalFilesToProcess = selectedFiles.length;
     importProgress = 0;
 
@@ -236,13 +233,13 @@
       transactions = await processAllFiles();
 
       if (transactions.length === 0) {
-        error = $t("import.errors.no_transactions");
+        error = $t('import.errors.no_transactions');
         return;
       }
 
       step = 2;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "import.errors.parse_failed";
+      const errorMessage = err instanceof Error ? err.message : 'import.errors.parse_failed';
       error = $t(errorMessage);
       console.error('Preview generation failed:', err);
     } finally {
@@ -251,7 +248,6 @@
       totalFilesToProcess = 0;
     }
   }
-
 
   /**
    * Import transactions without preview (directly from files)
@@ -271,7 +267,7 @@
       for (let i = 0; i < selectedFiles.length; i++) {
         importProgress = i + 1;
         const result = await apiTransactions.importFile(selectedFiles[i], {
-          currency: "EUR",
+          currency: 'EUR',
           duplicateDetectionEnabled: true,
           skipDuplicates: true,
           autoCategorizationEnabled: true,
@@ -293,9 +289,9 @@
    * Import transactions with preview (from selected transactions)
    */
   async function importFromPreview(): Promise<void> {
-    const selectedTransactions = transactions.filter(tx => tx.selected);
-    const duplicatesSkipped = transactions.filter(tx => tx.isDuplicate && !tx.selected).length;
-    const duplicatesImported = transactions.filter(tx => tx.isDuplicate && tx.selected).length;
+    const selectedTransactions = transactions.filter((tx) => tx.selected);
+    const duplicatesSkipped = transactions.filter((tx) => tx.isDuplicate && !tx.selected).length;
+    const duplicatesImported = transactions.filter((tx) => tx.isDuplicate && tx.selected).length;
 
     if (selectedTransactions.length === 0) {
       throw new Error('import.errors.no_transactions_selected');
@@ -320,7 +316,7 @@
     (window as any).lastImportDuplicatesForced = duplicatesImported;
 
     // Wait for animation before reloading
-    await new Promise(resolve => setTimeout(resolve, IMPORT_COMPLETE_DELAY_MS));
+    await new Promise((resolve) => setTimeout(resolve, IMPORT_COMPLETE_DELAY_MS));
 
     // Auto-load updated transactions list
     await apiTransactions.load();
@@ -330,7 +326,7 @@
    * Handle import errors
    */
   function handleImportError(): void {
-    error = $t("import.errors.import_failed");
+    error = $t('import.errors.import_failed');
     step = 2;
   }
 
@@ -363,7 +359,7 @@
         await importFromPreview();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "import.errors.import_failed";
+      const errorMessage = err instanceof Error ? err.message : 'import.errors.import_failed';
       error = $t(errorMessage);
       console.error('Import failed:', err);
       handleImportError();
@@ -378,7 +374,7 @@
    * Toggle selection state of a single transaction
    */
   function toggleTransaction(id: string): void {
-    transactions = transactions.map(tx =>
+    transactions = transactions.map((tx) =>
       tx.id === id ? { ...tx, selected: !tx.selected } : tx
     );
   }
@@ -388,10 +384,10 @@
    */
   function toggleAllTransactions(): void {
     const currentVisible = visibleTransactions;
-    const allSelected = currentVisible.every(tx => tx.selected);
+    const allSelected = currentVisible.every((tx) => tx.selected);
 
-    transactions = transactions.map(tx => {
-      const isVisible = currentVisible.some(v => v.id === tx.id);
+    transactions = transactions.map((tx) => {
+      const isVisible = currentVisible.some((v) => v.id === tx.id);
       return isVisible ? { ...tx, selected: !allSelected } : tx;
     });
   }
@@ -404,7 +400,7 @@
       step = 1;
       selectedFiles = [];
       transactions = [];
-      error = "";
+      error = '';
       importedCount = 0;
     }
   }
@@ -413,7 +409,7 @@
    * Close import dialog and navigate to home
    */
   function handleClose(): void {
-    goto("/");
+    goto('/');
   }
 
   // ===== SEARCH FUNCTIONALITY =====
@@ -442,27 +438,25 @@
       transaction.description,
       transaction.date,
       transaction.amount?.toString(),
-      transaction.hash
+      transaction.hash,
     ];
 
-    return searchableFields.some(field =>
-      field?.toString().toLowerCase().includes(searchQuery)
-    );
+    return searchableFields.some((field) => field?.toString().toLowerCase().includes(searchQuery));
   }
 
   // ===== REACTIVE STATE COMPUTATIONS =====
 
   /** Count of selected transactions */
-  $: selectedCount = transactions.filter(tx => tx.selected).length;
+  $: selectedCount = transactions.filter((tx) => tx.selected).length;
 
   /** Count of duplicate transactions */
-  $: duplicateCount = transactions.filter(tx => tx.isDuplicate).length;
+  $: duplicateCount = transactions.filter((tx) => tx.isDuplicate).length;
 
   /** Count of selected duplicates */
-  $: selectedDuplicatesCount = transactions.filter(tx => tx.isDuplicate && tx.selected).length;
+  $: selectedDuplicatesCount = transactions.filter((tx) => tx.isDuplicate && tx.selected).length;
 
   /** Count of new (non-duplicate) transactions */
-  $: newTransactionsCount = transactions.filter(tx => !tx.isDuplicate).length;
+  $: newTransactionsCount = transactions.filter((tx) => !tx.isDuplicate).length;
 
   /**
    * Filter transactions based on view mode and search query
@@ -473,10 +467,10 @@
     // Apply view mode filter
     switch (viewMode) {
       case 'duplicates':
-        filtered = filtered.filter(tx => tx.isDuplicate);
+        filtered = filtered.filter((tx) => tx.isDuplicate);
         break;
       case 'new':
-        filtered = filtered.filter(tx => !tx.isDuplicate);
+        filtered = filtered.filter((tx) => !tx.isDuplicate);
         break;
       case 'all':
       default:
@@ -493,21 +487,22 @@
     : visibleTransactions.slice(0, 10);
 
   /** Generate import button label based on selected count */
-  $: importButtonText = selectedCount === 1
-    ? $t("import.actions.import_count", { count: selectedCount })
-    : $t("import.actions.import_count_plural", { count: selectedCount });
+  $: importButtonText =
+    selectedCount === 1
+      ? $t('import.actions.import_count', { count: selectedCount })
+      : $t('import.actions.import_count_plural', { count: selectedCount });
 </script>
 
 <svelte:head>
-  <title>{$t("import.title")} - Happy Balance</title>
+  <title>{$t('import.title')} - Happy Balance</title>
 </svelte:head>
 
 <main class="import-page">
   <div class="import-container">
     <!-- Header sin Logo -->
     <div class="import-header">
-      <h1 class="import-title">{$t("import.title")}</h1>
-      <p class="import-subtitle">{$t("import.subtitle")}</p>
+      <h1 class="import-title">{$t('import.title')}</h1>
+      <p class="import-subtitle">{$t('import.subtitle')}</p>
     </div>
 
     <!-- Progress Steps con círculos perfectos -->
@@ -516,12 +511,7 @@
         <div class="step-item">
           <div class="step-circle {step >= 1 ? 'active' : ''}">
             {#if step > 1}
-              <svg
-                class="step-check"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg class="step-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -535,9 +525,9 @@
           </div>
           <div class="step-text">
             <div class="step-title {step >= 1 ? 'active' : ''}">
-              {$t("import.steps.upload")}
+              {$t('import.steps.upload')}
             </div>
-            <div class="step-desc">{$t("import.steps.upload_desc")}</div>
+            <div class="step-desc">{$t('import.steps.upload_desc')}</div>
           </div>
         </div>
 
@@ -546,12 +536,7 @@
         <div class="step-item">
           <div class="step-circle {step >= 2 ? 'active' : ''}">
             {#if step > 2}
-              <svg
-                class="step-check"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg class="step-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -565,9 +550,9 @@
           </div>
           <div class="step-text">
             <div class="step-title {step >= 2 ? 'active' : ''}">
-              {$t("import.steps.preview")}
+              {$t('import.steps.preview')}
             </div>
-            <div class="step-desc">{$t("import.steps.preview_desc")}</div>
+            <div class="step-desc">{$t('import.steps.preview_desc')}</div>
           </div>
         </div>
 
@@ -577,9 +562,9 @@
           <div class="step-circle {step >= 3 ? 'active' : ''}">3</div>
           <div class="step-text">
             <div class="step-title {step >= 3 ? 'active' : ''}">
-              {$t("import.steps.complete")}
+              {$t('import.steps.complete')}
             </div>
-            <div class="step-desc">{$t("import.steps.complete_desc")}</div>
+            <div class="step-desc">{$t('import.steps.complete_desc')}</div>
           </div>
         </div>
       </div>
@@ -589,12 +574,7 @@
     <div class="import-content">
       {#if error}
         <div class="error-alert">
-          <svg
-            class="error-icon"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -605,7 +585,7 @@
           <span class="error-message">{error}</span>
           <button
             class="error-close"
-            on:click={() => (error = "")}
+            on:click={() => (error = '')}
             aria-label="Close error message"
           >
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -625,7 +605,7 @@
         <div class="upload-step">
           <!-- Settings Section con toggle personalizado -->
           <div class="settings-section">
-            <h3 class="settings-title">{$t("import.settings.title")}</h3>
+            <h3 class="settings-title">{$t('import.settings.title')}</h3>
             <div class="setting-item">
               <label class="setting-label">
                 <input
@@ -633,12 +613,10 @@
                   bind:checked={previewEnabled}
                   class="toggle toggle-acapulco"
                 />
-                <span class="setting-text"
-                  >{$t("import.settings.enable_preview")}</span
-                >
+                <span class="setting-text">{$t('import.settings.enable_preview')}</span>
               </label>
               <div class="setting-desc">
-                {$t("import.settings.enable_preview_desc")}
+                {$t('import.settings.enable_preview_desc')}
               </div>
             </div>
           </div>
@@ -654,10 +632,7 @@
               id="file-upload"
               disabled={loading}
             />
-            <label
-              for="file-upload"
-              class="upload-label {loading ? 'loading' : ''}"
-            >
+            <label for="file-upload" class="upload-label {loading ? 'loading' : ''}">
               {#if loading}
                 <div class="upload-spinner"></div>
               {:else}
@@ -675,12 +650,10 @@
 
               <div class="upload-text">
                 <p class="upload-title">
-                  {loading
-                    ? $t("import.upload.processing")
-                    : $t("import.upload.choose_file")}
+                  {loading ? $t('import.upload.processing') : $t('import.upload.choose_file')}
                 </p>
                 <p class="upload-subtitle">
-                  {$t("import.upload.drag_drop")}
+                  {$t('import.upload.drag_drop')}
                 </p>
               </div>
             </label>
@@ -694,7 +667,10 @@
                     Procesando archivo {importProgress} de {totalFilesToProcess}...
                   </p>
                   <div class="progress-bar">
-                    <div class="progress-fill" style="width: {(importProgress / totalFilesToProcess) * 100}%"></div>
+                    <div
+                      class="progress-fill"
+                      style="width: {(importProgress / totalFilesToProcess) * 100}%"
+                    ></div>
                   </div>
                 </div>
               {/if}
@@ -720,7 +696,7 @@
                       </div>
                     </div>
                     <div class="file-badge">
-                      {$t("import.upload.ready")}
+                      {$t('import.upload.ready')}
                     </div>
                   </div>
                 {/each}
@@ -737,39 +713,53 @@
           <div class="stats-grid">
             <div class="stat-card">
               <div class="stat-value">{transactions.length}</div>
-              <div class="stat-label">{$t("import.preview.stats.total")}</div>
+              <div class="stat-label">{$t('import.preview.stats.total')}</div>
             </div>
             <div class="stat-card accent">
               <div class="stat-value">{selectedCount}</div>
               <div class="stat-label">
-                {$t("import.preview.stats.selected")}
+                {$t('import.preview.stats.selected')}
               </div>
             </div>
             <div class="stat-card warning" class:pulse={duplicateCount > 0}>
               <div class="stat-value">{duplicateCount}</div>
               <div class="stat-label">
-                {$t("import.preview.stats.duplicates")}
+                {$t('import.preview.stats.duplicates')}
               </div>
               {#if duplicateCount > 0}
                 <div class="stat-hint">Posibles duplicados detectados</div>
               {/if}
               {#if selectedDuplicatesCount > 0}
-                <div class="stat-hint accent">{selectedDuplicatesCount} seleccionados para importar</div>
+                <div class="stat-hint accent">
+                  {selectedDuplicatesCount} seleccionados para importar
+                </div>
               {/if}
             </div>
             <div class="stat-card error">
               <div class="stat-value">
                 {transactions.length - selectedCount}
               </div>
-              <div class="stat-label">{$t("import.preview.stats.skipped")}</div>
+              <div class="stat-label">{$t('import.preview.stats.skipped')}</div>
             </div>
           </div>
 
           <!-- Search Bar -->
           <div class="search-container">
             <div class="search-wrapper">
-              <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                class="search-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
               <input
                 type="text"
@@ -785,21 +775,21 @@
             <div class="filter-tabs">
               <button
                 class="filter-tab {viewMode === 'all' ? 'active' : ''}"
-                on:click={() => viewMode = 'all'}
+                on:click={() => (viewMode = 'all')}
               >
                 Todas ({transactions.length})
               </button>
 
               <button
                 class="filter-tab {viewMode === 'new' ? 'active' : ''}"
-                on:click={() => viewMode = 'new'}
+                on:click={() => (viewMode = 'new')}
               >
                 Nuevas ({newTransactionsCount})
               </button>
 
               <button
                 class="filter-tab {viewMode === 'duplicates' ? 'active' : ''}"
-                on:click={() => viewMode = 'duplicates'}
+                on:click={() => (viewMode = 'duplicates')}
                 disabled={duplicateCount === 0}
               >
                 Duplicados ({duplicateCount})
@@ -818,15 +808,15 @@
                     class="toggle toggle-acapulco toggle-sm"
                   />
                   <span class="control-text">
-                    {$t("import.preview.controls.show_all")}
+                    {$t('import.preview.controls.show_all')}
                   </span>
                 </label>
               {/if}
 
               <button class="select-all-btn" on:click={toggleAllTransactions}>
                 {visibleTransactions.every((tx) => tx.selected)
-                  ? $t("import.preview.controls.deselect_all")
-                  : $t("import.preview.controls.select_all")}
+                  ? $t('import.preview.controls.deselect_all')
+                  : $t('import.preview.controls.select_all')}
               </button>
             </div>
           </div>
@@ -837,16 +827,49 @@
               <div class="empty-state">
                 <div class="empty-icon">
                   {#if viewMode === 'duplicates'}
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      width="48"
+                      height="48"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   {:else if viewMode === 'new'}
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      width="48"
+                      height="48"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   {:else}
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    <svg
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      width="48"
+                      height="48"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                      />
                     </svg>
                   {/if}
                 </div>
@@ -870,159 +893,131 @@
                 </p>
               </div>
             {:else}
-            <div class="table-wrapper">
-              <table class="transactions-table">
-                <thead>
-                  <tr>
-                    <th class="col-checkbox">
-                      <span class="th-content"
-                        >{$t("import.preview.table.select")}</span
-                      >
-                    </th>
-                    <th class="col-date">
-                      <span class="th-content"
-                        >{$t("import.preview.table.date")}</span
-                      >
-                    </th>
-                    <th class="col-partner">
-                      <span class="th-content"
-                        >{$t("import.preview.table.partner")}</span
-                      >
-                    </th>
-                    <th class="col-description">
-                      <span class="th-content"
-                        >{$t("import.preview.table.description")}</span
-                      >
-                    </th>
-                    <th class="col-amount">
-                      <span class="th-content"
-                        >{$t("import.preview.table.amount")}</span
-                      >
-                    </th>
-                    <th class="col-status">
-                      <span class="th-content"
-                        >{$t("import.preview.table.status")}</span
-                      >
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each displayedTransactions as transaction (transaction.id)}
-                    <tr
-                      class="transaction-row {transaction.isDuplicate
-                        ? 'duplicate'
-                        : ''}"
-                    >
-                      <td class="col-checkbox">
-                        <div class="checkbox-wrapper">
-                          <input
-                            type="checkbox"
-                            class="checkbox-acapulco"
-                            id="tx-{transaction.id}"
-                            checked={transaction.selected}
-                            on:change={() => toggleTransaction(transaction.id)}
-                          />
-                          <label
-                            for="tx-{transaction.id}"
-                            class="checkbox-label"
-                          >
-                            <svg class="checkbox-icon" viewBox="0 0 24 24">
-                              <path
-                                d="M5 13l4 4L19 7"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                fill="none"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                              />
-                            </svg>
-                          </label>
-                        </div>
-                      </td>
-                      <td class="col-date">
-                        <div class="cell-content">
-                          {transaction.date}
-                        </div>
-                      </td>
-                      <td class="col-partner">
-                        <div class="cell-content" title={transaction.partner}>
-                          {transaction.partner}
-                        </div>
-                      </td>
-                      <td class="col-description">
-                        <div
-                          class="cell-content"
-                          title={transaction.description}
-                        >
-                          {transaction.description}
-                        </div>
-                      </td>
-                      <td class="col-amount">
-                        <div
-                          class="amount-wrapper {transaction.amount >= 0
-                            ? 'positive'
-                            : 'negative'}"
-                        >
-                          <span class="amount-sign"
-                            >{transaction.amount >= 0 ? "+" : ""}</span
-                          >
-                          <span class="amount-value"
-                            >{Math.abs(transaction.amount).toFixed(2)}</span
-                          >
-                          <span class="amount-currency">€</span>
-                        </div>
-                      </td>
-                      <td class="col-status">
-                        {#if transaction.isDuplicate}
-                          <div class="status-badge {transaction.selected ? 'duplicate-selected' : 'duplicate'}">
-                            <span class="status-dot"></span>
-                            <span class="status-text">
-                              {transaction.selected ? 'Duplicado (se importará)' : $t("import.preview.status.duplicate")}
-                            </span>
+              <div class="table-wrapper">
+                <table class="transactions-table">
+                  <thead>
+                    <tr>
+                      <th class="col-checkbox">
+                        <span class="th-content">{$t('import.preview.table.select')}</span>
+                      </th>
+                      <th class="col-date">
+                        <span class="th-content">{$t('import.preview.table.date')}</span>
+                      </th>
+                      <th class="col-partner">
+                        <span class="th-content">{$t('import.preview.table.partner')}</span>
+                      </th>
+                      <th class="col-description">
+                        <span class="th-content">{$t('import.preview.table.description')}</span>
+                      </th>
+                      <th class="col-amount">
+                        <span class="th-content">{$t('import.preview.table.amount')}</span>
+                      </th>
+                      <th class="col-status">
+                        <span class="th-content">{$t('import.preview.table.status')}</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each displayedTransactions as transaction (transaction.id)}
+                      <tr class="transaction-row {transaction.isDuplicate ? 'duplicate' : ''}">
+                        <td class="col-checkbox">
+                          <div class="checkbox-wrapper">
+                            <input
+                              type="checkbox"
+                              class="checkbox-acapulco"
+                              id="tx-{transaction.id}"
+                              checked={transaction.selected}
+                              on:change={() => toggleTransaction(transaction.id)}
+                            />
+                            <label for="tx-{transaction.id}" class="checkbox-label">
+                              <svg class="checkbox-icon" viewBox="0 0 24 24">
+                                <path
+                                  d="M5 13l4 4L19 7"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  fill="none"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                            </label>
                           </div>
-                          {#if transaction.duplicateReason}
-                            <div
-                              class="status-reason"
-                              title={transaction.duplicateReason}
+                        </td>
+                        <td class="col-date">
+                          <div class="cell-content">
+                            {transaction.date}
+                          </div>
+                        </td>
+                        <td class="col-partner">
+                          <div class="cell-content" title={transaction.partner}>
+                            {transaction.partner}
+                          </div>
+                        </td>
+                        <td class="col-description">
+                          <div class="cell-content" title={transaction.description}>
+                            {transaction.description}
+                          </div>
+                        </td>
+                        <td class="col-amount">
+                          <div
+                            class="amount-wrapper {transaction.amount >= 0
+                              ? 'positive'
+                              : 'negative'}"
+                          >
+                            <span class="amount-sign">{transaction.amount >= 0 ? '+' : ''}</span>
+                            <span class="amount-value"
+                              >{Math.abs(transaction.amount).toFixed(2)}</span
                             >
-                              {transaction.duplicateReason}
+                            <span class="amount-currency">€</span>
+                          </div>
+                        </td>
+                        <td class="col-status">
+                          {#if transaction.isDuplicate}
+                            <div
+                              class="status-badge {transaction.selected
+                                ? 'duplicate-selected'
+                                : 'duplicate'}"
+                            >
+                              <span class="status-dot"></span>
+                              <span class="status-text">
+                                {transaction.selected
+                                  ? 'Duplicado (se importará)'
+                                  : $t('import.preview.status.duplicate')}
+                              </span>
+                            </div>
+                            {#if transaction.duplicateReason}
+                              <div class="status-reason" title={transaction.duplicateReason}>
+                                {transaction.duplicateReason}
+                              </div>
+                            {/if}
+                          {:else if transaction.selected}
+                            <div class="status-badge ready">
+                              <span class="status-dot"></span>
+                              <span class="status-text">{$t('import.preview.status.ready')}</span>
+                            </div>
+                          {:else}
+                            <div class="status-badge skipped">
+                              <span class="status-dot"></span>
+                              <span class="status-text">{$t('import.preview.status.skipped')}</span>
                             </div>
                           {/if}
-                        {:else if transaction.selected}
-                          <div class="status-badge ready">
-                            <span class="status-dot"></span>
-                            <span class="status-text"
-                              >{$t("import.preview.status.ready")}</span
-                            >
-                          </div>
-                        {:else}
-                          <div class="status-badge skipped">
-                            <span class="status-dot"></span>
-                            <span class="status-text"
-                              >{$t("import.preview.status.skipped")}</span
-                            >
-                          </div>
-                        {/if}
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </div>
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
             {/if}
 
             {#if !showAllTransactions && visibleTransactions.length > 10}
               <div class="pagination-info">
                 <p class="pagination-text">
-                  {$t("import.preview.pagination.showing", {
+                  {$t('import.preview.pagination.showing', {
                     total: visibleTransactions.length,
                   })}
                 </p>
-                <button
-                  class="show-all-btn"
-                  on:click={() => (showAllTransactions = true)}
-                >
-                  {$t("import.preview.pagination.show_all")}
+                <button class="show-all-btn" on:click={() => (showAllTransactions = true)}>
+                  {$t('import.preview.pagination.show_all')}
                 </button>
               </div>
             {/if}
@@ -1036,9 +1031,9 @@
           {#if loading}
             <div class="complete-loading">
               <div class="complete-spinner"></div>
-              <h3 class="complete-title">{$t("import.complete.importing")}</h3>
+              <h3 class="complete-title">{$t('import.complete.importing')}</h3>
               <p class="complete-subtitle">
-                {$t("import.complete.importing_desc")}
+                {$t('import.complete.importing_desc')}
               </p>
             </div>
           {:else}
@@ -1053,9 +1048,9 @@
                   />
                 </svg>
               </div>
-              <h3 class="complete-title">{$t("import.complete.success")}</h3>
+              <h3 class="complete-title">{$t('import.complete.success')}</h3>
               <p class="complete-subtitle">
-                {$t("import.complete.success_desc", { count: importedCount })}
+                {$t('import.complete.success_desc', { count: importedCount })}
               </p>
               {#if (window as any).lastImportDuplicates > 0}
                 <p class="complete-info">
@@ -1064,7 +1059,8 @@
               {/if}
               {#if (window as any).lastImportDuplicatesForced > 0}
                 <p class="complete-info">
-                  ✅ {(window as any).lastImportDuplicatesForced} posibles duplicados fueron importados por petición del usuario
+                  ✅ {(window as any).lastImportDuplicatesForced} posibles duplicados fueron importados
+                  por petición del usuario
                 </p>
               {/if}
             </div>
@@ -1078,7 +1074,7 @@
           <div class="footer-actions">
             {#if step === 2}
               <button class="btn-secondary" on:click={goBack}>
-                {$t("common.back")}
+                {$t('common.back')}
               </button>
               <button
                 class="btn-primary {selectedCount === 0 ? 'disabled' : ''}"
@@ -1088,14 +1084,11 @@
                 {importButtonText}
               </button>
             {:else if step === 3 && !loading}
-              <button
-                class="btn-secondary"
-                on:click={resetImportState}
-              >
-                {$t("import.complete.import_another")}
+              <button class="btn-secondary" on:click={resetImportState}>
+                {$t('import.complete.import_another')}
               </button>
               <button class="btn-primary" on:click={handleClose}>
-                {$t("common.done")}
+                {$t('common.done')}
               </button>
             {/if}
           </div>
@@ -1613,7 +1606,8 @@
   }
 
   @keyframes pulse-warning {
-    0%, 100% {
+    0%,
+    100% {
       background: rgba(254, 205, 44, 0.1);
       border-color: rgba(254, 205, 44, 0.2);
     }
@@ -1936,7 +1930,7 @@
   }
 
   .col-date .cell-content {
-    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
     font-size: 0.75rem;
     color: var(--text-secondary);
   }
@@ -1955,7 +1949,7 @@
     align-items: baseline;
     justify-content: flex-end;
     gap: 0.125rem;
-    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
     font-weight: 600;
   }
 
@@ -2225,11 +2219,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(
-      135deg,
-      var(--acapulco),
-      rgba(122, 186, 165, 0.9)
-    );
+    background: linear-gradient(135deg, var(--acapulco), rgba(122, 186, 165, 0.9));
     border: none;
     border-radius: 0.5rem;
     color: var(--text-inverse);
@@ -2242,11 +2232,7 @@
 
   .import-btn:hover,
   .done-btn:hover {
-    background: linear-gradient(
-      135deg,
-      rgba(122, 186, 165, 0.9),
-      rgba(122, 186, 165, 0.8)
-    );
+    background: linear-gradient(135deg, rgba(122, 186, 165, 0.9), rgba(122, 186, 165, 0.8));
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(122, 186, 165, 0.3);
   }

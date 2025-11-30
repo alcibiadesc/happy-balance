@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
-  import { afterNavigate, goto } from "$app/navigation";
-  import Chart from "chart.js/auto";
+  import { onMount, onDestroy } from 'svelte';
+  import { afterNavigate, goto } from '$app/navigation';
+  import Chart from 'chart.js/auto';
   import {
     TrendingUp,
     TrendingDown,
@@ -22,14 +22,14 @@
     Calendar,
     Link2,
     ExternalLink,
-  } from "lucide-svelte";
-  import { t } from "$lib/stores/i18n";
-  import { currentCurrency, formatCurrency } from "$lib/stores/currency";
-  import { effectiveTheme } from "$lib/stores/theme";
+  } from 'lucide-svelte';
+  import { t } from '$lib/stores/i18n';
+  import { currentCurrency, formatCurrency } from '$lib/stores/currency';
+  import { effectiveTheme } from '$lib/stores/theme';
 
   // Store
-  import { createInvestmentsStore } from "$lib/modules/investments/presentation/stores/investmentsStore.svelte.ts";
-  import ConfirmModal from "$lib/components/organisms/ConfirmModal.svelte";
+  import { createInvestmentsStore } from '$lib/modules/investments/presentation/stores/investmentsStore.svelte.ts';
+  import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
 
   const store = createInvestmentsStore();
 
@@ -40,9 +40,9 @@
   let lineChart: Chart | null = null;
 
   // View state
-  let viewMode = $state<"grid" | "details">("grid");
+  let viewMode = $state<'grid' | 'details'>('grid');
   let showIconPicker = $state(false);
-  let activeForm = $state<"new" | "edit" | null>(null);
+  let activeForm = $state<'new' | 'edit' | null>(null);
   let pickerPosition = $state({ top: 0, left: 0 });
 
   // Goal
@@ -69,7 +69,7 @@
 
   async function handlePeriodChange(period: TimePeriod) {
     selectedPeriod = period;
-    const periodConfig = timePeriods.find(p => p.label === period);
+    const periodConfig = timePeriods.find((p) => p.label === period);
 
     if (periodConfig?.months) {
       const dateFrom = getDateFromMonthsAgo(periodConfig.months);
@@ -127,7 +127,7 @@
     };
 
     for (const inv of store.investments) {
-      const groupName = inv.categoryId ? (inv.categoryName || 'Categoría') : 'Sin categoría';
+      const groupName = inv.categoryId ? inv.categoryName || 'Categoría' : 'Sin categoría';
       if (!groups[groupName]) {
         groups[groupName] = [];
       }
@@ -150,38 +150,42 @@
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    return store.investments.map(inv => {
-      const monthlyHistory = (inv.history || []).filter(h => {
-        const date = new Date(h.date);
-        return date.getMonth() === currentMonth &&
-               date.getFullYear() === currentYear &&
-               h.type === 'CONTRIBUTION';
-      });
+    return store.investments
+      .map((inv) => {
+        const monthlyHistory = (inv.history || []).filter((h) => {
+          const date = new Date(h.date);
+          return (
+            date.getMonth() === currentMonth &&
+            date.getFullYear() === currentYear &&
+            h.type === 'CONTRIBUTION'
+          );
+        });
 
-      const monthlyTotal = monthlyHistory.reduce((sum, h) => sum + Number(h.amount), 0);
+        const monthlyTotal = monthlyHistory.reduce((sum, h) => sum + Number(h.amount), 0);
 
-      return {
-        ...inv,
-        monthlyContribution: monthlyTotal,
-        monthlyHistory,
-      };
-    }).filter(inv => inv.monthlyContribution > 0);
+        return {
+          ...inv,
+          monthlyContribution: monthlyTotal,
+          monthlyHistory,
+        };
+      })
+      .filter((inv) => inv.monthlyContribution > 0);
   });
 
   // Chart theme colors
   function getChartColors() {
-    const isDark = $effectiveTheme === "dark";
+    const isDark = $effectiveTheme === 'dark';
     return {
-      text: isDark ? "#e5e7eb" : "#374151",
-      grid: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
-      green: "#10B981",
-      red: "#EF4444",
-      blue: "#3B82F6",
-      purple: "#8B5CF6",
-      orange: "#F59E0B",
-      pink: "#EC4899",
-      cyan: "#06B6D4",
-      teal: "#14B8A6",
+      text: isDark ? '#e5e7eb' : '#374151',
+      grid: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+      green: '#10B981',
+      red: '#EF4444',
+      blue: '#3B82F6',
+      purple: '#8B5CF6',
+      orange: '#F59E0B',
+      pink: '#EC4899',
+      cyan: '#06B6D4',
+      teal: '#14B8A6',
     };
   }
 
@@ -196,9 +200,9 @@
     if (donutChart) donutChart.destroy();
 
     donutChart = new Chart(donutChartRef, {
-      type: "doughnut",
+      type: 'doughnut',
       data: {
-        labels: ["Invertido", profitAmount >= 0 ? "Ganancia" : "Pérdida"],
+        labels: ['Invertido', profitAmount >= 0 ? 'Ganancia' : 'Pérdida'],
         datasets: [
           {
             data: [investedAmount, Math.abs(profitAmount)],
@@ -211,15 +215,15 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: "70%",
+        cutout: '70%',
         plugins: {
           legend: {
-            position: "bottom",
+            position: 'bottom',
             labels: {
               color: colors.text,
               padding: 16,
               usePointStyle: true,
-              pointStyle: "circle",
+              pointStyle: 'circle',
             },
           },
           tooltip: {
@@ -248,15 +252,15 @@
     if (lineChart) lineChart.destroy();
 
     lineChart = new Chart(lineChartRef, {
-      type: "line",
+      type: 'line',
       data: {
         labels: store.timeline.map((t) => t.date),
         datasets: [
           {
-            label: "Aportaciones acumuladas",
+            label: 'Aportaciones acumuladas',
             data: cumulativeData,
             borderColor: colors.green,
-            backgroundColor: colors.green + "20",
+            backgroundColor: colors.green + '20',
             borderWidth: 2,
             fill: true,
             tension: 0.4,
@@ -270,7 +274,7 @@
         maintainAspectRatio: false,
         interaction: {
           intersect: false,
-          mode: "index",
+          mode: 'index',
         },
         plugins: {
           legend: {
@@ -300,7 +304,7 @@
   }
 
   // Icon picker
-  function handleIconClick(e: Event, formType: "new" | "edit") {
+  function handleIconClick(e: Event, formType: 'new' | 'edit') {
     const buttonElement = e.currentTarget as HTMLElement;
     const rect = buttonElement.getBoundingClientRect();
     pickerPosition = {
@@ -312,9 +316,9 @@
   }
 
   function selectIcon(icon: string) {
-    if (activeForm === "new") {
+    if (activeForm === 'new') {
       store.newInvestmentForm.icon = icon;
-    } else if (activeForm === "edit") {
+    } else if (activeForm === 'edit') {
       store.editForm.icon = icon;
     }
     showIconPicker = false;
@@ -323,11 +327,11 @@
 
   function handleViewDetails(investment: any) {
     store.loadInvestmentDetails(investment.id);
-    viewMode = "details";
+    viewMode = 'details';
   }
 
   function backToGrid() {
-    viewMode = "grid";
+    viewMode = 'grid';
     store.selectedInvestment = null;
   }
 
@@ -336,9 +340,7 @@
   }
 
   // Goal progress
-  const goalProgress = $derived(
-    Math.min(100, (store.totalPortfolioValue / goal) * 100)
-  );
+  const goalProgress = $derived(Math.min(100, (store.totalPortfolioValue / goal) * 100));
 
   // Reactivity for charts
   $effect(() => {
@@ -355,7 +357,7 @@
 
   onMount(async () => {
     await store.loadAll();
-    await store.loadTimeline("month");
+    await store.loadTimeline('month');
   });
 
   // Reload data when navigating to this page (handles sync from other pages)
@@ -374,14 +376,16 @@
 </svelte:head>
 
 <div class="portfolio-page">
-  {#if viewMode === "grid"}
+  {#if viewMode === 'grid'}
     <!-- Balance Header (Gofire-style) -->
     <header class="balance-header">
       <div class="balance-content">
         <span class="greeting">Tu portfolio</span>
         <div class="balance-amount">
           <span class="currency">{$currentCurrency}</span>
-          <span class="amount">{store.formatCurrency(store.totalPortfolioValue).replace(/[€$£]/g, '')}</span>
+          <span class="amount"
+            >{store.formatCurrency(store.totalPortfolioValue).replace(/[€$£]/g, '')}</span
+          >
         </div>
 
         <!-- Goal Progress -->
@@ -400,19 +404,18 @@
 
         {#if showGoalEdit}
           <div class="goal-input-wrapper">
-            <input
-              type="number"
-              bind:value={goal}
-              class="goal-input"
-              placeholder="Meta..."
-            />
+            <input type="number" bind:value={goal} class="goal-input" placeholder="Meta..." />
             <button class="goal-save" onclick={() => (showGoalEdit = false)}>OK</button>
           </div>
         {/if}
       </div>
 
       <!-- Revenue Card -->
-      <div class="revenue-card" class:positive={store.totalProfit >= 0} class:negative={store.totalProfit < 0}>
+      <div
+        class="revenue-card"
+        class:positive={store.totalProfit >= 0}
+        class:negative={store.totalProfit < 0}
+      >
         <div class="revenue-header">
           <span class="revenue-label">Rentabilidad</span>
           {#if store.totalProfit >= 0}
@@ -499,7 +502,7 @@
           <div class="form-row">
             <button
               class="icon-picker-btn"
-              onclick={(e) => handleIconClick(e, "new")}
+              onclick={(e) => handleIconClick(e, 'new')}
               style="background-color: {store.newInvestmentForm.color}"
             >
               {store.newInvestmentForm.icon}
@@ -553,16 +556,12 @@
                 <div class="investment-row editing">
                   <button
                     class="icon-picker-btn small"
-                    onclick={(e) => handleIconClick(e, "edit")}
+                    onclick={(e) => handleIconClick(e, 'edit')}
                     style="background-color: {store.editForm.color}"
                   >
                     {store.editForm.icon}
                   </button>
-                  <input
-                    type="text"
-                    class="form-input name"
-                    bind:value={store.editForm.name}
-                  />
+                  <input type="text" class="form-input name" bind:value={store.editForm.name} />
                   <input
                     type="number"
                     class="form-input value"
@@ -596,10 +595,7 @@
                   <div class="drag-handle" onclick={(e) => e.stopPropagation()}>
                     <GripVertical size={14} />
                   </div>
-                  <div
-                    class="row-icon"
-                    style="background-color: {investment.color}"
-                  >
+                  <div class="row-icon" style="background-color: {investment.color}">
                     {investment.icon}
                   </div>
                   <div class="row-info">
@@ -644,7 +640,7 @@
                       class:active={investment.highlight}
                       onclick={() => store.toggleHighlight(investment)}
                     >
-                      <Star size={14} fill={investment.highlight ? "currentColor" : "none"} />
+                      <Star size={14} fill={investment.highlight ? 'currentColor' : 'none'} />
                     </button>
                     <button class="btn-icon" onclick={() => store.startAddHistory(investment.id)}>
                       <Plus size={14} />
@@ -661,7 +657,7 @@
             {/each}
           </div>
 
-        <!-- Grouped by Category View -->
+          <!-- Grouped by Category View -->
         {:else if investmentViewMode === 'grouped'}
           <div class="grouped-view">
             {#each groupedInvestments() as group}
@@ -677,10 +673,7 @@
                       class:highlighted={investment.highlight}
                       onclick={() => handleViewDetails(investment)}
                     >
-                      <div
-                        class="row-icon small"
-                        style="background-color: {investment.color}"
-                      >
+                      <div class="row-icon small" style="background-color: {investment.color}">
                         {investment.icon}
                       </div>
                       <div class="row-info">
@@ -703,14 +696,16 @@
             {/each}
           </div>
 
-        <!-- Monthly Contributions View -->
+          <!-- Monthly Contributions View -->
         {:else if investmentViewMode === 'monthly'}
           <div class="monthly-view">
             <div class="monthly-header">
               <Calendar size={16} />
               <span>Aportaciones este mes</span>
               <span class="monthly-total">
-                {store.formatCurrency(monthlyContributions().reduce((sum, i) => sum + i.monthlyContribution, 0))}
+                {store.formatCurrency(
+                  monthlyContributions().reduce((sum, i) => sum + i.monthlyContribution, 0)
+                )}
               </span>
             </div>
             {#if monthlyContributions().length === 0}
@@ -720,22 +715,20 @@
             {:else}
               <div class="investments-grid">
                 {#each monthlyContributions() as investment (investment.id)}
-                  <div
-                    class="investment-row monthly"
-                    onclick={() => handleViewDetails(investment)}
-                  >
-                    <div
-                      class="row-icon"
-                      style="background-color: {investment.color}"
-                    >
+                  <div class="investment-row monthly" onclick={() => handleViewDetails(investment)}>
+                    <div class="row-icon" style="background-color: {investment.color}">
                       {investment.icon}
                     </div>
                     <div class="row-info">
                       <span class="row-name">{investment.name}</span>
-                      <span class="row-symbol">{investment.monthlyHistory.length} aportación(es)</span>
+                      <span class="row-symbol"
+                        >{investment.monthlyHistory.length} aportación(es)</span
+                      >
                     </div>
                     <div class="row-value">
-                      <span class="value monthly-contribution">+{store.formatCurrency(investment.monthlyContribution)}</span>
+                      <span class="value monthly-contribution"
+                        >+{store.formatCurrency(investment.monthlyContribution)}</span
+                      >
                     </div>
                   </div>
                 {/each}
@@ -745,7 +738,7 @@
         {/if}
       {/if}
     </section>
-  {:else if viewMode === "details" && store.selectedInvestment}
+  {:else if viewMode === 'details' && store.selectedInvestment}
     <!-- Investment Details -->
     <header class="details-header">
       <button class="back-btn" onclick={backToGrid}>
@@ -756,10 +749,7 @@
 
     <div class="details-content">
       <div class="details-main">
-        <div
-          class="details-icon"
-          style="background-color: {store.selectedInvestment.color}"
-        >
+        <div class="details-icon" style="background-color: {store.selectedInvestment.color}">
           {store.selectedInvestment.icon}
         </div>
         <div class="details-info">
@@ -773,13 +763,21 @@
       <div class="details-stats">
         <div class="stat">
           <span class="stat-label">Valor actual</span>
-          <span class="stat-value">{store.formatCurrency(store.selectedInvestment.currentValue)}</span>
+          <span class="stat-value"
+            >{store.formatCurrency(store.selectedInvestment.currentValue)}</span
+          >
         </div>
         <div class="stat">
           <span class="stat-label">Aportado</span>
-          <span class="stat-value">{store.formatCurrency(store.selectedInvestment.netContributions)}</span>
+          <span class="stat-value"
+            >{store.formatCurrency(store.selectedInvestment.netContributions)}</span
+          >
         </div>
-        <div class="stat" class:positive={store.selectedInvestment.profit >= 0} class:negative={store.selectedInvestment.profit < 0}>
+        <div
+          class="stat"
+          class:positive={store.selectedInvestment.profit >= 0}
+          class:negative={store.selectedInvestment.profit < 0}
+        >
           <span class="stat-label">Rentabilidad</span>
           <span class="stat-value">
             {store.formatCurrency(store.selectedInvestment.profit)}
@@ -792,7 +790,10 @@
       <div class="history-section">
         <div class="history-header">
           <h3><History size={16} /> Historial</h3>
-          <button class="add-btn small" onclick={() => store.startAddHistory(store.selectedInvestment?.id || '')}>
+          <button
+            class="add-btn small"
+            onclick={() => store.startAddHistory(store.selectedInvestment?.id || '')}
+          >
             <Plus size={14} />
           </button>
         </div>
@@ -809,10 +810,7 @@
                       class="form-input small"
                       bind:value={store.editingHistoryEntry.date}
                     />
-                    <select
-                      class="form-input small"
-                      bind:value={store.editingHistoryEntry.type}
-                    >
+                    <select class="form-input small" bind:value={store.editingHistoryEntry.type}>
                       <option value="CONTRIBUTION">Aportación</option>
                       <option value="WITHDRAWAL">Retirada</option>
                       <option value="VALUE_UPDATE">Actualización</option>
@@ -834,7 +832,10 @@
                     <button class="btn-icon small" onclick={() => store.cancelHistoryEntryEdit()}>
                       <X size={12} />
                     </button>
-                    <button class="btn-icon primary small" onclick={() => store.saveHistoryEntryEdit()}>
+                    <button
+                      class="btn-icon primary small"
+                      onclick={() => store.saveHistoryEntryEdit()}
+                    >
                       <Plus size={12} />
                     </button>
                   </div>
@@ -845,7 +846,7 @@
                   class="history-item"
                   class:linked={entry.transactionId}
                   onclick={() => entry.transactionId && navigateToTransaction(entry.transactionId)}
-                  role={entry.transactionId ? "button" : undefined}
+                  role={entry.transactionId ? 'button' : undefined}
                   tabindex={entry.transactionId ? 0 : undefined}
                 >
                   <div class="history-date">{store.formatDate(entry.date)}</div>
@@ -858,12 +859,15 @@
                     {/if}
                   </div>
                   <div class="history-amount {store.getHistoryTypeColor(entry.type)}">
-                    {entry.type === "WITHDRAWAL" ? "-" : "+"}{store.formatCurrency(entry.amount)}
+                    {entry.type === 'WITHDRAWAL' ? '-' : '+'}{store.formatCurrency(entry.amount)}
                   </div>
                   {#if entry.transactionId}
                     <button
                       class="btn-icon small link-btn"
-                      onclick={(e) => { e.stopPropagation(); navigateToTransaction(entry.transactionId!); }}
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        navigateToTransaction(entry.transactionId!);
+                      }}
                       title="Ver transacción"
                     >
                       <ExternalLink size={12} />
@@ -871,13 +875,19 @@
                   {/if}
                   <button
                     class="btn-icon small"
-                    onclick={(e) => { e.stopPropagation(); store.startEditHistoryEntry(store.selectedInvestment?.id || '', entry); }}
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      store.startEditHistoryEntry(store.selectedInvestment?.id || '', entry);
+                    }}
                   >
                     <Pencil size={12} />
                   </button>
                   <button
                     class="btn-icon danger small"
-                    onclick={(e) => { e.stopPropagation(); store.deleteHistoryEntry(store.selectedInvestment?.id || '', entry.id); }}
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      store.deleteHistoryEntry(store.selectedInvestment?.id || '', entry.id);
+                    }}
                   >
                     <Trash2 size={12} />
                   </button>
@@ -920,7 +930,13 @@
           <X size={18} />
         </button>
       </div>
-      <form class="add-history-body" onsubmit={(e) => { e.preventDefault(); store.saveHistoryEntry(); }}>
+      <form
+        class="add-history-body"
+        onsubmit={(e) => {
+          e.preventDefault();
+          store.saveHistoryEntry();
+        }}
+      >
         <div class="form-group">
           <label for="history-type">Tipo</label>
           <select id="history-type" bind:value={store.addHistoryFormData.type}>
@@ -942,14 +958,25 @@
         </div>
         <div class="form-group">
           <label for="history-date">Fecha</label>
-          <input id="history-date" type="date" required bind:value={store.addHistoryFormData.date} />
+          <input
+            id="history-date"
+            type="date"
+            required
+            bind:value={store.addHistoryFormData.date}
+          />
         </div>
         <div class="form-group">
           <label for="history-notes">Notas</label>
-          <input id="history-notes" type="text" bind:value={store.addHistoryFormData.notes} placeholder="Opcional" />
+          <input
+            id="history-notes"
+            type="text"
+            bind:value={store.addHistoryFormData.notes}
+            placeholder="Opcional"
+          />
         </div>
         <div class="add-history-footer">
-          <button type="button" class="btn-cancel" onclick={store.cancelAddHistory}>Cancelar</button>
+          <button type="button" class="btn-cancel" onclick={store.cancelAddHistory}>Cancelar</button
+          >
           <button type="submit" class="btn-save">Guardar</button>
         </div>
       </form>
@@ -1123,11 +1150,11 @@
   }
 
   .revenue-card.positive .revenue-header {
-    color: #10B981;
+    color: #10b981;
   }
 
   .revenue-card.negative .revenue-header {
-    color: #EF4444;
+    color: #ef4444;
   }
 
   .revenue-value {
@@ -1136,11 +1163,11 @@
   }
 
   .revenue-card.positive .revenue-value {
-    color: #10B981;
+    color: #10b981;
   }
 
   .revenue-card.negative .revenue-value {
-    color: #EF4444;
+    color: #ef4444;
   }
 
   .revenue-percentage {
@@ -1149,11 +1176,11 @@
   }
 
   .revenue-card.positive .revenue-percentage {
-    color: #10B981;
+    color: #10b981;
   }
 
   .revenue-card.negative .revenue-percentage {
-    color: #EF4444;
+    color: #ef4444;
   }
 
   /* Charts Section */
@@ -1449,7 +1476,7 @@
   }
 
   .investment-row.highlighted {
-    border-color: #F59E0B;
+    border-color: #f59e0b;
     background: rgba(245, 158, 11, 0.05);
   }
 
@@ -1547,7 +1574,7 @@
     background: rgba(16, 185, 129, 0.1);
     border: 1px solid rgba(16, 185, 129, 0.2);
     border-radius: 0.5rem;
-    color: #10B981;
+    color: #10b981;
     font-size: 0.875rem;
     font-weight: 500;
   }
@@ -1569,7 +1596,7 @@
   }
 
   .monthly-contribution {
-    color: #10B981 !important;
+    color: #10b981 !important;
   }
 
   .row-icon {
@@ -1648,11 +1675,11 @@
   }
 
   .row-value .profit.positive {
-    color: #10B981;
+    color: #10b981;
   }
 
   .row-value .profit.negative {
-    color: #EF4444;
+    color: #ef4444;
   }
 
   .row-actions {
@@ -1686,13 +1713,13 @@
   }
 
   .btn-icon.active {
-    color: #F59E0B;
-    border-color: #F59E0B;
+    color: #f59e0b;
+    border-color: #f59e0b;
   }
 
   .btn-icon.danger:hover {
-    border-color: #EF4444;
-    color: #EF4444;
+    border-color: #ef4444;
+    color: #ef4444;
   }
 
   .btn-icon.primary {
@@ -1813,11 +1840,11 @@
   }
 
   .stat.positive .stat-value {
-    color: #10B981;
+    color: #10b981;
   }
 
   .stat.negative .stat-value {
-    color: #EF4444;
+    color: #ef4444;
   }
 
   .history-section h3 {
@@ -1938,15 +1965,15 @@
   }
 
   .history-amount.text-green-600 {
-    color: #10B981;
+    color: #10b981;
   }
 
   .history-amount.text-red-600 {
-    color: #EF4444;
+    color: #ef4444;
   }
 
   .history-amount.text-blue-600 {
-    color: #3B82F6;
+    color: #3b82f6;
   }
 
   .empty-history {
@@ -2080,7 +2107,6 @@
     outline: none;
     border-color: var(--acapulco);
   }
-
 
   @media (max-width: 640px) {
     .portfolio-page {

@@ -88,11 +88,7 @@ export class Period {
     return { start, end };
   }
 
-  private static generateLabel(
-    type: PeriodType,
-    offset: number,
-    startDate: Date
-  ): string {
+  private static generateLabel(type: PeriodType, offset: number, startDate: Date): string {
     if (offset === 0) {
       const labels: Record<PeriodType, string> = {
         overview: 'Últimos 12 meses',
@@ -100,7 +96,7 @@ export class Period {
         month: 'Este mes',
         quarter: 'Este trimestre',
         year: 'Este año',
-        custom: 'Personalizado'
+        custom: 'Personalizado',
       };
       return labels[type];
     }
@@ -114,7 +110,7 @@ export class Period {
       case 'month': {
         const monthName = startDate.toLocaleDateString('es-ES', {
           month: 'long',
-          year: 'numeric'
+          year: 'numeric',
         });
         // Capitalize first letter
         return monthName.charAt(0).toUpperCase() + monthName.slice(1);
@@ -153,7 +149,7 @@ export class Period {
   toApiParams(): { startDate: string; endDate: string } {
     return {
       startDate: this.startDate.toISOString().split('T')[0],
-      endDate: this.endDate.toISOString().split('T')[0]
+      endDate: this.endDate.toISOString().split('T')[0],
     };
   }
 

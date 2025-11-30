@@ -72,7 +72,7 @@ export class Money {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     });
     return formatter.format(this.amount);
   }

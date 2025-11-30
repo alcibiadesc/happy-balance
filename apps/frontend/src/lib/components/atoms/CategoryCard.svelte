@@ -13,8 +13,8 @@
     name,
     amount,
     percentage,
-    color = "var(--primary)",
-    icon = "📊",
+    color = 'var(--primary)',
+    icon = '📊',
     monthlyBudget = null,
     budgetUsage = null,
   }: Props = $props();
@@ -23,10 +23,7 @@
 <div class="category-card">
   <div class="category-header">
     <div class="category-info">
-      <span
-        class="category-icon"
-        style="background-color: {color}20; color: {color}"
-      >
+      <span class="category-icon" style="background-color: {color}20; color: {color}">
         {icon}
       </span>
       <span class="category-name">{name}</span>
@@ -41,7 +38,11 @@
   <div class="category-bar">
     <div
       class="category-progress"
-      style="width: {budgetUsage !== null ? Math.min(budgetUsage, 100) : percentage}%; background-color: {budgetUsage !== null && budgetUsage > 100 ? 'var(--accent)' : color}"
+      style="width: {budgetUsage !== null
+        ? Math.min(budgetUsage, 100)
+        : percentage}%; background-color: {budgetUsage !== null && budgetUsage > 100
+        ? 'var(--accent)'
+        : color}"
     ></div>
   </div>
   <div class="category-footer">

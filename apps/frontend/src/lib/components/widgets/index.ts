@@ -118,12 +118,12 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
  * Get widget definition by ID
  */
 export function getWidgetDefinition(id: WidgetId): WidgetDefinition | undefined {
-  return WIDGET_REGISTRY.find(w => w.id === id);
+  return WIDGET_REGISTRY.find((w) => w.id === id);
 }
 
 /**
  * Get all widget IDs
  */
 export function getAllWidgetIds(): WidgetId[] {
-  return WIDGET_REGISTRY.map(w => w.id);
+  return WIDGET_REGISTRY.map((w) => w.id);
 }

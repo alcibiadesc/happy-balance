@@ -11,7 +11,14 @@
     formatCurrency: (amount: number) => string;
   }
 
-  let { income, expenses, investments, savingsRate, loading = false, formatCurrency }: Props = $props();
+  let {
+    income,
+    expenses,
+    investments,
+    savingsRate,
+    loading = false,
+    formatCurrency,
+  }: Props = $props();
 
   const savings = $derived(income - expenses - investments);
   const targetSavingsRate = 20; // 20% is a common savings target

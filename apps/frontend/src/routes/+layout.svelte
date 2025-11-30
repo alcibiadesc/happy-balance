@@ -1,24 +1,24 @@
 <script>
-  import { onMount } from "svelte";
-  import "../app.css";
-  import "../lib/styles/japan-palette.css";
-  import NewNavbar from "../lib/components/organisms/NewNavbar.svelte";
-  import { setLanguage } from "$lib/stores/i18n";
-  import { setCurrency } from "$lib/stores/currency";
-  import { setTheme, applyTheme } from "$lib/stores/theme";
-  import { transactions } from "$lib/stores/transactions";
-  import { sidebarCollapsed } from "$lib/stores/sidebar";
-  import { userPreferences } from "$lib/stores/user-preferences";
-  import { authStore } from "$lib/modules/auth/presentation/stores/authStore.svelte";
-  import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
+  import { onMount } from 'svelte';
+  import '../app.css';
+  import '../lib/styles/japan-palette.css';
+  import NewNavbar from '../lib/components/organisms/NewNavbar.svelte';
+  import { setLanguage } from '$lib/stores/i18n';
+  import { setCurrency } from '$lib/stores/currency';
+  import { setTheme, applyTheme } from '$lib/stores/theme';
+  import { transactions } from '$lib/stores/transactions';
+  import { sidebarCollapsed } from '$lib/stores/sidebar';
+  import { userPreferences } from '$lib/stores/user-preferences';
+  import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
 
   let { children } = $props();
 
   // Check authentication status for protected routes
   $effect(() => {
     const publicRoutes = ['/login', '/health'];
-    const isPublicRoute = publicRoutes.some(route => $page.url.pathname.startsWith(route));
+    const isPublicRoute = publicRoutes.some((route) => $page.url.pathname.startsWith(route));
 
     if (!isPublicRoute && !authStore.isAuthenticated && !authStore.isLoading) {
       goto('/login');
@@ -39,7 +39,11 @@
     });
 
     // Load transaction data only once if authenticated
-    if (authStore.isAuthenticated && typeof window !== "undefined" && !window.__transactions_loaded__) {
+    if (
+      authStore.isAuthenticated &&
+      typeof window !== 'undefined' &&
+      !window.__transactions_loaded__
+    ) {
       transactions.load();
       window.__transactions_loaded__ = true;
     }
@@ -51,9 +55,11 @@
     <NewNavbar />
   {/if}
 
-  <main class="main-content"
-        class:main-content--collapsed={$sidebarCollapsed && authStore.isAuthenticated}
-        class:main-content--no-auth={!authStore.isAuthenticated}>
+  <main
+    class="main-content"
+    class:main-content--collapsed={$sidebarCollapsed && authStore.isAuthenticated}
+    class:main-content--no-auth={!authStore.isAuthenticated}
+  >
     <div class="content-container" class:content-container--no-auth={!authStore.isAuthenticated}>
       {@render children?.()}
     </div>

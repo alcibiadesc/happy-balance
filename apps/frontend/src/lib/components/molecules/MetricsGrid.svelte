@@ -46,7 +46,7 @@
     labels,
     formatCurrency,
     formatTrend,
-    getTrendColor
+    getTrendColor,
   }: Props = $props();
 
   // Drag state
@@ -56,9 +56,9 @@
   // Get visible and sorted metrics from config with size info
   const visibleMetrics = $derived(
     [...$dashboardConfig.metrics]
-      .filter(m => m.visible)
+      .filter((m) => m.visible)
       .sort((a, b) => a.order - b.order)
-      .map(m => ({ id: m.id, size: m.size || 'normal' }))
+      .map((m) => ({ id: m.id, size: m.size || 'normal' }))
   );
 
   function handleDragStart(e: DragEvent, id: MetricType) {
@@ -119,14 +119,18 @@
         ondragover={(e) => handleDragOver(e, metric.id)}
         ondragleave={handleDragLeave}
         ondrop={(e) => handleDrop(e, metric.id)}
-        role={$dashboardConfig.editMode ? "listitem" : undefined}
+        role={$dashboardConfig.editMode ? 'listitem' : undefined}
       >
         {#if $dashboardConfig.editMode}
           <div class="metric-controls">
             <button class="drag-handle" aria-label="Arrastrar">
               <GripVertical size={14} />
             </button>
-            <button class="size-btn" onclick={() => handleToggleSize(metric.id)} aria-label={metric.size === 'large' ? 'Reducir' : 'Expandir'}>
+            <button
+              class="size-btn"
+              onclick={() => handleToggleSize(metric.id)}
+              aria-label={metric.size === 'large' ? 'Reducir' : 'Expandir'}
+            >
               {#if metric.size === 'large'}
                 <Minimize2 size={12} />
               {:else}

@@ -7,7 +7,9 @@
   // Props
   export let isOpen = false;
   export let categories: Category[] = [];
-  export let onSubmit: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>) => void = () => {};
+  export let onSubmit: (
+    transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>
+  ) => void = () => {};
   export let onCancel: () => void = () => {};
 
   // Form state
@@ -68,22 +70,26 @@
 
     try {
       const transactionAmount = parseFloat(amount);
-      const finalAmount = type === 'expense' ? -Math.abs(transactionAmount) : Math.abs(transactionAmount);
+      const finalAmount =
+        type === 'expense' ? -Math.abs(transactionAmount) : Math.abs(transactionAmount);
 
-      const transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'> = {
+      const transaction: Omit<
+        Transaction,
+        'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'
+      > = {
         amount: finalAmount,
         date,
         time: new Date().toLocaleTimeString('es-ES', {
           hour: '2-digit',
           minute: '2-digit',
-          hour12: false
+          hour12: false,
         }),
         merchant: merchant.trim(),
         description: description.trim(),
         categoryId: categoryId || undefined,
         patternHash: undefined,
         hidden: false,
-        notes: undefined
+        notes: undefined,
       };
 
       await onSubmit(transaction);
@@ -164,7 +170,9 @@
                 class:income={type === 'income'}
                 on:click={toggleType}
               >
-                {type === 'expense' ? $t('transactions.modal.expense') : $t('transactions.modal.income')}
+                {type === 'expense'
+                  ? $t('transactions.modal.expense')
+                  : $t('transactions.modal.income')}
               </button>
             </div>
           </div>
@@ -192,7 +200,9 @@
 
         <!-- Description -->
         <div class="field-group">
-          <label class="field-label" for="description">{$t('transactions.modal.what_for_label')}</label>
+          <label class="field-label" for="description"
+            >{$t('transactions.modal.what_for_label')}</label
+          >
           <input
             type="text"
             bind:value={description}
@@ -223,13 +233,13 @@
           <label class="field-label" for="category">{$t('transactions.category')}</label>
           {#if categories.length > 0}
             <div class="category-grid">
-              {#each categories.filter(c => (type === 'income' && ['income', 'no_compute'].includes(c.type)) || (type === 'expense' && ['essential', 'discretionary', 'investment', 'debt_payment', 'no_compute'].includes(c.type))) as category}
+              {#each categories.filter((c) => (type === 'income' && ['income', 'no_compute'].includes(c.type)) || (type === 'expense' && ['essential', 'discretionary', 'investment', 'debt_payment', 'no_compute'].includes(c.type))) as category}
                 <button
                   type="button"
                   class="category-chip"
                   class:selected={categoryId === category.id}
                   style="--category-color: {category.color}"
-                  on:click={() => categoryId = categoryId === category.id ? '' : category.id}
+                  on:click={() => (categoryId = categoryId === category.id ? '' : category.id)}
                 >
                   <span class="category-icon">{category.icon}</span>
                   <span class="category-name">{category.name}</span>
@@ -241,13 +251,10 @@
               <div class="empty-categories-content">
                 <span class="empty-categories-icon">🏷️</span>
                 <p class="empty-categories-text">
-                  No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar mejor tus gastos e ingresos.
+                  No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar
+                  mejor tus gastos e ingresos.
                 </p>
-                <button
-                  type="button"
-                  class="create-categories-btn"
-                  on:click={navigateToCategories}
-                >
+                <button type="button" class="create-categories-btn" on:click={navigateToCategories}>
                   <Plus size={16} />
                   Crear categorías
                 </button>
@@ -261,11 +268,7 @@
           <button type="button" class="btn-secondary" on:click={closeModal}>
             {$t('common.cancel')}
           </button>
-          <button
-            type="submit"
-            class="btn-primary"
-            disabled={isSubmitting}
-          >
+          <button type="submit" class="btn-primary" disabled={isSubmitting}>
             {#if isSubmitting}
               <div class="spinner"></div>
               {$t('transactions.modal.saving')}
@@ -616,8 +619,12 @@
   }
 
   @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slide-up {
@@ -632,8 +639,12 @@
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   @media (max-width: 480px) {

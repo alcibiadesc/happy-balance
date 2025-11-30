@@ -1,0 +1,10 @@
+# Build outputs
+.svelte-kit/
+build/
+dist/
+
+# Dependencies
+node_modules/
+
+# Generated
+*.generated.*

@@ -69,7 +69,7 @@ export class CategoryBudget {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     });
     return formatter.format(this.amount);
   }

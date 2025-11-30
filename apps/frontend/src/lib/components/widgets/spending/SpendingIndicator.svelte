@@ -1,18 +1,16 @@
 <script lang="ts">
   import { t, currentLanguage } from '$lib/stores/i18n';
   import { currentCurrency, currencies } from '$lib/stores/currency';
-  
+
   interface Props {
     income: number;
     expenses: number;
   }
-  
+
   let { income, expenses }: Props = $props();
-  
+
   // Calculate spending rate (de cada 10€ cuántos gasto)
-  let spendingRate = $derived(
-    income > 0 ? Math.round(expenses / income * 10) : 0
-  );
+  let spendingRate = $derived(income > 0 ? Math.round((expenses / income) * 10) : 0);
 
   // Determine status based on spending rate
   let spendingStatus = $derived.by(() => {
@@ -35,7 +33,7 @@
         style: 'currency',
         currency: currency.code,
         minimumFractionDigits: currency.code === 'JPY' ? 0 : 0,
-        maximumFractionDigits: currency.code === 'JPY' ? 0 : 0
+        maximumFractionDigits: currency.code === 'JPY' ? 0 : 0,
       }).format(amount);
     };
 
@@ -106,7 +104,8 @@
 
   /* Subtle pulse animation on the dot for high spending */
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }

@@ -13,7 +13,7 @@ export const load: PageLoad = async ({ fetch, depends }) => {
     return {
       initialData: null,
       availablePeriods: [],
-      error: null
+      error: null,
     };
   }
 
@@ -24,7 +24,7 @@ export const load: PageLoad = async ({ fetch, depends }) => {
     // Load available periods and initial dashboard data in parallel
     const [availablePeriods, dashboardData] = await Promise.all([
       repository.getAvailablePeriods(),
-      repository.getDashboardData(Period.create('overview', 0), 'EUR')
+      repository.getDashboardData(Period.create('overview', 0), 'EUR'),
     ]);
 
     // Load 12 months history for charts
@@ -39,8 +39,8 @@ export const load: PageLoad = async ({ fetch, depends }) => {
             month: item.monthName || item.label || item.month || 'Unknown',
             income: summary.income || 0,
             expenses: summary.expenses || 0,
-            balance: summary.balance || ((summary.income || 0) - (summary.expenses || 0)),
-            investments: summary.investments || 0
+            balance: summary.balance || (summary.income || 0) - (summary.expenses || 0),
+            investments: summary.investments || 0,
           };
         }),
         monthlyBarData: history.map((item: any) => {
@@ -49,18 +49,18 @@ export const load: PageLoad = async ({ fetch, depends }) => {
             month: item.monthName || item.label || item.month || 'Unknown',
             income: summary.income || 0,
             expenses: summary.expenses || 0,
-            investments: summary.investments || 0
+            investments: summary.investments || 0,
           };
-        })
+        }),
       },
       availablePeriods,
-      error: null
+      error: null,
     };
   } catch (error) {
     return {
       initialData: null,
       availablePeriods: [],
-      error: error instanceof Error ? error.message : 'Failed to load dashboard data'
+      error: error instanceof Error ? error.message : 'Failed to load dashboard data',
     };
   }
 };

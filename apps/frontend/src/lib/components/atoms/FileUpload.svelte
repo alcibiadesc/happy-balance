@@ -41,7 +41,7 @@
     event.preventDefault();
     isDragActive = false;
     dispatch('dragover', false);
-    
+
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
       dispatch('upload', { files: event.dataTransfer.files });
     }
@@ -55,12 +55,11 @@
 </script>
 
 <div
-  class="relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer
-    {isDragActive || dragActive 
-      ? 'border-acapulco bg-acapulco bg-opacity-5 scale-105' 
-      : 'border-evening-sea border-opacity-30 hover:border-acapulco hover:bg-acapulco hover:bg-opacity-5'
-    }
-    {disabled ? 'opacity-50 cursor-not-allowed' : ''}
+  class="relative cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-all duration-200
+    {isDragActive || dragActive
+    ? 'border-acapulco bg-acapulco scale-105 bg-opacity-5'
+    : 'border-evening-sea hover:border-acapulco hover:bg-acapulco border-opacity-30 hover:bg-opacity-5'}
+    {disabled ? 'cursor-not-allowed opacity-50' : ''}
   "
   on:dragover={handleDragOver}
   on:dragleave={handleDragLeave}
@@ -83,34 +82,34 @@
 
   <div class="flex flex-col items-center space-y-4">
     <!-- Upload Icon -->
-    <svg 
-      class="w-12 h-12 text-acapulco transition-transform duration-200 {isDragActive || dragActive ? 'scale-110' : ''}" 
-      fill="none" 
-      stroke="currentColor" 
+    <svg
+      class="text-acapulco h-12 w-12 transition-transform duration-200 {isDragActive || dragActive
+        ? 'scale-110'
+        : ''}"
+      fill="none"
+      stroke="currentColor"
       viewBox="0 0 24 24"
     >
-      <path 
-        stroke-linecap="round" 
-        stroke-linejoin="round" 
-        stroke-width="2" 
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
       />
     </svg>
 
     <div class="space-y-2">
-      <p class="text-lg font-medium text-evening-sea">
+      <p class="text-evening-sea text-lg font-medium">
         {#if isDragActive || dragActive}
           Drop your CSV file here
         {:else}
           Choose a CSV file or drag it here
         {/if}
       </p>
-      <p class="text-sm text-evening-sea text-opacity-70">
-        Supports CSV files up to 10MB
-      </p>
+      <p class="text-evening-sea text-sm text-opacity-70">Supports CSV files up to 10MB</p>
     </div>
 
-    <div class="text-xs text-evening-sea text-opacity-50">
+    <div class="text-evening-sea text-xs text-opacity-50">
       <span class="font-medium">Supported formats:</span> .csv
     </div>
   </div>

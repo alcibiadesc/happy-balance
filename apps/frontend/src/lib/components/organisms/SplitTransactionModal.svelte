@@ -18,9 +18,15 @@
   // Determine if transaction is expense or income
   $: isExpense = transaction ? transaction.amount < 0 : true;
   $: modalTitle = isExpense
-    ? (transaction?.linkedTransactionId ? 'Gasto Compartido Vinculado' : 'Marcar como Gasto Compartido')
-    : (transaction?.linkedTransactionId ? 'Reembolso Vinculado' : 'Vincular con Gasto Compartido');
-  $: potentialsLabel = isExpense ? 'Reembolsos Disponibles (Opcional)' : 'Gastos Compartidos Disponibles (Opcional)';
+    ? transaction?.linkedTransactionId
+      ? 'Gasto Compartido Vinculado'
+      : 'Marcar como Gasto Compartido'
+    : transaction?.linkedTransactionId
+      ? 'Reembolso Vinculado'
+      : 'Vincular con Gasto Compartido';
+  $: potentialsLabel = isExpense
+    ? 'Reembolsos Disponibles (Opcional)'
+    : 'Gastos Compartidos Disponibles (Opcional)';
   $: saveButtonLabel = 'Guardar';
   $: linkButtonLabel = 'Vincular';
 
@@ -188,11 +194,7 @@
         <h3 id="modal-title" class="modal-title">
           {modalTitle}
         </h3>
-        <button
-          class="close-btn"
-          on:click={onClose}
-          aria-label="Cerrar"
-        >
+        <button class="close-btn" on:click={onClose} aria-label="Cerrar">
           <X size={20} />
         </button>
       </div>
@@ -215,25 +217,31 @@
           {#if transaction.splitPercentage !== undefined}
             <div class="split-details">
               {#if isExpense}
-                <span>Pagas el <strong>{transaction.splitPercentage}%</strong> del gasto total</span>
-                <span class="real-amount">Monto real: {formatCurrency((transaction.amount * transaction.splitPercentage) / 100)}</span>
+                <span>Pagas el <strong>{transaction.splitPercentage}%</strong> del gasto total</span
+                >
+                <span class="real-amount"
+                  >Monto real: {formatCurrency(
+                    (transaction.amount * transaction.splitPercentage) / 100
+                  )}</span
+                >
               {:else}
-                <span>Este ingreso cubre el <strong>{transaction.splitPercentage}%</strong> de un gasto compartido</span>
-                <span class="real-amount">Monto cubierto: {formatCurrency((transaction.amount * transaction.splitPercentage) / 100)}</span>
+                <span
+                  >Este ingreso cubre el <strong>{transaction.splitPercentage}%</strong> de un gasto
+                  compartido</span
+                >
+                <span class="real-amount"
+                  >Monto cubierto: {formatCurrency(
+                    (transaction.amount * transaction.splitPercentage) / 100
+                  )}</span
+                >
               {/if}
             </div>
           {/if}
         </div>
 
         <div class="actions">
-          <button class="btn btn-secondary" on:click={onClose}>
-            Cerrar
-          </button>
-          <button
-            class="btn btn-danger"
-            on:click={unlinkTransaction}
-            disabled={loading}
-          >
+          <button class="btn btn-secondary" on:click={onClose}> Cerrar </button>
+          <button class="btn btn-danger" on:click={unlinkTransaction} disabled={loading}>
             <Unlink size={16} />
             Desvincular
           </button>
@@ -242,7 +250,9 @@
         <!-- Not linked - configure split -->
         <div class="split-config">
           <label class="label">
-            {isExpense ? '¿Qué porcentaje del gasto pagas tú?' : '¿Qué porcentaje del gasto cubre este reembolso?'}
+            {isExpense
+              ? '¿Qué porcentaje del gasto pagas tú?'
+              : '¿Qué porcentaje del gasto cubre este reembolso?'}
           </label>
           <div class="slider-container">
             <input
@@ -260,7 +270,8 @@
             </div>
           </div>
           <div class="real-amount-display">
-            {isExpense ? 'Monto real' : 'Monto cubierto'}: <strong>{formatCurrency((transaction.amount * splitPercentage) / 100)}</strong>
+            {isExpense ? 'Monto real' : 'Monto cubierto'}:
+            <strong>{formatCurrency((transaction.amount * splitPercentage) / 100)}</strong>
           </div>
         </div>
 
@@ -286,13 +297,23 @@
                     <div class="reimbursement-header">
                       <div class="reimbursement-left">
                         {#if reimbursement.transaction.description}
-                          <div class="reimbursement-title">{reimbursement.transaction.description}</div>
+                          <div class="reimbursement-title">
+                            {reimbursement.transaction.description}
+                          </div>
                         {/if}
-                        <div class="reimbursement-merchant">{reimbursement.transaction.merchant}</div>
-                        <div class="reimbursement-date">{formatDate(reimbursement.transaction.date)}</div>
+                        <div class="reimbursement-merchant">
+                          {reimbursement.transaction.merchant}
+                        </div>
+                        <div class="reimbursement-date">
+                          {formatDate(reimbursement.transaction.date)}
+                        </div>
                       </div>
                       <div class="reimbursement-right">
-                        <div class="reimbursement-amount" class:expense={!isExpense} class:income={isExpense}>
+                        <div
+                          class="reimbursement-amount"
+                          class:expense={!isExpense}
+                          class:income={isExpense}
+                        >
                           {formatCurrency(reimbursement.transaction.amount)}
                         </div>
                         <div
@@ -327,20 +348,12 @@
           <button class="btn btn-secondary" on:click={onClose} disabled={loading}>
             Cancelar
           </button>
-          <button
-            class="btn btn-primary"
-            on:click={saveWithoutLinking}
-            disabled={loading}
-          >
+          <button class="btn btn-primary" on:click={saveWithoutLinking} disabled={loading}>
             <Check size={16} />
             {saveButtonLabel}
           </button>
           {#if selectedReimbursementId}
-            <button
-              class="btn btn-accent"
-              on:click={linkTransaction}
-              disabled={loading}
-            >
+            <button class="btn btn-accent" on:click={linkTransaction} disabled={loading}>
               <Split size={16} />
               {linkButtonLabel}
             </button>
@@ -374,7 +387,9 @@
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -574,7 +589,9 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .reimbursements-section {

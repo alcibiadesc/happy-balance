@@ -36,7 +36,11 @@
     <div class="login-container" in:fly={{ y: 30, duration: 600, delay: 200 }}>
       <div class="logo-wrapper" in:fade={{ duration: 400 }}>
         <div class="logo">
-          <img src="/logo/happy-balance-logo-without-text.png" alt="Happy Balance" class="logo-image" />
+          <img
+            src="/logo/happy-balance-logo-without-text.png"
+            alt="Happy Balance"
+            class="logo-image"
+          />
         </div>
       </div>
 

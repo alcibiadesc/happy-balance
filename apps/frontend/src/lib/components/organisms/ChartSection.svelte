@@ -10,14 +10,7 @@
     loading?: boolean;
   }
 
-  let {
-    title,
-    subtitle,
-    data,
-    height = 280,
-    period,
-    loading = false
-  }: Props = $props();
+  let { title, subtitle, data, height = 280, period, loading = false }: Props = $props();
 </script>
 
 <section class="chart-section">
@@ -26,12 +19,7 @@
     <p class="chart-subtitle">{subtitle}</p>
   {/if}
   <div class="chart-wrapper">
-    <FinancialChart
-      {data}
-      {height}
-      {period}
-      {loading}
-    />
+    <FinancialChart {data} {height} {period} {loading} />
   </div>
 </section>
 

@@ -38,7 +38,7 @@
     onToggleHide,
     onDelete,
     onOpenSplitModal,
-    formatAmount
+    formatAmount,
   }: TransactionRowProps = $props();
 
   // Focus directive for auto-focusing input
@@ -119,12 +119,22 @@
           {formatAmount(transaction.amount)}
         </div>
         {#if transaction.linkedTransactionId && transaction.splitPercentage !== undefined}
-          <div class="split-indicator" title={transaction.amount < 0 ? `Gasto compartido - Pagas el ${transaction.splitPercentage}%` : `Reembolso vinculado - Cubre el ${transaction.splitPercentage}%`}>
+          <div
+            class="split-indicator"
+            title={transaction.amount < 0
+              ? `Gasto compartido - Pagas el ${transaction.splitPercentage}%`
+              : `Reembolso vinculado - Cubre el ${transaction.splitPercentage}%`}
+          >
             <Split size={12} />
             <span>{transaction.splitPercentage}%</span>
           </div>
         {:else if transaction.splitPercentage !== undefined}
-          <div class="split-indicator split-unlinked" title={transaction.amount < 0 ? `Gasto compartido - Pagas el ${transaction.splitPercentage}% (sin vincular)` : `Reembolso - Cubre el ${transaction.splitPercentage}% (sin vincular)`}>
+          <div
+            class="split-indicator split-unlinked"
+            title={transaction.amount < 0
+              ? `Gasto compartido - Pagas el ${transaction.splitPercentage}% (sin vincular)`
+              : `Reembolso - Cubre el ${transaction.splitPercentage}% (sin vincular)`}
+          >
             <Split size={12} />
             <span>{transaction.splitPercentage}%</span>
           </div>
@@ -136,7 +146,9 @@
       <button
         class="category-btn"
         class:has-category={category}
-        style={category ? `background-color: ${category.color}20; border-color: ${category.color}; color: ${category.color}` : ''}
+        style={category
+          ? `background-color: ${category.color}20; border-color: ${category.color}; color: ${category.color}`
+          : ''}
         title={category ? `Categoría: ${category.name}` : 'Asignar categoría'}
         data-testid="transaction-category"
         onclick={(e) => {
@@ -161,8 +173,12 @@
         class="action-btn split-btn"
         class:linked={transaction.linkedTransactionId}
         title={transaction.linkedTransactionId
-          ? (transaction.amount < 0 ? 'Gasto compartido vinculado' : 'Reembolso vinculado')
-          : (transaction.amount < 0 ? 'Marcar como gasto compartido' : 'Vincular con gasto compartido')}
+          ? transaction.amount < 0
+            ? 'Gasto compartido vinculado'
+            : 'Reembolso vinculado'
+          : transaction.amount < 0
+            ? 'Marcar como gasto compartido'
+            : 'Vincular con gasto compartido'}
         onclick={(e) => {
           e.stopPropagation();
           onOpenSplitModal();
@@ -174,7 +190,9 @@
     <button
       class="action-btn"
       class:hidden={transaction.hidden}
-      title={transaction.hidden ? $t('transactions.show_transaction') : $t('transactions.hide_transaction')}
+      title={transaction.hidden
+        ? $t('transactions.show_transaction')
+        : $t('transactions.hide_transaction')}
       onclick={(e) => {
         e.stopPropagation();
         onToggleHide();
@@ -431,7 +449,7 @@
     color: var(--primary);
   }
 
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     margin-right: 0.5rem;
     cursor: pointer;
   }

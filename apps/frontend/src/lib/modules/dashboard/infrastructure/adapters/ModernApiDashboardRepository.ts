@@ -1,4 +1,7 @@
-import type { DashboardRepository, DashboardData } from '../../domain/repositories/DashboardRepository';
+import type {
+  DashboardRepository,
+  DashboardData,
+} from '../../domain/repositories/DashboardRepository';
 import { DashboardMetrics } from '../../domain/entities/DashboardMetrics';
 import { Category } from '../../domain/entities/Category';
 import { Money } from '../../domain/value-objects/Money';
@@ -60,12 +63,12 @@ export class ModernApiDashboardRepository implements DashboardRepository {
    */
   private getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     };
 
     const token = authStore.getAccessToken();
     if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     return headers;
@@ -144,9 +147,12 @@ export class ModernApiDashboardRepository implements DashboardRepository {
    */
   async getCategoryBreakdown(year: number, month: number): Promise<CategoryData[]> {
     try {
-      const response = await fetch(`${this.apiBase}/dashboard/categories/${year}/${month}?limit=10`, {
-        headers: this.getAuthHeaders(),
-      });
+      const response = await fetch(
+        `${this.apiBase}/dashboard/categories/${year}/${month}?limit=10`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         return [];
@@ -252,7 +258,12 @@ export class ModernApiDashboardRepository implements DashboardRepository {
   /**
    * Get summary data for a specific quarter
    */
-  private async getQuarterSummary(startDate: Date, endDate: Date, year: number, quarter: number): Promise<any> {
+  private async getQuarterSummary(
+    startDate: Date,
+    endDate: Date,
+    year: number,
+    quarter: number
+  ): Promise<any> {
     try {
       const formatDate = (date: Date) => {
         const y = date.getFullYear();
@@ -292,7 +303,7 @@ export class ModernApiDashboardRepository implements DashboardRepository {
           balance: (summary.income || 0) - (summary.expenses || 0),
           essentialExpenses: essential,
           discretionaryExpenses: discretionary,
-          debtPayments: debtPayments
+          debtPayments: debtPayments,
         };
       }
 
@@ -329,7 +340,7 @@ export class ModernApiDashboardRepository implements DashboardRepository {
             year: year,
             label: year.toString(),
             period: year.toString(),
-            ...results[i]
+            ...results[i],
           });
         }
       }
@@ -374,7 +385,7 @@ export class ModernApiDashboardRepository implements DashboardRepository {
           balance: (summary.income || 0) - (summary.expenses || 0),
           essentialExpenses: essential,
           discretionaryExpenses: discretionary,
-          debtPayments: debtPayments
+          debtPayments: debtPayments,
         };
       }
 
@@ -412,7 +423,7 @@ export class ModernApiDashboardRepository implements DashboardRepository {
         const currentYear = now.getFullYear();
 
         // Calcular el total de trimestres desde el año 0
-        const totalQuarters = (currentYear * 4) + currentQuarter + offset;
+        const totalQuarters = currentYear * 4 + currentQuarter + offset;
 
         // Calcular año y trimestre final
         const targetYear = Math.floor(totalQuarters / 4);
@@ -451,11 +462,7 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
     // Mapear categorías - usar categoryBreakdown si existe (del endpoint enhanced)
     const categoryData = data.categoryBreakdown || data.categories || [];
-    const categories = this.mapCategories(
-      categoryData,
-      summary.currency || currency,
-      expenses
-    );
+    const categories = this.mapCategories(categoryData, summary.currency || currency, expenses);
 
     // Mapear tendencias - usar monthlyTrend si existe (del endpoint enhanced)
     const trendData = data.monthlyTrend || data.trends || [];
@@ -464,7 +471,7 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       income: trend.income || 0,
       expenses: trend.expenses || 0,
       balance: trend.balance || 0,
-      investments: trend.investments || 0
+      investments: trend.investments || 0,
     }));
 
     // Mapear distribución de gastos - manejar formato del endpoint enhanced
@@ -473,20 +480,35 @@ export class ModernApiDashboardRepository implements DashboardRepository {
     // Si no hay distribución del API, calcular estimaciones basadas en el total
     const totalExpensesValue = expenses.getValue();
     // Check if we have ANY distribution data (including when essential is 0)
-    const hasDistribution = distribution.essential !== undefined ||
-                           distribution.discretionary !== undefined ||
-                           distribution.debtPayments !== undefined ||
-                           distribution.uncategorized !== undefined;
+    const hasDistribution =
+      distribution.essential !== undefined ||
+      distribution.discretionary !== undefined ||
+      distribution.debtPayments !== undefined ||
+      distribution.uncategorized !== undefined;
 
     const expenseDistribution = {
-      essential: distribution.essential?._amount !== undefined ? distribution.essential._amount :
-                distribution.essential !== undefined ? distribution.essential :
-                (hasDistribution ? 0 : totalExpensesValue * 0.6),
-      discretionary: distribution.discretionary?._amount !== undefined ? distribution.discretionary._amount :
-                distribution.discretionary !== undefined ? distribution.discretionary :
-                (hasDistribution ? 0 : totalExpensesValue * 0.35),
-      debtPayments: distribution.debtPayments?._amount !== undefined ? distribution.debtPayments._amount :
-                distribution.debtPayments !== undefined ? distribution.debtPayments : 0
+      essential:
+        distribution.essential?._amount !== undefined
+          ? distribution.essential._amount
+          : distribution.essential !== undefined
+            ? distribution.essential
+            : hasDistribution
+              ? 0
+              : totalExpensesValue * 0.6,
+      discretionary:
+        distribution.discretionary?._amount !== undefined
+          ? distribution.discretionary._amount
+          : distribution.discretionary !== undefined
+            ? distribution.discretionary
+            : hasDistribution
+              ? 0
+              : totalExpensesValue * 0.35,
+      debtPayments:
+        distribution.debtPayments?._amount !== undefined
+          ? distribution.debtPayments._amount
+          : distribution.debtPayments !== undefined
+            ? distribution.debtPayments
+            : 0,
     };
 
     // Generar datos para gráficos de barras
@@ -498,12 +520,12 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       monthlyTrend,
       monthlyBarData,
       expenseDistribution,
-      categoryBreakdown: categoryData // Pass raw category data with budgets
+      categoryBreakdown: categoryData, // Pass raw category data with budgets
     };
   }
 
   private mapCategories(categoryData: any[], currency: string, totalExpenses: Money): Category[] {
-    return categoryData.map(cat => {
+    return categoryData.map((cat) => {
       const amount = Money.create(cat.amount || 0, currency);
 
       // Usar el porcentaje que viene del servidor (ya redondeado)
@@ -529,11 +551,11 @@ export class ModernApiDashboardRepository implements DashboardRepository {
     if (!trends || trends.length === 0) return [];
 
     // Use real data without fake estimates
-    return trends.map(trend => ({
+    return trends.map((trend) => ({
       month: trend.month,
       income: trend.income,
       expenses: trend.expenses,
-      investments: trend.investments || 0
+      investments: trend.investments || 0,
     }));
   }
 
@@ -549,9 +571,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       expenseDistribution: {
         essential: 0,
         discretionary: 0,
-        debtPayments: 0
+        debtPayments: 0,
       },
-      categoryBreakdown: []
+      categoryBreakdown: [],
     };
   }
 }

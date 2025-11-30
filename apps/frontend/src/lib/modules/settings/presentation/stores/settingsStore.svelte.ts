@@ -73,12 +73,12 @@ export function createSettingsStore(apiBase: string) {
   // Helper function to create authenticated headers
   function getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     };
 
     const token = authStore.getAccessToken();
     if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     return headers;
@@ -90,11 +90,13 @@ export function createSettingsStore(apiBase: string) {
   let currentCurrencyCode = $state(get(currentCurrency));
 
   // State
-  let settings = $state<Settings>(Settings.create({
-    theme: currentTheme as ThemeType,
-    language: currentLangCode,
-    currency: currentCurrencyCode
-  }));
+  let settings = $state<Settings>(
+    Settings.create({
+      theme: currentTheme as ThemeType,
+      language: currentLangCode,
+      currency: currentCurrencyCode,
+    })
+  );
   let importStatus = $state('');
   let importError = $state('');
   let importSuccess = $state(false);
@@ -107,9 +109,9 @@ export function createSettingsStore(apiBase: string) {
   let pendingImportData = $state<ImportData | null>(null);
 
   // Subscribe to store changes
-  effectiveTheme.subscribe(value => currentTheme = value);
-  currentLanguage.subscribe(value => currentLangCode = value);
-  currentCurrency.subscribe(value => currentCurrencyCode = value);
+  effectiveTheme.subscribe((value) => (currentTheme = value));
+  currentLanguage.subscribe((value) => (currentLangCode = value));
+  currentCurrency.subscribe((value) => (currentCurrencyCode = value));
 
   // Computed
   const isDark = $derived(currentTheme === 'dark');
@@ -158,7 +160,7 @@ export function createSettingsStore(apiBase: string) {
     try {
       // Fetch backend data
       const response = await fetch(`${apiBase}/export/all`, {
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -182,7 +184,9 @@ export function createSettingsStore(apiBase: string) {
       };
 
       // Download as JSON file
-      const blob = new Blob([JSON.stringify(completeExport, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(completeExport, null, 2)], {
+        type: 'application/json',
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -201,7 +205,8 @@ export function createSettingsStore(apiBase: string) {
       }, 3000);
     } catch (error) {
       console.error('Export error:', error);
-      importError = error instanceof Error ? error.message : get(t)('settings.export_error') || 'Export failed';
+      importError =
+        error instanceof Error ? error.message : get(t)('settings.export_error') || 'Export failed';
     } finally {
       importing = false;
     }
@@ -230,10 +235,10 @@ export function createSettingsStore(apiBase: string) {
         ? (dataToImport.data?.transactions?.length || 0) +
           (dataToImport.data?.categories?.length || 0) +
           (dataToImport.data?.investments?.length || 0)
-        : (dataToImport.transactions?.length || 0);
+        : dataToImport.transactions?.length || 0;
 
-      importStatus = get(t)('settings.import_success', { count }) ||
-        `Imported ${count} items successfully`;
+      importStatus =
+        get(t)('settings.import_success', { count }) || `Imported ${count} items successfully`;
       importSuccess = true;
 
       setTimeout(() => {
@@ -246,9 +251,8 @@ export function createSettingsStore(apiBase: string) {
       }, 2000);
     } catch (error) {
       console.error('Import error:', error);
-      importError = error instanceof Error
-        ? error.message
-        : get(t)('settings.import_error') || 'Import failed';
+      importError =
+        error instanceof Error ? error.message : get(t)('settings.import_error') || 'Import failed';
     } finally {
       importing = false;
       pendingImportData = null;
@@ -326,9 +330,10 @@ export function createSettingsStore(apiBase: string) {
         });
 
         const mergedTransactions = [...existingTransactions, ...newTransactions];
-        const mergedHashes = [...existingHashes, ...newTransactions.map((t: any) =>
-          t.hash || `${t.date}_${t.amount}_${t.merchant}`
-        )];
+        const mergedHashes = [
+          ...existingHashes,
+          ...newTransactions.map((t: any) => t.hash || `${t.date}_${t.amount}_${t.merchant}`),
+        ];
 
         localStorage.setItem('transactions', JSON.stringify(mergedTransactions));
         localStorage.setItem('transaction-hashes', JSON.stringify(mergedHashes));
@@ -369,7 +374,7 @@ export function createSettingsStore(apiBase: string) {
         // Delete all transactions for the authenticated user
         const transactionsResponse = await fetch(`${apiBase}/transactions`, {
           method: 'DELETE',
-          headers: getAuthHeaders()
+          headers: getAuthHeaders(),
         });
 
         if (!transactionsResponse.ok) {
@@ -383,14 +388,9 @@ export function createSettingsStore(apiBase: string) {
       }
 
       // Clear localStorage
-      const keysToDelete = [
-        'transactions',
-        'transaction-hashes',
-        'categories',
-        'user-preferences'
-      ];
+      const keysToDelete = ['transactions', 'transaction-hashes', 'categories', 'user-preferences'];
 
-      keysToDelete.forEach(key => {
+      keysToDelete.forEach((key) => {
         localStorage.removeItem(key);
       });
 
@@ -423,7 +423,7 @@ export function createSettingsStore(apiBase: string) {
       // Reset to default categories via seed endpoint
       const seedResponse = await fetch(`${apiBase}/seed`, {
         method: 'POST',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!seedResponse.ok) {
@@ -503,23 +503,53 @@ export function createSettingsStore(apiBase: string) {
 
   return {
     // State
-    get settings() { return settings; },
-    get importStatus() { return importStatus; },
-    get importError() { return importError; },
-    get importSuccess() { return importSuccess; },
-    get importing() { return importing; },
-    get isDark() { return isDark; },
-    get availableLanguages() { return availableLanguages; },
-    get currentLanguage() { return currentLang; },
+    get settings() {
+      return settings;
+    },
+    get importStatus() {
+      return importStatus;
+    },
+    get importError() {
+      return importError;
+    },
+    get importSuccess() {
+      return importSuccess;
+    },
+    get importing() {
+      return importing;
+    },
+    get isDark() {
+      return isDark;
+    },
+    get availableLanguages() {
+      return availableLanguages;
+    },
+    get currentLanguage() {
+      return currentLang;
+    },
 
     // Modal states
-    get showImportModal() { return showImportModal; },
-    set showImportModal(value: boolean) { showImportModal = value; },
-    get showDeleteAllModal() { return showDeleteAllModal; },
-    set showDeleteAllModal(value: boolean) { showDeleteAllModal = value; },
-    get showResetModal() { return showResetModal; },
-    set showResetModal(value: boolean) { showResetModal = value; },
-    get pendingImportData() { return pendingImportData; },
+    get showImportModal() {
+      return showImportModal;
+    },
+    set showImportModal(value: boolean) {
+      showImportModal = value;
+    },
+    get showDeleteAllModal() {
+      return showDeleteAllModal;
+    },
+    set showDeleteAllModal(value: boolean) {
+      showDeleteAllModal = value;
+    },
+    get showResetModal() {
+      return showResetModal;
+    },
+    set showResetModal(value: boolean) {
+      showResetModal = value;
+    },
+    get pendingImportData() {
+      return pendingImportData;
+    },
 
     // Actions
     toggleTheme,
@@ -531,7 +561,7 @@ export function createSettingsStore(apiBase: string) {
     deleteAllData,
     confirmDeleteAll,
     resetData,
-    confirmReset
+    confirmReset,
   };
 }
 

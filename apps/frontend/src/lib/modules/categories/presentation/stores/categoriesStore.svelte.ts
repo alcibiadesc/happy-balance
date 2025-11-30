@@ -32,14 +32,14 @@ export function createCategoriesStore() {
     icon: '',
     color: '',
     annualBudget: 0,
-    type: 'essential'
+    type: 'essential',
   });
   let newCategoryForm = $state<EditForm>({
     name: '',
     icon: '',
     color: '',
     annualBudget: 0,
-    type: 'essential'
+    type: 'essential',
   });
 
   // UI State
@@ -60,7 +60,7 @@ export function createCategoriesStore() {
     top: 0,
     left: 0,
     width: 220,
-    position: 'bottom'
+    position: 'bottom',
   });
 
   // Helper Tooltip State
@@ -68,22 +68,62 @@ export function createCategoriesStore() {
   let tooltipPosition = $state({
     top: 0,
     left: 0,
-    position: 'bottom'
+    position: 'bottom',
   });
 
   // Constants
   const availableColors = [
-    '#f5796c', '#fecd2c', '#7abaa5', '#6b5b95',
-    '#ff6f69', '#88b04b', '#92a8d1', '#955251',
-    '#b565a7', '#009b77', '#dd4124', '#d65076',
-    '#45b8ac', '#efc050', '#5b5ea6', '#9b2335'
+    '#f5796c',
+    '#fecd2c',
+    '#7abaa5',
+    '#6b5b95',
+    '#ff6f69',
+    '#88b04b',
+    '#92a8d1',
+    '#955251',
+    '#b565a7',
+    '#009b77',
+    '#dd4124',
+    '#d65076',
+    '#45b8ac',
+    '#efc050',
+    '#5b5ea6',
+    '#9b2335',
   ];
 
   const availableEmojis = [
-    '🏠', '🍔', '🎮', '💼', '🚗', '✈️', '📚', '💊',
-    '🎬', '👕', '💳', '🎁', '💰', '📱', '🏥', '🎓',
-    '🏪', '⚡', '💧', '🌐', '🔧', '🐾', '🎨', '🎵',
-    '🏋️', '🚕', '☕', '🍺', '💐', '📦', '🏦', '💸'
+    '🏠',
+    '🍔',
+    '🎮',
+    '💼',
+    '🚗',
+    '✈️',
+    '📚',
+    '💊',
+    '🎬',
+    '👕',
+    '💳',
+    '🎁',
+    '💰',
+    '📱',
+    '🏥',
+    '🎓',
+    '🏪',
+    '⚡',
+    '💧',
+    '🌐',
+    '🔧',
+    '🐾',
+    '🎨',
+    '🎵',
+    '🏋️',
+    '🚕',
+    '☕',
+    '🍺',
+    '💐',
+    '📦',
+    '🏦',
+    '💸',
   ];
 
   // Computed
@@ -94,10 +134,10 @@ export function createCategoriesStore() {
       discretionary: [],
       investment: [],
       debt_payment: [],
-      no_compute: []
+      no_compute: [],
     };
 
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       grouped[cat.getTypeValue()].push(cat);
     });
 
@@ -110,17 +150,19 @@ export function createCategoriesStore() {
     { value: 'discretionary', type: CategoryType.discretionary() },
     { value: 'investment', type: CategoryType.investment() },
     { value: 'debt_payment', type: CategoryType.debtPayment() },
-    { value: 'no_compute', type: CategoryType.noCompute() }
+    { value: 'no_compute', type: CategoryType.noCompute() },
   ]);
 
   // Load categories from API
   async function loadCategories() {
     await apiCategories.load();
     const apiCats = get(apiCategories);
-    categories = apiCats.map(cat => CategoryEntity.create({
-      ...cat,
-      type: (cat.type || 'essential') as CategoryTypeValue
-    }));
+    categories = apiCats.map((cat) =>
+      CategoryEntity.create({
+        ...cat,
+        type: (cat.type || 'essential') as CategoryTypeValue,
+      })
+    );
   }
 
   // Category CRUD operations
@@ -131,14 +173,14 @@ export function createCategoriesStore() {
       icon: '🏷️',
       color: availableColors[0],
       type: type,
-      annualBudget: 0
+      annualBudget: 0,
     };
     newCategory = {
       name: '',
       icon: '🏷️',
       color: availableColors[0],
       type: type,
-      annualBudget: 0
+      annualBudget: 0,
     };
   }
 
@@ -150,7 +192,7 @@ export function createCategoriesStore() {
       icon: newCategoryForm.icon,
       color: newCategoryForm.color,
       type: newCategoryForm.type,
-      annualBudget: newCategoryForm.annualBudget
+      annualBudget: newCategoryForm.annualBudget,
     };
 
     await apiCategories.add(category);
@@ -173,7 +215,7 @@ export function createCategoriesStore() {
       icon: category.getIcon(),
       color: category.getColor(),
       annualBudget: category.getAnnualBudget(),
-      type: category.getTypeValue()
+      type: category.getTypeValue(),
     };
   }
 
@@ -186,7 +228,7 @@ export function createCategoriesStore() {
         icon: editForm.icon,
         color: editForm.color,
         type: editForm.type,
-        annualBudget: editForm.annualBudget
+        annualBudget: editForm.annualBudget,
       };
 
       await apiCategories.update(editingCategory, updateData);
@@ -207,7 +249,7 @@ export function createCategoriesStore() {
     // Count transactions with this category
     await apiTransactions.load();
     const transactions = get(apiTransactions);
-    transactionsWithCategory = transactions.filter(t => t.categoryId === category.getId()).length;
+    transactionsWithCategory = transactions.filter((t) => t.categoryId === category.getId()).length;
     recategorizeTarget = 'remove';
     showDeleteModal = true;
   }
@@ -221,11 +263,11 @@ export function createCategoriesStore() {
       // Handle recategorization if there are transactions
       if (transactionsWithCategory > 0) {
         const transactions = get(apiTransactions);
-        const affectedTransactions = transactions.filter(t => t.categoryId === category.getId());
+        const affectedTransactions = transactions.filter((t) => t.categoryId === category.getId());
 
         for (const transaction of affectedTransactions) {
           await apiTransactions.update(transaction.id, {
-            categoryId: recategorizeTarget === 'remove' ? undefined : recategorizeTarget
+            categoryId: recategorizeTarget === 'remove' ? undefined : recategorizeTarget,
           });
         }
       }
@@ -271,13 +313,13 @@ export function createCategoriesStore() {
     if (selectedCategories.size === 0) return;
 
     // Get all selected category entities
-    categoriesToDelete = categories.filter(cat => selectedCategories.has(cat.getId()));
+    categoriesToDelete = categories.filter((cat) => selectedCategories.has(cat.getId()));
 
     // Count total transactions across all selected categories
     await apiTransactions.load();
     const transactions = get(apiTransactions);
-    transactionsWithCategory = transactions.filter(t =>
-      t.categoryId && selectedCategories.has(t.categoryId)
+    transactionsWithCategory = transactions.filter(
+      (t) => t.categoryId && selectedCategories.has(t.categoryId)
     ).length;
 
     recategorizeTarget = 'remove';
@@ -291,14 +333,14 @@ export function createCategoriesStore() {
       // Handle recategorization if there are transactions
       if (transactionsWithCategory > 0) {
         const transactions = get(apiTransactions);
-        const categoryIds = new Set(categoriesToDelete.map(cat => cat.getId()));
-        const affectedTransactions = transactions.filter(t =>
-          t.categoryId && categoryIds.has(t.categoryId)
+        const categoryIds = new Set(categoriesToDelete.map((cat) => cat.getId()));
+        const affectedTransactions = transactions.filter(
+          (t) => t.categoryId && categoryIds.has(t.categoryId)
         );
 
         for (const transaction of affectedTransactions) {
           await apiTransactions.update(transaction.id, {
-            categoryId: recategorizeTarget === 'remove' ? undefined : recategorizeTarget
+            categoryId: recategorizeTarget === 'remove' ? undefined : recategorizeTarget,
           });
         }
       }
@@ -354,7 +396,11 @@ export function createCategoriesStore() {
     const spaceRight = viewportWidth - rect.right;
     const spaceLeft = rect.left;
 
-    let top, left, maxHeight, position, width = pickerWidth;
+    let top,
+      left,
+      maxHeight,
+      position,
+      width = pickerWidth;
 
     if (spaceBelow >= pickerEstimatedHeight + spacing) {
       position = 'bottom';
@@ -375,7 +421,7 @@ export function createCategoriesStore() {
     }
 
     if (spaceRight >= pickerWidth / 2) {
-      left = rect.left + (rect.width / 2) - (pickerWidth / 2);
+      left = rect.left + rect.width / 2 - pickerWidth / 2;
     } else if (spaceLeft >= pickerWidth / 2) {
       left = rect.right - pickerWidth / 2;
     } else {
@@ -390,12 +436,12 @@ export function createCategoriesStore() {
   function getCurrencySymbol(): string {
     const currency = get(currentCurrency);
     const symbols: Record<string, string> = {
-      'EUR': '€',
-      'USD': '$',
-      'GBP': '£',
-      'JPY': '¥',
-      'CNY': '¥',
-      'INR': '₹'
+      EUR: '€',
+      USD: '$',
+      GBP: '£',
+      JPY: '¥',
+      CNY: '¥',
+      INR: '₹',
     };
     return symbols[currency] || currency;
   }
@@ -406,50 +452,110 @@ export function createCategoriesStore() {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(amount);
   }
 
   return {
     // State
-    get categories() { return categories; },
-    get categoriesByType() { return categoriesByType; },
-    get categoryTypes() { return categoryTypes; },
-    get editingCategory() { return editingCategory; },
-    get newCategory() { return newCategory; },
-    get selectedType() { return selectedType; },
-    get editForm() { return editForm; },
-    set editForm(value: EditForm) { editForm = value; },
-    get newCategoryForm() { return newCategoryForm; },
-    set newCategoryForm(value: EditForm) { newCategoryForm = value; },
+    get categories() {
+      return categories;
+    },
+    get categoriesByType() {
+      return categoriesByType;
+    },
+    get categoryTypes() {
+      return categoryTypes;
+    },
+    get editingCategory() {
+      return editingCategory;
+    },
+    get newCategory() {
+      return newCategory;
+    },
+    get selectedType() {
+      return selectedType;
+    },
+    get editForm() {
+      return editForm;
+    },
+    set editForm(value: EditForm) {
+      editForm = value;
+    },
+    get newCategoryForm() {
+      return newCategoryForm;
+    },
+    set newCategoryForm(value: EditForm) {
+      newCategoryForm = value;
+    },
 
     // UI State
-    get showDeleteModal() { return showDeleteModal; },
-    set showDeleteModal(value: boolean) { showDeleteModal = value; },
-    get categoryToDelete() { return categoryToDelete; },
-    get categoriesToDelete() { return categoriesToDelete; },
-    get transactionsWithCategory() { return transactionsWithCategory; },
-    get recategorizeTarget() { return recategorizeTarget; },
-    set recategorizeTarget(value: string) { recategorizeTarget = value; },
+    get showDeleteModal() {
+      return showDeleteModal;
+    },
+    set showDeleteModal(value: boolean) {
+      showDeleteModal = value;
+    },
+    get categoryToDelete() {
+      return categoryToDelete;
+    },
+    get categoriesToDelete() {
+      return categoriesToDelete;
+    },
+    get transactionsWithCategory() {
+      return transactionsWithCategory;
+    },
+    get recategorizeTarget() {
+      return recategorizeTarget;
+    },
+    set recategorizeTarget(value: string) {
+      recategorizeTarget = value;
+    },
 
     // Bulk Selection State
-    get isSelectionMode() { return isSelectionMode; },
-    get selectedCategories() { return selectedCategories; },
-    get selectedCount() { return selectedCategories.size; },
+    get isSelectionMode() {
+      return isSelectionMode;
+    },
+    get selectedCategories() {
+      return selectedCategories;
+    },
+    get selectedCount() {
+      return selectedCategories.size;
+    },
 
     // Icon Picker State
-    get showIconPickerNew() { return showIconPickerNew; },
-    set showIconPickerNew(value: boolean) { showIconPickerNew = value; },
-    get showIconPickerEdit() { return showIconPickerEdit; },
-    set showIconPickerEdit(value: string | null) { showIconPickerEdit = value; },
-    get pickerPosition() { return pickerPosition; },
-    set pickerPosition(value: PickerPosition) { pickerPosition = value; },
+    get showIconPickerNew() {
+      return showIconPickerNew;
+    },
+    set showIconPickerNew(value: boolean) {
+      showIconPickerNew = value;
+    },
+    get showIconPickerEdit() {
+      return showIconPickerEdit;
+    },
+    set showIconPickerEdit(value: string | null) {
+      showIconPickerEdit = value;
+    },
+    get pickerPosition() {
+      return pickerPosition;
+    },
+    set pickerPosition(value: PickerPosition) {
+      pickerPosition = value;
+    },
 
     // Helper Tooltip State
-    get showHelperTooltip() { return showHelperTooltip; },
-    set showHelperTooltip(value: boolean) { showHelperTooltip = value; },
-    get tooltipPosition() { return tooltipPosition; },
-    set tooltipPosition(value: any) { tooltipPosition = value; },
+    get showHelperTooltip() {
+      return showHelperTooltip;
+    },
+    set showHelperTooltip(value: boolean) {
+      showHelperTooltip = value;
+    },
+    get tooltipPosition() {
+      return tooltipPosition;
+    },
+    set tooltipPosition(value: any) {
+      tooltipPosition = value;
+    },
 
     // Constants
     availableColors,
@@ -474,7 +580,7 @@ export function createCategoriesStore() {
     closeIconPicker,
     calculatePickerPosition,
     getCurrencySymbol,
-    formatCurrency
+    formatCurrency,
   };
 }
 

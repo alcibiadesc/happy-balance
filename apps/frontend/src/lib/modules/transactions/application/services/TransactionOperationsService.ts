@@ -35,7 +35,9 @@ export class TransactionOperationsService {
     await this.apiTransactions.delete(id);
   }
 
-  async add(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>): Promise<void> {
+  async add(
+    transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>
+  ): Promise<void> {
     try {
       await this.apiTransactions.add(transaction as Omit<Transaction, 'id' | 'createdAt'>);
     } catch (error) {
@@ -52,8 +54,8 @@ export class TransactionOperationsService {
     try {
       const selectedCategory = categoryId ? this.getCategory(categoryId) : null;
 
-      let updates: Partial<Transaction> = {
-        categoryId: categoryId === null ? undefined : categoryId
+      const updates: Partial<Transaction> = {
+        categoryId: categoryId === null ? undefined : categoryId,
       };
 
       // Handle amount conversion based on category type
@@ -62,8 +64,8 @@ export class TransactionOperationsService {
           updates.amount = Math.abs(transaction.amount);
         } else if (
           (selectedCategory.type === 'essential' ||
-           selectedCategory.type === 'discretionary' ||
-           selectedCategory.type === 'investment') &&
+            selectedCategory.type === 'discretionary' ||
+            selectedCategory.type === 'investment') &&
           transaction.amount > 0
         ) {
           updates.amount = -Math.abs(transaction.amount);
@@ -85,10 +87,7 @@ export class TransactionOperationsService {
     }
   }
 
-  async categorizeSimilarTransactions(
-    transaction: Transaction,
-    categoryId: string
-  ): Promise<void> {
+  async categorizeSimilarTransactions(transaction: Transaction, categoryId: string): Promise<void> {
     const allTransactions = get(this.apiTransactions);
     const similar = this.findSimilarTransactions(transaction, allTransactions);
 
@@ -102,9 +101,7 @@ export class TransactionOperationsService {
     categoryId: string
   ): Promise<void> {
     const allTransactions = get(this.apiTransactions);
-    const transactionsToUpdate = allTransactions.filter(t =>
-      transactionIds.includes(t.id)
-    );
+    const transactionsToUpdate = allTransactions.filter((t) => transactionIds.includes(t.id));
 
     for (const t of transactionsToUpdate) {
       await this.categorize(t, categoryId, false);
@@ -133,7 +130,7 @@ export class TransactionOperationsService {
       const words1 = new Set(clean1.split(' '));
       const words2 = new Set(clean2.split(' '));
 
-      const intersection = new Set([...words1].filter(x => words2.has(x)));
+      const intersection = new Set([...words1].filter((x) => words2.has(x)));
       const union = new Set([...words1, ...words2]);
 
       return intersection.size / union.size;
@@ -142,7 +139,7 @@ export class TransactionOperationsService {
     const targetDesc = transaction.description;
     const targetMerchant = transaction.merchant;
 
-    return allTransactions.filter(t => {
+    return allTransactions.filter((t) => {
       if (t.id === transaction.id) return false;
       if (t.categoryId) return false;
 
@@ -154,10 +151,7 @@ export class TransactionOperationsService {
     });
   }
 
-  async updateObservations(
-    transactionId: string,
-    observations: string | null
-  ): Promise<boolean> {
+  async updateObservations(transactionId: string, observations: string | null): Promise<boolean> {
     try {
       await this.apiTransactions.update(transactionId, { observations: observations ?? undefined });
       return true;

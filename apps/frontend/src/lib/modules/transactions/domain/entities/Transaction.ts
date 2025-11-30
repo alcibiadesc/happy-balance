@@ -1,10 +1,10 @@
-import { Result } from "../shared/Result";
-import { TransactionId } from "../value-objects/TransactionId";
-import { Money } from "../value-objects/Money";
-import { TransactionDate } from "../value-objects/TransactionDate";
-import { Merchant } from "../value-objects/Merchant";
-import { Category, CategoryId } from "./Category";
-import { TransactionType } from "./TransactionType";
+import { Result } from '../shared/Result';
+import { TransactionId } from '../value-objects/TransactionId';
+import { Money } from '../value-objects/Money';
+import { TransactionDate } from '../value-objects/TransactionDate';
+import { Merchant } from '../value-objects/Merchant';
+import { Category, CategoryId } from './Category';
+import { TransactionType } from './TransactionType';
 
 /**
  * Transaction entity - Rich domain model
@@ -22,7 +22,7 @@ export class Transaction {
     private readonly _merchant: Merchant,
     private readonly _type: TransactionType,
     description: string,
-    private readonly _createdAt: Date = new Date(),
+    private readonly _createdAt: Date = new Date()
   ) {
     this._description = description;
   }
@@ -33,45 +33,32 @@ export class Transaction {
     merchant: Merchant,
     type: TransactionType,
     description: string,
-    id?: TransactionId,
+    id?: TransactionId
   ): Result<Transaction> {
     // Business rule: Income transactions should have non-negative amounts
     if (type === TransactionType.INCOME && amount.getValue() < 0) {
-      return Result.failWithMessage(
-        "Income transactions cannot have negative amounts",
-      );
+      return Result.failWithMessage('Income transactions cannot have negative amounts');
     }
 
     // Business rule: Expense transactions should have non-negative amounts
     if (type === TransactionType.EXPENSE && amount.getValue() < 0) {
-      return Result.failWithMessage(
-        "Expense transactions cannot have negative amounts",
-      );
+      return Result.failWithMessage('Expense transactions cannot have negative amounts');
     }
 
     // Business rule: Investment transactions should have non-negative amounts
     if (type === TransactionType.INVESTMENT && amount.getValue() < 0) {
-      return Result.failWithMessage(
-        "Investment transactions cannot have negative amounts",
-      );
+      return Result.failWithMessage('Investment transactions cannot have negative amounts');
     }
 
     // Validate description
     if (description && description.length > 200) {
-      return Result.failWithMessage("Description cannot exceed 200 characters");
+      return Result.failWithMessage('Description cannot exceed 200 characters');
     }
 
     const transactionId = id || TransactionId.generate();
 
     return Result.ok(
-      new Transaction(
-        transactionId,
-        amount,
-        date,
-        merchant,
-        type,
-        description || "",
-      ),
+      new Transaction(transactionId, amount, date, merchant, type, description || '')
     );
   }
 
@@ -117,13 +104,13 @@ export class Transaction {
     // Business rule: Category type must match transaction type
     if (category.type !== this._type) {
       return Result.failWithMessage(
-        `Category type ${category.type} does not match transaction type ${this._type}`,
+        `Category type ${category.type} does not match transaction type ${this._type}`
       );
     }
 
     // Business rule: Cannot categorize inactive categories
     if (!category.isActive) {
-      return Result.failWithMessage("Cannot categorize with inactive category");
+      return Result.failWithMessage('Cannot categorize with inactive category');
     }
 
     this._categoryId = category.id;
@@ -136,10 +123,10 @@ export class Transaction {
 
   updateDescription(newDescription: string): Result<void> {
     if (newDescription && newDescription.length > 200) {
-      return Result.failWithMessage("Description cannot exceed 200 characters");
+      return Result.failWithMessage('Description cannot exceed 200 characters');
     }
 
-    this._description = newDescription || "";
+    this._description = newDescription || '';
     return Result.ok(undefined);
   }
 
@@ -167,9 +154,7 @@ export class Transaction {
     }
 
     // Within tolerance time window
-    const timeDiffMs = Math.abs(
-      this._date.getDate().getTime() - other._date.getDate().getTime(),
-    );
+    const timeDiffMs = Math.abs(this._date.getDate().getTime() - other._date.getDate().getTime());
     const toleranceMs = toleranceHours * 60 * 60 * 1000;
 
     return timeDiffMs <= toleranceMs;
@@ -231,7 +216,7 @@ export class Transaction {
     return {
       id: this._id.value,
       amount: this._amount.getValue(),
-      currency: "EUR", // Currency is managed separately in the app
+      currency: 'EUR', // Currency is managed separately in the app
       date: this._date.toString(),
       merchant: this._merchant.name,
       type: this._type,
@@ -266,7 +251,7 @@ export class Transaction {
         merchantResult.getValue(),
         snapshot.type,
         snapshot.description,
-        new Date(snapshot.createdAt),
+        new Date(snapshot.createdAt)
       );
 
       // Set optional fields
@@ -282,7 +267,7 @@ export class Transaction {
       return Result.ok(transaction);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to create transaction from snapshot: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to create transaction from snapshot: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

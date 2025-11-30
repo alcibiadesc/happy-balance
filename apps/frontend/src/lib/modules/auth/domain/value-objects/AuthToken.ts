@@ -48,9 +48,6 @@ export class AuthTokens {
   ) {}
 
   static create(accessToken: string, refreshToken: string): AuthTokens {
-    return new AuthTokens(
-      AccessToken.create(accessToken),
-      RefreshToken.create(refreshToken)
-    );
+    return new AuthTokens(AccessToken.create(accessToken), RefreshToken.create(refreshToken));
   }
 }

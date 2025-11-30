@@ -42,14 +42,14 @@
       expenses: store.trends?.expenses.getPercentageChange() || 0,
       investments: store.trends?.investments.getPercentageChange() || 0,
     },
-    categories: store.categories.map(cat => ({
+    categories: store.categories.map((cat) => ({
       name: cat.getName(),
       amount: cat.getAmount().getValue(),
       percentage: cat.getPercentage(),
       color: cat.getColor(),
       icon: cat.getIcon(),
       monthlyBudget: cat.getMonthlyBudget(),
-      budgetUsage: cat.getBudgetUsage()
+      budgetUsage: cat.getBudgetUsage(),
     })),
     categoryBreakdown: store.categoryBreakdown,
     expenseDistribution: store.expenseDistribution,
@@ -91,10 +91,7 @@
       }
     });
 
-    await Promise.all([
-      store.loadDashboard(),
-      loadPortfolio()
-    ]);
+    await Promise.all([store.loadDashboard(), loadPortfolio()]);
   });
 </script>
 

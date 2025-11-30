@@ -89,25 +89,60 @@ export function createInvestmentsStore() {
   let inlineEditValue = $state<number>(0);
 
   // History entry editing
-  let editingHistoryEntry = $state<{ investmentId: string; historyId: string; amount: number; date: string; notes: string; type: string } | null>(null);
+  let editingHistoryEntry = $state<{
+    investmentId: string;
+    historyId: string;
+    amount: number;
+    date: string;
+    notes: string;
+    type: string;
+  } | null>(null);
 
   // Constants
   const availableColors = [
-    '#10B981', '#3B82F6', '#8B5CF6', '#EC4899',
-    '#F59E0B', '#EF4444', '#14B8A6', '#6366F1',
-    '#84CC16', '#F97316', '#06B6D4', '#A855F7'
+    '#10B981',
+    '#3B82F6',
+    '#8B5CF6',
+    '#EC4899',
+    '#F59E0B',
+    '#EF4444',
+    '#14B8A6',
+    '#6366F1',
+    '#84CC16',
+    '#F97316',
+    '#06B6D4',
+    '#A855F7',
   ];
 
   const availableIcons = [
-    '📈', '💹', '📊', '💰', '🏦', '💎', '🪙', '📉',
-    '💵', '💴', '💶', '💷', '🏠', '🚗', '✈️', '🎯',
-    '📱', '💻', '🔒', '🌍', '⚡', '🛢️', '🏭', '🎨'
+    '📈',
+    '💹',
+    '📊',
+    '💰',
+    '🏦',
+    '💎',
+    '🪙',
+    '📉',
+    '💵',
+    '💴',
+    '💶',
+    '💷',
+    '🏠',
+    '🚗',
+    '✈️',
+    '🎯',
+    '📱',
+    '💻',
+    '🔒',
+    '🌍',
+    '⚡',
+    '🛢️',
+    '🏭',
+    '🎨',
   ];
 
   // Computed
-  const highlightedInvestments = $derived(
-    investments.filter(inv => inv.highlight)
-  );
+  const highlightedInvestments = $derived(investments.filter((inv) => inv.highlight));
 
   const totalPortfolioValue = $derived(
     portfolioSummary?.totalValue ?? investments.reduce((sum, inv) => sum + inv.currentValue, 0)
@@ -117,9 +152,7 @@ export function createInvestmentsStore() {
     portfolioSummary?.totalProfit ?? investments.reduce((sum, inv) => sum + inv.profit, 0)
   );
 
-  const profitPercentage = $derived(
-    portfolioSummary?.profitPercentage ?? 0
-  );
+  const profitPercentage = $derived(portfolioSummary?.profitPercentage ?? 0);
 
   // Load all data
   async function loadAll() {
@@ -361,12 +394,18 @@ export function createInvestmentsStore() {
   }
 
   // History entry editing
-  function startEditHistoryEntry(investmentId: string, entry: { id: string; amount: number; date: string; notes?: string; type: string }) {
+  function startEditHistoryEntry(
+    investmentId: string,
+    entry: { id: string; amount: number; date: string; notes?: string; type: string }
+  ) {
     editingHistoryEntry = {
       investmentId,
       historyId: entry.id,
       amount: entry.amount,
-      date: typeof entry.date === 'string' ? entry.date.split('T')[0] : new Date(entry.date).toISOString().split('T')[0],
+      date:
+        typeof entry.date === 'string'
+          ? entry.date.split('T')[0]
+          : new Date(entry.date).toISOString().split('T')[0],
       notes: entry.notes || '',
       type: entry.type,
     };
@@ -482,12 +521,24 @@ export function createInvestmentsStore() {
 
   // Legacy modals object for backwards compatibility (not reactive)
   const modals = {
-    get showAddHistoryModal() { return showAddHistoryModalState; },
-    set showAddHistoryModal(v: boolean) { showAddHistoryModalState = v; },
-    get showDeleteModal() { return showDeleteModalState; },
-    set showDeleteModal(v: boolean) { showDeleteModalState = v; },
-    get showNewForm() { return showNewFormState; },
-    set showNewForm(v: boolean) { showNewFormState = v; },
+    get showAddHistoryModal() {
+      return showAddHistoryModalState;
+    },
+    set showAddHistoryModal(v: boolean) {
+      showAddHistoryModalState = v;
+    },
+    get showDeleteModal() {
+      return showDeleteModalState;
+    },
+    set showDeleteModal(v: boolean) {
+      showDeleteModalState = v;
+    },
+    get showNewForm() {
+      return showNewFormState;
+    },
+    set showNewForm(v: boolean) {
+      showNewFormState = v;
+    },
   };
 
   // Separate reactive form data for add history (nested objects in $state don't bind well)
@@ -609,51 +660,113 @@ export function createInvestmentsStore() {
     addHistoryFormData,
 
     // State (getters for non-modal state)
-    get investments() { return investments; },
-    get portfolioSummary() { return portfolioSummary; },
-    get timeline() { return timeline; },
-    get isLoading() { return isLoading; },
-    get error() { return error; },
-    get selectedInvestment() { return selectedInvestment; },
-    set selectedInvestment(value: Investment | null) { selectedInvestment = value; },
+    get investments() {
+      return investments;
+    },
+    get portfolioSummary() {
+      return portfolioSummary;
+    },
+    get timeline() {
+      return timeline;
+    },
+    get isLoading() {
+      return isLoading;
+    },
+    get error() {
+      return error;
+    },
+    get selectedInvestment() {
+      return selectedInvestment;
+    },
+    set selectedInvestment(value: Investment | null) {
+      selectedInvestment = value;
+    },
 
     // Computed
-    get highlightedInvestments() { return highlightedInvestments; },
-    get totalPortfolioValue() { return totalPortfolioValue; },
-    get totalProfit() { return totalProfit; },
-    get profitPercentage() { return profitPercentage; },
+    get highlightedInvestments() {
+      return highlightedInvestments;
+    },
+    get totalPortfolioValue() {
+      return totalPortfolioValue;
+    },
+    get totalProfit() {
+      return totalProfit;
+    },
+    get profitPercentage() {
+      return profitPercentage;
+    },
 
     // Edit state
-    get editingInvestment() { return editingInvestment; },
-    get editForm() { return editForm; },
-    set editForm(value: InvestmentEditForm) { editForm = value; },
+    get editingInvestment() {
+      return editingInvestment;
+    },
+    get editForm() {
+      return editForm;
+    },
+    set editForm(value: InvestmentEditForm) {
+      editForm = value;
+    },
 
     // New form state
-    get showNewForm() { return showNewFormState; },
-    set showNewForm(value: boolean) { showNewFormState = value; },
-    get newInvestmentForm() { return newInvestmentForm; },
-    set newInvestmentForm(value: InvestmentEditForm) { newInvestmentForm = value; },
+    get showNewForm() {
+      return showNewFormState;
+    },
+    set showNewForm(value: boolean) {
+      showNewFormState = value;
+    },
+    get newInvestmentForm() {
+      return newInvestmentForm;
+    },
+    set newInvestmentForm(value: InvestmentEditForm) {
+      newInvestmentForm = value;
+    },
 
     // Add history state
-    get showAddHistoryModal() { return showAddHistoryModalState; },
-    set showAddHistoryModal(value: boolean) { showAddHistoryModalState = value; },
-    get addHistoryForm() { return addHistoryForm; },
-    set addHistoryForm(value: AddHistoryForm) { addHistoryForm = value; },
-    get addHistoryInvestmentId() { return addHistoryInvestmentId; },
+    get showAddHistoryModal() {
+      return showAddHistoryModalState;
+    },
+    set showAddHistoryModal(value: boolean) {
+      showAddHistoryModalState = value;
+    },
+    get addHistoryForm() {
+      return addHistoryForm;
+    },
+    set addHistoryForm(value: AddHistoryForm) {
+      addHistoryForm = value;
+    },
+    get addHistoryInvestmentId() {
+      return addHistoryInvestmentId;
+    },
 
     // Delete state
-    get showDeleteModal() { return showDeleteModalState; },
-    set showDeleteModal(value: boolean) { showDeleteModalState = value; },
-    get investmentToDelete() { return investmentToDelete; },
+    get showDeleteModal() {
+      return showDeleteModalState;
+    },
+    set showDeleteModal(value: boolean) {
+      showDeleteModalState = value;
+    },
+    get investmentToDelete() {
+      return investmentToDelete;
+    },
 
     // Inline value editing
-    get inlineEditingId() { return inlineEditingId; },
-    get inlineEditValue() { return inlineEditValue; },
-    set inlineEditValue(value: number) { inlineEditValue = value; },
+    get inlineEditingId() {
+      return inlineEditingId;
+    },
+    get inlineEditValue() {
+      return inlineEditValue;
+    },
+    set inlineEditValue(value: number) {
+      inlineEditValue = value;
+    },
 
     // History entry editing
-    get editingHistoryEntry() { return editingHistoryEntry; },
-    set editingHistoryEntry(value: typeof editingHistoryEntry) { editingHistoryEntry = value; },
+    get editingHistoryEntry() {
+      return editingHistoryEntry;
+    },
+    set editingHistoryEntry(value: typeof editingHistoryEntry) {
+      editingHistoryEntry = value;
+    },
 
     // Constants
     availableColors,

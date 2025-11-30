@@ -3,19 +3,19 @@
     showText?: boolean;
     size?: 'sm' | 'md' | 'lg';
   }
-  
+
   let { showText = true, size = 'md' }: Props = $props();
-  
+
   const sizeClasses = {
     sm: 'h-8 w-8',
-    md: 'h-10 w-10', 
-    lg: 'h-12 w-12'
+    md: 'h-10 w-10',
+    lg: 'h-12 w-12',
   };
-  
+
   const textSizes = {
     sm: 'text-sm',
     md: 'text-base',
-    lg: 'text-lg'
+    lg: 'text-lg',
   };
 </script>
 
@@ -28,16 +28,12 @@
       class="logo-image {sizeClasses[size]}"
     />
   </div>
-  
+
   <!-- Brand Text -->
   {#if showText}
     <div class="brand-text">
-      <div class="brand-name {textSizes[size]}">
-        Happy Balance
-      </div>
-      <div class="brand-tagline text-xs text-subtle">
-        Financial harmony
-      </div>
+      <div class="brand-name {textSizes[size]}">Happy Balance</div>
+      <div class="brand-tagline text-subtle text-xs">Financial harmony</div>
     </div>
   {/if}
 </div>
@@ -58,27 +54,27 @@
     object-fit: contain;
     border-radius: 6px;
   }
-  
+
   .brand-icon:hover {
     transform: translateY(-1px) scale(1.05);
     background: linear-gradient(135deg, rgba(122, 186, 165, 0.15), rgba(122, 186, 165, 0.1));
     border-color: rgba(122, 186, 165, 0.3);
     box-shadow: 0 4px 12px rgba(122, 186, 165, 0.15);
   }
-  
+
   .brand-text {
     display: flex;
     flex-direction: column;
     line-height: 1.2;
   }
-  
+
   .brand-name {
     font-weight: 500;
     color: var(--text-primary);
     letter-spacing: 0.01em;
     font-family: 'Noto Sans JP', 'Inter', sans-serif;
   }
-  
+
   .brand-tagline {
     font-weight: 300;
     margin-top: 2px;

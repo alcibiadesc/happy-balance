@@ -1,4 +1,4 @@
-import { Result } from "../shared/Result";
+import { Result } from '../shared/Result';
 
 /**
  * Merchant value object
@@ -7,24 +7,20 @@ import { Result } from "../shared/Result";
 export class Merchant {
   private constructor(
     private readonly _name: string,
-    private readonly _normalizedName: string,
+    private readonly _normalizedName: string
   ) {}
 
   static create(name: string): Result<Merchant> {
     if (!name || name.trim().length === 0) {
-      return Result.failWithMessage("Merchant name cannot be empty");
+      return Result.failWithMessage('Merchant name cannot be empty');
     }
 
     if (name.trim().length < 2) {
-      return Result.failWithMessage(
-        "Merchant name must be at least 2 characters",
-      );
+      return Result.failWithMessage('Merchant name must be at least 2 characters');
     }
 
     if (name.length > 100) {
-      return Result.failWithMessage(
-        "Merchant name cannot exceed 100 characters",
-      );
+      return Result.failWithMessage('Merchant name cannot exceed 100 characters');
     }
 
     const cleanName = name.trim();
@@ -36,8 +32,8 @@ export class Merchant {
   private static normalize(name: string): string {
     return name
       .toLowerCase()
-      .replace(/[^\w\s]/g, "") // Remove special characters
-      .replace(/\s+/g, " ") // Normalize whitespace
+      .replace(/[^\w\s]/g, '') // Remove special characters
+      .replace(/\s+/g, ' ') // Normalize whitespace
       .trim();
   }
 
@@ -80,7 +76,7 @@ export class Merchant {
         matrix[j][i] = Math.min(
           matrix[j][i - 1] + 1, // deletion
           matrix[j - 1][i] + 1, // insertion
-          matrix[j - 1][i - 1] + substitutionCost, // substitution
+          matrix[j - 1][i - 1] + substitutionCost // substitution
         );
       }
     }
@@ -99,66 +95,12 @@ export class Merchant {
 
     // Common merchant patterns
     const patterns: Record<string, string[]> = {
-      food: [
-        "restaurant",
-        "cafe",
-        "pizza",
-        "burger",
-        "food",
-        "kitchen",
-        "bistro",
-        "bar",
-        "pub",
-      ],
-      transport: [
-        "taxi",
-        "uber",
-        "lyft",
-        "bus",
-        "train",
-        "metro",
-        "gas",
-        "fuel",
-        "parking",
-      ],
-      shopping: [
-        "store",
-        "shop",
-        "market",
-        "mall",
-        "amazon",
-        "ebay",
-        "clothing",
-        "fashion",
-      ],
-      utilities: [
-        "electric",
-        "water",
-        "gas",
-        "internet",
-        "phone",
-        "mobile",
-        "utility",
-      ],
-      health: [
-        "pharmacy",
-        "hospital",
-        "clinic",
-        "doctor",
-        "medical",
-        "health",
-        "dental",
-      ],
-      entertainment: [
-        "cinema",
-        "movie",
-        "theater",
-        "concert",
-        "game",
-        "sport",
-        "gym",
-        "fitness",
-      ],
+      food: ['restaurant', 'cafe', 'pizza', 'burger', 'food', 'kitchen', 'bistro', 'bar', 'pub'],
+      transport: ['taxi', 'uber', 'lyft', 'bus', 'train', 'metro', 'gas', 'fuel', 'parking'],
+      shopping: ['store', 'shop', 'market', 'mall', 'amazon', 'ebay', 'clothing', 'fashion'],
+      utilities: ['electric', 'water', 'gas', 'internet', 'phone', 'mobile', 'utility'],
+      health: ['pharmacy', 'hospital', 'clinic', 'doctor', 'medical', 'health', 'dental'],
+      entertainment: ['cinema', 'movie', 'theater', 'concert', 'game', 'sport', 'gym', 'fitness'],
     };
 
     for (const [category, keywords] of Object.entries(patterns)) {

@@ -15,7 +15,10 @@ export function formatTrendValue(value: number): string {
  * For expenses, negative (decreasing) is good
  * For income/investments, positive (increasing) is good
  */
-export function getTrendColor(value: number, type: 'income' | 'expenses' | 'investments' | string): string {
+export function getTrendColor(
+  value: number,
+  type: 'income' | 'expenses' | 'investments' | string
+): string {
   if (type === 'expenses') {
     return value <= 0 ? 'var(--success)' : 'var(--accent)';
   }
@@ -25,7 +28,10 @@ export function getTrendColor(value: number, type: 'income' | 'expenses' | 'inve
 /**
  * Get status color based on percentage thresholds
  */
-export function getStatusColor(value: number, thresholds: { good: number; warning: number }): 'success' | 'warning' | 'danger' {
+export function getStatusColor(
+  value: number,
+  thresholds: { good: number; warning: number }
+): 'success' | 'warning' | 'danger' {
   if (value >= thresholds.good) return 'success';
   if (value >= thresholds.warning) return 'warning';
   return 'danger';

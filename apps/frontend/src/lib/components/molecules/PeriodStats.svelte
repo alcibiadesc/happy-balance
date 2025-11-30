@@ -21,7 +21,7 @@
     const abs = Math.abs(amount);
     const formatted = abs.toLocaleString('es-ES', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'EUR',
     });
     return amount < 0 && abs !== 0 ? `-${formatted}` : formatted;
   }
@@ -30,7 +30,11 @@
 <div class="period-stats">
   <div class="balance-display">
     <div class="balance-label">{$t('transactions.period.balance')}</div>
-    <div class="balance-value" class:positive={stats.balance >= 0} class:negative={stats.balance < 0}>
+    <div
+      class="balance-value"
+      class:positive={stats.balance >= 0}
+      class:negative={stats.balance < 0}
+    >
       {formatAmount(stats.balance)}
     </div>
   </div>
@@ -84,15 +88,21 @@
     <div class="visual-bar">
       <div
         class="bar-segment essential"
-        style="width: {stats.expensesWithoutInvestments > 0 ? (stats.essentialExpenses / stats.expensesWithoutInvestments * 100) : 0}%"
+        style="width: {stats.expensesWithoutInvestments > 0
+          ? (stats.essentialExpenses / stats.expensesWithoutInvestments) * 100
+          : 0}%"
       ></div>
       <div
         class="bar-segment discretionary"
-        style="width: {stats.expensesWithoutInvestments > 0 ? (stats.discretionaryExpenses / stats.expensesWithoutInvestments * 100) : 0}%"
+        style="width: {stats.expensesWithoutInvestments > 0
+          ? (stats.discretionaryExpenses / stats.expensesWithoutInvestments) * 100
+          : 0}%"
       ></div>
       <div
         class="bar-segment uncategorized"
-        style="width: {stats.expensesWithoutInvestments > 0 ? (stats.uncategorizedExpensesOnly / stats.expensesWithoutInvestments * 100) : 0}%"
+        style="width: {stats.expensesWithoutInvestments > 0
+          ? (stats.uncategorizedExpensesOnly / stats.expensesWithoutInvestments) * 100
+          : 0}%"
       ></div>
     </div>
   </div>
@@ -165,7 +175,7 @@
   }
 
   .stat-value.investment {
-    color: #8B5CF6;
+    color: #8b5cf6;
   }
 
   .stat-value.expense {

@@ -22,10 +22,11 @@ export class PeriodNavigationService {
 
           return {
             offset,
-            label: offset === 0
-              ? 'Este mes'
-              : targetDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
-            fullLabel: period.getLabel()
+            label:
+              offset === 0
+                ? 'Este mes'
+                : targetDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
+            fullLabel: period.getLabel(),
           };
         });
 
@@ -38,10 +39,11 @@ export class PeriodNavigationService {
 
           return {
             offset,
-            label: offset === 0
-              ? 'Este trimestre'
-              : `Q${quarter} ${period.getStartDate().getFullYear()}`,
-            fullLabel: period.getLabel()
+            label:
+              offset === 0
+                ? 'Este trimestre'
+                : `Q${quarter} ${period.getStartDate().getFullYear()}`,
+            fullLabel: period.getLabel(),
           };
         });
 
@@ -54,7 +56,7 @@ export class PeriodNavigationService {
           return {
             offset,
             label: offset === 0 ? 'Este año' : year.toString(),
-            fullLabel: `${year}`
+            fullLabel: `${year}`,
           };
         });
 
@@ -67,7 +69,7 @@ export class PeriodNavigationService {
           return {
             offset,
             label: offset === 0 ? 'Esta semana' : `Semana ${-offset}`,
-            fullLabel: period.getLabel()
+            fullLabel: period.getLabel(),
           };
         });
 
@@ -90,7 +92,7 @@ export class PeriodNavigationService {
       month: 'Este mes',
       quarter: 'Este trimestre',
       year: 'Este año',
-      custom: 'Personalizado'
+      custom: 'Personalizado',
     };
     return labels[periodType];
   }
@@ -104,7 +106,7 @@ export class PeriodNavigationService {
       case 'month':
         return period.getStartDate().toLocaleDateString('es-ES', {
           month: 'long',
-          year: 'numeric'
+          year: 'numeric',
         });
       case 'quarter':
         const quarter = Math.floor(period.getStartDate().getMonth() / 3) + 1;

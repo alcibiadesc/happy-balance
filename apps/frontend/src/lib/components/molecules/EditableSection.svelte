@@ -14,9 +14,7 @@
 
   const sectionDef = $derived(getSectionDefinition(sectionId));
   const SectionIcon = $derived(sectionDef?.icon);
-  const sectionLabel = $derived(
-    sectionDef ? ($t(sectionDef.i18nKey) || sectionId) : sectionId
-  );
+  const sectionLabel = $derived(sectionDef ? $t(sectionDef.i18nKey) || sectionId : sectionId);
 
   let isDragging = $state(false);
   let dragOver = $state(false);
@@ -68,7 +66,7 @@
   ondragover={handleDragOver}
   ondragleave={handleDragLeave}
   ondrop={handleDrop}
-  role={$dashboardConfig.editMode ? "listitem" : undefined}
+  role={$dashboardConfig.editMode ? 'listitem' : undefined}
 >
   {#if $dashboardConfig.editMode && SectionIcon}
     <div class="section-label">

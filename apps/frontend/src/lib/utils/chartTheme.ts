@@ -9,7 +9,7 @@ export function getChartThemeColors() {
       balance: '#023c46', // Evening Sea from palette
       investments: '#023c46', // Evening Sea from palette
       grid: 'rgba(0, 0, 0, 0.1)',
-      text: '#023c46' // Evening Sea - primary dark color from palette
+      text: '#023c46', // Evening Sea - primary dark color from palette
     };
   }
 
@@ -23,7 +23,7 @@ export function getChartThemeColors() {
       balance: '#6ba5d6', // Light blue - different from income
       investments: '#d4a574', // Gold/tan - different from both
       grid: 'rgba(255, 255, 255, 0.1)',
-      text: '#fef7ee' // Bridesmaid for dark mode
+      text: '#fef7ee', // Bridesmaid for dark mode
     };
   }
 
@@ -33,7 +33,7 @@ export function getChartThemeColors() {
     balance: '#4a90e2', // Medium blue - clearly blue, not dark
     investments: '#8b7a52', // Brown/gold - different from balance
     grid: 'rgba(0, 0, 0, 0.1)',
-    text: '#023c46' // Evening Sea - primary dark color from palette
+    text: '#023c46', // Evening Sea - primary dark color from palette
   };
 }
 
@@ -50,14 +50,14 @@ export function updateChartTheme(chart: any) {
     chart.options.scales.x.ticks.color = textColor;
     chart.options.scales.x.ticks.font = {
       ...chart.options.scales.x.ticks.font,
-      weight: '600'
+      weight: '600',
     };
   }
   if (chart.options.scales?.y?.ticks) {
     chart.options.scales.y.ticks.color = textColor;
     chart.options.scales.y.ticks.font = {
       ...chart.options.scales.y.ticks.font,
-      weight: '600'
+      weight: '600',
     };
   }
 
@@ -66,7 +66,7 @@ export function updateChartTheme(chart: any) {
     chart.options.plugins.legend.labels.color = textColor;
     chart.options.plugins.legend.labels.font = {
       ...chart.options.plugins.legend.labels.font,
-      weight: '600'
+      weight: '600',
     };
   }
 
@@ -122,7 +122,7 @@ export function setupChartThemeObserver(chart: any, callback?: () => void) {
 
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ['class']
+    attributeFilter: ['class'],
   });
 
   // Also listen for system theme changes

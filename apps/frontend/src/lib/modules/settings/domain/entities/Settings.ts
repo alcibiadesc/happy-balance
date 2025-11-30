@@ -23,11 +23,7 @@ export class Settings {
   }
 
   static default(): Settings {
-    return new Settings(
-      Theme.create('system'),
-      Language.english(),
-      'EUR'
-    );
+    return new Settings(Theme.create('system'), Language.english(), 'EUR');
   }
 
   // Theme methods
@@ -66,7 +62,7 @@ export class Settings {
     return {
       theme: this.theme.getValue(),
       language: this.language.getCode(),
-      currency: this.currency
+      currency: this.currency,
     };
   }
 

@@ -1,27 +1,27 @@
 import {
   createInitialModalState,
   modalActions,
-  type ModalState
+  type ModalState,
 } from '../../application/services/ModalStateService';
 import {
   createInitialFilterState,
   filterActions,
-  type FilterState
+  type FilterState,
 } from '../../application/services/FilterService';
 import {
   createInitialObservationsState,
   observationsActions,
-  type ObservationsState
+  type ObservationsState,
 } from '../../application/services/ObservationsService';
 import {
   createInitialGroupingState,
   groupingActions,
-  type GroupingState
+  type GroupingState,
 } from '../../application/services/GroupingService';
 import {
   createInitialSelectionState,
   selectionActions,
-  type SelectionState
+  type SelectionState,
 } from '../../application/services/SelectionService';
 
 class TransactionsPageStore {
@@ -34,13 +34,27 @@ class TransactionsPageStore {
   private showCategoryFilterDropdown = $state(false);
 
   // Getters for state
-  get modalState() { return this.modals; }
-  get filterState() { return this.filters; }
-  get observationsState() { return this.observations; }
-  get groupingState() { return this.grouping; }
-  get selectionState() { return this.selection; }
-  get isShowingDatePicker() { return this.showDatePicker; }
-  get isShowingCategoryFilterDropdown() { return this.showCategoryFilterDropdown; }
+  get modalState() {
+    return this.modals;
+  }
+  get filterState() {
+    return this.filters;
+  }
+  get observationsState() {
+    return this.observations;
+  }
+  get groupingState() {
+    return this.grouping;
+  }
+  get selectionState() {
+    return this.selection;
+  }
+  get isShowingDatePicker() {
+    return this.showDatePicker;
+  }
+  get isShowingCategoryFilterDropdown() {
+    return this.showCategoryFilterDropdown;
+  }
 
   // Modal actions
   openCategoryModal = (transaction: any) => {

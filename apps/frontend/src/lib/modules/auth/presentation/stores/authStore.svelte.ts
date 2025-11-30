@@ -57,13 +57,13 @@ class AuthStore {
     try {
       const result = await this.authRepository.login({
         username: Username.create(username),
-        password
+        password,
       });
 
       if ('requiresPasswordChange' in result) {
         this.requiresPasswordChange = {
           userId: result.userId,
-          username: result.username
+          username: result.username,
         };
         return result;
       }
@@ -84,7 +84,11 @@ class AuthStore {
     this.error = null;
 
     try {
-      const result = await this.authRepository.resetPasswordChange(userId, currentPassword, newPassword);
+      const result = await this.authRepository.resetPasswordChange(
+        userId,
+        currentPassword,
+        newPassword
+      );
       this.currentUser = result.user;
       this.isAuthenticated = true;
       this.requiresPasswordChange = null;

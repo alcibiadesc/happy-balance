@@ -6,10 +6,7 @@
     type?: 'success' | 'error' | 'info';
   }
 
-  let {
-    message,
-    type = 'info'
-  }: Props = $props();
+  let { message, type = 'info' }: Props = $props();
 </script>
 
 {#if message}

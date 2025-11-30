@@ -1,6 +1,5 @@
-
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from '$app/stores';
 </script>
 
 <!-- Layout wrapper for transactions page -->
@@ -13,7 +12,7 @@
     min-height: 100vh;
     background: var(--surface);
   }
-  
+
   @media (min-width: 1024px) {
     .transactions-layout {
       /* Account for sidebar */

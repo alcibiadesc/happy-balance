@@ -28,19 +28,19 @@
     onToggleCategory,
     onTogglePrimaryType,
     onToggleShowUncategorized,
-    onClearFilters
+    onClearFilters,
   }: Props = $props();
 
   let showCategoryFilterDropdown = $state(false);
   let showPrimaryTypeDropdown = $state(false);
 
   const primaryTypeNames = {
-    'income': '💰 Ingresos',
-    'essential': '🏠 Esenciales',
-    'discretionary': '🎉 Discrecionales',
-    'investment': '📈 Inversiones',
-    'debt_payment': '💳 Pago Deudas',
-    'no_compute': '🚫 No Computar'
+    income: '💰 Ingresos',
+    essential: '🏠 Esenciales',
+    discretionary: '🎉 Discrecionales',
+    investment: '📈 Inversiones',
+    debt_payment: '💳 Pago Deudas',
+    no_compute: '🚫 No Computar',
   };
 </script>
 
@@ -241,7 +241,7 @@
         {/each}
 
         {#each selectedCategories as categoryId}
-          {@const category = categories.find(c => c.id === categoryId)}
+          {@const category = categories.find((c) => c.id === categoryId)}
           {#if category}
             <button
               class="tag-mini category-tag"
@@ -533,7 +533,7 @@
     border: none;
     border-radius: 0.625rem;
     background: var(--error-bg);
-    color: #EF4444;
+    color: #ef4444;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
@@ -605,12 +605,12 @@
 
   .tag-mini.income-tag {
     background: var(--success-light);
-    color: #10B981;
+    color: #10b981;
   }
 
   .tag-mini.expense-tag {
     background: var(--error-bg);
-    color: #EF4444;
+    color: #ef4444;
   }
 
   .tag-mini.uncategorized-tag {

@@ -20,7 +20,7 @@
     formatCurrency,
     isSelectionMode = false,
     isSelected = false,
-    onToggleSelect
+    onToggleSelect,
   }: Props = $props();
 
   function handleClick() {
@@ -35,7 +35,7 @@
   class:selection-mode={isSelectionMode}
   class:selected={isSelected}
   onclick={handleClick}
-  role={isSelectionMode ? "button" : undefined}
+  role={isSelectionMode ? 'button' : undefined}
   tabindex={isSelectionMode ? 0 : undefined}
 >
   {#if isSelectionMode}
@@ -49,10 +49,7 @@
     </div>
   {/if}
 
-  <div
-    class="category-icon"
-    style="background-color: {category.color}20"
-  >
+  <div class="category-icon" style="background-color: {category.color}20">
     {category.icon}
   </div>
 
@@ -60,7 +57,8 @@
     <span class="category-name">{category.name}</span>
     {#if category.annualBudget}
       <span class="category-budget">
-        {formatCurrency(category.annualBudget)} {$t('categories.per_year')}
+        {formatCurrency(category.annualBudget)}
+        {$t('categories.per_year')}
       </span>
     {:else}
       <span class="category-budget no-budget">
@@ -71,11 +69,7 @@
 
   {#if !isSelectionMode}
     <div class="category-actions">
-      <button
-        class="action-btn"
-        onclick={() => onEdit(category)}
-        title={$t('common.edit')}
-      >
+      <button class="action-btn" onclick={() => onEdit(category)} title={$t('common.edit')}>
         <Edit2 size={14} />
       </button>
       <button
@@ -128,7 +122,7 @@
     justify-content: center;
   }
 
-  .selection-checkbox input[type="checkbox"] {
+  .selection-checkbox input[type='checkbox'] {
     width: 1.25rem;
     height: 1.25rem;
     cursor: pointer;

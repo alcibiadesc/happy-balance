@@ -36,35 +36,35 @@ export const createInitialModalState = (): ModalState => ({
   showDeleteSingleModal: false,
   transactionToDelete: null,
   showSplitModal: false,
-  splitModalTransaction: null
+  splitModalTransaction: null,
 });
 
 export const modalActions = {
   openCategoryModal: (state: ModalState, transaction: Transaction): ModalState => ({
     ...state,
     showCategoryModal: true,
-    categoryModalTransaction: transaction
+    categoryModalTransaction: transaction,
   }),
 
   closeCategoryModal: (state: ModalState): ModalState => ({
     ...state,
     showCategoryModal: false,
-    categoryModalTransaction: null
+    categoryModalTransaction: null,
   }),
 
   openAddModal: (state: ModalState): ModalState => ({
     ...state,
-    showAddModal: true
+    showAddModal: true,
   }),
 
   closeAddModal: (state: ModalState): ModalState => ({
     ...state,
-    showAddModal: false
+    showAddModal: false,
   }),
 
   toggleFilters: (state: ModalState): ModalState => ({
     ...state,
-    showFilters: !state.showFilters
+    showFilters: !state.showFilters,
   }),
 
   openSmartCategorization: (
@@ -77,7 +77,7 @@ export const modalActions = {
     showSmartCategorization: true,
     smartCategorizationTransaction: transaction,
     smartCategorizationCategory: category,
-    smartMatchingTransactions: matchingTransactions
+    smartMatchingTransactions: matchingTransactions,
   }),
 
   closeSmartCategorization: (state: ModalState): ModalState => ({
@@ -86,40 +86,40 @@ export const modalActions = {
     smartCategorizationTransaction: null,
     smartCategorizationCategory: null,
     smartMatchingTransactions: [],
-    smartSuggestions: []
+    smartSuggestions: [],
   }),
 
   openDeleteSelectedModal: (state: ModalState): ModalState => ({
     ...state,
-    showDeleteSelectedModal: true
+    showDeleteSelectedModal: true,
   }),
 
   closeDeleteSelectedModal: (state: ModalState): ModalState => ({
     ...state,
-    showDeleteSelectedModal: false
+    showDeleteSelectedModal: false,
   }),
 
   openDeleteSingleModal: (state: ModalState, transactionId: string): ModalState => ({
     ...state,
     showDeleteSingleModal: true,
-    transactionToDelete: transactionId
+    transactionToDelete: transactionId,
   }),
 
   closeDeleteSingleModal: (state: ModalState): ModalState => ({
     ...state,
     showDeleteSingleModal: false,
-    transactionToDelete: null
+    transactionToDelete: null,
   }),
 
   openSplitModal: (state: ModalState, transaction: Transaction): ModalState => ({
     ...state,
     showSplitModal: true,
-    splitModalTransaction: transaction
+    splitModalTransaction: transaction,
   }),
 
   closeSplitModal: (state: ModalState): ModalState => ({
     ...state,
     showSplitModal: false,
-    splitModalTransaction: null
-  })
+    splitModalTransaction: null,
+  }),
 };

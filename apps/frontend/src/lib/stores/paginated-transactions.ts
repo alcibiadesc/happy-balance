@@ -2,18 +2,18 @@ import { writable, derived } from 'svelte/store';
 import type { Transaction } from '$lib/types/transaction';
 import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
 
-import { getApiUrl } from "$lib/utils/api-url";
+import { getApiUrl } from '$lib/utils/api-url';
 const API_BASE = getApiUrl();
 
 // Helper function to create authenticated headers
 function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   };
 
   const token = authStore.getAccessToken();
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   return headers;
@@ -79,7 +79,7 @@ function createPaginatedTransactionStore() {
 
     // Load first page of transactions
     async loadFirstPage(query: Partial<PaginatedQuery> = {}) {
-      update(state => ({ ...state, isLoading: true, error: null }));
+      update((state) => ({ ...state, isLoading: true, error: null }));
 
       try {
         const fullQuery: PaginatedQuery = {
@@ -105,7 +105,7 @@ function createPaginatedTransactionStore() {
         return response;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        update(state => ({
+        update((state) => ({
           ...state,
           isLoading: false,
           error: errorMessage,
@@ -117,14 +117,14 @@ function createPaginatedTransactionStore() {
     // Load next page and append to existing transactions
     async loadNextPage(query: Partial<PaginatedQuery> = {}) {
       let currentState: PaginatedTransactionState;
-      const unsubscribe = subscribe(state => currentState = state);
+      const unsubscribe = subscribe((state) => (currentState = state));
       unsubscribe();
 
       if (currentState!.isLoading || !currentState!.hasMore) {
         return null;
       }
 
-      update(state => ({ ...state, isLoading: true, error: null }));
+      update((state) => ({ ...state, isLoading: true, error: null }));
 
       try {
         const fullQuery: PaginatedQuery = {
@@ -138,7 +138,7 @@ function createPaginatedTransactionStore() {
 
         const response = await this.fetchTransactions(fullQuery);
 
-        update(state => ({
+        update((state) => ({
           ...state,
           transactions: [...state.transactions, ...response.transactions],
           currentPage: response.pagination.page,
@@ -150,7 +150,7 @@ function createPaginatedTransactionStore() {
         return response;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        update(state => ({
+        update((state) => ({
           ...state,
           isLoading: false,
           error: errorMessage,
@@ -192,11 +192,9 @@ function createPaginatedTransactionStore() {
     // Update a single transaction optimistically
     async updateTransaction(id: string, updates: Partial<Transaction>) {
       // Optimistic update
-      update(state => ({
+      update((state) => ({
         ...state,
-        transactions: state.transactions.map(t =>
-          t.id === id ? { ...t, ...updates } : t
-        ),
+        transactions: state.transactions.map((t) => (t.id === id ? { ...t, ...updates } : t)),
       }));
 
       try {
@@ -226,11 +224,9 @@ function createPaginatedTransactionStore() {
         const updatedTransaction = mapApiToTransaction(result.data);
 
         // Update with server response
-        update(state => ({
+        update((state) => ({
           ...state,
-          transactions: state.transactions.map(t =>
-            t.id === id ? updatedTransaction : t
-          ),
+          transactions: state.transactions.map((t) => (t.id === id ? updatedTransaction : t)),
         }));
 
         return updatedTransaction;
@@ -244,9 +240,9 @@ function createPaginatedTransactionStore() {
     // Delete a transaction
     async deleteTransaction(id: string) {
       // Optimistic removal
-      update(state => ({
+      update((state) => ({
         ...state,
-        transactions: state.transactions.filter(t => t.id !== id),
+        transactions: state.transactions.filter((t) => t.id !== id),
         totalCount: Math.max(0, state.totalCount - 1),
       }));
 
@@ -277,13 +273,11 @@ function mapApiToTransaction(apiTransaction: any): Transaction {
     time: new Date(apiTransaction.createdAt).toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false
+      hour12: false,
     }),
     merchant: apiTransaction.merchant,
     description: apiTransaction.description || '',
-    amount: apiTransaction.type === 'EXPENSE'
-      ? -apiTransaction.amount
-      : apiTransaction.amount,
+    amount: apiTransaction.type === 'EXPENSE' ? -apiTransaction.amount : apiTransaction.amount,
     categoryId: apiTransaction.categoryId,
     category: undefined,
     status: 'completed' as const,
@@ -302,20 +296,20 @@ export const paginatedTransactions = createPaginatedTransactionStore();
 // Derived stores for easy access
 export const paginatedTransactionsList = derived(
   paginatedTransactions,
-  $store => $store.transactions
+  ($store) => $store.transactions
 );
 
 export const paginatedTransactionsLoading = derived(
   paginatedTransactions,
-  $store => $store.isLoading
+  ($store) => $store.isLoading
 );
 
 export const paginatedTransactionsHasMore = derived(
   paginatedTransactions,
-  $store => $store.hasMore
+  ($store) => $store.hasMore
 );
 
 export const paginatedTransactionsTotalCount = derived(
   paginatedTransactions,
-  $store => $store.totalCount
+  ($store) => $store.totalCount
 );

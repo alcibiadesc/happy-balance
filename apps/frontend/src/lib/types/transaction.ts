@@ -7,7 +7,7 @@ export interface Transaction {
   amount: number;
   categoryId?: string;
   category?: Category;
-  status: "completed" | "pending" | "hidden";
+  status: 'completed' | 'pending' | 'hidden';
   tags: string[];
   patternHash?: string; // Hash for pattern matching
   hash?: string; // Hash for duplicate detection
@@ -30,13 +30,7 @@ export interface PotentialReimbursement {
 export interface Category {
   id: string;
   name: string;
-  type:
-    | "income"
-    | "essential"
-    | "discretionary"
-    | "investment"
-    | "debt_payment"
-    | "no_compute";
+  type: 'income' | 'essential' | 'discretionary' | 'investment' | 'debt_payment' | 'no_compute';
   color: string;
   icon: string;
   parentId?: string; // For subcategories
@@ -69,6 +63,6 @@ export interface TransactionFilter {
 }
 
 export interface BulkAction {
-  type: "categorize" | "delete" | "hide" | "tag";
+  type: 'categorize' | 'delete' | 'hide' | 'tag';
   payload: any;
 }

@@ -48,12 +48,18 @@ export class Trend {
   getColor(type: 'income' | 'expenses' | 'investments'): string {
     if (type === 'expenses') {
       // For expenses, down is good (green), up is bad (red)
-      return this.direction === 'down' ? 'var(--success)' :
-             this.direction === 'up' ? 'var(--accent)' : 'var(--text-secondary)';
+      return this.direction === 'down'
+        ? 'var(--success)'
+        : this.direction === 'up'
+          ? 'var(--accent)'
+          : 'var(--text-secondary)';
     }
     // For income and investments, up is good (green), down is bad (red)
-    return this.direction === 'up' ? 'var(--success)' :
-           this.direction === 'down' ? 'var(--accent)' : 'var(--text-secondary)';
+    return this.direction === 'up'
+      ? 'var(--success)'
+      : this.direction === 'down'
+        ? 'var(--accent)'
+        : 'var(--text-secondary)';
   }
 
   toJSON() {
@@ -61,7 +67,7 @@ export class Trend {
       current: this.current,
       previous: this.previous,
       percentageChange: this.percentageChange,
-      direction: this.direction
+      direction: this.direction,
     };
   }
 }

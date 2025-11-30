@@ -13,24 +13,15 @@
     value = '',
     placeholder = $t('transactions.search_placeholder'),
     onInput,
-    onClear
+    onClear,
   }: SearchBarProps = $props();
 </script>
 
 <div class="search-bar" class:searching={value.length > 0}>
   <Search size={14} class="search-icon" />
-  <input
-    type="text"
-    {placeholder}
-    {value}
-    oninput={(e) => onInput(e.currentTarget.value)}
-  />
+  <input type="text" {placeholder} {value} oninput={(e) => onInput(e.currentTarget.value)} />
   {#if value.length > 0}
-    <button
-      class="clear-search"
-      onclick={onClear}
-      aria-label={$t('common.reset')}
-    >
+    <button class="clear-search" onclick={onClear} aria-label={$t('common.reset')}>
       <X size={12} />
     </button>
   {/if}

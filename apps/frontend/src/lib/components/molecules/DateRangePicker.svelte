@@ -85,11 +85,7 @@
         <button class="btn-secondary" onclick={handleCancel}>
           {$t('common.cancel')}
         </button>
-        <button
-          class="btn-primary"
-          onclick={handleApply}
-          disabled={!tempStartDate || !tempEndDate}
-        >
+        <button class="btn-primary" onclick={handleApply} disabled={!tempStartDate || !tempEndDate}>
           {$t('common.apply')}
         </button>
       </div>

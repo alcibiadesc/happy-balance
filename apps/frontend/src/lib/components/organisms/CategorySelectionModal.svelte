@@ -77,23 +77,23 @@
 
   // Group categories by type and filter by search term
   $: isIncomeTransaction = transaction ? transaction.amount > 0 : false;
-  $: filteredCategories = categories.filter(cat =>
-    searchTerm === '' ||
-    normalizeForSearch(cat.name).includes(normalizeForSearch(searchTerm))
+  $: filteredCategories = categories.filter(
+    (cat) =>
+      searchTerm === '' || normalizeForSearch(cat.name).includes(normalizeForSearch(searchTerm))
   );
   $: groupedCategories = (() => {
     if (isIncomeTransaction) {
       return {
-        income: filteredCategories.filter(cat => cat.type === 'income' || cat.type === 'INCOME'),
-        no_compute: filteredCategories.filter(cat => cat.type === 'no_compute')
+        income: filteredCategories.filter((cat) => cat.type === 'income' || cat.type === 'INCOME'),
+        no_compute: filteredCategories.filter((cat) => cat.type === 'no_compute'),
       };
     } else {
       return {
-        essential: filteredCategories.filter(cat => cat.type === 'essential'),
-        discretionary: filteredCategories.filter(cat => cat.type === 'discretionary'),
-        investment: filteredCategories.filter(cat => cat.type === 'investment'),
-        debt_payment: filteredCategories.filter(cat => cat.type === 'debt_payment'),
-        no_compute: filteredCategories.filter(cat => cat.type === 'no_compute')
+        essential: filteredCategories.filter((cat) => cat.type === 'essential'),
+        discretionary: filteredCategories.filter((cat) => cat.type === 'discretionary'),
+        investment: filteredCategories.filter((cat) => cat.type === 'investment'),
+        debt_payment: filteredCategories.filter((cat) => cat.type === 'debt_payment'),
+        no_compute: filteredCategories.filter((cat) => cat.type === 'no_compute'),
       };
     }
   })();
@@ -105,7 +105,7 @@
     investment: 'Inversiones',
     debt_payment: 'Pago de Deudas',
     no_compute: 'No Computar',
-    income: 'Ingresos'
+    income: 'Ingresos',
   };
 
   function navigateToCategories() {
@@ -145,7 +145,7 @@
                 <span class="amount" class:income={transaction.amount > 0}>
                   {new Intl.NumberFormat('es-ES', {
                     style: 'currency',
-                    currency: 'EUR'
+                    currency: 'EUR',
                   }).format(Math.abs(transaction.amount))}
                 </span>
                 <span class="separator">•</span>
@@ -193,12 +193,10 @@
             <div class="empty-categories-content">
               <span class="empty-categories-icon">🏷️</span>
               <p class="empty-categories-text">
-                No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar mejor tus gastos e ingresos.
+                No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar
+                mejor tus gastos e ingresos.
               </p>
-              <button
-                class="create-categories-btn"
-                on:click={navigateToCategories}
-              >
+              <button class="create-categories-btn" on:click={navigateToCategories}>
                 <Plus size={16} />
                 Crear categorías
               </button>
@@ -587,7 +585,6 @@
     border-color: var(--gray-400);
     box-shadow: 0 8px 25px rgba(120, 113, 108, 0.08);
   }
-
 
   .category-icon {
     font-size: 20px;
