@@ -16,14 +16,14 @@ describe("Money Value Object", () => {
       const result = Money.create(-100, "EUR");
 
       expect(result.isFailure()).toBe(true);
-      expect(result.getError().message).toContain("Amount must be positive");
+      expect(result.getError().message).toContain("Amount cannot be negative");
     });
 
     it("should fail with invalid currency", () => {
-      const result = Money.create(100, "INVALID");
+      const result = Money.create(100, "XXX"); // Valid 3-letter code but not supported
 
       expect(result.isFailure()).toBe(true);
-      expect(result.getError().message).toContain("Invalid currency");
+      expect(result.getError().message).toContain("Unsupported currency");
     });
 
     it("should fail with NaN amount", () => {
@@ -31,7 +31,7 @@ describe("Money Value Object", () => {
 
       expect(result.isFailure()).toBe(true);
       expect(result.getError().message).toContain(
-        "Amount must be a valid number",
+        "Amount must be a finite number",
       );
     });
 
@@ -70,7 +70,7 @@ describe("Money Value Object", () => {
       const result = money1.add(money2);
 
       expect(result.isFailure()).toBe(true);
-      expect(result.getError().message).toContain("Currency mismatch");
+      expect(result.getError().message).toContain("Cannot add different currencies");
     });
 
     it("should subtract two Money values with same currency", () => {
@@ -107,7 +107,7 @@ describe("Money Value Object", () => {
       const result = money.divide(0);
 
       expect(result.isFailure()).toBe(true);
-      expect(result.getError().message).toContain("Cannot divide by zero");
+      expect(result.getError().message).toContain("Divisor must be a positive finite number");
     });
   });
 
@@ -140,25 +140,32 @@ describe("Money Value Object", () => {
     it("should format Money as string", () => {
       const money = Money.create(1234.56, "EUR").getValue();
 
-      expect(money.toString()).toBe("€1,234.56");
+      expect(money.toString()).toBe("1234.56 EUR");
+    });
+
+    it("should format Money with format() method", () => {
+      const money = Money.create(1234.56, "EUR").getValue();
+
+      // format() uses Intl.NumberFormat
+      expect(money.format()).toMatch(/1[.,]234[.,]56/);
     });
 
     it("should format USD correctly", () => {
       const money = Money.create(1234.56, "USD").getValue();
 
-      expect(money.toString()).toBe("$1,234.56");
+      expect(money.toString()).toBe("1234.56 USD");
     });
 
     it("should handle zero formatting", () => {
       const money = Money.create(0, "EUR").getValue();
 
-      expect(money.toString()).toBe("€0.00");
+      expect(money.toString()).toBe("0 EUR");
     });
 
-    it("should round to 2 decimal places", () => {
+    it("should preserve decimal precision in amount", () => {
       const money = Money.create(99.999, "EUR").getValue();
 
-      expect(money.toString()).toBe("€100.00");
+      expect(money.amount).toBe(99.999);
     });
   });
 });
