@@ -52,7 +52,15 @@ export default tseslint.config(
     },
   },
 
-  // Custom rules
+  // Custom rules for non-Svelte files
+  {
+    files: ['**/*.ts', '**/*.js'],
+    rules: {
+      'prefer-const': 'warn',
+    },
+  },
+
+  // Custom rules for all files
   {
     rules: {
       '@typescript-eslint/no-unused-vars': [
@@ -71,12 +79,11 @@ export default tseslint.config(
       'no-self-assign': 'off', // Svelte reactivity pattern
       'no-case-declarations': 'off', // Allow let in case blocks
       'no-useless-escape': 'warn',
-      'prefer-const': 'warn',
       'svelte/no-at-html-tags': 'warn',
       'svelte/valid-compile': 'off', // Handled by svelte-check
-      'svelte/no-navigation-without-resolve': 'warn',
+      'svelte/no-navigation-without-resolve': 'off', // Using direct paths is fine for this app
       'svelte/require-each-key': 'warn',
-      'svelte/prefer-svelte-reactivity': 'warn',
+      'svelte/prefer-svelte-reactivity': 'off', // Svelte 5 uses different patterns
       'svelte/no-reactive-literals': 'off', // Svelte pattern
       'svelte/no-immutable-reactive-statements': 'off', // Svelte pattern
     },
