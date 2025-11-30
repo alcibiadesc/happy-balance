@@ -9,7 +9,7 @@
     isMenuOpen: boolean;
   }
 
-  let { onMenuToggle, isMenuOpen }: Props = $props();
+  const { onMenuToggle, isMenuOpen }: Props = $props();
 </script>
 
 <header class="mobile-header" class:mobile-header--blur={isMenuOpen}>

@@ -4,7 +4,7 @@
     size?: 'sm' | 'md' | 'lg';
   }
 
-  let { showText = true, size = 'md' }: Props = $props();
+  const { showText = true, size = 'md' }: Props = $props();
 
   const sizeClasses = {
     sm: 'h-8 w-8',

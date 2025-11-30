@@ -9,7 +9,7 @@
     onClear: () => void;
   }
 
-  let {
+  const {
     value = '',
     placeholder = $t('transactions.search_placeholder'),
     onInput,

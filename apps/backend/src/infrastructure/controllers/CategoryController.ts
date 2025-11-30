@@ -58,14 +58,14 @@ export class CategoryController {
 
   constructor(
     private readonly categoryRepository: ICategoryRepository,
-    investmentRepository?: IInvestmentRepository,
-    userId?: string
+    _investmentRepository?: IInvestmentRepository,
+    _userId?: string
   ) {
-    if (investmentRepository && userId) {
+    if (_investmentRepository && _userId) {
       this.syncService = new CategoryInvestmentSyncService(
-        investmentRepository,
+        _investmentRepository,
         categoryRepository,
-        userId
+        _userId
       );
     }
   }

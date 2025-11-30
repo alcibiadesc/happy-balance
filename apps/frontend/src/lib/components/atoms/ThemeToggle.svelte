@@ -2,14 +2,14 @@
   import { Sun, Moon } from 'lucide-svelte';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
-  import { theme, setTheme, effectiveTheme } from '$lib/stores/theme';
+  import { setTheme, effectiveTheme } from '$lib/stores/theme';
 
   interface Props {
     size?: 'sm' | 'md';
     collapsed?: boolean;
   }
 
-  let { size = 'md', collapsed = false }: Props = $props();
+  const { size = 'md', collapsed = false }: Props = $props();
 
   let mounted = $state(false);
 
@@ -19,7 +19,7 @@
   };
 
   // Get current effective theme (reactive)
-  let isDark = $derived($effectiveTheme === 'dark');
+  const isDark = $derived($effectiveTheme === 'dark');
 
   function toggleTheme() {
     // Toggle between light and dark (not system)

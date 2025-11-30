@@ -22,7 +22,7 @@ function getAuthHeaders(): Record<string, string> {
 // Transaction Store using Backend APIs
 function createApiTransactionStore() {
   // Start with fake data for debugging
-  const fakeTransaction: Transaction = {
+  const _fakeTransaction: Transaction = {
     id: 'fake-1',
     amount: -50,
     date: '2025-01-15',

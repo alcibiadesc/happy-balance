@@ -5,7 +5,7 @@
     collapsed: boolean;
   }
 
-  let { collapsed }: Props = $props();
+  const { collapsed }: Props = $props();
 </script>
 
 <nav class="sidebar-navigation" class:sidebar-navigation--collapsed={collapsed}>

@@ -13,7 +13,7 @@
   import { t } from '$lib/stores/i18n';
   import { currencies } from '$lib/stores/currency';
   import { userPreferences } from '$lib/stores/user-preferences';
-  import { sidebarConfig, type NavItemId } from '$lib/stores/sidebarConfig';
+  import { sidebarConfig } from '$lib/stores/sidebarConfig';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { fly } from 'svelte/transition';
@@ -118,7 +118,7 @@
         },
       });
 
-      const result = await response.json();
+      const _result = await response.json();
 
       if (response.ok) {
         updateMessage = 'Update initiated! The application will restart shortly...';
@@ -127,7 +127,7 @@
           window.location.reload();
         }, 15000);
       } else {
-        updateError = result.note || result.error || 'Update failed';
+        updateError = _result.note || _result.error || 'Update failed';
       }
     } catch (err) {
       updateError = 'Failed to apply update. Try running manually: ./scripts/update-docker.sh';

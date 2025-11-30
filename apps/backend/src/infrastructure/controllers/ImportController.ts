@@ -86,7 +86,7 @@ export class ImportController {
   constructor(
     private readonly importTransactionsUseCase: ImportTransactionsUseCase,
     private readonly checkDuplicateHashesUseCase: CheckDuplicateHashesUseCase,
-    private readonly importSelectedTransactionsUseCase: ImportSelectedTransactionsUseCase,
+    private readonly importSelectedTransactionsUseCase: ImportSelectedTransactionsUseCase
   ) {
     this.generateHashesUseCase = new GenerateHashesUseCase();
   }

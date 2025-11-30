@@ -8,7 +8,7 @@
     onClose: () => void;
   }
 
-  let { isOpen, onClose }: Props = $props();
+  const { isOpen, onClose }: Props = $props();
 
   // Close on escape key
   function handleKeydown(event: KeyboardEvent) {

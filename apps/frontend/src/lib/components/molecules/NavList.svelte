@@ -1,6 +1,6 @@
 <script lang="ts">
   import NavItem from '../atoms/NavItem.svelte';
-  import { t, currentLanguage } from '$lib/stores/i18n';
+  import { t } from '$lib/stores/i18n';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { sidebarConfig } from '$lib/stores/sidebarConfig';
@@ -11,7 +11,7 @@
     onItemClick?: () => void;
   }
 
-  let { isMobile = false, collapsed = false, onItemClick }: Props = $props();
+  const { isMobile = false, collapsed = false, onItemClick }: Props = $props();
 
   // Get visible nav items from the sidebar config
   const visibleItems = $derived(sidebarConfig.getVisibleItems($sidebarConfig));
@@ -22,7 +22,7 @@
   }
 
   // Get current path to highlight active item
-  let currentPath = $derived($page.url.pathname);
+  const currentPath = $derived($page.url.pathname);
 </script>
 
 <nav class="nav-list" class:nav-list--mobile={isMobile} class:nav-list--collapsed={collapsed}>

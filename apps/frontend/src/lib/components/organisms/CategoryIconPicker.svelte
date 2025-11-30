@@ -17,7 +17,7 @@
     onClose: () => void;
   }
 
-  let { isOpen, position, availableEmojis, onSelect, onClose }: Props = $props();
+  const { isOpen, position, availableEmojis, onSelect, onClose }: Props = $props();
 </script>
 
 {#if isOpen}
@@ -52,7 +52,7 @@
 
     <!-- Scrollable grid of emojis -->
     <div class="emoji-picker-content" role="listbox" aria-label={$t('accessibility.icon_list')}>
-      {#each availableEmojis as emoji}
+      {#each availableEmojis as emoji (emoji)}
         <button
           class="emoji-option"
           onclick={() => onSelect(emoji)}

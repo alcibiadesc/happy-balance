@@ -11,11 +11,11 @@
     onChange: (event: Event) => void;
   }
 
-  let { value, options, onChange }: Props = $props();
+  const { value, options, onChange }: Props = $props();
 </script>
 
 <select class="currency-select" {value} onchange={onChange}>
-  {#each options as currency}
+  {#each options as currency (currency.value)}
     <option value={currency.value}>{currency.label}</option>
   {/each}
 </select>

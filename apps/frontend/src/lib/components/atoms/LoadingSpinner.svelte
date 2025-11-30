@@ -4,7 +4,7 @@
     message?: string;
   }
 
-  let { size = 24, message }: Props = $props();
+  const { size = 24, message }: Props = $props();
 </script>
 
 <div class="loading-container">

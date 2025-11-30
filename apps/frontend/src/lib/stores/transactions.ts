@@ -1,6 +1,6 @@
 import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
-import type { Transaction, Category, CategoryRule } from '$lib/types/transaction';
+import type { Transaction, CategoryRule, Category } from '$lib/types/transaction';
 
 // Transaction Store with persistence
 function createTransactionStore() {
@@ -110,7 +110,7 @@ function createTransactionStore() {
 
 // Category Store
 function createCategoryStore() {
-  const { subscribe, set, update } = writable<Category[]>([
+  const { subscribe, update } = writable<Category[]>([
     // Default categories
     {
       id: '1',

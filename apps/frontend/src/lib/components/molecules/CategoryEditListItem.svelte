@@ -21,7 +21,7 @@
     showIconPicker: boolean;
   }
 
-  let {
+  const {
     editForm,
     availableColors,
     getCurrencySymbol,
@@ -70,7 +70,7 @@
     </div>
 
     <div class="color-picker">
-      {#each availableColors as color}
+      {#each availableColors as color (color)}
         <button
           class="color-option"
           class:selected={editForm.color === color}

@@ -7,7 +7,7 @@
     onChange: (event: Event) => void;
   }
 
-  let { value, languages, onChange }: Props = $props();
+  const { value, languages, onChange }: Props = $props();
 </script>
 
 <div class="language-select">
@@ -15,7 +15,7 @@
     <Globe size={16} strokeWidth={2} />
   </div>
   <select class="language-select__input" {value} onchange={onChange}>
-    {#each languages as lang}
+    {#each languages as lang (lang.code)}
       <option value={lang.code}>
         {lang.flag}
         {lang.name}

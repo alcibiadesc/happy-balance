@@ -25,7 +25,7 @@
     formatAmount: (amount: number) => string;
   }
 
-  let {
+  const {
     date,
     transactions,
     categories,
@@ -74,7 +74,7 @@
   </button>
 
   {#if isExpanded}
-    {#each transactions as transaction}
+    {#each transactions as transaction (transaction.id)}
       {@const category = getCategoryById(transaction.categoryId)}
       <TransactionRow
         {transaction}

@@ -8,8 +8,6 @@ import type {
   LoginResponse,
   PasswordChangeRequired,
 } from '../../domain/repositories/IAuthRepository';
-import type { User } from '../../domain/entities/User';
-import type { AuthTokens } from '../../domain/value-objects/AuthToken';
 import { Username } from '../../domain/value-objects/Username';
 
 export interface LoginRequest {

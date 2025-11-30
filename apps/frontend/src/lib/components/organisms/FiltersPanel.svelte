@@ -17,7 +17,7 @@
     onClearFilters: () => void;
   }
 
-  let {
+  const {
     visible,
     transactionTypeFilter,
     selectedCategories,
@@ -117,7 +117,7 @@
         {#if showCategoryFilterDropdown}
           <div class="category-dropdown-mini">
             <div class="category-grid-compact">
-              {#each categories as category}
+              {#each categories as category (category.id)}
                 <button
                   class="category-chip-mini"
                   class:selected={selectedCategories.includes(category.id)}
@@ -160,7 +160,7 @@
         {#if showPrimaryTypeDropdown}
           <div class="category-dropdown-mini">
             <div class="category-grid-compact">
-              {#each Object.entries(primaryTypeNames) as [type, name]}
+              {#each Object.entries(primaryTypeNames) as [type, name] (type)}
                 <button
                   class="category-chip-mini"
                   class:selected={selectedPrimaryTypes.includes(type)}
@@ -229,7 +229,7 @@
           </button>
         {/if}
 
-        {#each selectedPrimaryTypes as primaryType}
+        {#each selectedPrimaryTypes as primaryType (primaryType)}
           <button
             class="tag-mini primary-type-tag"
             onclick={() => onTogglePrimaryType(primaryType)}
@@ -240,7 +240,7 @@
           </button>
         {/each}
 
-        {#each selectedCategories as categoryId}
+        {#each selectedCategories as categoryId (categoryId)}
           {@const category = categories.find((c) => c.id === categoryId)}
           {#if category}
             <button

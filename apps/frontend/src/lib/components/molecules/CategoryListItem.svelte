@@ -13,7 +13,7 @@
     onToggleSelect?: (category: Category) => void;
   }
 
-  let {
+  const {
     category,
     onEdit,
     onDelete,

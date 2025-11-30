@@ -1,7 +1,6 @@
 import { CategoryEntity, type CategoryData } from '../../domain/entities/CategoryEntity';
 import { CategoryType, type CategoryTypeValue } from '../../domain/value-objects/CategoryType';
 import { apiCategories, apiTransactions } from '$lib/stores/api-transactions';
-import type { Category } from '$lib/types/transaction';
 import { get } from 'svelte/store';
 import { currentCurrency } from '$lib/stores/currency';
 

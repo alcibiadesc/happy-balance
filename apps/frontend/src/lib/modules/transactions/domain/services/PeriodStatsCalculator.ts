@@ -30,7 +30,7 @@ const getCategoryType = (transaction: Transaction, categories: Category[]): stri
   return category?.type;
 };
 
-const sumAmount = (transactions: Transaction[]): number =>
+const _sumAmount = (transactions: Transaction[]): number =>
   transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
 const filterByType = (
@@ -73,7 +73,7 @@ export const calculatePeriodStats = (
     return sum + t.amount;
   }, 0);
 
-  const totalExpenses = expenseTransactions.reduce((sum, t) => {
+  const _totalExpenses = expenseTransactions.reduce((sum, t) => {
     const amount = Math.abs(t.amount);
     // Apply split percentage if exists
     const splitPercent = (t as any).splitPercentage ?? 100;
@@ -109,11 +109,11 @@ export const calculatePeriodStats = (
   );
 
   // Calculate balance
-  const balance = income - totalExpenses;
+  const balance = income - _totalExpenses;
 
   return {
     income: safeguardNumber(income),
-    expenses: safeguardNumber(totalExpenses),
+    expenses: safeguardNumber(_totalExpenses),
     essentialExpenses: safeguardNumber(essentialExpenses),
     discretionaryExpenses: safeguardNumber(discretionaryExpenses),
     investmentExpenses: safeguardNumber(investmentExpenses),

@@ -10,7 +10,7 @@
     loading?: boolean;
   }
 
-  let { value, trend, trendColor, loading = false }: Props = $props();
+  const { value, trend, trendColor, loading = false }: Props = $props();
 </script>
 
 <MetricCard

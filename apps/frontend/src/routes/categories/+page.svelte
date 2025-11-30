@@ -19,8 +19,8 @@
   // Helper Tooltip
   let tooltipButtonElement = $state<HTMLElement | null>(null);
 
-  function calculateTooltipPosition(buttonElement: HTMLElement) {
-    const rect = buttonElement.getBoundingClientRect();
+  function calculateTooltipPosition(_buttonElement: HTMLElement) {
+    const rect = _buttonElement.getBoundingClientRect();
     const tooltipWidth = 320;
     const tooltipHeight = 80;
     const spacing = 8;
@@ -65,11 +65,11 @@
     store.showHelperTooltip = !store.showHelperTooltip;
   }
 
-  function handleIconClick(e: Event, forNew: boolean = false) {
+  function handleIconClick(e: Event, _forNew: boolean = false) {
     const buttonElement = e.currentTarget as HTMLElement;
     store.pickerPosition = store.calculatePickerPosition(buttonElement);
 
-    if (forNew) {
+    if (_forNew) {
       store.showIconPickerNew = !store.showIconPickerNew;
     } else {
       store.showIconPickerEdit =
@@ -110,7 +110,7 @@
     </header>
 
     <main class="categories-content">
-      {#each store.categoryTypes as { value, type }}
+      {#each store.categoryTypes as { value, type } (value)}
         <CategorySection
           title={$t(type.getTitleKey())}
           description={$t(type.getDescriptionKey())}
@@ -147,7 +147,7 @@
               showIconPicker={store.showIconPickerNew}
             />
           {/if}
-          {#each store.categoriesByType[value] as category}
+          {#each store.categoriesByType[value] as category (category.getId())}
             {#if store.editingCategory === category.getId()}
               <CategoryEditListItem
                 bind:editForm={store.editForm}
@@ -240,7 +240,7 @@
         />
         <span>{$t('categories.leave_uncategorized')}</span>
       </label>
-      {#each store.categories as cat}
+      {#each store.categories as cat (cat.getId())}
         {#if store.categoriesToDelete.length > 1 ? !store.categoriesToDelete.some((c) => c.getId() === cat.getId()) : cat.getId() !== store.categoryToDelete?.getId()}
           <label class="radio-option">
             <input

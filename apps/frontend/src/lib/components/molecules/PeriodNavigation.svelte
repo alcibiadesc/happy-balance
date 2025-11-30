@@ -33,7 +33,7 @@
         disabled={loading}
         class="period-select"
       >
-        {#each navigationOptions as option}
+        {#each navigationOptions as option (option.offset)}
           <option value={option.offset}>{option.label}</option>
         {/each}
       </select>

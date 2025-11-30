@@ -11,7 +11,7 @@ import type {
 } from '../../domain/repositories/IAuthRepository';
 import type { User } from '../../domain/entities/User';
 import { User as UserEntity } from '../../domain/entities/User';
-import { AuthTokens, AccessToken, RefreshToken } from '../../domain/value-objects/AuthToken';
+import { AuthTokens } from '../../domain/value-objects/AuthToken';
 import { UserId } from '../../domain/value-objects/UserId';
 import { Username } from '../../domain/value-objects/Username';
 import { UserRole } from '../../domain/value-objects/UserRole';

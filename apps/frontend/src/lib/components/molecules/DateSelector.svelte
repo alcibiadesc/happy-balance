@@ -170,7 +170,7 @@
       </button>
     </div>
     <div class="month-grid">
-      {#each ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'] as month}
+      {#each ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'] as month (month)}
         {@const monthDate = `${selectedPeriod.split('-')[0]}-${month}`}
         <button
           class="month-option"

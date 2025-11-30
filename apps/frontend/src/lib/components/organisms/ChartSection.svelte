@@ -10,7 +10,7 @@
     loading?: boolean;
   }
 
-  let { title, subtitle, data, height = 280, period, loading = false }: Props = $props();
+  const { title, subtitle, data, height = 280, period, loading = false }: Props = $props();
 </script>
 
 <section class="chart-section">

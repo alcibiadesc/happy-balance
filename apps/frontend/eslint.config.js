@@ -47,6 +47,9 @@ export default tseslint.config(
         parser: tseslint.parser,
       },
     },
+    rules: {
+      'prefer-const': 'off', // Svelte props use let for reactivity
+    },
   },
 
   // Custom rules
@@ -60,7 +63,7 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off', // Too many false positives with Chart.js and Svelte
       '@typescript-eslint/no-require-imports': 'off', // Allow require in config files
       '@typescript-eslint/no-unused-expressions': 'off', // Svelte reactive statements
       'no-console': 'off', // Allow console in frontend for debugging

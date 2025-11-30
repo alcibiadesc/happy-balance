@@ -3,7 +3,7 @@ import { getApiUrl } from '$lib/utils/api-url';
 
 export const findMatchingTransactions = async (
   transaction: Transaction,
-  allTransactions: Transaction[]
+  _allTransactions: Transaction[]
 ): Promise<Transaction[]> => {
   try {
     // Call backend API with ultra-strict matching (85% threshold + type validation)

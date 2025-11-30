@@ -17,7 +17,7 @@
     formatCurrency: (amount: number) => string;
   }
 
-  let { categories, totalExpenses, loading = false, formatCurrency }: Props = $props();
+  const { categories, totalExpenses, loading = false, formatCurrency }: Props = $props();
 
   // Show top 5 expense categories
   const topCategories = $derived(

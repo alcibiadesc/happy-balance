@@ -9,7 +9,7 @@
     budgetUsage?: number | null;
   }
 
-  let {
+  const {
     name,
     amount,
     percentage,

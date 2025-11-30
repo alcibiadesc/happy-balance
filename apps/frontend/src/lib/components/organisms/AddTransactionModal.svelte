@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Plus, X, Calendar, DollarSign, Building, FileText } from 'lucide-svelte';
+  import { Plus, X } from 'lucide-svelte';
   import { goto } from '$app/navigation';
   import type { Transaction, Category } from '$lib/types/transaction';
   import { t } from '$lib/stores/i18n';
@@ -233,7 +233,7 @@
           <label class="field-label" for="category">{$t('transactions.category')}</label>
           {#if categories.length > 0}
             <div class="category-grid">
-              {#each categories.filter((c) => (type === 'income' && ['income', 'no_compute'].includes(c.type)) || (type === 'expense' && ['essential', 'discretionary', 'investment', 'debt_payment', 'no_compute'].includes(c.type))) as category}
+              {#each categories.filter((c) => (type === 'income' && ['income', 'no_compute'].includes(c.type)) || (type === 'expense' && ['essential', 'discretionary', 'investment', 'debt_payment', 'no_compute'].includes(c.type))) as category (category.id)}
                 <button
                   type="button"
                   class="category-chip"

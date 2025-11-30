@@ -4,7 +4,7 @@
     onToggle: () => void;
   }
 
-  let { isDark, onToggle }: Props = $props();
+  const { isDark, onToggle }: Props = $props();
 </script>
 
 <!-- DaisyUI Toggle with custom styling -->

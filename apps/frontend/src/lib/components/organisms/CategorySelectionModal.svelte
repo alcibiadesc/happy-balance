@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { X, Plus, Search } from 'lucide-svelte';
-  import { onMount, onDestroy } from 'svelte';
+  import { X, Plus } from 'lucide-svelte';
+  import { onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import type { Transaction, Category } from '$lib/types/transaction';
 
@@ -203,12 +203,12 @@
             </div>
           </div>
         {:else if isIncomeTransaction}
-          {#each Object.entries(groupedCategories) as [type, categoryList]}
+          {#each Object.entries(groupedCategories) as [type, categoryList] (type)}
             {#if categoryList.length > 0}
               <div class="category-group">
                 <h3 class="group-title">{typeDisplayNames[type]}</h3>
                 <div class="category-list">
-                  {#each categoryList as category}
+                  {#each categoryList as category (category.id)}
                     <button
                       class="category-option {type}-type"
                       style="background-color: {category.color}20; border-color: {category.color};"
@@ -223,12 +223,12 @@
             {/if}
           {/each}
         {:else}
-          {#each Object.entries(groupedCategories) as [type, categoryList]}
+          {#each Object.entries(groupedCategories) as [type, categoryList] (type)}
             {#if categoryList.length > 0}
               <div class="category-group">
                 <h3 class="group-title">{typeDisplayNames[type]}</h3>
                 <div class="category-list">
-                  {#each categoryList as category}
+                  {#each categoryList as category (category.id)}
                     <button
                       class="category-option {type}-type"
                       style="background-color: {category.color}20; border-color: {category.color};"

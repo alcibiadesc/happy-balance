@@ -25,14 +25,14 @@
     loading?: boolean;
   }
 
-  let { data = [], height = 280, period = 'month', loading = false }: Props = $props();
+  const { data = [], height = 280, period: _period = 'month', loading = false }: Props = $props();
 
   let canvasRef = $state<HTMLCanvasElement>();
   let chart: Chart | null = null;
   let cleanupThemeObserver: (() => void) | null = null;
 
   // Reactive data processing
-  let chartData = $derived(() => {
+  const chartData = $derived(() => {
     if (!data?.length) return { labels: [], income: [], expenses: [], balance: [] };
 
     return {
@@ -50,7 +50,7 @@
 
   // Get month labels based on period
   function getTimeUnit() {
-    switch (period) {
+    switch (_period) {
       case 'week':
         return 'week';
       case 'quarter':
@@ -65,7 +65,7 @@
   // Chart configuration
   function getChartConfig() {
     const colors = getChartThemeColors();
-    const timeUnit = getTimeUnit();
+    const _timeUnit = getTimeUnit();
 
     return {
       type: 'line' as const,

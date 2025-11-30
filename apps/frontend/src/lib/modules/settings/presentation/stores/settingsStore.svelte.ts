@@ -3,8 +3,8 @@ import { Theme, type ThemeType } from '../../domain/value-objects/Theme';
 import { Language } from '../../domain/value-objects/Language';
 import { t } from '$lib/stores/i18n';
 import { currentLanguage, setLanguage } from '$lib/stores/i18n';
-import { currentCurrency, currencies, setCurrency } from '$lib/stores/currency';
-import { theme as themeStore, setTheme, effectiveTheme } from '$lib/stores/theme';
+import { currentCurrency, setCurrency } from '$lib/stores/currency';
+import { setTheme, effectiveTheme } from '$lib/stores/theme';
 import { userPreferences } from '$lib/stores/user-preferences';
 import { get } from 'svelte/store';
 import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
@@ -228,7 +228,7 @@ export function createSettingsStore(apiBase: string) {
 
     importing = true;
     try {
-      const result = await importData(dataToImport);
+      const _result = await importData(dataToImport);
 
       // Calculate count based on format
       const count = isNewFormat

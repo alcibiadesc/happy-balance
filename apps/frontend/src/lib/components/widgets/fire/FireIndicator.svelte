@@ -11,10 +11,10 @@
     formatCurrency: (amount: number) => string;
   }
 
-  let {
+  const {
     monthlyIncome,
     monthlyExpenses,
-    monthlyInvestments,
+    monthlyInvestments: _monthlyInvestments,
     totalInvestments = 0,
     loading = false,
     formatCurrency,

@@ -11,7 +11,7 @@
     formatCurrency: (amount: number) => string;
   }
 
-  let {
+  const {
     income,
     expenses,
     investments,

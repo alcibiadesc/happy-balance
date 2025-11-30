@@ -10,7 +10,7 @@
     importing?: boolean;
   }
 
-  let { onExport, onFileImport, onReset, onDeleteAll, importing = false }: Props = $props();
+  const { onExport, onFileImport, onReset, onDeleteAll, importing = false }: Props = $props();
 </script>
 
 <div class="action-buttons">

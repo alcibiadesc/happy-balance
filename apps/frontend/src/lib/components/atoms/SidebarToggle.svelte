@@ -7,7 +7,7 @@
     size?: 'sm' | 'md';
   }
 
-  let { collapsed, onclick, size = 'md' }: Props = $props();
+  const { collapsed, onclick, size = 'md' }: Props = $props();
 
   const sizeClasses = {
     sm: 'w-8 h-8',

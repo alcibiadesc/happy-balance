@@ -57,7 +57,7 @@ export function createInvestmentsStore() {
   });
 
   // New investment form
-  let showNewForm = $state(false);
+  let _showNewForm = $state(false);
   let newInvestmentForm = $state<InvestmentEditForm>({
     name: '',
     symbol: '',
@@ -71,7 +71,7 @@ export function createInvestmentsStore() {
   });
 
   // Add history modal
-  let showAddHistoryModal = $state(false);
+  let _showAddHistoryModal = $state(false);
   let addHistoryInvestmentId = $state<string | null>(null);
   let addHistoryForm = $state<AddHistoryForm>({
     amount: 0,
@@ -81,7 +81,7 @@ export function createInvestmentsStore() {
   });
 
   // Delete modal
-  let showDeleteModal = $state(false);
+  let _showDeleteModal = $state(false);
   let investmentToDelete = $state<Investment | null>(null);
 
   // Inline value editing
@@ -194,7 +194,7 @@ export function createInvestmentsStore() {
   }
 
   // CRUD operations
-  function startNewInvestment() {
+  function _startNewInvestment() {
     const currency = get(currentCurrency);
     newInvestmentForm = {
       name: '',
@@ -207,10 +207,10 @@ export function createInvestmentsStore() {
       icon: '📈',
       notes: '',
     };
-    showNewForm = true;
+    _showNewForm = true;
   }
 
-  async function saveNewInvestment() {
+  async function _saveNewInvestment() {
     if (!newInvestmentForm.name) return;
 
     try {
@@ -228,14 +228,14 @@ export function createInvestmentsStore() {
 
       await investmentsApi.create(data);
       await loadAll();
-      showNewForm = false;
+      _showNewForm = false;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Failed to create investment';
     }
   }
 
-  function cancelNewInvestment() {
-    showNewForm = false;
+  function _cancelNewInvestment() {
+    _showNewForm = false;
   }
 
   function startEdit(investment: Investment) {
@@ -290,18 +290,18 @@ export function createInvestmentsStore() {
     }
   }
 
-  function prepareDelete(investment: Investment) {
+  function _prepareDelete(investment: Investment) {
     investmentToDelete = investment;
-    showDeleteModal = true;
+    _showDeleteModal = true;
   }
 
-  async function confirmDelete() {
+  async function _confirmDelete() {
     if (!investmentToDelete) return;
 
     try {
       await investmentsApi.delete(investmentToDelete.id);
       await loadAll();
-      showDeleteModal = false;
+      _showDeleteModal = false;
       investmentToDelete = null;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Failed to delete investment';
@@ -309,7 +309,7 @@ export function createInvestmentsStore() {
   }
 
   // History operations
-  function startAddHistory(investmentId: string) {
+  function _startAddHistory(investmentId: string) {
     addHistoryInvestmentId = investmentId;
     addHistoryForm = {
       amount: 0,
@@ -317,10 +317,10 @@ export function createInvestmentsStore() {
       date: new Date().toISOString().split('T')[0],
       notes: '',
     };
-    showAddHistoryModal = true;
+    _showAddHistoryModal = true;
   }
 
-  async function saveHistoryEntry() {
+  async function _saveHistoryEntry() {
     if (!addHistoryInvestmentId || addHistoryForm.amount <= 0) return;
 
     try {
@@ -339,15 +339,15 @@ export function createInvestmentsStore() {
         await loadInvestmentDetails(addHistoryInvestmentId);
       }
 
-      showAddHistoryModal = false;
+      _showAddHistoryModal = false;
       addHistoryInvestmentId = null;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Failed to add history entry';
     }
   }
 
-  function cancelAddHistory() {
-    showAddHistoryModal = false;
+  function _cancelAddHistory() {
+    _showAddHistoryModal = false;
     addHistoryInvestmentId = null;
   }
 
@@ -550,7 +550,7 @@ export function createInvestmentsStore() {
   });
 
   // Wrap modal functions to use the reactive state
-  function startAddHistoryReactive(investmentId: string) {
+  function _startAddHistoryReactive(investmentId: string) {
     addHistoryInvestmentId = investmentId;
     // Reset form data
     addHistoryFormData.amount = 0;
@@ -560,12 +560,12 @@ export function createInvestmentsStore() {
     showAddHistoryModalState = true;
   }
 
-  function cancelAddHistoryReactive() {
+  function _cancelAddHistoryReactive() {
     showAddHistoryModalState = false;
     addHistoryInvestmentId = null;
   }
 
-  async function saveHistoryEntryReactive() {
+  async function _saveHistoryEntryReactive() {
     if (!addHistoryInvestmentId || addHistoryFormData.amount <= 0) return;
 
     try {
@@ -591,12 +591,12 @@ export function createInvestmentsStore() {
     }
   }
 
-  function prepareDeleteReactive(investment: Investment) {
+  function _prepareDeleteReactive(investment: Investment) {
     investmentToDelete = investment;
     showDeleteModalState = true;
   }
 
-  async function confirmDeleteReactive() {
+  async function _confirmDeleteReactive() {
     if (!investmentToDelete) return;
 
     try {
@@ -609,7 +609,7 @@ export function createInvestmentsStore() {
     }
   }
 
-  function startNewInvestmentReactive() {
+  function _startNewInvestmentReactive() {
     const currency = get(currentCurrency);
     newInvestmentForm = {
       name: '',
@@ -625,7 +625,7 @@ export function createInvestmentsStore() {
     showNewFormState = true;
   }
 
-  async function saveNewInvestmentReactive() {
+  async function _saveNewInvestmentReactive() {
     if (!newInvestmentForm.name) return;
 
     try {
@@ -649,7 +649,7 @@ export function createInvestmentsStore() {
     }
   }
 
-  function cancelNewInvestmentReactive() {
+  function _cancelNewInvestmentReactive() {
     showNewFormState = false;
   }
 
@@ -776,18 +776,18 @@ export function createInvestmentsStore() {
     loadAll,
     loadTimeline,
     loadInvestmentDetails,
-    startNewInvestment: startNewInvestmentReactive,
-    saveNewInvestment: saveNewInvestmentReactive,
-    cancelNewInvestment: cancelNewInvestmentReactive,
+    startNewInvestment: _startNewInvestmentReactive,
+    saveNewInvestment: _saveNewInvestmentReactive,
+    cancelNewInvestment: _cancelNewInvestmentReactive,
     startEdit,
     saveEdit,
     cancelEdit,
     toggleHighlight,
-    prepareDelete: prepareDeleteReactive,
-    confirmDelete: confirmDeleteReactive,
-    startAddHistory: startAddHistoryReactive,
-    saveHistoryEntry: saveHistoryEntryReactive,
-    cancelAddHistory: cancelAddHistoryReactive,
+    prepareDelete: _prepareDeleteReactive,
+    confirmDelete: _confirmDeleteReactive,
+    startAddHistory: _startAddHistoryReactive,
+    saveHistoryEntry: _saveHistoryEntryReactive,
+    cancelAddHistory: _cancelAddHistoryReactive,
     deleteHistoryEntry,
     reorderInvestments,
     startInlineEdit,

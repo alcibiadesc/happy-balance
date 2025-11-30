@@ -27,9 +27,9 @@
     formatCurrency: (amount: number) => string;
   }
 
-  let {
+  const {
     title,
-    categories = [],
+    categories: _categories = [],
     categoryBreakdown = [],
     totalExpenses = 0,
     totalIncome = 0,

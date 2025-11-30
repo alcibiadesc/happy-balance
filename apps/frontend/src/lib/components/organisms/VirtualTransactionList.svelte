@@ -1,19 +1,10 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { Transaction, Category } from '$lib/types/transaction';
   import { paginatedTransactions, type PaginatedQuery } from '$lib/stores/paginated-transactions';
   import { apiCategories } from '$lib/stores/api-transactions';
-  import {
-    ChevronDown,
-    TrendingUp,
-    TrendingDown,
-    Eye,
-    EyeOff,
-    Trash2,
-    Tag,
-    MoreVertical,
-  } from 'lucide-svelte';
+  import { TrendingUp, TrendingDown, Eye, EyeOff, Trash2, Tag, MoreVertical } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
 
   // Props
@@ -29,7 +20,7 @@
     showHiddenTransactions?: boolean;
   }
 
-  let {
+  const {
     query = {},
     onTransactionSelect = undefined,
     onTransactionEdit = undefined,
@@ -52,17 +43,17 @@
   const LOAD_THRESHOLD = 300; // Distance from bottom to trigger next page load
 
   // Reactive data from store
-  let transactions = $derived($paginatedTransactions.transactions);
-  let totalCount = $derived($paginatedTransactions.totalCount);
-  let isLoading = $derived($paginatedTransactions.isLoading);
-  let hasMore = $derived($paginatedTransactions.hasMore);
-  let error = $derived($paginatedTransactions.error);
+  const transactions = $derived($paginatedTransactions.transactions);
+  const totalCount = $derived($paginatedTransactions.totalCount);
+  const isLoading = $derived($paginatedTransactions.isLoading);
+  const hasMore = $derived($paginatedTransactions.hasMore);
+  const error = $derived($paginatedTransactions.error);
 
   // Categories for lookup
-  let categories = $derived($apiCategories);
+  const categories = $derived($apiCategories);
 
   // Filter transactions based on showHiddenTransactions preference
-  let filteredTransactions = $derived(() => {
+  const filteredTransactions = $derived(() => {
     if (showHiddenTransactions) {
       return transactions;
     }
@@ -72,11 +63,11 @@
   // Virtual scrolling calculations
   let scrollTop = $state(0);
   let containerHeight = $state(600);
-  let visibleStart = $derived(Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_SIZE);
-  let visibleEnd = $derived(
+  const visibleStart = $derived(Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_SIZE);
+  const visibleEnd = $derived(
     visibleStart + Math.ceil(containerHeight / ITEM_HEIGHT) + BUFFER_SIZE * 2
   );
-  let visibleTransactions = $derived(() => {
+  const visibleTransactions = $derived(() => {
     const start = Math.max(0, visibleStart);
     const end = Math.min(filteredTransactions.length, visibleEnd);
     return filteredTransactions.slice(start, end);
@@ -227,7 +218,7 @@
       <div class="transactions-list">
         {#each visibleTransactions as transaction, index (transaction.id)}
           {@const category = getCategoryById(transaction.categoryId)}
-          {@const actualIndex = Math.max(0, visibleStart) + index}
+          {@const _actualIndex = Math.max(0, visibleStart) + index}
           <div
             class="transaction-card"
             class:selected={selectedTransactions.has(transaction.id)}

@@ -12,7 +12,7 @@
     subtext?: string;
   }
 
-  let {
+  const {
     icon: Icon,
     iconClass,
     label,

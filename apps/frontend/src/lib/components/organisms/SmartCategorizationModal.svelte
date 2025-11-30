@@ -163,7 +163,7 @@
               <span class="preview-total">{getTotalAmount()}</span>
             </div>
             <div class="preview-list">
-              {#each matchingTransactions as match}
+              {#each matchingTransactions as match (match.id)}
                 <label class="preview-item" class:selected={selectedTransactionIds.has(match.id)}>
                   <input
                     type="checkbox"

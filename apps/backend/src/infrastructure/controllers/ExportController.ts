@@ -4,8 +4,7 @@ import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
 import { IInvestmentRepository } from "@domain/repositories/IInvestmentRepository";
 import { Transaction } from "@domain/entities/Transaction";
 import { Category } from "@domain/entities/Category";
-import { Investment, InvestmentId, InvestmentHistory, InvestmentHistoryId } from "@domain/entities/Investment";
-import { InvestmentHistoryType } from "@domain/entities/InvestmentHistoryType";
+import { Investment, InvestmentHistory } from "@domain/entities/Investment";
 
 export interface ExportData {
   exportDate: string;

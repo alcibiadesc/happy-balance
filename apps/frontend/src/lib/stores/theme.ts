@@ -57,7 +57,7 @@ export function applyTheme(theme: Theme) {
 
 // Escuchar cambios del sistema
 if (browser) {
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (_e) => {
     const currentTheme = getInitialTheme();
     if (currentTheme === 'system') {
       applyTheme('system');

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { t } from '$lib/stores/i18n';
-  import type { Transaction, Category } from '$lib/types/transaction';
 
   interface PeriodStatsData {
     income: number;
@@ -14,7 +13,7 @@
     balance: number;
   }
 
-  let { stats }: { stats: PeriodStatsData } = $props();
+  const { stats }: { stats: PeriodStatsData } = $props();
 
   function formatAmount(amount: number): string {
     if (isNaN(amount)) return '€0.00';

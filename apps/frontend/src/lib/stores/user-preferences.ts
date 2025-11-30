@@ -70,7 +70,7 @@ function createUserPreferencesStore() {
             await this.save(DEFAULT_PREFERENCES);
           }
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn('Failed to load preferences from database, using localStorage fallback');
 
         // Fallback to localStorage
@@ -102,7 +102,7 @@ function createUserPreferencesStore() {
         } else {
           throw new Error('Failed to save to database');
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn('Failed to save preferences to database, updating localStorage only');
 
         // Fallback to localStorage update only

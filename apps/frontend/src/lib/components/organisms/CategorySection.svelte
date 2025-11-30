@@ -19,12 +19,12 @@
     children?: any;
   }
 
-  let {
+  const {
     title,
     description,
     icon: Icon,
     iconClass,
-    categories,
+    categories: _categories,
     onAddNew,
     showHelperButton = false,
     onHelperClick,

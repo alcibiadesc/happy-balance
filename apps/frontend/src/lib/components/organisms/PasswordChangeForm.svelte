@@ -8,7 +8,7 @@
     username: string;
   }
 
-  let { userId, username }: Props = $props();
+  const { userId, username }: Props = $props();
 
   let currentPassword = $state('');
   let newPassword = $state('');

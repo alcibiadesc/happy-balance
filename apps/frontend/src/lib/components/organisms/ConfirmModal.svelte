@@ -14,7 +14,7 @@
     children?: any;
   }
 
-  let {
+  const {
     isOpen = false,
     title = '',
     message = '',

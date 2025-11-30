@@ -10,7 +10,7 @@
     loading?: boolean;
   }
 
-  let { value, profit = 0, profitPercentage = 0, loading = false }: Props = $props();
+  const { value, profit = 0, profitPercentage = 0, loading = false }: Props = $props();
 
   const trendColor = $derived(profit >= 0 ? 'var(--success)' : 'var(--danger)');
   const trendText = $derived(

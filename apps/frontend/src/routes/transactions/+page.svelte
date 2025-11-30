@@ -420,7 +420,7 @@
 
   <!-- Transactions list -->
   <main class="transactions-list">
-    {#each groupedTransactions as group}
+    {#each groupedTransactions as group (group.date)}
       <TransactionGroup
         date={formatDate(group.date)}
         transactions={group.items}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t, currentLanguage } from '$lib/stores/i18n';
+  import { t } from '$lib/stores/i18n';
   import { currentCurrency, currencies } from '$lib/stores/currency';
 
   interface Props {
@@ -7,20 +7,20 @@
     expenses: number;
   }
 
-  let { income, expenses }: Props = $props();
+  const { income, expenses }: Props = $props();
 
   // Calculate spending rate (de cada 10€ cuántos gasto)
-  let spendingRate = $derived(income > 0 ? Math.round((expenses / income) * 10) : 0);
+  const spendingRate = $derived(income > 0 ? Math.round((expenses / income) * 10) : 0);
 
   // Determine status based on spending rate
-  let spendingStatus = $derived.by(() => {
+  const spendingStatus = $derived.by(() => {
     if (spendingRate <= 5) return 'good';
     if (spendingRate <= 8) return 'medium';
     return 'regular';
   });
 
   // Generate dynamic spending summary with current currency
-  let spendingSummaryText = $derived.by(() => {
+  const spendingSummaryText = $derived.by(() => {
     const currencyCode = $currentCurrency;
     const rate = spendingRate;
 

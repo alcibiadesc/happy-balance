@@ -6,7 +6,6 @@
 import type { User } from '../entities/User';
 import type { AuthTokens } from '../value-objects/AuthToken';
 import type { Username } from '../value-objects/Username';
-import type { UserId } from '../value-objects/UserId';
 
 export interface LoginCredentials {
   username: Username;

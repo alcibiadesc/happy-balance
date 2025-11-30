@@ -179,9 +179,9 @@ export class LocalStorageTransactionRepository implements ITransactionRepository
         transactions,
         totalCount,
       });
-    } catch (error) {
+    } catch (_error) {
       return Result.failWithMessage(
-        `Failed to find transactions with filters: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to find transactions with filters: ${_error instanceof Error ? _error.message : 'Unknown error'}`
       );
     }
   }
@@ -322,7 +322,7 @@ export class LocalStorageTransactionRepository implements ITransactionRepository
   async getStatistics(
     startDate: TransactionDate,
     endDate: TransactionDate,
-    currency: string
+    _currency: string
   ): Promise<
     Result<{
       totalIncome: number;

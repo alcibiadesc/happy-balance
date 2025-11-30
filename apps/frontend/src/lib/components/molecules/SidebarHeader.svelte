@@ -8,7 +8,7 @@
     onToggle: () => void;
   }
 
-  let { collapsed, onToggle }: Props = $props();
+  const { collapsed, onToggle }: Props = $props();
 </script>
 
 <header class="sidebar-header" class:sidebar-header--collapsed={collapsed}>

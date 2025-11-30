@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { CalendarRange } from 'lucide-svelte';
   import type { ComponentType } from 'svelte';
 
   interface Period {
@@ -16,7 +15,7 @@
     onPeriodChange: (period: string) => void;
   }
 
-  let {
+  const {
     periods,
     selectedPeriod,
     loading = false,
@@ -26,7 +25,7 @@
 </script>
 
 <div class="period-selector">
-  {#each periods as period}
+  {#each periods as period (period.value)}
     <button
       class="period-button"
       class:active={selectedPeriod === period.value}

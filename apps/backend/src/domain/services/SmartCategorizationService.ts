@@ -33,7 +33,7 @@ export interface CategorizationOptions {
 export class SmartCategorizationService {
   constructor(
     private readonly patternRepository: ICategoryPatternRepository,
-    private readonly transactionRepository: ITransactionRepository,
+    private readonly transactionRepository: ITransactionRepository
   ) {}
 
   /**

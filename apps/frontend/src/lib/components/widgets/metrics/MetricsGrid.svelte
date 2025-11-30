@@ -42,11 +42,11 @@
     getTrendColor: (value: number, type: string) => string;
   }
 
-  let {
+  const {
     metrics,
     trends,
-    expenseDistribution,
-    categoryBreakdown = [],
+    expenseDistribution: _expenseDistribution,
+    categoryBreakdown: _categoryBreakdown = [],
     loading = false,
     labels,
     formatCurrency,

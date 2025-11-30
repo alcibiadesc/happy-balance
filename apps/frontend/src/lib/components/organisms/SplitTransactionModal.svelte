@@ -284,7 +284,7 @@
           <div class="reimbursements-section">
             <div class="section-label">{potentialsLabel}</div>
             <div class="reimbursements-list">
-              {#each potentialReimbursements as reimbursement}
+              {#each potentialReimbursements as reimbursement (reimbursement.transaction.id)}
                 <label class="reimbursement-item">
                   <input
                     type="radio"
@@ -326,7 +326,7 @@
                     </div>
                     {#if reimbursement.matchReasons.length > 0}
                       <div class="match-reasons">
-                        {#each reimbursement.matchReasons as reason}
+                        {#each reimbursement.matchReasons as reason (reason)}
                           <span class="reason-badge">{reason}</span>
                         {/each}
                       </div>

@@ -78,8 +78,8 @@
   async function loadPortfolio() {
     try {
       portfolioSummary = await investmentsApi.getPortfolioSummary();
-    } catch (error) {
-      console.error('Failed to load portfolio summary:', error);
+    } catch (_error) {
+      console.error('Failed to load portfolio summary:', _error);
     }
   }
 

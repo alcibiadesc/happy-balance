@@ -11,11 +11,11 @@
     onPeriodTypeChange: (type: string) => void;
   }
 
-  let {
+  const {
     currentPeriod,
     selectedPeriodType,
     periodOffset,
-    availablePeriods,
+    availablePeriods: _availablePeriods,
     loading = false,
     onNavigate,
     onPeriodTypeChange,
@@ -126,7 +126,7 @@
       <div class="dropdown">
         <!-- Period Type Tabs -->
         <div class="period-tabs">
-          {#each periodTypes as type}
+          {#each periodTypes as type (type.value)}
             <button
               class="tab"
               class:active={selectedPeriodType === type.value}
@@ -140,7 +140,7 @@
         <!-- Period Options -->
         {#if navigationOptions().length > 0}
           <div class="period-options">
-            {#each navigationOptions() as option}
+            {#each navigationOptions() as option (option.offset)}
               <button
                 class="option"
                 class:selected={periodOffset === option.offset}

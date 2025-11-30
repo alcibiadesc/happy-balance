@@ -13,7 +13,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
 
-  let { children } = $props();
+  const { children } = $props();
 
   // Check authentication status for protected routes
   $effect(() => {

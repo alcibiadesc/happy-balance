@@ -3,7 +3,7 @@ import { z } from "zod";
 import { GetDashboardMetricsUseCase } from "../../application/use-cases/GetDashboardMetricsUseCase";
 import { DashboardQuery } from "../../application/queries/DashboardQuery";
 import { PrismaDashboardRepository } from "../repositories/PrismaDashboardRepository";
-import { DashboardResponseDTO, ErrorResponseDTO, DashboardErrors } from "../dto/DashboardDTO";
+import { ErrorResponseDTO, DashboardErrors } from "../dto/DashboardDTO";
 
 // Schemas de validación
 const MonthYearSchema = z.object({
@@ -128,11 +128,8 @@ export class DashboardController {
 
       const dashboardData = this.formatDashboardResponse(metricsResult.getValue());
       const totalExpenses = dashboardData.summary.expenses || 1;
-
-      // Reemplazar las categorías con el breakdown real
-      const budgetDivisor = 12; // Vista mensual
       const enrichedCategories = categoryBreakdown.map(cat => {
-        const periodBudget = cat.annualBudget ? Math.round(cat.annualBudget / budgetDivisor) : null;
+        const periodBudget = cat.annualBudget ? Math.round(cat.annualBudget / 12) : null;
         const amount = Math.round(cat.amount);
         const budgetUsage = periodBudget && periodBudget > 0
           ? Math.round((amount / periodBudget) * 100)
@@ -683,12 +680,7 @@ export class DashboardController {
         });
       }
 
-      const dashboardData = this.formatDashboardResponse(metricsResult.getValue());
       const metricsData = metricsResult.getValue();
-      const totalExpenses = dashboardData.summary.expenses || 1; // Evitar división por cero
-
-      // Calcular el divisor del presupuesto según el período (para mensual = 12)
-      const budgetDivisor = 12; // Por ahora solo soportamos vista mensual
 
       // Usar categoryBreakdown del use case (incluye income, expenses, investments)
       const categoryBreakdown = metricsData.categoryBreakdown || [];
@@ -713,7 +705,7 @@ export class DashboardController {
           label: startDate.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
         },
         data: {
-          ...dashboardData,
+          ...this.formatDashboardResponse(metricsData),
           categories: enrichedCategories,
           categoryBreakdown: enrichedCategories, // Para compatibilidad
           expenseDistribution,

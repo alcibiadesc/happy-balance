@@ -15,16 +15,6 @@ interface ApiResponse<T> {
   period?: any;
 }
 
-interface SummaryData {
-  income: number;
-  expenses: number;
-  investments: number;
-  debtPayments?: number;
-  balance: number;
-  savingsRate: number;
-  currency: string;
-}
-
 interface CategoryData {
   id: string;
   name: string;
@@ -95,7 +85,7 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       }
 
       return this.mapToDomainModel(result.data, period, currency);
-    } catch (error) {
+    } catch (_error) {
       return this.getEmptyDashboardData(period, currency);
     }
   }
@@ -115,8 +105,8 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
       const result: ApiResponse<AvailablePeriod[]> = await response.json();
       return result.data || [];
-    } catch (error) {
-      console.error('[Dashboard] Error fetching periods:', error);
+    } catch (_error) {
+      console.error('[Dashboard] Error fetching periods:', _error);
       return [];
     }
   }
@@ -136,8 +126,8 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
       const result = await response.json();
       return result.data;
-    } catch (error) {
-      console.error('[Dashboard] Error fetching comparison:', error);
+    } catch (_error) {
+      console.error('[Dashboard] Error fetching comparison:', _error);
       return null;
     }
   }
@@ -160,8 +150,8 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
       const result: ApiResponse<{ categories: CategoryData[] }> = await response.json();
       return result.data?.categories || [];
-    } catch (error) {
-      console.error('[Dashboard] Error fetching categories:', error);
+    } catch (_error) {
+      console.error('[Dashboard] Error fetching categories:', _error);
       return [];
     }
   }
@@ -181,8 +171,8 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
       const result = await response.json();
       return result.data;
-    } catch (error) {
-      console.error('[Dashboard] Error fetching savings:', error);
+    } catch (_error) {
+      console.error('[Dashboard] Error fetching savings:', _error);
       return null;
     }
   }
@@ -202,8 +192,8 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
       const result = await response.json();
       return result.data || [];
-    } catch (error) {
-      console.error('[Dashboard] Error fetching history:', error);
+    } catch (_error) {
+      console.error('[Dashboard] Error fetching history:', _error);
       return [];
     }
   }
@@ -249,8 +239,8 @@ export class ModernApiDashboardRepository implements DashboardRepository {
         }
         return a.quarter - b.quarter;
       });
-    } catch (error) {
-      console.error('[Dashboard] Error fetching quarterly history:', error);
+    } catch (_error) {
+      console.error('[Dashboard] Error fetching quarterly history:', _error);
       return [];
     }
   }
@@ -288,8 +278,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
         const distribution = result.data.expenseDistribution || result.data.distribution || {};
 
         // Use actual distribution data if available, otherwise use estimates
-        const essential = distribution.essential || (summary.expenses || 0) * 0.6;
-        const discretionary = distribution.discretionary || (summary.expenses || 0) * 0.4;
+        const _totalExpenses = summary.expenses || 0;
+        const essential = distribution.essential || _totalExpenses * 0.6;
+        const discretionary = distribution.discretionary || _totalExpenses * 0.4;
         const debtPayments = distribution.debtPayments || 0;
 
         return {
@@ -347,8 +338,8 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
       // Sort by year ascending
       return yearlyData.sort((a, b) => a.year - b.year);
-    } catch (error) {
-      console.error('[Dashboard] Error fetching yearly history:', error);
+    } catch (_error) {
+      console.error('[Dashboard] Error fetching yearly history:', _error);
       return [];
     }
   }
@@ -371,12 +362,13 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       if (result.success && result.data) {
         // Aggregate the year data
         const summary = result.data.summary || {};
-        const distribution = result.data.expenseDistribution || result.data.distribution || {};
+        const _distribution = result.data.expenseDistribution || result.data.distribution || {};
 
         // Use actual distribution data if available, otherwise use estimates
-        const essential = distribution.essential || (summary.expenses || 0) * 0.6;
-        const discretionary = distribution.discretionary || (summary.expenses || 0) * 0.4;
-        const debtPayments = distribution.debtPayments || 0;
+        const _totalExpenses = summary.expenses || 0;
+        const essential = _distribution.essential || _totalExpenses * 0.6;
+        const discretionary = _distribution.discretionary || _totalExpenses * 0.4;
+        const debtPayments = _distribution.debtPayments || 0;
 
         return {
           income: summary.income || 0,
@@ -524,7 +516,7 @@ export class ModernApiDashboardRepository implements DashboardRepository {
     };
   }
 
-  private mapCategories(categoryData: any[], currency: string, totalExpenses: Money): Category[] {
+  private mapCategories(categoryData: any[], currency: string, _totalExpenses: Money): Category[] {
     return categoryData.map((cat) => {
       const amount = Money.create(cat.amount || 0, currency);
 
@@ -547,7 +539,7 @@ export class ModernApiDashboardRepository implements DashboardRepository {
     });
   }
 
-  private generateMonthlyBarData(trends: TrendData[], distribution: any): any[] {
+  private generateMonthlyBarData(trends: TrendData[], _distribution: any): any[] {
     if (!trends || trends.length === 0) return [];
 
     // Use real data without fake estimates

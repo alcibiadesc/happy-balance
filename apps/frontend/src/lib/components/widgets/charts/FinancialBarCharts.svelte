@@ -29,14 +29,14 @@
     loading?: boolean;
   }
 
-  let { data = [], height = 250, period = 'month', loading = false }: Props = $props();
+  const { data = [], height = 250, period: _period = 'month', loading = false }: Props = $props();
 
   let canvasRef = $state<HTMLCanvasElement>();
   let chart: Chart | null = null;
   let cleanupThemeObserver: (() => void) | null = null;
 
   // Reactive data processing - simplified to show real data only
-  let chartData = $derived(() => {
+  const chartData = $derived(() => {
     if (!data?.length)
       return {
         labels: [],

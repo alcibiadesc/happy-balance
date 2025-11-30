@@ -10,7 +10,7 @@
     children: Snippet;
   }
 
-  let { sectionId, children }: Props = $props();
+  const { sectionId, children }: Props = $props();
 
   const sectionDef = $derived(getSectionDefinition(sectionId));
   const SectionIcon = $derived(sectionDef?.icon);

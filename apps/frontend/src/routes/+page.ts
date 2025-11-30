@@ -4,7 +4,7 @@ import { getApiUrl } from '$lib/utils/api-url';
 import { ModernApiDashboardRepository } from '$lib/modules/dashboard/infrastructure/adapters/ModernApiDashboardRepository';
 import { Period } from '$lib/modules/dashboard/domain/value-objects/Period';
 
-export const load: PageLoad = async ({ fetch, depends }) => {
+export const load: PageLoad = async ({ depends }) => {
   // Declare dependency for invalidation
   depends('dashboard:data');
 

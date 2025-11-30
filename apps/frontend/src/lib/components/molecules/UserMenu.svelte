@@ -100,7 +100,7 @@
     }
   }
 
-  let roleConfig = $derived(
+  const _roleConfig = $derived(
     authStore.currentUser ? getRoleConfig(authStore.currentUser.role) : null
   );
 </script>

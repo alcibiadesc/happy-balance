@@ -9,7 +9,7 @@
     collapsed: boolean;
   }
 
-  let { collapsed }: Props = $props();
+  const { collapsed }: Props = $props();
 
   let versionInfo = $state<{ version: string; commit: string; buildTimestamp: string } | null>(
     null

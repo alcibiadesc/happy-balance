@@ -22,7 +22,7 @@ export interface SyncFromTransactionCommand {
 export class SyncInvestmentFromTransactionUseCase {
   constructor(
     private readonly investmentRepository: IInvestmentRepository,
-    _categoryRepository: ICategoryRepository
+    _categoryRepository?: ICategoryRepository
   ) {}
 
   async execute(command: SyncFromTransactionCommand): Promise<Result<Investment>> {

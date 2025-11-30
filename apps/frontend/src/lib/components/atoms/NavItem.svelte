@@ -10,7 +10,7 @@
     onclick?: () => void;
   }
 
-  let { href, icon, children, isActive = false, isImportant = false, onclick }: Props = $props();
+  const { href, icon, children, isActive = false, isImportant = false, onclick }: Props = $props();
 
   // Icon mapping
   const iconMap = {

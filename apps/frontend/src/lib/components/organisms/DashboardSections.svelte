@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dashboardConfig, type SectionType } from '$lib/stores/dashboardConfig';
+  import { dashboardConfig } from '$lib/stores/dashboardConfig';
   import { t } from '$lib/stores/i18n';
   import EditableSection from '$lib/components/molecules/EditableSection.svelte';
 
@@ -56,7 +56,7 @@
     data: DashboardData;
   }
 
-  let { data }: Props = $props();
+  const { data }: Props = $props();
 
   // Calculate cumulative investments from historical data for FIRE calculation
   const totalInvestments = $derived(
