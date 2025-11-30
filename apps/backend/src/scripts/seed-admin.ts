@@ -64,7 +64,7 @@ async function seedAdminUser(): Promise<void> {
         password: hashedPassword,
         role: 'admin',
         isActive: true,
-        createdBy: null // Self-created
+        createdBy: undefined // Self-created
       });
 
       await prisma.user.create({

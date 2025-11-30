@@ -5,7 +5,6 @@ import {
   InvestmentSnapshot,
   InvestmentHistory,
   InvestmentHistoryId,
-  InvestmentHistorySnapshot,
 } from "../entities/Investment";
 import { InvestmentHistoryType } from "../entities/InvestmentHistoryType";
 

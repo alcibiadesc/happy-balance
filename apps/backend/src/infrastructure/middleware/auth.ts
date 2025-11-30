@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { AuthenticationService } from '@domain/services/AuthenticationService';
 import { UserRole } from '@domain/entities/User';
 
@@ -15,37 +15,41 @@ const authService = new AuthenticationService();
 /**
  * Middleware to verify JWT token and attach user info to request
  */
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authenticate: RequestHandler = (req: Request, res: Response, next: NextFunction): void => {
+  const authReq = req as AuthRequest;
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'No authorization header provided'
       });
+      return;
     }
 
     const [bearer, token] = authHeader.split(' ');
 
     if (bearer !== 'Bearer' || !token) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Invalid authorization format'
       });
+      return;
     }
 
     const result = authService.verifyAccessToken(token);
 
     if (result.isFailure()) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: result.getError()
       });
+      return;
     }
 
     const payload = result.getValue();
-    req.user = {
+    authReq.user = {
       userId: payload.userId,
       username: payload.username,
       role: payload.role
@@ -64,19 +68,22 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 /**
  * Middleware to require admin role
  */
-export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!req.user) {
-    return res.status(401).json({
+export const requireAdmin: RequestHandler = (req: Request, res: Response, next: NextFunction): void => {
+  const authReq = req as AuthRequest;
+  if (!authReq.user) {
+    res.status(401).json({
       success: false,
       error: 'Authentication required'
     });
+    return;
   }
 
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({
+  if (authReq.user.role !== 'admin') {
+    res.status(403).json({
       success: false,
       error: 'Admin privileges required'
     });
+    return;
   }
 
   next();
@@ -85,19 +92,22 @@ export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction
 /**
  * Middleware to require user or admin role (can edit)
  */
-export const requireEditor = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!req.user) {
-    return res.status(401).json({
+export const requireEditor: RequestHandler = (req: Request, res: Response, next: NextFunction): void => {
+  const authReq = req as AuthRequest;
+  if (!authReq.user) {
+    res.status(401).json({
       success: false,
       error: 'Authentication required'
     });
+    return;
   }
 
-  if (req.user.role !== 'admin' && req.user.role !== 'user') {
-    return res.status(403).json({
+  if (authReq.user.role !== 'admin' && authReq.user.role !== 'user') {
+    res.status(403).json({
       success: false,
       error: 'Edit privileges required'
     });
+    return;
   }
 
   next();
@@ -106,25 +116,28 @@ export const requireEditor = (req: AuthRequest, res: Response, next: NextFunctio
 /**
  * Optional authentication - doesn't fail if no token, but attaches user if valid
  */
-export const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const optionalAuth: RequestHandler = (req: Request, res: Response, next: NextFunction): void => {
+  const authReq = req as AuthRequest;
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
-      return next();
+      next();
+      return;
     }
 
     const [bearer, token] = authHeader.split(' ');
 
     if (bearer !== 'Bearer' || !token) {
-      return next();
+      next();
+      return;
     }
 
     const result = authService.verifyAccessToken(token);
 
     if (result.isSuccess()) {
       const payload = result.getValue();
-      req.user = {
+      authReq.user = {
         userId: payload.userId,
         username: payload.username,
         role: payload.role

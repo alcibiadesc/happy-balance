@@ -522,6 +522,10 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     }>
   > {
     try {
+      if (!this.userId) {
+        return Result.failWithMessage("User ID is required for bulk import");
+      }
+      const userId = this.userId;
       const snapshots = transactions.map((t) => t.toSnapshot());
 
       let imported = 0;
@@ -543,7 +547,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 categoryId: snapshot.categoryId,
                 isSelected: snapshot.isSelected,
                 hash: snapshot.hash,
-                userId: this.userId,
+                userId: userId,
                 createdAt: new Date(snapshot.createdAt),
               },
             });
@@ -573,7 +577,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
                 categoryId: snapshot.categoryId,
                 isSelected: snapshot.isSelected,
                 hash: snapshot.hash,
-                userId: this.userId,
+                userId: userId,
                 createdAt: new Date(snapshot.createdAt),
               },
             });

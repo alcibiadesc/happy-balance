@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { randomUUID } from 'crypto';
 import { AuthenticationService } from '@domain/services/AuthenticationService';
 import { IUserRepository } from '@domain/repositories/IUserRepository';
 import { User } from '@domain/entities/User';
@@ -105,7 +104,7 @@ export class AuthController {
       await this.userRepository.updateLastLogin(user.id);
 
       const tokens = tokensResult.getValue();
-      res.json({
+      return res.json({
         success: true,
         data: {
           accessToken: tokens.accessToken,
@@ -115,7 +114,7 @@ export class AuthController {
       });
     } catch (error) {
       console.error('Login error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Internal server error'
       });
@@ -173,7 +172,7 @@ export class AuthController {
       }
 
       const tokens = tokensResult.getValue();
-      res.json({
+      return res.json({
         success: true,
         data: {
           accessToken: tokens.accessToken,
@@ -182,7 +181,7 @@ export class AuthController {
       });
     } catch (error) {
       console.error('Token refresh error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Internal server error'
       });
@@ -255,13 +254,13 @@ export class AuthController {
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Password changed successfully'
       });
     } catch (error) {
       console.error('Change password error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Internal server error'
       });
@@ -347,7 +346,7 @@ export class AuthController {
       await this.userRepository.updateLastLogin(updatedUser.id);
 
       const tokens = tokensResult.getValue();
-      res.json({
+      return res.json({
         success: true,
         message: 'Password changed successfully',
         data: {
@@ -358,17 +357,17 @@ export class AuthController {
       });
     } catch (error) {
       console.error('Reset password change error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Internal server error'
       });
     }
   }
 
-  async logout(req: Request, res: Response) {
+  logout(_req: Request, res: Response) {
     // For JWT-based auth, logout is typically handled client-side
     // by removing the tokens. This endpoint is for audit/tracking purposes.
-    res.json({
+    return res.json({
       success: true,
       message: 'Logged out successfully'
     });
@@ -394,13 +393,13 @@ export class AuthController {
       }
 
       const user = userResult.getValue()!;
-      res.json({
+      return res.json({
         success: true,
         data: user.toDTO()
       });
     } catch (error) {
       console.error('Get current user error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Internal server error'
       });

@@ -1,9 +1,7 @@
 import { IInvestmentRepository } from "@domain/repositories/IInvestmentRepository";
-import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
 import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
-import { Investment, InvestmentId, InvestmentHistory } from "@domain/entities/Investment";
+import { Investment, InvestmentHistory } from "@domain/entities/Investment";
 import { InvestmentHistoryType } from "@domain/entities/InvestmentHistoryType";
-import { CategoryType } from "@domain/entities/CategoryType";
 import { Result } from "@domain/shared/Result";
 
 export interface SyncFromTransactionCommand {
@@ -24,7 +22,7 @@ export interface SyncFromTransactionCommand {
 export class SyncInvestmentFromTransactionUseCase {
   constructor(
     private readonly investmentRepository: IInvestmentRepository,
-    private readonly categoryRepository: ICategoryRepository
+    _categoryRepository: ICategoryRepository
   ) {}
 
   async execute(command: SyncFromTransactionCommand): Promise<Result<Investment>> {

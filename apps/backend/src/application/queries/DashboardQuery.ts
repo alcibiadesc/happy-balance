@@ -1,5 +1,3 @@
-import { TransactionType } from "../../domain/entities/TransactionType";
-
 /**
  * Query for dashboard financial data
  * Following CQRS pattern - Queries only read data

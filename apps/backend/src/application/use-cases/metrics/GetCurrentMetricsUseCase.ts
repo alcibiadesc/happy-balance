@@ -1,7 +1,6 @@
 import { Result } from '../../../domain/shared/Result';
 import { MetricsRepository } from '../../../domain/metrics/repositories/MetricsRepository';
 import { MetricsPeriod } from '../../../domain/metrics/value-objects/MetricsPeriod';
-import { MetricsType } from '../../../domain/metrics/value-objects/MetricsType';
 import { Currency } from '../../../domain/value-objects/Currency';
 import { MetricSnapshot } from '../../../domain/metrics/entities/MetricSnapshot';
 

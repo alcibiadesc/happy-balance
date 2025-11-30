@@ -1,6 +1,5 @@
 import { Transaction } from "../../domain/entities/Transaction";
 import { Category } from "../../domain/entities/Category";
-import { Result } from "../../domain/shared/Result";
 import {
   SmartCategorizationService,
   CategorizationOptions,

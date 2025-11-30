@@ -1,6 +1,6 @@
 import { Result } from "../../domain/shared/Result";
 import { Transaction } from "../../domain/entities/Transaction";
-import { Category } from "../../domain/entities/Category";
+import type { Category } from "../../domain/entities/Category";
 import { Money } from "../../domain/value-objects/Money";
 import { TransactionDate } from "../../domain/value-objects/TransactionDate";
 import { Merchant } from "../../domain/value-objects/Merchant";
@@ -429,7 +429,7 @@ export class ImportTransactionsUseCase {
           return Result.fail(duplicateResult.getError());
         }
 
-        const { unique, duplicates, duplicateReasons } =
+        const { duplicates, duplicateReasons } =
           duplicateResult.getValue();
         duplicatesCount = duplicates.length;
 
