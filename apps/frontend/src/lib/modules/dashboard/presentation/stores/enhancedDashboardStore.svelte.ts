@@ -141,7 +141,7 @@ export function createEnhancedDashboardStore(apiBase: string) {
       } else {
         dashboardData = null;
       }
-    } catch (error) {
+    } catch (_error) {
       dashboardData = null;
     } finally {
       loading = false;

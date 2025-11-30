@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
-  import { TrendingUp, TrendingDown, Wallet, Coins, ArrowRightLeft, Info } from 'lucide-svelte';
+  import { TrendingUp, TrendingDown, Wallet, Coins, ArrowRightLeft } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
 
   // Components

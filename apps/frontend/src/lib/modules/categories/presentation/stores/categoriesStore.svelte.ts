@@ -395,11 +395,8 @@ export function createCategoriesStore() {
     const spaceRight = viewportWidth - rect.right;
     const spaceLeft = rect.left;
 
-    let top,
-      left,
-      maxHeight,
-      position,
-      width = pickerWidth;
+    let top, left, maxHeight, position;
+    const width = pickerWidth;
 
     if (spaceBelow >= pickerEstimatedHeight + spacing) {
       position = 'bottom';

@@ -121,8 +121,8 @@
 
     // Log any parsing warnings
     if (parseResult.errors.length > 0) {
-      parseResult.errors.forEach((error) => {
-        console.warn(`CSV parsing - Row ${error.row}: ${error.message}`);
+      parseResult.errors.forEach((_error) => {
+        console.warn(`CSV parsing - Row ${_error.row}: ${_error.message}`);
       });
     }
 
@@ -238,10 +238,10 @@
       }
 
       step = 2;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'import.errors.parse_failed';
+    } catch (_err) {
+      const errorMessage = _err instanceof Error ? _err.message : 'import.errors.parse_failed';
       error = $t(errorMessage);
-      console.error('Preview generation failed:', err);
+      console.error('Preview generation failed:', _err);
     } finally {
       loading = false;
       importProgress = 0;
@@ -278,7 +278,7 @@
       }
 
       await finalizeImport(totalImported, totalDuplicatesSkipped, 0);
-    } catch (err) {
+    } catch (_err) {
       handleImportError();
     } finally {
       cleanupImportProgress();
@@ -297,7 +297,7 @@
       throw new Error('import.errors.no_transactions_selected');
     }
 
-    const result = await apiTransactions.importSelectedTransactions(selectedTransactions);
+    const _result = await apiTransactions.importSelectedTransactions(selectedTransactions);
     await finalizeImport(selectedTransactions.length, duplicatesSkipped, duplicatesImported);
   }
 
@@ -358,10 +358,10 @@
         // Preview enabled - import selected transactions
         await importFromPreview();
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'import.errors.import_failed';
+    } catch (_err) {
+      const errorMessage = _err instanceof Error ? _err.message : 'import.errors.import_failed';
       error = $t(errorMessage);
-      console.error('Import failed:', err);
+      console.error('Import failed:', _err);
       handleImportError();
     } finally {
       cleanupImportProgress();
@@ -675,7 +675,7 @@
                 </div>
               {/if}
               <div class="files-list">
-                {#each selectedFiles as file}
+                {#each selectedFiles as file (file.name)}
                   <div class="file-info">
                     <div class="file-details">
                       <div class="file-icon">

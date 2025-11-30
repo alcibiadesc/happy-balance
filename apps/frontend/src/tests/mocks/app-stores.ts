@@ -1,4 +1,5 @@
-import { readable, writable } from 'svelte/store';
+import { readable } from 'svelte/store';
+// Note: writable was removed as unused - re-add if needed
 
 export const page = readable({
   url: new URL('http://localhost'),

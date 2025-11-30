@@ -4,7 +4,6 @@
   import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
   import { goto } from '$app/navigation';
   import Button from '$lib/components/atoms/Button.svelte';
-  import Input from '$lib/components/atoms/Input.svelte';
   import Badge from '$lib/components/atoms/Badge.svelte';
   import { t } from '$lib/stores/i18n';
   import { getApiUrl } from '$lib/utils/api-url';
@@ -126,7 +125,7 @@
         try {
           const errorData = JSON.parse(responseText);
           throw new Error(errorData.message || `Failed to create user: ${response.status}`);
-        } catch (parseError) {
+        } catch (_parseError) {
           throw new Error(
             `Failed to create user: ${response.status} - ${responseText.substring(0, 100)}`
           );
@@ -292,7 +291,7 @@
     }
   }
 
-  function getRoleIcon(role: string) {
+  function _getRoleIcon(role: string) {
     switch (role) {
       case 'admin':
         return Shield;
@@ -305,7 +304,7 @@
     }
   }
 
-  function formatDate(dateString?: string) {
+  function _formatDate(dateString?: string) {
     if (!dateString) return 'Never';
     return new Date(dateString).toLocaleDateString();
   }

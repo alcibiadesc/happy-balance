@@ -71,8 +71,8 @@
       if (response.ok) {
         versionInfo = await response.json();
       }
-    } catch (err) {
-      console.error('Failed to load version info:', err);
+    } catch (_err) {
+      console.error('Failed to load version info:', _err);
     }
   }
 
@@ -97,7 +97,7 @@
           updateMessage = 'You are running the latest version';
         }
       }
-    } catch (err) {
+    } catch (_err) {
       updateError = 'Failed to check for updates';
     } finally {
       checkingUpdates = false;
@@ -129,7 +129,7 @@
       } else {
         updateError = _result.note || _result.error || 'Update failed';
       }
-    } catch (err) {
+    } catch (_err) {
       updateError = 'Failed to apply update. Try running manually: ./scripts/update-docker.sh';
     } finally {
       updatingSystem = false;
@@ -192,8 +192,8 @@
       setTimeout(() => {
         passwordSuccess = null;
       }, 5000);
-    } catch (err) {
-      passwordError = err instanceof Error ? err.message : 'Password change failed';
+    } catch (_err) {
+      passwordError = _err instanceof Error ? _err.message : 'Password change failed';
     } finally {
       isSubmittingPassword = false;
     }

@@ -25,7 +25,7 @@
     loading?: boolean;
   }
 
-  const { data = [], height = 280, period: _period = 'month', loading = false }: Props = $props();
+  const { data = [], height = 280, period = 'month', loading = false }: Props = $props();
 
   let canvasRef = $state<HTMLCanvasElement>();
   let chart: Chart | null = null;

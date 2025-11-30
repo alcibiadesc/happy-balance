@@ -12,7 +12,6 @@
   import PeriodStats from '$lib/components/molecules/PeriodStats.svelte';
   import DateSelector from '$lib/components/molecules/DateSelector.svelte';
   import SearchBar from '$lib/components/molecules/SearchBar.svelte';
-  import TransactionRow from '$lib/components/organisms/TransactionRow.svelte';
   import FiltersPanel from '$lib/components/organisms/FiltersPanel.svelte';
   import TransactionGroup from '$lib/components/organisms/TransactionGroup.svelte';
 
@@ -23,35 +22,18 @@
   import { filterTransactions } from '$lib/modules/transactions/application/services/FilterService';
   import {
     groupTransactionsByDate,
-    formatDate,
+    formatDate as _formatDate,
   } from '$lib/modules/transactions/application/services/GroupingService';
   import {
     findMatchingTransactions,
     getCategoryById,
-    formatAmount,
+    formatAmount as _formatAmount,
   } from '$lib/modules/transactions/application/services/CategoryService';
   import { createObservationsHandler } from '$lib/modules/transactions/application/services/ObservationsService';
   import { TransactionOperationsService } from '$lib/modules/transactions/application/services/TransactionOperationsService';
 
   // Icons
-  import {
-    ChevronDown,
-    ChevronUp,
-    ChevronRight,
-    Filter,
-    Download,
-    Plus,
-    TrendingUp,
-    TrendingDown,
-    Check,
-    X,
-    Trash2,
-    Tag,
-    MoreVertical,
-    Minimize2,
-    Maximize2,
-    EyeOff,
-  } from 'lucide-svelte';
+  import { Filter, Download, Plus, Trash2, Minimize2, Maximize2, EyeOff } from 'lucide-svelte';
 
   // Stores
   import {
@@ -59,7 +41,7 @@
     apiCategories,
     apiSelectedTransactions,
   } from '$lib/stores/api-transactions';
-  import type { Transaction, Category } from '$lib/types/transaction';
+  import type { Transaction } from '$lib/types/transaction';
   import { t } from '$lib/stores/i18n';
   import { exportTransactionsToCSV, downloadCSV, generateFilename } from '$lib/utils/csv-export';
 
@@ -205,7 +187,7 @@
     return await observationsHandler.saveObservations(transaction, text);
   }
 
-  function saveObservationsDebounced(transaction: Transaction) {
+  function _saveObservationsDebounced(transaction: Transaction) {
     const text = pageStore.observationsState.editingText;
     observationsHandler.saveObservationsDebounced(transaction, text, () =>
       pageStore.cancelEditingObservations()
@@ -422,7 +404,7 @@
   <main class="transactions-list">
     {#each groupedTransactions as group (group.date)}
       <TransactionGroup
-        date={formatDate(group.date)}
+        date={_formatDate(group.date)}
         transactions={group.items}
         categories={$apiCategories}
         isExpanded={!pageStore.groupingState.collapsedGroups.has(group.date)}
@@ -445,7 +427,7 @@
           if (transaction) await saveObservations(transaction);
         }}
         onCancelObservations={cancelEditingObservations}
-        {formatAmount}
+        formatAmount={_formatAmount}
       />
     {/each}
   </main>

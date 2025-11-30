@@ -10,7 +10,6 @@
     Trash2,
     Star,
     History,
-    ChevronRight,
     ChevronLeft,
     X,
     Target,
@@ -23,7 +22,7 @@
     Link2,
     ExternalLink,
   } from 'lucide-svelte';
-  import { t } from '$lib/stores/i18n';
+  import { t as _t } from '$lib/stores/i18n';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import { effectiveTheme } from '$lib/stores/theme';
 
@@ -441,7 +440,7 @@
         <div class="chart-header">
           <h3><TrendingUp size={16} /> Evolución</h3>
           <div class="period-filters">
-            {#each timePeriods as period}
+            {#each timePeriods as period (period.label)}
               <button
                 class="period-btn"
                 class:active={selectedPeriod === period.label}
@@ -522,7 +521,7 @@
             />
           </div>
           <div class="form-row colors">
-            {#each store.availableColors as color}
+            {#each store.availableColors as color (color)}
               <button
                 class="color-dot"
                 class:selected={store.newInvestmentForm.color === color}
@@ -660,7 +659,7 @@
           <!-- Grouped by Category View -->
         {:else if investmentViewMode === 'grouped'}
           <div class="grouped-view">
-            {#each groupedInvestments() as group}
+            {#each groupedInvestments() as group (group.name)}
               <div class="group-section">
                 <div class="group-header">
                   <span class="group-name">{group.name}</span>
@@ -911,7 +910,7 @@
       style="top: {pickerPosition.top}px; left: {pickerPosition.left}px;"
       onclick={(e) => e.stopPropagation()}
     >
-      {#each store.availableIcons as icon}
+      {#each store.availableIcons as icon (icon)}
         <button class="icon-option" onclick={() => selectIcon(icon)}>
           {icon}
         </button>

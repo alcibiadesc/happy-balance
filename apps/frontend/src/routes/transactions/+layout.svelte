@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  // Layout for transactions - currently empty but kept for potential future use
 </script>
 
 <!-- Layout wrapper for transactions page -->
