@@ -912,18 +912,18 @@
 
 <!-- Add History Modal -->
 {#if store.showAddHistoryModal}
-  <div class="modal-overlay" onclick={store.cancelAddHistory}>
-    <div class="modal" onclick={(e) => e.stopPropagation()}>
-      <div class="modal-header">
+  <div class="add-history-overlay" onclick={store.cancelAddHistory}>
+    <div class="add-history-modal" onclick={(e) => e.stopPropagation()}>
+      <div class="add-history-header">
         <h3>Añadir movimiento</h3>
         <button class="btn-close" onclick={store.cancelAddHistory}>
           <X size={18} />
         </button>
       </div>
-      <form class="modal-body" onsubmit={(e) => { e.preventDefault(); store.saveHistoryEntry(); }}>
+      <form class="add-history-body" onsubmit={(e) => { e.preventDefault(); store.saveHistoryEntry(); }}>
         <div class="form-group">
           <label for="history-type">Tipo</label>
-          <select id="history-type" bind:value={store.addHistoryForm.type}>
+          <select id="history-type" bind:value={store.addHistoryFormData.type}>
             <option value="CONTRIBUTION">Aportación</option>
             <option value="WITHDRAWAL">Retirada</option>
             <option value="VALUE_UPDATE">Actualización</option>
@@ -937,18 +937,18 @@
             step="0.01"
             min="0.01"
             required
-            bind:value={store.addHistoryForm.amount}
+            bind:value={store.addHistoryFormData.amount}
           />
         </div>
         <div class="form-group">
           <label for="history-date">Fecha</label>
-          <input id="history-date" type="date" required bind:value={store.addHistoryForm.date} />
+          <input id="history-date" type="date" required bind:value={store.addHistoryFormData.date} />
         </div>
         <div class="form-group">
           <label for="history-notes">Notas</label>
-          <input id="history-notes" type="text" bind:value={store.addHistoryForm.notes} placeholder="Opcional" />
+          <input id="history-notes" type="text" bind:value={store.addHistoryFormData.notes} placeholder="Opcional" />
         </div>
-        <div class="modal-footer">
+        <div class="add-history-footer">
           <button type="button" class="btn-cancel" onclick={store.cancelAddHistory}>Cancelar</button>
           <button type="submit" class="btn-save">Guardar</button>
         </div>
@@ -1991,8 +1991,8 @@
     background: var(--surface);
   }
 
-  /* Modal */
-  .modal-overlay {
+  /* Add History Modal */
+  .add-history-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
@@ -2003,14 +2003,17 @@
     padding: 1rem;
   }
 
-  .modal {
+  .add-history-modal {
+    position: relative;
     background: var(--surface-elevated);
     border-radius: 0.75rem;
     width: 100%;
     max-width: 360px;
+    z-index: 10000;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
 
-  .modal-header {
+  .add-history-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -2018,7 +2021,7 @@
     border-bottom: 1px solid var(--border-color);
   }
 
-  .modal-header h3 {
+  .add-history-header h3 {
     font-size: 1rem;
     font-weight: 500;
     margin: 0;
@@ -2033,20 +2036,20 @@
     cursor: pointer;
   }
 
-  .modal-body {
+  .add-history-body {
     padding: 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
-  form.modal-body {
-    padding-bottom: 0;
-  }
-
-  form.modal-body .modal-footer {
-    margin: 1rem -1.25rem 0;
+  .add-history-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
     padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    margin: 1rem -1.25rem 0;
   }
 
   .form-group {
@@ -2078,13 +2081,6 @@
     border-color: var(--acapulco);
   }
 
-  .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    padding: 1rem 1.25rem;
-    border-top: 1px solid var(--border-color);
-  }
 
   @media (max-width: 640px) {
     .portfolio-page {

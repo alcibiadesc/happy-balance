@@ -14,12 +14,15 @@
   // Domain Store
   import { createEnhancedDashboardStore } from '$lib/modules/dashboard/presentation/stores/enhancedDashboardStore.svelte.ts';
   import { getApiUrl } from '$lib/utils/api-url';
+  import { investmentsApi } from '$lib/modules/investments/infrastructure/api/investmentsApi';
+  import type { PortfolioSummary } from '$lib/modules/investments/domain/entities/Investment';
 
   // Initialize store
   const store = createEnhancedDashboardStore(getApiUrl());
 
   // State
   let showDateRangePicker = $state(false);
+  let portfolioSummary = $state<PortfolioSummary | null>(null);
 
   // Computed data for sections
   const dashboardData = $derived({
@@ -30,6 +33,9 @@
       balance: store.metrics?.getBalance().getValue() || 0,
       spendingRate: store.metrics?.getSpendingRate() || 0,
       savingsRate: store.metrics?.getSavingsRate() || 0,
+      portfolio: portfolioSummary?.totalValue ?? 0,
+      portfolioProfit: portfolioSummary?.totalProfit ?? 0,
+      portfolioProfitPercentage: portfolioSummary?.profitPercentage ?? 0,
     },
     trends: {
       income: store.trends?.income.getPercentageChange() || 0,
@@ -68,6 +74,15 @@
     await store.setCustomDateRange(startDate, endDate);
   }
 
+  // Load portfolio data
+  async function loadPortfolio() {
+    try {
+      portfolioSummary = await investmentsApi.getPortfolioSummary();
+    } catch (error) {
+      console.error('Failed to load portfolio summary:', error);
+    }
+  }
+
   // Lifecycle
   onMount(async () => {
     $effect(() => {
@@ -76,7 +91,10 @@
       }
     });
 
-    await store.loadDashboard();
+    await Promise.all([
+      store.loadDashboard(),
+      loadPortfolio()
+    ]);
   });
 </script>
 

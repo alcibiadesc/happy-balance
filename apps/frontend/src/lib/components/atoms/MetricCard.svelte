@@ -103,6 +103,11 @@
     color: var(--accent);
   }
 
+  .metric-icon.portfolio {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8B5CF6;
+  }
+
   .metric-label {
     font-size: 0.875rem;
     color: var(--text-secondary);

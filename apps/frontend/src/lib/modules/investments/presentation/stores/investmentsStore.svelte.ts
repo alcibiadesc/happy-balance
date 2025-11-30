@@ -474,8 +474,141 @@ export function createInvestmentsStore() {
     return colors[type];
   }
 
+  // Expose state as reactive object
+  // Using individual $state variables for modal states (for proper reactivity)
+  let showAddHistoryModalState = $state(false);
+  let showDeleteModalState = $state(false);
+  let showNewFormState = $state(false);
+
+  // Legacy modals object for backwards compatibility (not reactive)
+  const modals = {
+    get showAddHistoryModal() { return showAddHistoryModalState; },
+    set showAddHistoryModal(v: boolean) { showAddHistoryModalState = v; },
+    get showDeleteModal() { return showDeleteModalState; },
+    set showDeleteModal(v: boolean) { showDeleteModalState = v; },
+    get showNewForm() { return showNewFormState; },
+    set showNewForm(v: boolean) { showNewFormState = v; },
+  };
+
+  // Separate reactive form data for add history (nested objects in $state don't bind well)
+  const addHistoryFormData = $state<AddHistoryForm>({
+    amount: 0,
+    type: 'CONTRIBUTION' as InvestmentHistoryType,
+    date: new Date().toISOString().split('T')[0],
+    notes: '',
+  });
+
+  // Wrap modal functions to use the reactive state
+  function startAddHistoryReactive(investmentId: string) {
+    addHistoryInvestmentId = investmentId;
+    // Reset form data
+    addHistoryFormData.amount = 0;
+    addHistoryFormData.type = 'CONTRIBUTION';
+    addHistoryFormData.date = new Date().toISOString().split('T')[0];
+    addHistoryFormData.notes = '';
+    showAddHistoryModalState = true;
+  }
+
+  function cancelAddHistoryReactive() {
+    showAddHistoryModalState = false;
+    addHistoryInvestmentId = null;
+  }
+
+  async function saveHistoryEntryReactive() {
+    if (!addHistoryInvestmentId || addHistoryFormData.amount <= 0) return;
+
+    try {
+      const data: AddHistoryEntryData = {
+        amount: addHistoryFormData.amount,
+        type: addHistoryFormData.type,
+        date: addHistoryFormData.date,
+        notes: addHistoryFormData.notes || undefined,
+      };
+
+      await investmentsApi.addHistoryEntry(addHistoryInvestmentId, data);
+      await loadAll();
+
+      // Refresh selected investment if viewing details
+      if (selectedInvestment?.id === addHistoryInvestmentId) {
+        await loadInvestmentDetails(addHistoryInvestmentId);
+      }
+
+      showAddHistoryModalState = false;
+      addHistoryInvestmentId = null;
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Failed to add history entry';
+    }
+  }
+
+  function prepareDeleteReactive(investment: Investment) {
+    investmentToDelete = investment;
+    showDeleteModalState = true;
+  }
+
+  async function confirmDeleteReactive() {
+    if (!investmentToDelete) return;
+
+    try {
+      await investmentsApi.delete(investmentToDelete.id);
+      await loadAll();
+      showDeleteModalState = false;
+      investmentToDelete = null;
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Failed to delete investment';
+    }
+  }
+
+  function startNewInvestmentReactive() {
+    const currency = get(currentCurrency);
+    newInvestmentForm = {
+      name: '',
+      symbol: '',
+      currentValue: 0,
+      currency: currency || 'EUR',
+      categoryId: null,
+      highlight: false,
+      color: availableColors[0],
+      icon: '📈',
+      notes: '',
+    };
+    showNewFormState = true;
+  }
+
+  async function saveNewInvestmentReactive() {
+    if (!newInvestmentForm.name) return;
+
+    try {
+      const data: CreateInvestmentData = {
+        name: newInvestmentForm.name,
+        symbol: newInvestmentForm.symbol || undefined,
+        currentValue: newInvestmentForm.currentValue,
+        currency: newInvestmentForm.currency,
+        categoryId: newInvestmentForm.categoryId || undefined,
+        highlight: newInvestmentForm.highlight,
+        color: newInvestmentForm.color,
+        icon: newInvestmentForm.icon,
+        notes: newInvestmentForm.notes || undefined,
+      };
+
+      await investmentsApi.create(data);
+      await loadAll();
+      showNewFormState = false;
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Failed to create investment';
+    }
+  }
+
+  function cancelNewInvestmentReactive() {
+    showNewFormState = false;
+  }
+
   return {
-    // State
+    // Reactive modals state - direct access to $state object
+    modals,
+    // Reactive form data for add history modal
+    addHistoryFormData,
+
+    // State (getters for non-modal state)
     get investments() { return investments; },
     get portfolioSummary() { return portfolioSummary; },
     get timeline() { return timeline; },
@@ -496,21 +629,21 @@ export function createInvestmentsStore() {
     set editForm(value: InvestmentEditForm) { editForm = value; },
 
     // New form state
-    get showNewForm() { return showNewForm; },
-    set showNewForm(value: boolean) { showNewForm = value; },
+    get showNewForm() { return showNewFormState; },
+    set showNewForm(value: boolean) { showNewFormState = value; },
     get newInvestmentForm() { return newInvestmentForm; },
     set newInvestmentForm(value: InvestmentEditForm) { newInvestmentForm = value; },
 
     // Add history state
-    get showAddHistoryModal() { return showAddHistoryModal; },
-    set showAddHistoryModal(value: boolean) { showAddHistoryModal = value; },
+    get showAddHistoryModal() { return showAddHistoryModalState; },
+    set showAddHistoryModal(value: boolean) { showAddHistoryModalState = value; },
     get addHistoryForm() { return addHistoryForm; },
     set addHistoryForm(value: AddHistoryForm) { addHistoryForm = value; },
     get addHistoryInvestmentId() { return addHistoryInvestmentId; },
 
     // Delete state
-    get showDeleteModal() { return showDeleteModal; },
-    set showDeleteModal(value: boolean) { showDeleteModal = value; },
+    get showDeleteModal() { return showDeleteModalState; },
+    set showDeleteModal(value: boolean) { showDeleteModalState = value; },
     get investmentToDelete() { return investmentToDelete; },
 
     // Inline value editing
@@ -526,22 +659,22 @@ export function createInvestmentsStore() {
     availableColors,
     availableIcons,
 
-    // Actions
+    // Actions - using reactive versions for modal-related actions
     loadAll,
     loadTimeline,
     loadInvestmentDetails,
-    startNewInvestment,
-    saveNewInvestment,
-    cancelNewInvestment,
+    startNewInvestment: startNewInvestmentReactive,
+    saveNewInvestment: saveNewInvestmentReactive,
+    cancelNewInvestment: cancelNewInvestmentReactive,
     startEdit,
     saveEdit,
     cancelEdit,
     toggleHighlight,
-    prepareDelete,
-    confirmDelete,
-    startAddHistory,
-    saveHistoryEntry,
-    cancelAddHistory,
+    prepareDelete: prepareDeleteReactive,
+    confirmDelete: confirmDeleteReactive,
+    startAddHistory: startAddHistoryReactive,
+    saveHistoryEntry: saveHistoryEntryReactive,
+    cancelAddHistory: cancelAddHistoryReactive,
     deleteHistoryEntry,
     reorderInvestments,
     startInlineEdit,

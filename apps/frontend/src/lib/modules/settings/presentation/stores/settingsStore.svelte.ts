@@ -1,7 +1,6 @@
 import { Settings } from '../../domain/entities/Settings';
 import { Theme, type ThemeType } from '../../domain/value-objects/Theme';
 import { Language } from '../../domain/value-objects/Language';
-import { ExportDataUseCase } from '../../application/use-cases/ExportData';
 import { t } from '$lib/stores/i18n';
 import { currentLanguage, setLanguage } from '$lib/stores/i18n';
 import { currentCurrency, currencies, setCurrency } from '$lib/stores/currency';
@@ -9,8 +8,57 @@ import { theme as themeStore, setTheme, effectiveTheme } from '$lib/stores/theme
 import { userPreferences } from '$lib/stores/user-preferences';
 import { get } from 'svelte/store';
 import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
+import { browser } from '$app/environment';
+
+/**
+ * Complete export format including:
+ * - Backend data (transactions, categories, investments, history)
+ * - Frontend settings (dashboard config, sidebar config, user preferences)
+ */
+export interface CompleteExportData {
+  exportDate: string;
+  version: string;
+  user: {
+    id: string;
+    exportedAt: string;
+  };
+  data: {
+    transactions: any[];
+    categories: any[];
+    investments: any[];
+    investmentHistory: any[];
+    summary: {
+      totalTransactions: number;
+      totalCategories: number;
+      totalInvestments: number;
+      totalHistoryEntries: number;
+      dateRange: {
+        from: string | null;
+        to: string | null;
+      };
+    };
+  };
+  frontendSettings: {
+    dashboardConfig: any;
+    sidebarConfig: any;
+    userPreferences: any;
+  };
+}
 
 export interface ImportData {
+  // New complete format
+  data?: {
+    transactions?: any[];
+    categories?: any[];
+    investments?: any[];
+    investmentHistory?: any[];
+  };
+  frontendSettings?: {
+    dashboardConfig?: any;
+    sidebarConfig?: any;
+    userPreferences?: any;
+  };
+  // Legacy format compatibility
   transactions?: any[];
   transactionHashes?: any[];
   categories?: any[];
@@ -91,19 +139,72 @@ export function createSettingsStore(apiBase: string) {
     settings = settings.setCurrency(code);
   }
 
-  // Export operations
-  function exportData() {
-    const exportUseCase = new ExportDataUseCase();
-    const data = exportUseCase.execute(settings);
-    exportUseCase.downloadAsJSON(data);
+  // Get frontend settings from localStorage
+  function getFrontendSettings() {
+    if (!browser) return null;
 
-    // Show success feedback
-    importStatus = get(t)('settings.export_success');
-    importSuccess = true;
-    setTimeout(() => {
-      importStatus = '';
-      importSuccess = false;
-    }, 3000);
+    return {
+      dashboardConfig: JSON.parse(localStorage.getItem('dashboard-config') || 'null'),
+      sidebarConfig: JSON.parse(localStorage.getItem('sidebar-config') || 'null'),
+      userPreferences: JSON.parse(localStorage.getItem('user-preferences') || 'null'),
+    };
+  }
+
+  // Export operations - now fetches from API and includes frontend settings
+  async function exportData() {
+    importing = true;
+    importError = '';
+
+    try {
+      // Fetch backend data
+      const response = await fetch(`${apiBase}/export/all`, {
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export data from server');
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Export failed');
+      }
+
+      // Merge backend data with frontend settings
+      const completeExport: CompleteExportData = {
+        ...result.data,
+        frontendSettings: getFrontendSettings() || {
+          dashboardConfig: null,
+          sidebarConfig: null,
+          userPreferences: null,
+        },
+      };
+
+      // Download as JSON file
+      const blob = new Blob([JSON.stringify(completeExport, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `happy-balance-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // Show success feedback
+      importStatus = get(t)('settings.export_success');
+      importSuccess = true;
+      setTimeout(() => {
+        importStatus = '';
+        importSuccess = false;
+      }, 3000);
+    } catch (error) {
+      console.error('Export error:', error);
+      importError = error instanceof Error ? error.message : get(t)('settings.export_error') || 'Export failed';
+    } finally {
+      importing = false;
+    }
   }
 
   // Import operations
@@ -115,22 +216,39 @@ export function createSettingsStore(apiBase: string) {
   async function confirmImport() {
     if (!pendingImportData) return;
 
+    // Capture data before it gets nulled in finally
+    const dataToImport = pendingImportData;
+    const isNewFormat = !!dataToImport.data;
+    const hasFrontendSettings = !!(dataToImport as any).frontendSettings;
+
     importing = true;
     try {
-      await importData(pendingImportData);
+      const result = await importData(dataToImport);
 
-      importStatus = get(t)('settings.import_success', {
-        count: pendingImportData.transactions?.length || 0
-      });
+      // Calculate count based on format
+      const count = isNewFormat
+        ? (dataToImport.data?.transactions?.length || 0) +
+          (dataToImport.data?.categories?.length || 0) +
+          (dataToImport.data?.investments?.length || 0)
+        : (dataToImport.transactions?.length || 0);
+
+      importStatus = get(t)('settings.import_success', { count }) ||
+        `Imported ${count} items successfully`;
       importSuccess = true;
 
       setTimeout(() => {
         importStatus = '';
         importSuccess = false;
-      }, 5000);
+        // Reload to apply changes if frontend settings were imported
+        if (isNewFormat && hasFrontendSettings) {
+          window.location.reload();
+        }
+      }, 2000);
     } catch (error) {
       console.error('Import error:', error);
-      importError = get(t)('settings.import_error');
+      importError = error instanceof Error
+        ? error.message
+        : get(t)('settings.import_error') || 'Import failed';
     } finally {
       importing = false;
       pendingImportData = null;
@@ -138,44 +256,103 @@ export function createSettingsStore(apiBase: string) {
     }
   }
 
+  // Apply frontend settings from import
+  function applyFrontendSettings(frontendSettings: ImportData['frontendSettings']) {
+    if (!browser || !frontendSettings) return;
+
+    if (frontendSettings.dashboardConfig) {
+      localStorage.setItem('dashboard-config', JSON.stringify(frontendSettings.dashboardConfig));
+    }
+    if (frontendSettings.sidebarConfig) {
+      localStorage.setItem('sidebar-config', JSON.stringify(frontendSettings.sidebarConfig));
+    }
+    if (frontendSettings.userPreferences) {
+      localStorage.setItem('user-preferences', JSON.stringify(frontendSettings.userPreferences));
+      // Apply user preferences immediately
+      const prefs = frontendSettings.userPreferences;
+      if (prefs.theme) {
+        setTheme(prefs.theme as ThemeType);
+      }
+      if (prefs.language) {
+        setLanguage(prefs.language);
+      }
+      if (prefs.currency) {
+        setCurrency(prefs.currency);
+      }
+    }
+  }
+
   async function importData(data: ImportData) {
-    // Import transactions
-    if (data.transactions && Array.isArray(data.transactions)) {
-      const existingTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-      const existingHashes = JSON.parse(localStorage.getItem('transaction-hashes') || '[]');
+    // Detect format: new complete format or legacy format
+    const isNewFormat = !!data.data;
 
-      const newTransactions = data.transactions.filter((t: any) => {
-        const hash = t.hash || `${t.date}_${t.amount}_${t.merchant}`;
-        return !existingHashes.includes(hash);
-      });
+    if (isNewFormat) {
+      // New complete format - use API endpoint
+      try {
+        const response = await fetch(`${apiBase}/export/import-all`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(data),
+        });
 
-      const mergedTransactions = [...existingTransactions, ...newTransactions];
-      const mergedHashes = [...existingHashes, ...newTransactions.map((t: any) =>
-        t.hash || `${t.date}_${t.amount}_${t.merchant}`
-      )];
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Import failed');
+        }
 
-      localStorage.setItem('transactions', JSON.stringify(mergedTransactions));
-      localStorage.setItem('transaction-hashes', JSON.stringify(mergedHashes));
-    }
+        const result = await response.json();
+        console.log('Import result:', result);
 
-    // Import categories
-    if (data.categories && Array.isArray(data.categories)) {
-      const existingCategories = JSON.parse(localStorage.getItem('categories') || '[]');
-      const mergedCategories = [...existingCategories, ...data.categories];
-      localStorage.setItem('categories', JSON.stringify(mergedCategories));
-    }
+        // Apply frontend settings after backend import
+        if (data.frontendSettings) {
+          applyFrontendSettings(data.frontendSettings);
+        }
 
-    // Import settings
-    if (data.settings) {
-      if (data.settings.currency) {
-        await changeCurrency(data.settings.currency);
+        return result;
+      } catch (error) {
+        console.error('API import error:', error);
+        throw error;
       }
-      if (data.settings.language) {
-        await changeLanguage(data.settings.language);
+    } else {
+      // Legacy format - local storage based import
+      // Import transactions
+      if (data.transactions && Array.isArray(data.transactions)) {
+        const existingTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+        const existingHashes = JSON.parse(localStorage.getItem('transaction-hashes') || '[]');
+
+        const newTransactions = data.transactions.filter((t: any) => {
+          const hash = t.hash || `${t.date}_${t.amount}_${t.merchant}`;
+          return !existingHashes.includes(hash);
+        });
+
+        const mergedTransactions = [...existingTransactions, ...newTransactions];
+        const mergedHashes = [...existingHashes, ...newTransactions.map((t: any) =>
+          t.hash || `${t.date}_${t.amount}_${t.merchant}`
+        )];
+
+        localStorage.setItem('transactions', JSON.stringify(mergedTransactions));
+        localStorage.setItem('transaction-hashes', JSON.stringify(mergedHashes));
       }
-      if (data.settings.theme) {
-        setTheme(data.settings.theme as ThemeType);
-        await userPreferences.updateTheme(data.settings.theme as ThemeType);
+
+      // Import categories
+      if (data.categories && Array.isArray(data.categories)) {
+        const existingCategories = JSON.parse(localStorage.getItem('categories') || '[]');
+        const mergedCategories = [...existingCategories, ...data.categories];
+        localStorage.setItem('categories', JSON.stringify(mergedCategories));
+      }
+
+      // Import settings
+      if (data.settings) {
+        if (data.settings.currency) {
+          await changeCurrency(data.settings.currency);
+        }
+        if (data.settings.language) {
+          await changeLanguage(data.settings.language);
+        }
+        if (data.settings.theme) {
+          setTheme(data.settings.theme as ThemeType);
+          await userPreferences.updateTheme(data.settings.theme as ThemeType);
+        }
       }
     }
   }

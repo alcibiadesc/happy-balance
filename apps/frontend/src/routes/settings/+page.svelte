@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DollarSign, Palette, Globe, Lock, Info, RefreshCw } from 'lucide-svelte';
+  import { DollarSign, Palette, Globe, Lock, Info, RefreshCw, Menu } from 'lucide-svelte';
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
   import SettingsStatusMessage from '$lib/components/molecules/SettingsStatusMessage.svelte';
   import SettingsCard from '$lib/components/organisms/SettingsCard.svelte';
@@ -13,6 +13,7 @@
   import { t } from '$lib/stores/i18n';
   import { currencies } from '$lib/stores/currency';
   import { userPreferences } from '$lib/stores/user-preferences';
+  import { sidebarConfig, type NavItemId } from '$lib/stores/sidebarConfig';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { fly } from 'svelte/transition';
@@ -202,6 +203,37 @@ const API_BASE = getApiUrl();
   function clearPasswordMessages() {
     passwordError = null;
     passwordSuccess = null;
+  }
+
+  // Compute import message based on data format
+  function getImportMessage(): string {
+    const data = store.pendingImportData;
+    if (!data) return '';
+
+    // New complete format
+    if (data.data) {
+      const txCount = data.data.transactions?.length || 0;
+      const catCount = data.data.categories?.length || 0;
+      const invCount = data.data.investments?.length || 0;
+      const hasSettings = !!data.frontendSettings;
+      const exportDate = data.exportDate
+        ? new Date(data.exportDate).toLocaleDateString()
+        : 'Unknown date';
+
+      let message = `Import ${txCount} transactions, ${catCount} categories, ${invCount} investments`;
+      if (hasSettings) {
+        message += ' and user settings';
+      }
+      message += ` from ${exportDate}?`;
+      return message;
+    }
+
+    // Legacy format
+    const txCount = data.transactions?.length || 0;
+    const exportDate = data.settings?.exportDate
+      ? new Date(data.settings.exportDate).toLocaleDateString()
+      : 'Unknown date';
+    return `Import ${txCount} transactions from ${exportDate}?`;
   }
 </script>
 
@@ -446,6 +478,39 @@ const API_BASE = getApiUrl();
         </div>
     </SettingsCard>
 
+    <!-- Sidebar Settings -->
+    <SettingsCard
+      title={$t('settings.sidebar') || 'Sidebar'}
+      icon={Menu}
+      iconClass="sidebar"
+    >
+        <div class="setting-item sidebar-header">
+          <div class="setting-info">
+            <span class="setting-label">{$t('settings.sidebar_sections') || 'Navigation Sections'}</span>
+            <span class="setting-desc">{$t('settings.sidebar_sections_desc') || 'Choose which sections to show in the sidebar'}</span>
+          </div>
+        </div>
+
+        <div class="sidebar-items">
+          {#each $sidebarConfig.items as item (item.id)}
+            <div class="sidebar-item">
+              <label class="sidebar-item-label">
+                <input
+                  type="checkbox"
+                  checked={item.visible}
+                  disabled={item.required}
+                  onchange={() => sidebarConfig.toggleItem(item.id)}
+                />
+                <span class="sidebar-item-name">{$t(item.labelKey)}</span>
+                {#if item.required}
+                  <span class="required-badge">{$t('common.required') || 'Required'}</span>
+                {/if}
+              </label>
+            </div>
+          {/each}
+        </div>
+    </SettingsCard>
+
     <!-- Data Management -->
     <SettingsCard
       title={$t('settings.data')}
@@ -467,7 +532,7 @@ const API_BASE = getApiUrl();
 <ConfirmModal
   bind:isOpen={store.showImportModal}
   title="Import Data"
-  message="Are you sure you want to import {store.pendingImportData?.transactions?.length || 0} transactions from {store.pendingImportData?.settings?.exportDate ? new Date(store.pendingImportData.settings.exportDate).toLocaleDateString() : 'Unknown date'}? This will merge with your existing data."
+  message={getImportMessage() + " This will merge with your existing data."}
   confirmText="Import"
   cancelText="Cancel"
   type="info"
@@ -711,6 +776,69 @@ const API_BASE = getApiUrl();
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+  }
+
+  /* Sidebar settings styles */
+  .sidebar-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .sidebar-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+  }
+
+  .sidebar-item-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+  }
+
+  .sidebar-item-label:hover {
+    background: var(--surface-muted);
+  }
+
+  .sidebar-item-label input[type="checkbox"] {
+    width: 1.125rem;
+    height: 1.125rem;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+
+  .sidebar-item-label input[type="checkbox"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .sidebar-item-name {
+    flex: 1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .required-badge {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--surface-muted);
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
   }
 
   /* Mobile responsive */

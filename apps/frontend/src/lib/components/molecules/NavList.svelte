@@ -3,38 +3,36 @@
   import { t, currentLanguage } from '$lib/stores/i18n';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  
+  import { sidebarConfig } from '$lib/stores/sidebarConfig';
+
   interface Props {
     isMobile?: boolean;
     collapsed?: boolean;
     onItemClick?: () => void;
   }
-  
+
   let { isMobile = false, collapsed = false, onItemClick }: Props = $props();
-  
-  const navItems = [
-    { href: '/', icon: 'layout-dashboard', labelKey: 'navigation.dashboard' },
-    { href: '/transactions', icon: 'receipt', labelKey: 'navigation.transactions' },
-    { href: '/categories', icon: 'tag', labelKey: 'navigation.categories' },
-    { href: '/portfolio', icon: 'trending-up', labelKey: 'navigation.portfolio' },
-    { href: '/settings', icon: 'settings', labelKey: 'navigation.settings' }
-  ];
-  
+
+  // Get visible nav items from the sidebar config
+  const visibleItems = $derived(
+    sidebarConfig.getVisibleItems($sidebarConfig)
+  );
+
   function handleImportClick() {
     if (onItemClick) onItemClick();
     goto('/import');
   }
-  
+
   // Get current path to highlight active item
   let currentPath = $derived($page.url.pathname);
 </script>
 
 <nav class="nav-list" class:nav-list--mobile={isMobile} class:nav-list--collapsed={collapsed}>
   <!-- Main Navigation -->
-  {#each navItems as item}
-    <NavItem 
-      href={item.href} 
-      icon={item.icon} 
+  {#each visibleItems as item (item.id)}
+    <NavItem
+      href={item.href}
+      icon={item.icon}
       {collapsed}
       isActive={currentPath === item.href}
       onclick={onItemClick}

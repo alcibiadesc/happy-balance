@@ -3,15 +3,17 @@
   import { t } from '$lib/stores/i18n';
   import EditableSection from '$lib/components/molecules/EditableSection.svelte';
 
-  // Section Components
-  import SpendingIndicator from '$lib/components/molecules/SpendingIndicator.svelte';
-  import MetricsGrid from '$lib/components/molecules/MetricsGrid.svelte';
-  import CategoriesSection from '$lib/components/organisms/CategoriesSection.svelte';
-  import ChartSection from '$lib/components/organisms/ChartSection.svelte';
-  import FinancialBarCharts from '$lib/components/molecules/FinancialBarCharts.svelte';
-  import SavingsGoalCard from '$lib/components/molecules/SavingsGoalCard.svelte';
-  import TopMerchantsCard from '$lib/components/molecules/TopMerchantsCard.svelte';
-  import FireIndicator from '$lib/components/molecules/FireIndicator.svelte';
+  // Widget Components - imported from centralized widgets folder
+  import {
+    SpendingIndicator,
+    MetricsGrid,
+    CategoriesSection,
+    ChartSection,
+    FinancialBarCharts,
+    SavingsGoalCard,
+    TopMerchantsCard,
+    FireIndicator,
+  } from '$lib/components/widgets';
 
   import { formatTrendValue, getTrendColor } from '$lib/utils/format';
 
@@ -23,6 +25,9 @@
       balance: number;
       spendingRate: number;
       savingsRate: number;
+      portfolio?: number;
+      portfolioProfit?: number;
+      portfolioProfitPercentage?: number;
     };
     trends: {
       income: number;

@@ -76,6 +76,21 @@
     color: var(--warning);
   }
 
+  .card-icon.sidebar {
+    background: var(--primary-alpha, rgba(99, 102, 241, 0.1));
+    color: var(--primary);
+  }
+
+  .card-icon.security {
+    background: rgba(244, 63, 94, 0.1);
+    color: #f43f5e;
+  }
+
+  .card-icon.system {
+    background: rgba(100, 116, 139, 0.1);
+    color: #64748b;
+  }
+
   .card-title {
     font-size: 1.125rem;
     font-weight: 500;

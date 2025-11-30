@@ -9,10 +9,11 @@ import {
   PiggyBank,
   Wallet,
   Store,
-  Infinity
+  Infinity,
+  Briefcase
 } from 'lucide-svelte';
 
-export type MetricType = 'income' | 'expenses' | 'investments' | 'balance';
+export type MetricType = 'income' | 'expenses' | 'investments' | 'balance' | 'portfolio';
 export type SectionType = 'spending' | 'metrics' | 'categories' | 'lineChart' | 'barChart' | 'savingsGoal' | 'topMerchants' | 'fireIndicator';
 
 export interface MetricDefinition {
@@ -36,6 +37,7 @@ export const METRIC_DEFINITIONS: MetricDefinition[] = [
   { id: 'expenses', icon: TrendingDown, i18nKey: 'dashboard.metrics.expenses', defaultVisible: true, defaultOrder: 1 },
   { id: 'investments', icon: PiggyBank, i18nKey: 'dashboard.metrics.investments', defaultVisible: true, defaultOrder: 2 },
   { id: 'balance', icon: Wallet, i18nKey: 'dashboard.metrics.balance', defaultVisible: false, defaultOrder: 3 },
+  { id: 'portfolio', icon: Briefcase, i18nKey: 'dashboard.metrics.portfolio', defaultVisible: true, defaultOrder: 4 },
 ];
 
 export const SECTION_DEFINITIONS: SectionDefinition[] = [
