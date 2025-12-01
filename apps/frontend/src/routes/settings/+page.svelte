@@ -87,7 +87,6 @@
     retentionDays: number;
     maxBackups: number;
   } | null>(null);
-  let backupsLoading = $state(false);
   let creatingBackup = $state(false);
   let savingPolicy = $state(false);
   let backupError = $state<string | null>(null);
@@ -289,7 +288,9 @@
     try {
       const response = await fetch(`${API_BASE}/version`);
       if (response.ok) versionInfo = await response.json();
-    } catch {}
+    } catch {
+      // Version fetch is non-critical, silently ignore
+    }
 
     // Load backups
     await Promise.all([loadBackups(), loadBackupPolicy()]);
@@ -425,7 +426,7 @@
           value={store.currentLanguage.code}
           onchange={async (e) => await store.changeLanguage((e.target as HTMLSelectElement).value)}
         >
-          {#each languages as lang}
+          {#each languages as lang (lang.code)}
             <option value={lang.code}>{lang.flag} {lang.name}</option>
           {/each}
         </select>
@@ -440,7 +441,7 @@
           value={store.settings.currency}
           onchange={async (e) => await store.changeCurrency((e.target as HTMLSelectElement).value)}
         >
-          {#each currencyOptions as curr}
+          {#each currencyOptions as curr (curr.value)}
             <option value={curr.value}>{curr.label}</option>
           {/each}
         </select>
