@@ -381,6 +381,16 @@ export function createSettingsStore(apiBase: string) {
           console.warn('Failed to delete transactions from database');
         }
 
+        // Delete all investments for the authenticated user
+        const investmentsResponse = await fetch(`${apiBase}/investments`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        });
+
+        if (!investmentsResponse.ok) {
+          console.warn('Failed to delete investments from database');
+        }
+
         // Note: Categories are user-specific and stored locally
         // They will be reset when localStorage is cleared below
       } catch (apiError) {

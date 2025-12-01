@@ -500,6 +500,31 @@ export class InvestmentController {
     }
   }
 
+  async deleteAll(req: Request, res: Response): Promise<void> {
+    try {
+      const clearResult = await this.investmentRepository.clear();
+
+      if (clearResult.isFailure()) {
+        res.status(500).json({
+          success: false,
+          error: clearResult.getError(),
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: "All investments deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting all investments:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to delete all investments",
+      });
+    }
+  }
+
   async getPortfolioSummary(req: Request, res: Response): Promise<void> {
     try {
       const result = await this.getPortfolioSummaryUseCase.execute();

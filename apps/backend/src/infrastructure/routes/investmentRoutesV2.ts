@@ -66,6 +66,13 @@ export const createInvestmentRoutesV2 = (
     await controller.getInvestments(req, res);
   });
 
+  // Delete all investments
+  router.delete("/", async (req: Request, res: Response) => {
+    const userId = req.user?.userId || "default";
+    const controller = controllerFactory.createInvestmentController(userId);
+    await controller.deleteAll(req, res);
+  });
+
   // Get single investment
   router.get("/:id", async (req: Request, res: Response) => {
     const userId = req.user?.userId || "default";

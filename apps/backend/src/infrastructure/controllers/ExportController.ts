@@ -74,7 +74,7 @@ export class ExportController {
       const categories = categoriesResult.getValue();
 
       // Get all investments with history
-      const investmentsResult = await this.investmentRepository.getInvestmentsWithMetrics();
+      const investmentsResult = await this.investmentRepository.findAll();
 
       if (investmentsResult.isFailure()) {
         res.status(500).json({
@@ -84,13 +84,21 @@ export class ExportController {
         return;
       }
 
-      const investments = investmentsResult.getValue();
-
-      // Collect all history entries
+      // Load full investment data with history for each
+      const investmentSnapshots: any[] = [];
       const allHistory: any[] = [];
-      for (const inv of investments) {
-        if (inv.history && Array.isArray(inv.history)) {
-          allHistory.push(...inv.history);
+
+      for (const inv of investmentsResult.getValue()) {
+        const fullInvResult = await this.investmentRepository.findByIdWithHistory(inv.id);
+        if (fullInvResult.isSuccess() && fullInvResult.getValue()) {
+          const fullInv = fullInvResult.getValue()!;
+          const snapshot = fullInv.toSnapshot();
+          investmentSnapshots.push(snapshot);
+
+          // Collect history entries
+          if (snapshot.history && Array.isArray(snapshot.history)) {
+            allHistory.push(...snapshot.history);
+          }
         }
       }
 
@@ -114,15 +122,15 @@ export class ExportController {
         data: {
           transactions: transactions.map(t => t.toSnapshot()),
           categories: categories.map(c => c.toSnapshot()),
-          investments: investments.map(inv => ({
+          investments: investmentSnapshots.map(inv => ({
             ...inv,
-            history: undefined, // Remove history from investment objects (it's in separate array)
+            history: undefined, // History is stored in separate array to avoid duplication
           })),
           investmentHistory: allHistory,
           summary: {
             totalTransactions: transactions.length,
             totalCategories: categories.length,
-            totalInvestments: investments.length,
+            totalInvestments: investmentSnapshots.length,
             totalHistoryEntries: allHistory.length,
             dateRange: {
               from: dateFrom,
@@ -314,8 +322,16 @@ export class ExportController {
       if (importData.data.investments && Array.isArray(importData.data.investments)) {
         for (const invSnapshot of importData.data.investments) {
           try {
-            // Update userId to current user
-            const investmentData = { ...invSnapshot, userId: this.userId };
+            // Ensure required fields have defaults
+            const investmentData = {
+              ...invSnapshot,
+              userId: this.userId,
+              isActive: invSnapshot.isActive !== false, // Default to true if not explicitly false
+              history: invSnapshot.history || [], // Ensure history is an array
+            };
+
+            console.log("Importing investment:", investmentData.name, "isActive:", investmentData.isActive);
+
             const investmentResult = Investment.fromSnapshot(investmentData);
 
             if (investmentResult.isSuccess()) {
@@ -326,17 +342,19 @@ export class ExportController {
               if (existingResult.isSuccess() && existingResult.getValue()) {
                 // Update existing
                 await this.investmentRepository.update(investment);
+                console.log("Updated existing investment:", investment.name);
               } else {
                 // Save new
                 await this.investmentRepository.save(investment);
+                console.log("Saved new investment:", investment.name);
               }
               results.investments.imported++;
             } else {
-              console.warn("Failed to import investment:", investmentResult.getError());
+              console.warn("Failed to import investment:", invSnapshot.name, investmentResult.getError());
               results.investments.failed++;
             }
           } catch (error) {
-            console.warn("Error importing investment:", error);
+            console.warn("Error importing investment:", invSnapshot.name, error);
             results.investments.failed++;
           }
         }
@@ -350,7 +368,16 @@ export class ExportController {
 
             if (historyResult.isSuccess()) {
               const history = historyResult.getValue();
-              await this.investmentRepository.addHistoryEntry(history);
+              // Check if history entry already exists
+              const existingResult = await this.investmentRepository.findHistoryById(history.id);
+
+              if (existingResult.isSuccess() && existingResult.getValue()) {
+                // Update existing
+                await this.investmentRepository.updateHistoryEntry(history);
+              } else {
+                // Add new
+                await this.investmentRepository.addHistoryEntry(history);
+              }
               results.investmentHistory.imported++;
             } else {
               console.warn("Failed to import history entry:", historyResult.getError());
