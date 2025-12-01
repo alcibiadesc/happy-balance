@@ -84,77 +84,77 @@
 </script>
 
 <div class="dashboard-sections">
-{#each visibleSections as sectionId (sectionId)}
-  <EditableSection {sectionId}>
-    {#if sectionId === 'spending'}
-      <SpendingIndicator income={data.metrics.income} expenses={data.metrics.expenses} />
-    {:else if sectionId === 'metrics'}
-      <MetricsGrid
-        metrics={data.metrics}
-        trends={data.trends}
-        expenseDistribution={data.expenseDistribution}
-        categoryBreakdown={data.categoryBreakdown}
-        loading={data.loading}
-        labels={metricsLabels}
-        formatCurrency={data.formatCurrency}
-        formatTrend={formatTrendValue}
-        {getTrendColor}
-      />
-    {:else if sectionId === 'categories'}
-      <CategoriesSection
-        title={$t('dashboard.categories.title')}
-        categories={data.categories}
-        categoryBreakdown={data.categoryBreakdown}
-        expenseDistribution={data.expenseDistribution}
-        totalExpenses={data.metrics.expenses}
-        totalIncome={data.metrics.income}
-        totalInvestments={data.metrics.investments}
-        formatCurrency={data.formatCurrency}
-      />
-    {:else if sectionId === 'lineChart'}
-      <ChartSection
-        title={$t('dashboard.charts.temporal_evolution')}
-        subtitle={$t('dashboard.charts.temporal_evolution_subtitle')}
-        data={data.monthlyTrendData}
-        height={280}
-        period={data.selectedPeriodType}
-        loading={data.loading}
-      />
-    {:else if sectionId === 'barChart'}
-      <FinancialBarCharts
-        data={data.monthlyBarData}
-        height={250}
-        period={data.selectedPeriodType}
-        loading={data.loading}
-      />
-    {:else if sectionId === 'savingsGoal'}
-      <SavingsGoalCard
-        income={data.metrics.income}
-        expenses={data.metrics.expenses}
-        investments={data.metrics.investments}
-        savingsRate={data.metrics.savingsRate}
-        loading={data.loading}
-        formatCurrency={data.formatCurrency}
-      />
-    {:else if sectionId === 'topMerchants'}
-      <TopMerchantsCard
-        categories={data.categories}
-        totalExpenses={data.metrics.expenses}
-        loading={data.loading}
-        formatCurrency={data.formatCurrency}
-      />
-    {:else if sectionId === 'fireIndicator'}
-      <FireIndicator
-        monthlyIncome={data.metrics.income}
-        monthlyExpenses={data.metrics.expenses}
-        monthlyInvestments={data.metrics.investments}
-        {totalInvestments}
-        loading={data.loading}
-        formatCurrency={data.formatCurrency}
-      />
-    {/if}
-  </EditableSection>
-{/each}
+  {#each visibleSections as sectionId (sectionId)}
+    <EditableSection {sectionId}>
+      {#if sectionId === 'spending'}
+        <SpendingIndicator income={data.metrics.income} expenses={data.metrics.expenses} />
+      {:else if sectionId === 'metrics'}
+        <MetricsGrid
+          metrics={data.metrics}
+          trends={data.trends}
+          expenseDistribution={data.expenseDistribution}
+          categoryBreakdown={data.categoryBreakdown}
+          loading={data.loading}
+          labels={metricsLabels}
+          formatCurrency={data.formatCurrency}
+          formatTrend={formatTrendValue}
+          {getTrendColor}
+        />
+      {:else if sectionId === 'categories'}
+        <CategoriesSection
+          title={$t('dashboard.categories.title')}
+          categories={data.categories}
+          categoryBreakdown={data.categoryBreakdown}
+          expenseDistribution={data.expenseDistribution}
+          totalExpenses={data.metrics.expenses}
+          totalIncome={data.metrics.income}
+          totalInvestments={data.metrics.investments}
+          formatCurrency={data.formatCurrency}
+        />
+      {:else if sectionId === 'lineChart'}
+        <ChartSection
+          title={$t('dashboard.charts.temporal_evolution')}
+          subtitle={$t('dashboard.charts.temporal_evolution_subtitle')}
+          data={data.monthlyTrendData}
+          height={280}
+          period={data.selectedPeriodType}
+          loading={data.loading}
+        />
+      {:else if sectionId === 'barChart'}
+        <FinancialBarCharts
+          data={data.monthlyBarData}
+          height={250}
+          period={data.selectedPeriodType}
+          loading={data.loading}
+        />
+      {:else if sectionId === 'savingsGoal'}
+        <SavingsGoalCard
+          income={data.metrics.income}
+          expenses={data.metrics.expenses}
+          investments={data.metrics.investments}
+          savingsRate={data.metrics.savingsRate}
+          loading={data.loading}
+          formatCurrency={data.formatCurrency}
+        />
+      {:else if sectionId === 'topMerchants'}
+        <TopMerchantsCard
+          categories={data.categories}
+          totalExpenses={data.metrics.expenses}
+          loading={data.loading}
+          formatCurrency={data.formatCurrency}
+        />
+      {:else if sectionId === 'fireIndicator'}
+        <FireIndicator
+          monthlyIncome={data.metrics.income}
+          monthlyExpenses={data.metrics.expenses}
+          monthlyInvestments={data.metrics.investments}
+          {totalInvestments}
+          loading={data.loading}
+          formatCurrency={data.formatCurrency}
+        />
+      {/if}
+    </EditableSection>
+  {/each}
 </div>
 
 <style>

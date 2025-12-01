@@ -351,7 +351,9 @@
   }
 
   // Goal progress
-  const goalProgress = $derived(Math.min(100, (store.totalPortfolioValue / ($portfolioGoal || 100000)) * 100));
+  const goalProgress = $derived(
+    Math.min(100, (store.totalPortfolioValue / ($portfolioGoal || 100000)) * 100)
+  );
 
   // Reactivity for charts
   $effect(() => {
@@ -408,7 +410,11 @@
             <span class="goal-text">
               {goalProgress.toFixed(0)}% de tu meta
               {#if goalProgress < 100}
-                <span class="goal-remaining">(faltan {store.formatCurrency(($portfolioGoal || 100000) - store.totalPortfolioValue)})</span>
+                <span class="goal-remaining"
+                  >(faltan {store.formatCurrency(
+                    ($portfolioGoal || 100000) - store.totalPortfolioValue
+                  )})</span
+                >
               {/if}
             </span>
             <button class="goal-edit" onclick={() => (showGoalEdit = !showGoalEdit)}>
@@ -646,10 +652,20 @@
                     {/if}
                     {#if investment.netContributions > 0}
                       <div class="profit-pills">
-                        <span class="pill amount" class:positive={investment.profit >= 0} class:negative={investment.profit < 0}>
-                          {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(investment.profit)}
+                        <span
+                          class="pill amount"
+                          class:positive={investment.profit >= 0}
+                          class:negative={investment.profit < 0}
+                        >
+                          {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(
+                            investment.profit
+                          )}
                         </span>
-                        <span class="pill pct" class:positive={investment.profit >= 0} class:negative={investment.profit < 0}>
+                        <span
+                          class="pill pct"
+                          class:positive={investment.profit >= 0}
+                          class:negative={investment.profit < 0}
+                        >
                           {store.formatPercentage(investment.profitPercentage)}
                         </span>
                       </div>
@@ -704,10 +720,20 @@
                         <span class="value">{store.formatCurrency(investment.currentValue)}</span>
                         {#if investment.netContributions > 0}
                           <div class="profit-pills">
-                            <span class="pill amount" class:positive={investment.profit >= 0} class:negative={investment.profit < 0}>
-                              {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(investment.profit)}
+                            <span
+                              class="pill amount"
+                              class:positive={investment.profit >= 0}
+                              class:negative={investment.profit < 0}
+                            >
+                              {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(
+                                investment.profit
+                              )}
                             </span>
-                            <span class="pill pct" class:positive={investment.profit >= 0} class:negative={investment.profit < 0}>
+                            <span
+                              class="pill pct"
+                              class:positive={investment.profit >= 0}
+                              class:negative={investment.profit < 0}
+                            >
                               {store.formatPercentage(investment.profitPercentage)}
                             </span>
                           </div>

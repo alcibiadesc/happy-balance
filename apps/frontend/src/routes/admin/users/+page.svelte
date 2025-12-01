@@ -540,7 +540,9 @@
 
     <!-- Create User Modal - Simple Version -->
     {#if showCreateModal}
-      <div use:modalKeyboard={{ onConfirm: createUser, onCancel: closeModal, isOpen: showCreateModal }}></div>
+      <div
+        use:modalKeyboard={{ onConfirm: createUser, onCancel: closeModal, isOpen: showCreateModal }}
+      ></div>
       <div
         style="
           position: fixed;
@@ -738,7 +740,13 @@
 
     <!-- Confirmation Modal -->
     {#if confirmAction.show}
-      <div use:modalKeyboard={{ onConfirm: confirmYes, onCancel: confirmNo, isOpen: confirmAction.show }}></div>
+      <div
+        use:modalKeyboard={{
+          onConfirm: confirmYes,
+          onCancel: confirmNo,
+          isOpen: confirmAction.show,
+        }}
+      ></div>
       <div class="modal-overlay" onclick={confirmNo}>
         <div class="modal-content confirm-modal" onclick={(e) => e.stopPropagation()}>
           <div class="modal-header">

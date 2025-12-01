@@ -1,5 +1,16 @@
 <script lang="ts">
-  import { DollarSign, Palette, Globe, Lock, Info, RefreshCw, Menu, GripVertical, ChevronUp, ChevronDown } from 'lucide-svelte';
+  import {
+    DollarSign,
+    Palette,
+    Globe,
+    Lock,
+    Info,
+    RefreshCw,
+    Menu,
+    GripVertical,
+    ChevronUp,
+    ChevronDown,
+  } from 'lucide-svelte';
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
   import SettingsStatusMessage from '$lib/components/molecules/SettingsStatusMessage.svelte';
   import SettingsCard from '$lib/components/organisms/SettingsCard.svelte';
@@ -545,7 +556,9 @@
         />
         <div class="import-mode-content">
           <span class="import-mode-label">{$t('settings.import_merge') || 'Merge'}</span>
-          <span class="import-mode-desc">{$t('settings.import_merge_desc') || 'Add to existing data'}</span>
+          <span class="import-mode-desc"
+            >{$t('settings.import_merge_desc') || 'Add to existing data'}</span
+          >
         </div>
       </label>
       <label class="import-mode-option">
@@ -558,7 +571,9 @@
         />
         <div class="import-mode-content">
           <span class="import-mode-label">{$t('settings.import_replace') || 'Replace'}</span>
-          <span class="import-mode-desc">{$t('settings.import_replace_desc') || 'Delete all existing data first'}</span>
+          <span class="import-mode-desc"
+            >{$t('settings.import_replace_desc') || 'Delete all existing data first'}</span
+          >
         </div>
       </label>
     </div>

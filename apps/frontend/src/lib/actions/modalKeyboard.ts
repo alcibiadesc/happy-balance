@@ -19,10 +19,7 @@ export interface ModalKeyboardOptions {
 
 const DEFAULT_PREVENT_ENTER_ON = ['textarea', 'select', '[contenteditable="true"]'];
 
-export function modalKeyboard(
-  _node: HTMLElement,
-  options: ModalKeyboardOptions = {}
-) {
+export function modalKeyboard(_node: HTMLElement, options: ModalKeyboardOptions = {}) {
   let currentOptions = options;
 
   function handleKeydown(event: KeyboardEvent) {
