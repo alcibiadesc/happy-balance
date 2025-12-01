@@ -9,6 +9,7 @@
     Menu,
     ChevronUp,
     ChevronDown,
+    Database,
   } from 'lucide-svelte';
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
   import SettingsStatusMessage from '$lib/components/molecules/SettingsStatusMessage.svelte';
@@ -17,6 +18,7 @@
   import SettingsLanguageSelect from '$lib/components/molecules/SettingsLanguageSelect.svelte';
   import SettingsCurrencySelect from '$lib/components/molecules/SettingsCurrencySelect.svelte';
   import SettingsActionButtons from '$lib/components/organisms/SettingsActionButtons.svelte';
+  import BackupSettings from '$lib/components/organisms/BackupSettings.svelte';
   import Input from '$lib/components/atoms/Input.svelte';
   import { createSettingsStore } from '$lib/modules/settings/presentation/stores/settingsStore.svelte.ts';
   import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
@@ -465,6 +467,11 @@
           {/if}
         </div>
       </div>
+    </SettingsCard>
+
+    <!-- Backup Settings -->
+    <SettingsCard title={$t('settings.backup') || 'Backups'} icon={Database} iconClass="backup">
+      <BackupSettings />
     </SettingsCard>
 
     <!-- Sidebar Settings -->

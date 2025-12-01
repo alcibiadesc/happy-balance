@@ -28,6 +28,8 @@ model User {
   importLogs      ImportLog[]
   userPreferences UserPreferences?
   investments     Investment[]
+  backups         Backup[]
+  backupPolicy    BackupPolicy?
 
   @@index([username])
   @@index([role])
@@ -227,4 +229,51 @@ model InvestmentHistory {
   @@index([type])
   @@index([transactionId])
   @@map("investment_history")
+}
+
+// Backup Snapshots - stores JSON snapshots of user data
+model Backup {
+  id              String    @id @default(cuid()) @db.VarChar(36)
+  userId          String    @db.VarChar(36)
+  type            String    @db.VarChar(20)           // MANUAL, SCHEDULED, AUTO
+  status          String    @db.VarChar(20)           // PENDING, SUCCESS, FAILED
+  filename        String    @db.VarChar(255)          // backup filename on disk
+  sizeBytes       BigInt    @default(0)               // file size in bytes
+  version         String    @default("1.0") @db.VarChar(20)
+  description     String?   @db.VarChar(500)
+  errorMessage    String?   @db.VarChar(500)
+  metadata        Json?                               // summary stats: counts, date ranges
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+  expiresAt       DateTime?                           // when this backup should be deleted
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("backups")
+}
+
+// Backup Policy - retention rules per user
+model BackupPolicy {
+  id                    String    @id @default(cuid()) @db.VarChar(36)
+  userId                String    @unique @db.VarChar(36)
+  enabled               Boolean   @default(true)
+  frequency             String    @default("DAILY") @db.VarChar(20)  // DAILY, WEEKLY, MONTHLY
+  hourUtc               Int       @default(3)                        // Hour to run (0-23 UTC)
+  dayOfWeek             Int?                                         // 0-6 for WEEKLY (0=Sunday)
+  dayOfMonth            Int?                                         // 1-28 for MONTHLY
+  retentionDays         Int       @default(30)                       // Keep backups for N days
+  maxBackups            Int       @default(10)                       // Max backups to keep
+  lastRunAt             DateTime?
+  nextRunAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("backup_policies")
 }

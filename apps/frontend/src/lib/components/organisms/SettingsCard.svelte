@@ -86,6 +86,11 @@
     color: #64748b;
   }
 
+  .card-icon.backup {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+  }
+
   .card-title {
     font-size: 1.125rem;
     font-weight: 500;

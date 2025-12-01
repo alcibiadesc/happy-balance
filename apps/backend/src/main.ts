@@ -17,7 +17,12 @@ import { createUserPreferencesRoutesV2 } from "@infrastructure/routes/userPrefer
 import { createSeedRoutesV2 } from "@infrastructure/routes/seedRoutesV2";
 import { createInvestmentRoutesV2 } from "@infrastructure/routes/investmentRoutesV2";
 import { createExportRoutes } from "@infrastructure/routes/exportRoutesV2";
+import { createBackupRoutes } from "@infrastructure/routes/backupRoutes";
 import { ControllerFactory } from "@infrastructure/factories/ControllerFactory";
+import {
+  initializeBackupScheduler,
+  stopBackupScheduler,
+} from "@infrastructure/jobs/backupScheduler";
 import { createAuthRoutes } from "@infrastructure/routes/authRoutes";
 import { createUserManagementRoutes } from "@infrastructure/routes/userManagementRoutes";
 import { errorHandler } from "@infrastructure/middleware/errorHandler";
@@ -325,6 +330,9 @@ class App {
       createExportRoutes(this.controllerFactory),
     );
 
+    // Backup routes
+    this.app.use("/api/backups", createBackupRoutes());
+
     // 404 handler
     this.app.use("*", (req, res) => {
       res.status(404).json({
@@ -347,6 +355,9 @@ class App {
 
       // Automatically seed admin user on startup
       await seedAdminUser();
+
+      // Initialize backup scheduler
+      initializeBackupScheduler();
 
       // Start server with automatic port detection
       const server = this.app.listen(preferredPort, () => {
@@ -391,11 +402,13 @@ const app = new App();
 
 // Handle graceful shutdown
 process.on("SIGTERM", async () => {
+  stopBackupScheduler();
   await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on("SIGINT", async () => {
+  stopBackupScheduler();
   await prisma.$disconnect();
   process.exit(0);
 });
