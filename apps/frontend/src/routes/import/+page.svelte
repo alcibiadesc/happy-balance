@@ -5,6 +5,9 @@
   import { apiTransactions } from '$lib/stores/api-transactions';
   import { parseCSV } from '$lib/utils/csv-parser';
 
+  // Layout Components
+  import PageContainer from '$lib/components/atoms/PageContainer.svelte';
+
   // Atomic Components
   import ImportProgressSteps from '$lib/components/molecules/ImportProgressSteps.svelte';
   import ImportStatsGrid from '$lib/components/molecules/ImportStatsGrid.svelte';
@@ -505,404 +508,405 @@
   <title>{$t('import.title')} - Happy Balance</title>
 </svelte:head>
 
-<main class="import-page">
-  <div class="import-container">
-    <!-- Header sin Logo -->
-    <div class="import-header">
-      <h1 class="import-title">{$t('import.title')}</h1>
-      <p class="import-subtitle">{$t('import.subtitle')}</p>
-    </div>
+<PageContainer>
+  <main class="import-page">
+    <div class="import-container">
+      <!-- Header sin Logo -->
+      <div class="import-header">
+        <h1 class="import-title">{$t('import.title')}</h1>
+        <p class="import-subtitle">{$t('import.subtitle')}</p>
+      </div>
 
-    <!-- Progress Steps -->
-    <ImportProgressSteps currentStep={step} />
+      <!-- Progress Steps -->
+      <ImportProgressSteps currentStep={step} />
 
-    <!-- Content Card -->
-    <div class="import-content">
-      {#if error}
-        <div class="error-alert">
-          <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z"
-            />
-          </svg>
-          <span class="error-message">{error}</span>
-          <button
-            class="error-close"
-            on:click={() => (error = '')}
-            aria-label="Close error message"
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <!-- Content Card -->
+      <div class="import-content">
+        {#if error}
+          <div class="error-alert">
+            <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z"
               />
             </svg>
-          </button>
-        </div>
-      {/if}
-
-      <!-- Step 1: Upload -->
-      {#if step === 1}
-        <div class="upload-step">
-          <ImportSettings {previewEnabled} onToggle={() => (previewEnabled = !previewEnabled)} />
-          <ImportFileUpload
-            {loading}
-            onFileSelect={handleFileUpload}
-            {selectedFiles}
-            {importProgress}
-            totalFiles={totalFilesToProcess}
-          />
-          <CompatibleBanks />
-        </div>
-      {/if}
-
-      <!-- Step 2: Preview -->
-      {#if step === 2}
-        <div class="preview-step">
-          <!-- Summary Cards -->
-          <ImportStatsGrid
-            total={transactions.length}
-            selected={selectedCount}
-            duplicates={duplicateCount}
-            selectedDuplicates={selectedDuplicatesCount}
-            skipped={transactions.length - selectedCount}
-          />
-
-          <!-- Search Bar -->
-          <div class="search-container">
-            <div class="search-wrapper">
-              <svg
-                class="search-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-              >
+            <span class="error-message">{error}</span>
+            <button
+              class="error-close"
+              on:click={() => (error = '')}
+              aria-label="Close error message"
+            >
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-              <input
-                type="text"
-                placeholder="Buscar transacciones..."
-                class="search-input"
-                on:input={handleSearch}
-              />
-            </div>
+            </button>
           </div>
+        {/if}
 
-          <!-- View Mode Filters -->
-          <div class="view-filters">
-            <div class="filter-tabs">
-              <button
-                class="filter-tab {viewMode === 'all' ? 'active' : ''}"
-                on:click={() => (viewMode = 'all')}
-              >
-                Todas ({transactions.length})
-              </button>
+        <!-- Step 1: Upload -->
+        {#if step === 1}
+          <div class="upload-step">
+            <ImportSettings {previewEnabled} onToggle={() => (previewEnabled = !previewEnabled)} />
+            <ImportFileUpload
+              {loading}
+              onFileSelect={handleFileUpload}
+              {selectedFiles}
+              {importProgress}
+              totalFiles={totalFilesToProcess}
+            />
+            <CompatibleBanks />
+          </div>
+        {/if}
 
-              <button
-                class="filter-tab {viewMode === 'new' ? 'active' : ''}"
-                on:click={() => (viewMode = 'new')}
-              >
-                Nuevas ({newTransactionsCount})
-              </button>
+        <!-- Step 2: Preview -->
+        {#if step === 2}
+          <div class="preview-step">
+            <!-- Summary Cards -->
+            <ImportStatsGrid
+              total={transactions.length}
+              selected={selectedCount}
+              duplicates={duplicateCount}
+              selectedDuplicates={selectedDuplicatesCount}
+              skipped={transactions.length - selectedCount}
+            />
 
-              <button
-                class="filter-tab {viewMode === 'duplicates' ? 'active' : ''}"
-                on:click={() => (viewMode = 'duplicates')}
-                disabled={duplicateCount === 0}
-              >
-                Duplicados ({duplicateCount})
-                {#if selectedDuplicatesCount > 0}
-                  <span class="selected-badge">{selectedDuplicatesCount}</span>
-                {/if}
-              </button>
-            </div>
-
-            <div class="control-actions">
-              {#if visibleTransactions.length > 10}
-                <label class="control-item">
-                  <input
-                    type="checkbox"
-                    bind:checked={showAllTransactions}
-                    class="toggle toggle-acapulco toggle-sm"
+            <!-- Search Bar -->
+            <div class="search-container">
+              <div class="search-wrapper">
+                <svg
+                  class="search-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
-                  <span class="control-text">
-                    {$t('import.preview.controls.show_all')}
-                  </span>
-                </label>
-              {/if}
-
-              <button class="select-all-btn" on:click={toggleAllTransactions}>
-                {visibleTransactions.every((tx) => tx.selected)
-                  ? $t('import.preview.controls.deselect_all')
-                  : $t('import.preview.controls.select_all')}
-              </button>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Buscar transacciones..."
+                  class="search-input"
+                  on:input={handleSearch}
+                />
+              </div>
             </div>
-          </div>
 
-          <!-- Transactions Table Mejorada -->
-          <div class="table-container">
-            {#if visibleTransactions.length === 0}
-              <div class="empty-state">
-                <div class="empty-icon">
-                  {#if viewMode === 'duplicates'}
-                    <svg
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      width="48"
-                      height="48"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  {:else if viewMode === 'new'}
-                    <svg
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      width="48"
-                      height="48"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  {:else}
-                    <svg
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      width="48"
-                      height="48"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                      />
-                    </svg>
-                  {/if}
-                </div>
-                <h3 class="empty-title">
-                  {#if viewMode === 'duplicates'}
-                    No hay transacciones duplicadas
-                  {:else if viewMode === 'new'}
-                    No hay transacciones nuevas
-                  {:else}
-                    No hay transacciones
-                  {/if}
-                </h3>
-                <p class="empty-subtitle">
-                  {#if viewMode === 'duplicates'}
-                    ¡Excelente! No se detectaron duplicados en tu archivo
-                  {:else if viewMode === 'new'}
-                    Todas las transacciones ya existen en la base de datos
-                  {:else}
-                    El archivo no contiene transacciones válidas
-                  {/if}
-                </p>
-              </div>
-            {:else}
-              <div class="table-wrapper">
-                <table class="transactions-table">
-                  <thead>
-                    <tr>
-                      <th class="col-checkbox">
-                        <span class="th-content">{$t('import.preview.table.select')}</span>
-                      </th>
-                      <th class="col-date">
-                        <span class="th-content">{$t('import.preview.table.date')}</span>
-                      </th>
-                      <th class="col-partner">
-                        <span class="th-content">{$t('import.preview.table.partner')}</span>
-                      </th>
-                      <th class="col-description">
-                        <span class="th-content">{$t('import.preview.table.description')}</span>
-                      </th>
-                      <th class="col-amount">
-                        <span class="th-content">{$t('import.preview.table.amount')}</span>
-                      </th>
-                      <th class="col-status">
-                        <span class="th-content">{$t('import.preview.table.status')}</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {#each displayedTransactions as transaction (transaction.id)}
-                      <tr class="transaction-row {transaction.isDuplicate ? 'duplicate' : ''}">
-                        <td class="col-checkbox">
-                          <div class="checkbox-wrapper">
-                            <input
-                              type="checkbox"
-                              class="checkbox-acapulco"
-                              id="tx-{transaction.id}"
-                              checked={transaction.selected}
-                              on:change={() => toggleTransaction(transaction.id)}
-                            />
-                            <label for="tx-{transaction.id}" class="checkbox-label">
-                              <svg class="checkbox-icon" viewBox="0 0 24 24">
-                                <path
-                                  d="M5 13l4 4L19 7"
-                                  stroke="currentColor"
-                                  stroke-width="2"
-                                  fill="none"
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                />
-                              </svg>
-                            </label>
-                          </div>
-                        </td>
-                        <td class="col-date">
-                          <div class="cell-content">
-                            {transaction.date}
-                          </div>
-                        </td>
-                        <td class="col-partner">
-                          <div class="cell-content" title={transaction.partner}>
-                            {transaction.partner}
-                          </div>
-                        </td>
-                        <td class="col-description">
-                          <div class="cell-content" title={transaction.description}>
-                            {transaction.description}
-                          </div>
-                        </td>
-                        <td class="col-amount">
-                          <div
-                            class="amount-wrapper {transaction.amount >= 0
-                              ? 'positive'
-                              : 'negative'}"
-                          >
-                            <span class="amount-sign">{transaction.amount >= 0 ? '+' : ''}</span>
-                            <span class="amount-value"
-                              >{Math.abs(transaction.amount).toFixed(2)}</span
-                            >
-                            <span class="amount-currency">€</span>
-                          </div>
-                        </td>
-                        <td class="col-status">
-                          {#if transaction.isDuplicate}
-                            <div
-                              class="status-badge {transaction.selected
-                                ? 'duplicate-selected'
-                                : 'duplicate'}"
-                            >
-                              <span class="status-dot"></span>
-                              <span class="status-text">
-                                {transaction.selected
-                                  ? 'Duplicado (se importará)'
-                                  : $t('import.preview.status.duplicate')}
-                              </span>
-                            </div>
-                            {#if transaction.duplicateReason}
-                              <div class="status-reason" title={transaction.duplicateReason}>
-                                {transaction.duplicateReason}
-                              </div>
-                            {/if}
-                          {:else if transaction.selected}
-                            <div class="status-badge ready">
-                              <span class="status-dot"></span>
-                              <span class="status-text">{$t('import.preview.status.ready')}</span>
-                            </div>
-                          {:else}
-                            <div class="status-badge skipped">
-                              <span class="status-dot"></span>
-                              <span class="status-text">{$t('import.preview.status.skipped')}</span>
-                            </div>
-                          {/if}
-                        </td>
-                      </tr>
-                    {/each}
-                  </tbody>
-                </table>
-              </div>
-            {/if}
+            <!-- View Mode Filters -->
+            <div class="view-filters">
+              <div class="filter-tabs">
+                <button
+                  class="filter-tab {viewMode === 'all' ? 'active' : ''}"
+                  on:click={() => (viewMode = 'all')}
+                >
+                  Todas ({transactions.length})
+                </button>
 
-            {#if !showAllTransactions && visibleTransactions.length > 10}
-              <div class="pagination-info">
-                <p class="pagination-text">
-                  {$t('import.preview.pagination.showing', {
-                    total: visibleTransactions.length,
-                  })}
-                </p>
-                <button class="show-all-btn" on:click={() => (showAllTransactions = true)}>
-                  {$t('import.preview.pagination.show_all')}
+                <button
+                  class="filter-tab {viewMode === 'new' ? 'active' : ''}"
+                  on:click={() => (viewMode = 'new')}
+                >
+                  Nuevas ({newTransactionsCount})
+                </button>
+
+                <button
+                  class="filter-tab {viewMode === 'duplicates' ? 'active' : ''}"
+                  on:click={() => (viewMode = 'duplicates')}
+                  disabled={duplicateCount === 0}
+                >
+                  Duplicados ({duplicateCount})
+                  {#if selectedDuplicatesCount > 0}
+                    <span class="selected-badge">{selectedDuplicatesCount}</span>
+                  {/if}
                 </button>
               </div>
-            {/if}
-          </div>
-        </div>
-      {/if}
 
-      <!-- Step 3: Complete -->
-      {#if step === 3}
-        <ImportComplete
-          {loading}
-          {importedCount}
-          duplicatesSkipped={(window as any).lastImportDuplicates || 0}
-          duplicatesForced={(window as any).lastImportDuplicatesForced || 0}
-        />
-      {/if}
+              <div class="control-actions">
+                {#if visibleTransactions.length > 10}
+                  <label class="control-item">
+                    <input
+                      type="checkbox"
+                      bind:checked={showAllTransactions}
+                      class="toggle toggle-acapulco toggle-sm"
+                    />
+                    <span class="control-text">
+                      {$t('import.preview.controls.show_all')}
+                    </span>
+                  </label>
+                {/if}
 
-      <!-- Footer -->
-      {#if !loading}
-        <div class="import-footer">
-          <div class="footer-actions">
-            {#if step === 2}
-              <button class="btn-secondary" on:click={goBack}>
-                {$t('common.back')}
-              </button>
-              <button
-                class="btn-primary {selectedCount === 0 ? 'disabled' : ''}"
-                disabled={selectedCount === 0}
-                on:click={importTransactions}
-              >
-                {importButtonText}
-              </button>
-            {:else if step === 3 && !loading}
-              <button class="btn-secondary" on:click={resetImportState}>
-                {$t('import.complete.import_another')}
-              </button>
-              <button class="btn-primary" on:click={handleClose}>
-                {$t('common.done')}
-              </button>
-            {/if}
+                <button class="select-all-btn" on:click={toggleAllTransactions}>
+                  {visibleTransactions.every((tx) => tx.selected)
+                    ? $t('import.preview.controls.deselect_all')
+                    : $t('import.preview.controls.select_all')}
+                </button>
+              </div>
+            </div>
+
+            <!-- Transactions Table Mejorada -->
+            <div class="table-container">
+              {#if visibleTransactions.length === 0}
+                <div class="empty-state">
+                  <div class="empty-icon">
+                    {#if viewMode === 'duplicates'}
+                      <svg
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        width="48"
+                        height="48"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    {:else if viewMode === 'new'}
+                      <svg
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        width="48"
+                        height="48"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    {:else}
+                      <svg
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        width="48"
+                        height="48"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                        />
+                      </svg>
+                    {/if}
+                  </div>
+                  <h3 class="empty-title">
+                    {#if viewMode === 'duplicates'}
+                      No hay transacciones duplicadas
+                    {:else if viewMode === 'new'}
+                      No hay transacciones nuevas
+                    {:else}
+                      No hay transacciones
+                    {/if}
+                  </h3>
+                  <p class="empty-subtitle">
+                    {#if viewMode === 'duplicates'}
+                      ¡Excelente! No se detectaron duplicados en tu archivo
+                    {:else if viewMode === 'new'}
+                      Todas las transacciones ya existen en la base de datos
+                    {:else}
+                      El archivo no contiene transacciones válidas
+                    {/if}
+                  </p>
+                </div>
+              {:else}
+                <div class="table-wrapper">
+                  <table class="transactions-table">
+                    <thead>
+                      <tr>
+                        <th class="col-checkbox">
+                          <span class="th-content">{$t('import.preview.table.select')}</span>
+                        </th>
+                        <th class="col-date">
+                          <span class="th-content">{$t('import.preview.table.date')}</span>
+                        </th>
+                        <th class="col-partner">
+                          <span class="th-content">{$t('import.preview.table.partner')}</span>
+                        </th>
+                        <th class="col-description">
+                          <span class="th-content">{$t('import.preview.table.description')}</span>
+                        </th>
+                        <th class="col-amount">
+                          <span class="th-content">{$t('import.preview.table.amount')}</span>
+                        </th>
+                        <th class="col-status">
+                          <span class="th-content">{$t('import.preview.table.status')}</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {#each displayedTransactions as transaction (transaction.id)}
+                        <tr class="transaction-row {transaction.isDuplicate ? 'duplicate' : ''}">
+                          <td class="col-checkbox">
+                            <div class="checkbox-wrapper">
+                              <input
+                                type="checkbox"
+                                class="checkbox-acapulco"
+                                id="tx-{transaction.id}"
+                                checked={transaction.selected}
+                                on:change={() => toggleTransaction(transaction.id)}
+                              />
+                              <label for="tx-{transaction.id}" class="checkbox-label">
+                                <svg class="checkbox-icon" viewBox="0 0 24 24">
+                                  <path
+                                    d="M5 13l4 4L19 7"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    fill="none"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                  />
+                                </svg>
+                              </label>
+                            </div>
+                          </td>
+                          <td class="col-date">
+                            <div class="cell-content">
+                              {transaction.date}
+                            </div>
+                          </td>
+                          <td class="col-partner">
+                            <div class="cell-content" title={transaction.partner}>
+                              {transaction.partner}
+                            </div>
+                          </td>
+                          <td class="col-description">
+                            <div class="cell-content" title={transaction.description}>
+                              {transaction.description}
+                            </div>
+                          </td>
+                          <td class="col-amount">
+                            <div
+                              class="amount-wrapper {transaction.amount >= 0
+                                ? 'positive'
+                                : 'negative'}"
+                            >
+                              <span class="amount-sign">{transaction.amount >= 0 ? '+' : ''}</span>
+                              <span class="amount-value"
+                                >{Math.abs(transaction.amount).toFixed(2)}</span
+                              >
+                              <span class="amount-currency">€</span>
+                            </div>
+                          </td>
+                          <td class="col-status">
+                            {#if transaction.isDuplicate}
+                              <div
+                                class="status-badge {transaction.selected
+                                  ? 'duplicate-selected'
+                                  : 'duplicate'}"
+                              >
+                                <span class="status-dot"></span>
+                                <span class="status-text">
+                                  {transaction.selected
+                                    ? 'Duplicado (se importará)'
+                                    : $t('import.preview.status.duplicate')}
+                                </span>
+                              </div>
+                              {#if transaction.duplicateReason}
+                                <div class="status-reason" title={transaction.duplicateReason}>
+                                  {transaction.duplicateReason}
+                                </div>
+                              {/if}
+                            {:else if transaction.selected}
+                              <div class="status-badge ready">
+                                <span class="status-dot"></span>
+                                <span class="status-text">{$t('import.preview.status.ready')}</span>
+                              </div>
+                            {:else}
+                              <div class="status-badge skipped">
+                                <span class="status-dot"></span>
+                                <span class="status-text"
+                                  >{$t('import.preview.status.skipped')}</span
+                                >
+                              </div>
+                            {/if}
+                          </td>
+                        </tr>
+                      {/each}
+                    </tbody>
+                  </table>
+                </div>
+              {/if}
+
+              {#if !showAllTransactions && visibleTransactions.length > 10}
+                <div class="pagination-info">
+                  <p class="pagination-text">
+                    {$t('import.preview.pagination.showing', {
+                      total: visibleTransactions.length,
+                    })}
+                  </p>
+                  <button class="show-all-btn" on:click={() => (showAllTransactions = true)}>
+                    {$t('import.preview.pagination.show_all')}
+                  </button>
+                </div>
+              {/if}
+            </div>
           </div>
-        </div>
-      {/if}
+        {/if}
+
+        <!-- Step 3: Complete -->
+        {#if step === 3}
+          <ImportComplete
+            {loading}
+            {importedCount}
+            duplicatesSkipped={(window as any).lastImportDuplicates || 0}
+            duplicatesForced={(window as any).lastImportDuplicatesForced || 0}
+          />
+        {/if}
+
+        <!-- Footer -->
+        {#if !loading}
+          <div class="import-footer">
+            <div class="footer-actions">
+              {#if step === 2}
+                <button class="btn-secondary" on:click={goBack}>
+                  {$t('common.back')}
+                </button>
+                <button
+                  class="btn-primary {selectedCount === 0 ? 'disabled' : ''}"
+                  disabled={selectedCount === 0}
+                  on:click={importTransactions}
+                >
+                  {importButtonText}
+                </button>
+              {:else if step === 3 && !loading}
+                <button class="btn-secondary" on:click={resetImportState}>
+                  {$t('import.complete.import_another')}
+                </button>
+                <button class="btn-primary" on:click={handleClose}>
+                  {$t('common.done')}
+                </button>
+              {/if}
+            </div>
+          </div>
+        {/if}
+      </div>
     </div>
-  </div>
-</main>
+  </main>
+</PageContainer>
 
 <style>
   /* Import Page Layout */
   .import-page {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 1.5rem;
+    width: 100%;
     min-height: 100vh;
-    background: var(--surface);
   }
 
   .import-container {
@@ -2228,10 +2232,6 @@
 
   /* Responsive Design */
   @media (max-width: 768px) {
-    .import-page {
-      padding: 1rem;
-    }
-
     .progress-container {
       gap: 1rem;
       flex-wrap: wrap;

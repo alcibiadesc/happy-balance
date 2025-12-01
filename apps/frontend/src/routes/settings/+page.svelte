@@ -18,6 +18,8 @@
   } from 'lucide-svelte';
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
   import SettingsStatusMessage from '$lib/components/molecules/SettingsStatusMessage.svelte';
+  import PageContainer from '$lib/components/atoms/PageContainer.svelte';
+  import PageHeader from '$lib/components/molecules/PageHeader.svelte';
   import { createSettingsStore } from '$lib/modules/settings/presentation/stores/settingsStore.svelte.ts';
   import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
   import { t } from '$lib/stores/i18n';
@@ -382,10 +384,8 @@
   <title>{$t('settings.title')} - Happy Balance</title>
 </svelte:head>
 
-<main class="settings-page">
-  <header class="page-header">
-    <h1>{$t('settings.title')}</h1>
-  </header>
+<PageContainer>
+  <PageHeader title={$t('settings.title')} />
 
   <SettingsStatusMessage
     message={store.importStatus}
@@ -394,11 +394,12 @@
   <SettingsStatusMessage message={store.importError} type="error" />
 
   <div class="settings-content">
+    <!-- ROW 1: Preferences + Data -->
     <!-- SECTION: Preferences -->
     <section class="settings-section">
       <h2 class="section-title">
         <Globe size={18} />
-        Preferences
+        {$t('settings.preferences') || 'Preferences'}
       </h2>
 
       <div class="settings-row">
@@ -450,7 +451,7 @@
     <section class="settings-section">
       <h2 class="section-title">
         <Database size={18} />
-        Data
+        {$t('settings.data') || 'Data'}
       </h2>
 
       <div class="data-actions">
@@ -623,11 +624,96 @@
       {/if}
     </section>
 
+    <!-- ROW 2: Security + Sidebar -->
+    <!-- SECTION: Security (collapsible) -->
+    <section class="settings-section">
+      <button
+        class="section-title clickable"
+        onclick={() => (securityExpanded = !securityExpanded)}
+      >
+        <Lock size={18} />
+        <span>{$t('settings.security') || 'Security'}</span>
+        {#if securityExpanded}<ChevronUp size={16} />{:else}<ChevronDown size={16} />{/if}
+      </button>
+
+      {#if securityExpanded}
+        <div class="expanded-content">
+          {#if passwordError}
+            <div class="status-message error">{passwordError}</div>
+          {/if}
+          {#if passwordSuccess}
+            <div class="status-message success">{passwordSuccess}</div>
+          {/if}
+
+          <form onsubmit={handlePasswordChange} class="password-form-inline">
+            <div class="settings-row">
+              <div class="row-label">
+                <span class="label-text"
+                  >{$t('settings.current_password') || 'Current password'}</span
+                >
+              </div>
+              <input
+                type="password"
+                class="inline-input"
+                bind:value={currentPassword}
+                placeholder="••••••••"
+                disabled={isSubmittingPassword}
+              />
+            </div>
+
+            <div class="settings-row">
+              <div class="row-label">
+                <span class="label-text">{$t('settings.new_password') || 'New password'}</span>
+              </div>
+              <input
+                type="password"
+                class="inline-input"
+                bind:value={newPassword}
+                placeholder="••••••••"
+                disabled={isSubmittingPassword}
+              />
+            </div>
+
+            <div class="settings-row">
+              <div class="row-label">
+                <span class="label-text"
+                  >{$t('settings.confirm_password') || 'Confirm password'}</span
+                >
+              </div>
+              <input
+                type="password"
+                class="inline-input"
+                bind:value={confirmPassword}
+                placeholder="••••••••"
+                disabled={isSubmittingPassword}
+              />
+            </div>
+
+            <div class="settings-row last">
+              <div class="row-label"></div>
+              <button
+                type="submit"
+                class="action-btn primary"
+                disabled={isSubmittingPassword ||
+                  !currentPassword ||
+                  !newPassword ||
+                  !confirmPassword}
+              >
+                {isSubmittingPassword
+                  ? $t('common.updating') || 'Updating...'
+                  : $t('settings.update_password') || 'Update Password'}
+              </button>
+            </div>
+          </form>
+        </div>
+      {/if}
+    </section>
+
     <!-- SECTION: Sidebar (collapsible) -->
     <section class="settings-section">
       <button class="section-title clickable" onclick={() => (sidebarExpanded = !sidebarExpanded)}>
         <Menu size={18} />
-        <span>Sidebar</span>
+        <span>{$t('settings.sidebar') || 'Sidebar'}</span>
         {#if sidebarExpanded}<ChevronUp size={16} />{:else}<ChevronDown size={16} />{/if}
       </button>
 
@@ -720,84 +806,6 @@
       {/if}
     </section>
 
-    <!-- SECTION: Security (collapsible) -->
-    <section class="settings-section">
-      <button
-        class="section-title clickable"
-        onclick={() => (securityExpanded = !securityExpanded)}
-      >
-        <Lock size={18} />
-        <span>Security</span>
-        {#if securityExpanded}<ChevronUp size={16} />{:else}<ChevronDown size={16} />{/if}
-      </button>
-
-      {#if securityExpanded}
-        <div class="expanded-content">
-          {#if passwordError}
-            <div class="status-message error">{passwordError}</div>
-          {/if}
-          {#if passwordSuccess}
-            <div class="status-message success">{passwordSuccess}</div>
-          {/if}
-
-          <form onsubmit={handlePasswordChange} class="password-form-inline">
-            <div class="settings-row">
-              <div class="row-label">
-                <span class="label-text">Current password</span>
-              </div>
-              <input
-                type="password"
-                class="inline-input"
-                bind:value={currentPassword}
-                placeholder="••••••••"
-                disabled={isSubmittingPassword}
-              />
-            </div>
-
-            <div class="settings-row">
-              <div class="row-label">
-                <span class="label-text">New password</span>
-              </div>
-              <input
-                type="password"
-                class="inline-input"
-                bind:value={newPassword}
-                placeholder="••••••••"
-                disabled={isSubmittingPassword}
-              />
-            </div>
-
-            <div class="settings-row">
-              <div class="row-label">
-                <span class="label-text">Confirm password</span>
-              </div>
-              <input
-                type="password"
-                class="inline-input"
-                bind:value={confirmPassword}
-                placeholder="••••••••"
-                disabled={isSubmittingPassword}
-              />
-            </div>
-
-            <div class="settings-row last">
-              <div class="row-label"></div>
-              <button
-                type="submit"
-                class="action-btn primary"
-                disabled={isSubmittingPassword ||
-                  !currentPassword ||
-                  !newPassword ||
-                  !confirmPassword}
-              >
-                {isSubmittingPassword ? 'Updating...' : 'Update Password'}
-              </button>
-            </div>
-          </form>
-        </div>
-      {/if}
-    </section>
-
     <!-- Footer: Version -->
     {#if versionInfo}
       <footer class="version-footer">
@@ -807,7 +815,7 @@
       </footer>
     {/if}
   </div>
-</main>
+</PageContainer>
 
 <!-- Modals -->
 <ConfirmModal
@@ -873,28 +881,11 @@
 />
 
 <style>
-  .settings-page {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1.5rem;
-    min-height: 100vh;
-  }
-
-  .page-header {
-    margin-bottom: 2rem;
-  }
-
-  .page-header h1 {
-    font-size: 1.5rem;
-    font-weight: 400;
-    color: var(--text-primary);
-    margin: 0;
-  }
-
   .settings-content {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
+    align-items: start;
   }
 
   /* Sections */
@@ -902,7 +893,13 @@
     background: var(--surface-elevated);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 1.25rem;
+    padding: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .settings-content {
+      grid-template-columns: 1fr;
+    }
   }
 
   .section-title {
@@ -1496,11 +1493,12 @@
 
   /* Version footer */
   .version-footer {
+    grid-column: 1 / -1;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
-    padding-top: 1.5rem;
+    padding-top: 0.5rem;
     font-size: 0.6875rem;
     color: var(--text-muted);
   }

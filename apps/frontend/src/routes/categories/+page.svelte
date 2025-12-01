@@ -4,6 +4,10 @@
   import { TrendingUp, TrendingDown, Wallet, Coins, ArrowRightLeft } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
 
+  // Layout Components
+  import PageContainer from '$lib/components/atoms/PageContainer.svelte';
+  import PageHeader from '$lib/components/molecules/PageHeader.svelte';
+
   // Components
   import CategoryListItem from '$lib/components/molecules/CategoryListItem.svelte';
   import CategoryEditListItem from '$lib/components/molecules/CategoryEditListItem.svelte';
@@ -91,91 +95,83 @@
   <title>{$t('categories.title')} - Happy Balance</title>
 </svelte:head>
 
-<div class="categories-container full-width-page">
-  <div class="categories-wrapper">
-    <header class="page-header">
-      <div class="header-content">
-        <div>
-          <h1 class="page-title">{$t('categories.title')}</h1>
-          <p class="page-subtitle">{$t('categories.subtitle')}</p>
-        </div>
-        <button
-          class="selection-mode-btn"
-          class:active={store.isSelectionMode}
-          onclick={store.toggleSelectionMode}
-        >
-          {store.isSelectionMode ? $t('common.cancel') : $t('categories.select_multiple')}
-        </button>
-      </div>
-    </header>
+<PageContainer>
+  <PageHeader title={$t('categories.title')} subtitle={$t('categories.subtitle')}>
+    <button
+      class="selection-mode-btn"
+      class:active={store.isSelectionMode}
+      onclick={store.toggleSelectionMode}
+    >
+      {store.isSelectionMode ? $t('common.cancel') : $t('categories.select_multiple')}
+    </button>
+  </PageHeader>
 
-    <main class="categories-content">
-      {#each store.categoryTypes as { value, type } (value)}
-        <CategorySection
-          title={$t(type.getTitleKey())}
-          description={$t(type.getDescriptionKey())}
-          icon={value === 'income'
-            ? TrendingUp
-            : value === 'essential'
-              ? Wallet
-              : value === 'discretionary'
-                ? Coins
-                : value === 'investment'
-                  ? TrendingDown
-                  : value === 'debt_payment'
-                    ? ArrowRightLeft
-                    : Wallet}
-          iconClass={type.getIconClass()}
-          categories={store.categoriesByType[value]}
-          onAddNew={() => store.startNewCategory(value)}
-          showHelperButton={value === 'no_compute'}
-          onHelperClick={handleHelperClick}
-          isSelectionMode={store.isSelectionMode}
-          selectedCount={store.selectedCount}
-          onToggleSelectionMode={store.toggleSelectionMode}
-          onBulkDelete={store.prepareBulkDelete}
-        >
-          {#if store.newCategory && store.selectedType === value}
+  <main class="categories-content">
+    {#each store.categoryTypes as { value, type } (value)}
+      <CategorySection
+        title={$t(type.getTitleKey())}
+        description={$t(type.getDescriptionKey())}
+        icon={value === 'income'
+          ? TrendingUp
+          : value === 'essential'
+            ? Wallet
+            : value === 'discretionary'
+              ? Coins
+              : value === 'investment'
+                ? TrendingDown
+                : value === 'debt_payment'
+                  ? ArrowRightLeft
+                  : Wallet}
+        iconClass={type.getIconClass()}
+        categories={store.categoriesByType[value]}
+        onAddNew={() => store.startNewCategory(value)}
+        showHelperButton={value === 'no_compute'}
+        onHelperClick={handleHelperClick}
+        isSelectionMode={store.isSelectionMode}
+        selectedCount={store.selectedCount}
+        onToggleSelectionMode={store.toggleSelectionMode}
+        onBulkDelete={store.prepareBulkDelete}
+      >
+        {#if store.newCategory && store.selectedType === value}
+          <CategoryEditListItem
+            bind:editForm={store.newCategoryForm}
+            availableColors={store.availableColors}
+            getCurrencySymbol={store.getCurrencySymbol}
+            onSave={store.saveNewCategory}
+            onCancel={store.cancelNewCategory}
+            onIconClick={(e) => handleIconClick(e, true)}
+            onColorSelect={(color) => (store.newCategoryForm.color = color)}
+            showIconPicker={store.showIconPickerNew}
+          />
+        {/if}
+        {#each store.categoriesByType[value] as category (category.getId())}
+          {#if store.editingCategory === category.getId()}
             <CategoryEditListItem
-              bind:editForm={store.newCategoryForm}
+              bind:editForm={store.editForm}
               availableColors={store.availableColors}
               getCurrencySymbol={store.getCurrencySymbol}
-              onSave={store.saveNewCategory}
-              onCancel={store.cancelNewCategory}
-              onIconClick={(e) => handleIconClick(e, true)}
-              onColorSelect={(color) => (store.newCategoryForm.color = color)}
-              showIconPicker={store.showIconPickerNew}
+              onSave={store.saveEdit}
+              onCancel={store.cancelEdit}
+              onIconClick={handleIconClick}
+              onColorSelect={(color) => (store.editForm.color = color)}
+              showIconPicker={store.showIconPickerEdit === category.getId()}
+            />
+          {:else}
+            <CategoryListItem
+              category={category.toJSON()}
+              onEdit={() => store.startEdit(category)}
+              onDelete={() => store.prepareDelete(category)}
+              formatCurrency={store.formatCurrency}
+              isSelectionMode={store.isSelectionMode}
+              isSelected={store.isCategorySelected(category.getId())}
+              onToggleSelect={() => store.toggleCategorySelection(category)}
             />
           {/if}
-          {#each store.categoriesByType[value] as category (category.getId())}
-            {#if store.editingCategory === category.getId()}
-              <CategoryEditListItem
-                bind:editForm={store.editForm}
-                availableColors={store.availableColors}
-                getCurrencySymbol={store.getCurrencySymbol}
-                onSave={store.saveEdit}
-                onCancel={store.cancelEdit}
-                onIconClick={handleIconClick}
-                onColorSelect={(color) => (store.editForm.color = color)}
-                showIconPicker={store.showIconPickerEdit === category.getId()}
-              />
-            {:else}
-              <CategoryListItem
-                category={category.toJSON()}
-                onEdit={() => store.startEdit(category)}
-                onDelete={() => store.prepareDelete(category)}
-                formatCurrency={store.formatCurrency}
-                isSelectionMode={store.isSelectionMode}
-                isSelected={store.isCategorySelected(category.getId())}
-                onToggleSelect={() => store.toggleCategorySelection(category)}
-              />
-            {/if}
-          {/each}
-        </CategorySection>
-      {/each}
-    </main>
-  </div>
-</div>
+        {/each}
+      </CategorySection>
+    {/each}
+  </main>
+</PageContainer>
 
 <!-- Icon Picker Modal -->
 <CategoryIconPicker
@@ -258,61 +254,6 @@
 </ConfirmModal>
 
 <style>
-  /* Main Container */
-  .categories-container {
-    width: 100%;
-    min-height: calc(100vh - 72px);
-    background: var(--surface);
-    box-sizing: border-box;
-    padding: 0;
-  }
-
-  @media (min-width: 1024px) {
-    .categories-container {
-      min-height: 100vh;
-    }
-  }
-
-  /* Wrapper for content with max-width */
-  .categories-wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem;
-    box-sizing: border-box;
-  }
-
-  @media (min-width: 768px) {
-    .categories-wrapper {
-      padding: 2rem;
-    }
-  }
-
-  /* Header */
-  .page-header {
-    margin-bottom: 2rem;
-  }
-
-  .header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .page-title {
-    font-size: 1.875rem;
-    font-weight: 300;
-    color: var(--text-primary);
-    margin: 0 0 0.5rem 0;
-    letter-spacing: -0.025em;
-  }
-
-  .page-subtitle {
-    font-size: 0.875rem;
-    color: var(--text-muted);
-    margin: 0;
-  }
-
   .selection-mode-btn {
     padding: 0.5rem 1rem;
     border: 1px solid var(--border-color);
@@ -454,15 +395,6 @@
 
   /* Responsive */
   @media (max-width: 768px) {
-    .page-title {
-      font-size: 1.5rem;
-    }
-
-    .header-content {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
     .selection-mode-btn {
       width: 100%;
       text-align: center;

@@ -9,6 +9,10 @@
   import { getApiUrl } from '$lib/utils/api-url';
   import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
+  // Layout Components
+  import PageContainer from '$lib/components/atoms/PageContainer.svelte';
+  import PageHeader from '$lib/components/molecules/PageHeader.svelte';
+
   interface UserDTO {
     id: string;
     username: string;
@@ -388,17 +392,13 @@
 </svelte:head>
 
 {#if !authStore.isLoading && authStore.isAdmin}
-  <div class="page">
-    <div class="page-header">
-      <div class="header-content">
-        <h1 class="page-title">{$t('admin.users.title')}</h1>
-        <p class="page-subtitle">{$t('admin.users.subtitle')}</p>
-      </div>
+  <PageContainer>
+    <PageHeader title={$t('admin.users.title')} subtitle={$t('admin.users.subtitle')}>
       <Button variant="primary" onclick={handleCreateUserClick} disabled={loading}>
         <Plus size={16} strokeWidth={2} />
         {$t('admin.users.add_user')}
       </Button>
-    </div>
+    </PageHeader>
 
     <!-- Notifications -->
     {#if error}
@@ -766,7 +766,7 @@
         </div>
       </div>
     {/if}
-  </div>
+  </PageContainer>
 {:else if authStore.isLoading}
   <div class="loading">
     <div class="spinner"></div>
@@ -783,39 +783,6 @@
 {/if}
 
 <style>
-  .page {
-    padding: 1.5rem 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    min-height: 100vh;
-  }
-
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 2rem;
-    gap: 1rem;
-  }
-
-  .header-content {
-    flex: 1;
-  }
-
-  .page-title {
-    font-size: 1.875rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0 0 0.25rem 0;
-    line-height: 1.2;
-  }
-
-  .page-subtitle {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin: 0;
-  }
-
   /* Notifications */
   .notification {
     margin-bottom: 1.5rem;
@@ -1145,20 +1112,6 @@
 
   /* Responsive */
   @media (max-width: 768px) {
-    .page {
-      padding: 1rem;
-    }
-
-    .page-header {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 1rem;
-    }
-
-    .page-title {
-      font-size: 1.5rem;
-    }
-
     .user-card {
       display: grid;
       grid-template-columns: auto 1fr;
@@ -1217,10 +1170,6 @@
   }
 
   @media (max-width: 480px) {
-    .page {
-      padding: 0.5rem;
-    }
-
     .user-card {
       padding: 0.75rem;
     }

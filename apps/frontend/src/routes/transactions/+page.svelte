@@ -3,6 +3,9 @@
   import { browser } from '$app/environment';
   import '$lib/modules/transactions/presentation/styles/transactions-page.css';
 
+  // Layout Components
+  import PageContainer from '$lib/components/atoms/PageContainer.svelte';
+
   // Components
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
   import AddTransactionModal from '$lib/components/organisms/AddTransactionModal.svelte';
@@ -281,162 +284,164 @@
   });
 </script>
 
-<div class="transactions-page">
-  <header class="transactions-header">
-    <div class="header-content">
-      <PeriodStats stats={periodStats} />
-    </div>
-  </header>
+<PageContainer>
+  <div class="transactions-page">
+    <header class="transactions-header">
+      <div class="header-content">
+        <PeriodStats stats={periodStats} />
+      </div>
+    </header>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <div class="toolbar-content">
-      <!-- Date selector section -->
-      <DateSelector
-        bind:selectedPeriod={pageStore.filterState.selectedPeriod}
-        bind:showAllTransactions={pageStore.filterState.showAllTransactions}
-        bind:showHiddenTransactions={pageStore.filterState.showHiddenTransactions}
-        bind:dateRangeMode={pageStore.filterState.dateRangeMode}
-        bind:customStartDate={pageStore.filterState.customStartDate}
-        bind:customEndDate={pageStore.filterState.customEndDate}
-        bind:showDatePicker={pageStore.showDatePicker}
-        onPreviousPeriod={previousPeriod}
-        onNextPeriod={nextPeriod}
-        onToggleAllTransactions={() => pageStore.toggleAllTransactions()}
-        onToggleHiddenTransactions={() => pageStore.toggleHiddenTransactions()}
-        onToggleDateRangeMode={() => pageStore.toggleDateRangeMode()}
-        onToggleDatePicker={() => pageStore.toggleDatePicker()}
-        onUpdatePeriod={(period) => pageStore.setPeriod(period)}
-        onUpdateCustomStartDate={(date) => pageStore.setCustomStartDate(date)}
-        onUpdateCustomEndDate={(date) => pageStore.setCustomEndDate(date)}
-      />
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-content">
+        <!-- Date selector section -->
+        <DateSelector
+          bind:selectedPeriod={pageStore.filterState.selectedPeriod}
+          bind:showAllTransactions={pageStore.filterState.showAllTransactions}
+          bind:showHiddenTransactions={pageStore.filterState.showHiddenTransactions}
+          bind:dateRangeMode={pageStore.filterState.dateRangeMode}
+          bind:customStartDate={pageStore.filterState.customStartDate}
+          bind:customEndDate={pageStore.filterState.customEndDate}
+          bind:showDatePicker={pageStore.showDatePicker}
+          onPreviousPeriod={previousPeriod}
+          onNextPeriod={nextPeriod}
+          onToggleAllTransactions={() => pageStore.toggleAllTransactions()}
+          onToggleHiddenTransactions={() => pageStore.toggleHiddenTransactions()}
+          onToggleDateRangeMode={() => pageStore.toggleDateRangeMode()}
+          onToggleDatePicker={() => pageStore.toggleDatePicker()}
+          onUpdatePeriod={(period) => pageStore.setPeriod(period)}
+          onUpdateCustomStartDate={(date) => pageStore.setCustomStartDate(date)}
+          onUpdateCustomEndDate={(date) => pageStore.setCustomEndDate(date)}
+        />
 
-      <!-- Search bar -->
-      <SearchBar
-        value={pageStore.filterState.searchQuery}
-        onInput={(value) => pageStore.setSearchQuery(value)}
-        onClear={() => pageStore.setSearchQuery('')}
-      />
+        <!-- Search bar -->
+        <SearchBar
+          value={pageStore.filterState.searchQuery}
+          onInput={(value) => pageStore.setSearchQuery(value)}
+          onClear={() => pageStore.setSearchQuery('')}
+        />
 
-      <!-- Action buttons -->
-      <div class="toolbar-actions">
-        {#if pageStore.selectionState.isSelectionMode}
-          <button class="toolbar-btn" onclick={selectAll}>
-            {$t('transactions.select_all')}
-          </button>
-          <button class="toolbar-btn danger" onclick={deleteSelected}>
-            <Trash2 size={14} />
-          </button>
-          <button class="toolbar-btn" onclick={hideSelected}>
-            <EyeOff size={14} />
-          </button>
-          <button class="toolbar-btn" onclick={clearSelection}>
-            {$t('transactions.cancel')}
-          </button>
-        {:else}
-          {#if groupedTransactions.length > 1}
+        <!-- Action buttons -->
+        <div class="toolbar-actions">
+          {#if pageStore.selectionState.isSelectionMode}
+            <button class="toolbar-btn" onclick={selectAll}>
+              {$t('transactions.select_all')}
+            </button>
+            <button class="toolbar-btn danger" onclick={deleteSelected}>
+              <Trash2 size={14} />
+            </button>
+            <button class="toolbar-btn" onclick={hideSelected}>
+              <EyeOff size={14} />
+            </button>
+            <button class="toolbar-btn" onclick={clearSelection}>
+              {$t('transactions.cancel')}
+            </button>
+          {:else}
+            {#if groupedTransactions.length > 1}
+              <button
+                class="toolbar-btn icon-only"
+                onclick={pageStore.groupingState.allExpanded
+                  ? () => pageStore.collapseAll(groupedTransactions.map((g) => g.date))
+                  : () => pageStore.expandAll()}
+                title={pageStore.groupingState.allExpanded ? 'Colapsar todo' : 'Expandir todo'}
+                aria-label={pageStore.groupingState.allExpanded
+                  ? 'Colapsar grupos'
+                  : 'Expandir grupos'}
+              >
+                {#if pageStore.groupingState.allExpanded}
+                  <Minimize2 size={14} />
+                {:else}
+                  <Maximize2 size={14} />
+                {/if}
+              </button>
+              <div class="toolbar-separator"></div>
+            {/if}
+
             <button
-              class="toolbar-btn icon-only"
-              onclick={pageStore.groupingState.allExpanded
-                ? () => pageStore.collapseAll(groupedTransactions.map((g) => g.date))
-                : () => pageStore.expandAll()}
-              title={pageStore.groupingState.allExpanded ? 'Colapsar todo' : 'Expandir todo'}
-              aria-label={pageStore.groupingState.allExpanded
-                ? 'Colapsar grupos'
-                : 'Expandir grupos'}
+              class="toolbar-btn"
+              onclick={() => pageStore.toggleSelectionMode()}
+              aria-label={$t('accessibility.select_transactions')}
             >
-              {#if pageStore.groupingState.allExpanded}
-                <Minimize2 size={14} />
-              {:else}
-                <Maximize2 size={14} />
+              {$t('transactions.select')}
+            </button>
+            <button
+              class="toolbar-btn"
+              class:active={pageStore.modalState.showFilters}
+              class:has-filters={pageStore.filterState.selectedCategories.length > 0 ||
+                pageStore.filterState.transactionTypeFilter !== 'all'}
+              onclick={() => pageStore.toggleFilters()}
+              aria-label={$t('accessibility.show_filters')}
+            >
+              <Filter size={14} />
+              {#if pageStore.filterState.selectedCategories.length > 0 || pageStore.filterState.transactionTypeFilter !== 'all'}
+                <span class="filter-badge"></span>
               {/if}
             </button>
-            <div class="toolbar-separator"></div>
+            <button
+              class="toolbar-btn"
+              onclick={downloadTransactionsCSV}
+              aria-label={$t('accessibility.export_transactions')}
+            >
+              <Download size={14} />
+            </button>
           {/if}
-
-          <button
-            class="toolbar-btn"
-            onclick={() => pageStore.toggleSelectionMode()}
-            aria-label={$t('accessibility.select_transactions')}
-          >
-            {$t('transactions.select')}
-          </button>
-          <button
-            class="toolbar-btn"
-            class:active={pageStore.modalState.showFilters}
-            class:has-filters={pageStore.filterState.selectedCategories.length > 0 ||
-              pageStore.filterState.transactionTypeFilter !== 'all'}
-            onclick={() => pageStore.toggleFilters()}
-            aria-label={$t('accessibility.show_filters')}
-          >
-            <Filter size={14} />
-            {#if pageStore.filterState.selectedCategories.length > 0 || pageStore.filterState.transactionTypeFilter !== 'all'}
-              <span class="filter-badge"></span>
-            {/if}
-          </button>
-          <button
-            class="toolbar-btn"
-            onclick={downloadTransactionsCSV}
-            aria-label={$t('accessibility.export_transactions')}
-          >
-            <Download size={14} />
-          </button>
-        {/if}
+        </div>
       </div>
+
+      <FiltersPanel
+        visible={pageStore.modalState.showFilters}
+        transactionTypeFilter={pageStore.filterState.transactionTypeFilter}
+        selectedCategories={pageStore.filterState.selectedCategories}
+        selectedPrimaryTypes={pageStore.filterState.selectedPrimaryTypes}
+        showUncategorized={pageStore.filterState.showUncategorized}
+        categories={$apiCategories}
+        onTransactionTypeFilter={(type) => pageStore.setTransactionTypeFilter(type)}
+        onToggleCategory={(id) => pageStore.toggleCategory(id)}
+        onTogglePrimaryType={(type) => pageStore.togglePrimaryType(type)}
+        onToggleShowUncategorized={() => pageStore.toggleShowUncategorized()}
+        onClearFilters={() => pageStore.clearFilters()}
+      />
     </div>
 
-    <FiltersPanel
-      visible={pageStore.modalState.showFilters}
-      transactionTypeFilter={pageStore.filterState.transactionTypeFilter}
-      selectedCategories={pageStore.filterState.selectedCategories}
-      selectedPrimaryTypes={pageStore.filterState.selectedPrimaryTypes}
-      showUncategorized={pageStore.filterState.showUncategorized}
-      categories={$apiCategories}
-      onTransactionTypeFilter={(type) => pageStore.setTransactionTypeFilter(type)}
-      onToggleCategory={(id) => pageStore.toggleCategory(id)}
-      onTogglePrimaryType={(type) => pageStore.togglePrimaryType(type)}
-      onToggleShowUncategorized={() => pageStore.toggleShowUncategorized()}
-      onClearFilters={() => pageStore.clearFilters()}
-    />
+    <!-- Transactions list -->
+    <main class="transactions-list">
+      {#each groupedTransactions as group (group.date)}
+        <TransactionGroup
+          date={_formatDate(group.date)}
+          transactions={group.items}
+          categories={$apiCategories}
+          isExpanded={!pageStore.groupingState.collapsedGroups.has(group.date)}
+          isSelectionMode={pageStore.selectionState.isSelectionMode}
+          selectedIds={$apiSelectedTransactions}
+          editingObservationsId={pageStore.observationsState.editingTransactionId}
+          observationsText={pageStore.observationsState.editingText}
+          onToggleGroup={() => pageStore.toggleGroup(group.date)}
+          onToggleSelection={(id) => toggleSelection(id)}
+          onCategorize={(transaction) => pageStore.openCategoryModal(transaction)}
+          onToggleHide={(transaction) => toggleHideTransaction(transaction)}
+          onDelete={(id) => deleteTransaction(id)}
+          onEditObservations={(transaction) => startEditingObservations(transaction)}
+          onUpdateObservationsText={(text) => pageStore.updateObservationsText(text)}
+          onOpenSplitModal={(transaction) => pageStore.openSplitModal(transaction)}
+          onSaveObservations={async () => {
+            const transaction = group.items.find(
+              (t) => t.id === pageStore.observationsState.editingTransactionId
+            );
+            if (transaction) await saveObservations(transaction);
+          }}
+          onCancelObservations={cancelEditingObservations}
+          formatAmount={_formatAmount}
+        />
+      {/each}
+    </main>
+
+    <!-- FAB -->
+    <button class="fab" onclick={() => pageStore.openAddModal()}>
+      <Plus size={16} />
+    </button>
   </div>
-
-  <!-- Transactions list -->
-  <main class="transactions-list">
-    {#each groupedTransactions as group (group.date)}
-      <TransactionGroup
-        date={_formatDate(group.date)}
-        transactions={group.items}
-        categories={$apiCategories}
-        isExpanded={!pageStore.groupingState.collapsedGroups.has(group.date)}
-        isSelectionMode={pageStore.selectionState.isSelectionMode}
-        selectedIds={$apiSelectedTransactions}
-        editingObservationsId={pageStore.observationsState.editingTransactionId}
-        observationsText={pageStore.observationsState.editingText}
-        onToggleGroup={() => pageStore.toggleGroup(group.date)}
-        onToggleSelection={(id) => toggleSelection(id)}
-        onCategorize={(transaction) => pageStore.openCategoryModal(transaction)}
-        onToggleHide={(transaction) => toggleHideTransaction(transaction)}
-        onDelete={(id) => deleteTransaction(id)}
-        onEditObservations={(transaction) => startEditingObservations(transaction)}
-        onUpdateObservationsText={(text) => pageStore.updateObservationsText(text)}
-        onOpenSplitModal={(transaction) => pageStore.openSplitModal(transaction)}
-        onSaveObservations={async () => {
-          const transaction = group.items.find(
-            (t) => t.id === pageStore.observationsState.editingTransactionId
-          );
-          if (transaction) await saveObservations(transaction);
-        }}
-        onCancelObservations={cancelEditingObservations}
-        formatAmount={_formatAmount}
-      />
-    {/each}
-  </main>
-
-  <!-- FAB -->
-  <button class="fab" onclick={() => pageStore.openAddModal()}>
-    <Plus size={16} />
-  </button>
-</div>
+</PageContainer>
 
 <!-- Modals -->
 <CategorySelectionModal

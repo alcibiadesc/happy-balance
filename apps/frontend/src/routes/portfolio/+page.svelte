@@ -28,6 +28,9 @@
   import { portfolioGoal, userPreferences } from '$lib/stores/user-preferences';
   import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
+  // Layout Components
+  import PageContainer from '$lib/components/atoms/PageContainer.svelte';
+
   // Store
   import { createInvestmentsStore } from '$lib/modules/investments/presentation/stores/investmentsStore.svelte.ts';
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
@@ -383,570 +386,584 @@
   <title>Portfolio - Happy Balance</title>
 </svelte:head>
 
-<div class="portfolio-page">
-  {#if viewMode === 'grid'}
-    <!-- Balance Header (Gofire-style) -->
-    <header class="balance-header">
-      <div class="balance-content">
-        <span class="greeting">Tu portfolio</span>
-        <div class="balance-amount">
-          <span class="currency">{$currentCurrency}</span>
-          <span class="amount"
-            >{store.formatCurrency(store.totalPortfolioValue).replace(/[€$£]/g, '')}</span
-          >
-        </div>
-
-        <!-- Goal Progress -->
-        <div class="goal-section">
-          <div class="goal-bar">
-            <div class="goal-progress" style="width: {goalProgress}%"></div>
+<PageContainer>
+  <div class="portfolio-page">
+    {#if viewMode === 'grid'}
+      <!-- Balance Header (Gofire-style) -->
+      <header class="balance-header">
+        <div class="balance-content">
+          <span class="greeting">Tu portfolio</span>
+          <div class="balance-amount">
+            <span class="currency">{$currentCurrency}</span>
+            <span class="amount"
+              >{store.formatCurrency(store.totalPortfolioValue).replace(/[€$£]/g, '')}</span
+            >
           </div>
-          <div class="goal-info">
-            <span class="goal-text">
-              {goalProgress.toFixed(0)}% de tu meta
-              {#if goalProgress < 100}
-                <span class="goal-remaining"
-                  >(faltan {store.formatCurrency(
-                    ($portfolioGoal || 100000) - store.totalPortfolioValue
-                  )})</span
-                >
-              {/if}
-            </span>
-            <button class="goal-edit" onclick={() => (showGoalEdit = !showGoalEdit)}>
-              <Target size={14} />
-              {store.formatCurrency($portfolioGoal || 100000)}
-            </button>
-          </div>
-        </div>
 
-        {#if showGoalEdit}
-          <div class="goal-input-wrapper">
-            <input type="number" bind:value={goalInput} class="goal-input" placeholder="Meta..." />
-            <button class="goal-save" onclick={saveGoal}>OK</button>
+          <!-- Goal Progress -->
+          <div class="goal-section">
+            <div class="goal-bar">
+              <div class="goal-progress" style="width: {goalProgress}%"></div>
+            </div>
+            <div class="goal-info">
+              <span class="goal-text">
+                {goalProgress.toFixed(0)}% de tu meta
+                {#if goalProgress < 100}
+                  <span class="goal-remaining"
+                    >(faltan {store.formatCurrency(
+                      ($portfolioGoal || 100000) - store.totalPortfolioValue
+                    )})</span
+                  >
+                {/if}
+              </span>
+              <button class="goal-edit" onclick={() => (showGoalEdit = !showGoalEdit)}>
+                <Target size={14} />
+                {store.formatCurrency($portfolioGoal || 100000)}
+              </button>
+            </div>
           </div>
-        {/if}
-      </div>
 
-      <!-- Revenue Card -->
-      <div
-        class="revenue-card"
-        class:positive={store.totalProfit >= 0}
-        class:negative={store.totalProfit < 0}
-      >
-        <div class="revenue-header">
-          <span class="revenue-label">Rentabilidad</span>
-          {#if store.totalProfit >= 0}
-            <TrendingUp size={18} />
-          {:else}
-            <TrendingDown size={18} />
+          {#if showGoalEdit}
+            <div class="goal-input-wrapper">
+              <input
+                type="number"
+                bind:value={goalInput}
+                class="goal-input"
+                placeholder="Meta..."
+              />
+              <button class="goal-save" onclick={saveGoal}>OK</button>
+            </div>
           {/if}
         </div>
-        <div class="revenue-value">
-          {store.formatCurrency(store.totalProfit)}
-          <span class="revenue-percentage">{store.formatPercentage(store.profitPercentage)}</span>
-        </div>
-      </div>
-    </header>
 
-    <!-- Charts Section -->
-    <section class="charts-section">
-      <div class="chart-card">
-        <h3><PiggyBank size={16} /> Distribución</h3>
-        <div class="chart-container donut">
-          <canvas bind:this={donutChartRef}></canvas>
-        </div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-header">
-          <h3><TrendingUp size={16} /> Evolución</h3>
-          <div class="period-filters">
-            {#each timePeriods as period (period.label)}
-              <button
-                class="period-btn"
-                class:active={selectedPeriod === period.label}
-                onclick={() => handlePeriodChange(period.label)}
-              >
-                {period.label}
-              </button>
-            {/each}
-          </div>
-        </div>
-        <div class="chart-container line">
-          <canvas bind:this={lineChartRef}></canvas>
-        </div>
-      </div>
-    </section>
-
-    <!-- Investments Grid -->
-    <section class="investments-section">
-      <div class="section-header">
-        <h2><Wallet size={18} /> Inversiones</h2>
-        <div class="header-actions">
-          <div class="view-mode-toggle">
-            <button
-              class="view-btn"
-              class:active={investmentViewMode === 'individual'}
-              onclick={() => (investmentViewMode = 'individual')}
-              title="Vista individual"
-            >
-              <List size={14} />
-            </button>
-            <button
-              class="view-btn"
-              class:active={investmentViewMode === 'grouped'}
-              onclick={() => (investmentViewMode = 'grouped')}
-              title="Agrupar por categoría"
-            >
-              <LayoutGrid size={14} />
-            </button>
-            <button
-              class="view-btn"
-              class:active={investmentViewMode === 'monthly'}
-              onclick={() => (investmentViewMode = 'monthly')}
-              title="Aportaciones del mes"
-            >
-              <Calendar size={14} />
-            </button>
-          </div>
-          <button class="add-btn" onclick={() => store.startNewInvestment()}>
-            <Plus size={16} />
-            Añadir
-          </button>
-        </div>
-      </div>
-
-      <!-- New Investment Form -->
-      {#if store.showNewForm}
-        <div class="investment-form">
-          <div class="form-row">
-            <button
-              class="icon-picker-btn"
-              onclick={(e) => handleIconClick(e, 'new')}
-              style="background-color: {store.newInvestmentForm.color}"
-            >
-              {store.newInvestmentForm.icon}
-            </button>
-            <input
-              type="text"
-              class="form-input name"
-              bind:value={store.newInvestmentForm.name}
-              placeholder="Nombre de la inversión"
-            />
-            <input
-              type="number"
-              class="form-input value"
-              bind:value={store.newInvestmentForm.currentValue}
-              placeholder="Valor"
-              step="0.01"
-            />
-          </div>
-          <div class="form-row colors">
-            {#each store.availableColors as color (color)}
-              <button
-                class="color-dot"
-                class:selected={store.newInvestmentForm.color === color}
-                style="background-color: {color}"
-                onclick={() => (store.newInvestmentForm.color = color)}
-              />
-            {/each}
-          </div>
-          <div class="form-actions">
-            <button class="btn-cancel" onclick={store.cancelNewInvestment}>Cancelar</button>
-            <button class="btn-save" onclick={store.saveNewInvestment}>Guardar</button>
-          </div>
-        </div>
-      {/if}
-
-      <!-- Investments List -->
-      {#if store.isLoading}
-        <div class="loading">Cargando...</div>
-      {:else if store.investments.length === 0 && !store.showNewForm}
-        <div class="empty-state">
-          <Wallet size={48} strokeWidth={1} />
-          <p>Añade tu primera inversión</p>
-        </div>
-      {:else}
-        <!-- Individual View -->
-        {#if investmentViewMode === 'individual'}
-          <div class="investments-grid">
-            {#each store.investments as investment, index (investment.id)}
-              {#if store.editingInvestment === investment.id}
-                <!-- Edit Mode -->
-                <div class="investment-row editing">
-                  <button
-                    class="icon-picker-btn small"
-                    onclick={(e) => handleIconClick(e, 'edit')}
-                    style="background-color: {store.editForm.color}"
-                  >
-                    {store.editForm.icon}
-                  </button>
-                  <input type="text" class="form-input name" bind:value={store.editForm.name} />
-                  <input
-                    type="number"
-                    class="form-input value"
-                    bind:value={store.editForm.currentValue}
-                    step="0.01"
-                  />
-                  <div class="row-actions">
-                    <button class="btn-icon" onclick={store.cancelEdit}>
-                      <X size={16} />
-                    </button>
-                    <button class="btn-icon primary" onclick={store.saveEdit}>
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                </div>
-              {:else}
-                <!-- Display Mode with Drag-and-Drop -->
-                <div
-                  class="investment-row"
-                  class:highlighted={investment.highlight}
-                  class:dragging={draggedIndex === index}
-                  class:drag-over={dragOverIndex === index}
-                  draggable="true"
-                  ondragstart={(e) => handleDragStart(e, index)}
-                  ondragover={(e) => handleDragOver(e, index)}
-                  ondragleave={handleDragLeave}
-                  ondrop={(e) => handleDrop(e, index)}
-                  ondragend={handleDragEnd}
-                  onclick={() => handleViewDetails(investment)}
-                >
-                  <div class="drag-handle" onclick={(e) => e.stopPropagation()}>
-                    <GripVertical size={14} />
-                  </div>
-                  <div class="row-icon" style="background-color: {investment.color}">
-                    {investment.icon}
-                  </div>
-                  <div class="row-info">
-                    <span class="row-name">{investment.name}</span>
-                    {#if investment.symbol}
-                      <span class="row-symbol">{investment.symbol}</span>
-                    {/if}
-                  </div>
-                  <div class="row-value" onclick={(e) => e.stopPropagation()}>
-                    {#if store.inlineEditingId === investment.id}
-                      <input
-                        type="number"
-                        class="inline-edit-input"
-                        bind:value={store.inlineEditValue}
-                        onblur={() => store.saveInlineEdit()}
-                        onkeydown={(e) => {
-                          if (e.key === 'Enter') store.saveInlineEdit();
-                          if (e.key === 'Escape') store.cancelInlineEdit();
-                        }}
-                        step="0.01"
-                      />
-                    {:else}
-                      <span
-                        class="value editable"
-                        onclick={() => store.startInlineEdit(investment)}
-                        title="Click para editar"
-                      >
-                        {store.formatCurrency(investment.currentValue)}
-                      </span>
-                    {/if}
-                    {#if investment.netContributions > 0}
-                      <div class="profit-pills">
-                        <span
-                          class="pill amount"
-                          class:positive={investment.profit >= 0}
-                          class:negative={investment.profit < 0}
-                        >
-                          {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(
-                            investment.profit
-                          )}
-                        </span>
-                        <span
-                          class="pill pct"
-                          class:positive={investment.profit >= 0}
-                          class:negative={investment.profit < 0}
-                        >
-                          {store.formatPercentage(investment.profitPercentage)}
-                        </span>
-                      </div>
-                    {/if}
-                  </div>
-                  <div class="row-actions" onclick={(e) => e.stopPropagation()}>
-                    <button
-                      class="btn-icon"
-                      class:active={investment.highlight}
-                      onclick={() => store.toggleHighlight(investment)}
-                    >
-                      <Star size={14} fill={investment.highlight ? 'currentColor' : 'none'} />
-                    </button>
-                    <button class="btn-icon" onclick={() => store.startAddHistory(investment.id)}>
-                      <Plus size={14} />
-                    </button>
-                    <button class="btn-icon" onclick={() => store.startEdit(investment)}>
-                      <Pencil size={14} />
-                    </button>
-                    <button class="btn-icon danger" onclick={() => store.prepareDelete(investment)}>
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              {/if}
-            {/each}
-          </div>
-
-          <!-- Grouped by Category View -->
-        {:else if investmentViewMode === 'grouped'}
-          <div class="grouped-view">
-            {#each groupedInvestments() as group (group.name)}
-              <div class="group-section">
-                <div class="group-header">
-                  <span class="group-name">{group.name}</span>
-                  <span class="group-total">{store.formatCurrency(group.totalValue)}</span>
-                </div>
-                <div class="investments-grid">
-                  {#each group.items as investment (investment.id)}
-                    <div
-                      class="investment-row compact"
-                      class:highlighted={investment.highlight}
-                      onclick={() => handleViewDetails(investment)}
-                    >
-                      <div class="row-icon small" style="background-color: {investment.color}">
-                        {investment.icon}
-                      </div>
-                      <div class="row-info">
-                        <span class="row-name">{investment.name}</span>
-                      </div>
-                      <div class="row-value">
-                        <span class="value">{store.formatCurrency(investment.currentValue)}</span>
-                        {#if investment.netContributions > 0}
-                          <div class="profit-pills">
-                            <span
-                              class="pill amount"
-                              class:positive={investment.profit >= 0}
-                              class:negative={investment.profit < 0}
-                            >
-                              {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(
-                                investment.profit
-                              )}
-                            </span>
-                            <span
-                              class="pill pct"
-                              class:positive={investment.profit >= 0}
-                              class:negative={investment.profit < 0}
-                            >
-                              {store.formatPercentage(investment.profitPercentage)}
-                            </span>
-                          </div>
-                        {/if}
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/each}
-          </div>
-
-          <!-- Monthly Contributions View -->
-        {:else if investmentViewMode === 'monthly'}
-          <div class="monthly-view">
-            <div class="monthly-header">
-              <Calendar size={16} />
-              <span>Aportaciones este mes</span>
-              <span class="monthly-total">
-                {store.formatCurrency(
-                  monthlyContributions().reduce((sum, i) => sum + i.monthlyContribution, 0)
-                )}
-              </span>
-            </div>
-            {#if monthlyContributions().length === 0}
-              <div class="empty-monthly">
-                <p>Sin aportaciones este mes</p>
-              </div>
+        <!-- Revenue Card -->
+        <div
+          class="revenue-card"
+          class:positive={store.totalProfit >= 0}
+          class:negative={store.totalProfit < 0}
+        >
+          <div class="revenue-header">
+            <span class="revenue-label">Rentabilidad</span>
+            {#if store.totalProfit >= 0}
+              <TrendingUp size={18} />
             {:else}
-              <div class="investments-grid">
-                {#each monthlyContributions() as investment (investment.id)}
-                  <div class="investment-row monthly" onclick={() => handleViewDetails(investment)}>
+              <TrendingDown size={18} />
+            {/if}
+          </div>
+          <div class="revenue-value">
+            {store.formatCurrency(store.totalProfit)}
+            <span class="revenue-percentage">{store.formatPercentage(store.profitPercentage)}</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Charts Section -->
+      <section class="charts-section">
+        <div class="chart-card">
+          <h3><PiggyBank size={16} /> Distribución</h3>
+          <div class="chart-container donut">
+            <canvas bind:this={donutChartRef}></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3><TrendingUp size={16} /> Evolución</h3>
+            <div class="period-filters">
+              {#each timePeriods as period (period.label)}
+                <button
+                  class="period-btn"
+                  class:active={selectedPeriod === period.label}
+                  onclick={() => handlePeriodChange(period.label)}
+                >
+                  {period.label}
+                </button>
+              {/each}
+            </div>
+          </div>
+          <div class="chart-container line">
+            <canvas bind:this={lineChartRef}></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Investments Grid -->
+      <section class="investments-section">
+        <div class="section-header">
+          <h2><Wallet size={18} /> Inversiones</h2>
+          <div class="header-actions">
+            <div class="view-mode-toggle">
+              <button
+                class="view-btn"
+                class:active={investmentViewMode === 'individual'}
+                onclick={() => (investmentViewMode = 'individual')}
+                title="Vista individual"
+              >
+                <List size={14} />
+              </button>
+              <button
+                class="view-btn"
+                class:active={investmentViewMode === 'grouped'}
+                onclick={() => (investmentViewMode = 'grouped')}
+                title="Agrupar por categoría"
+              >
+                <LayoutGrid size={14} />
+              </button>
+              <button
+                class="view-btn"
+                class:active={investmentViewMode === 'monthly'}
+                onclick={() => (investmentViewMode = 'monthly')}
+                title="Aportaciones del mes"
+              >
+                <Calendar size={14} />
+              </button>
+            </div>
+            <button class="add-btn" onclick={() => store.startNewInvestment()}>
+              <Plus size={16} />
+              Añadir
+            </button>
+          </div>
+        </div>
+
+        <!-- New Investment Form -->
+        {#if store.showNewForm}
+          <div class="investment-form">
+            <div class="form-row">
+              <button
+                class="icon-picker-btn"
+                onclick={(e) => handleIconClick(e, 'new')}
+                style="background-color: {store.newInvestmentForm.color}"
+              >
+                {store.newInvestmentForm.icon}
+              </button>
+              <input
+                type="text"
+                class="form-input name"
+                bind:value={store.newInvestmentForm.name}
+                placeholder="Nombre de la inversión"
+              />
+              <input
+                type="number"
+                class="form-input value"
+                bind:value={store.newInvestmentForm.currentValue}
+                placeholder="Valor"
+                step="0.01"
+              />
+            </div>
+            <div class="form-row colors">
+              {#each store.availableColors as color (color)}
+                <button
+                  class="color-dot"
+                  class:selected={store.newInvestmentForm.color === color}
+                  style="background-color: {color}"
+                  onclick={() => (store.newInvestmentForm.color = color)}
+                />
+              {/each}
+            </div>
+            <div class="form-actions">
+              <button class="btn-cancel" onclick={store.cancelNewInvestment}>Cancelar</button>
+              <button class="btn-save" onclick={store.saveNewInvestment}>Guardar</button>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Investments List -->
+        {#if store.isLoading}
+          <div class="loading">Cargando...</div>
+        {:else if store.investments.length === 0 && !store.showNewForm}
+          <div class="empty-state">
+            <Wallet size={48} strokeWidth={1} />
+            <p>Añade tu primera inversión</p>
+          </div>
+        {:else}
+          <!-- Individual View -->
+          {#if investmentViewMode === 'individual'}
+            <div class="investments-grid">
+              {#each store.investments as investment, index (investment.id)}
+                {#if store.editingInvestment === investment.id}
+                  <!-- Edit Mode -->
+                  <div class="investment-row editing">
+                    <button
+                      class="icon-picker-btn small"
+                      onclick={(e) => handleIconClick(e, 'edit')}
+                      style="background-color: {store.editForm.color}"
+                    >
+                      {store.editForm.icon}
+                    </button>
+                    <input type="text" class="form-input name" bind:value={store.editForm.name} />
+                    <input
+                      type="number"
+                      class="form-input value"
+                      bind:value={store.editForm.currentValue}
+                      step="0.01"
+                    />
+                    <div class="row-actions">
+                      <button class="btn-icon" onclick={store.cancelEdit}>
+                        <X size={16} />
+                      </button>
+                      <button class="btn-icon primary" onclick={store.saveEdit}>
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  </div>
+                {:else}
+                  <!-- Display Mode with Drag-and-Drop -->
+                  <div
+                    class="investment-row"
+                    class:highlighted={investment.highlight}
+                    class:dragging={draggedIndex === index}
+                    class:drag-over={dragOverIndex === index}
+                    draggable="true"
+                    ondragstart={(e) => handleDragStart(e, index)}
+                    ondragover={(e) => handleDragOver(e, index)}
+                    ondragleave={handleDragLeave}
+                    ondrop={(e) => handleDrop(e, index)}
+                    ondragend={handleDragEnd}
+                    onclick={() => handleViewDetails(investment)}
+                  >
+                    <div class="drag-handle" onclick={(e) => e.stopPropagation()}>
+                      <GripVertical size={14} />
+                    </div>
                     <div class="row-icon" style="background-color: {investment.color}">
                       {investment.icon}
                     </div>
                     <div class="row-info">
                       <span class="row-name">{investment.name}</span>
-                      <span class="row-symbol"
-                        >{investment.monthlyHistory.length} aportación(es)</span
-                      >
+                      {#if investment.symbol}
+                        <span class="row-symbol">{investment.symbol}</span>
+                      {/if}
                     </div>
-                    <div class="row-value">
-                      <span class="value monthly-contribution"
-                        >+{store.formatCurrency(investment.monthlyContribution)}</span
+                    <div class="row-value" onclick={(e) => e.stopPropagation()}>
+                      {#if store.inlineEditingId === investment.id}
+                        <input
+                          type="number"
+                          class="inline-edit-input"
+                          bind:value={store.inlineEditValue}
+                          onblur={() => store.saveInlineEdit()}
+                          onkeydown={(e) => {
+                            if (e.key === 'Enter') store.saveInlineEdit();
+                            if (e.key === 'Escape') store.cancelInlineEdit();
+                          }}
+                          step="0.01"
+                        />
+                      {:else}
+                        <span
+                          class="value editable"
+                          onclick={() => store.startInlineEdit(investment)}
+                          title="Click para editar"
+                        >
+                          {store.formatCurrency(investment.currentValue)}
+                        </span>
+                      {/if}
+                      {#if investment.netContributions > 0}
+                        <div class="profit-pills">
+                          <span
+                            class="pill amount"
+                            class:positive={investment.profit >= 0}
+                            class:negative={investment.profit < 0}
+                          >
+                            {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(
+                              investment.profit
+                            )}
+                          </span>
+                          <span
+                            class="pill pct"
+                            class:positive={investment.profit >= 0}
+                            class:negative={investment.profit < 0}
+                          >
+                            {store.formatPercentage(investment.profitPercentage)}
+                          </span>
+                        </div>
+                      {/if}
+                    </div>
+                    <div class="row-actions" onclick={(e) => e.stopPropagation()}>
+                      <button
+                        class="btn-icon"
+                        class:active={investment.highlight}
+                        onclick={() => store.toggleHighlight(investment)}
                       >
+                        <Star size={14} fill={investment.highlight ? 'currentColor' : 'none'} />
+                      </button>
+                      <button class="btn-icon" onclick={() => store.startAddHistory(investment.id)}>
+                        <Plus size={14} />
+                      </button>
+                      <button class="btn-icon" onclick={() => store.startEdit(investment)}>
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        class="btn-icon danger"
+                        onclick={() => store.prepareDelete(investment)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-                {/each}
+                {/if}
+              {/each}
+            </div>
+
+            <!-- Grouped by Category View -->
+          {:else if investmentViewMode === 'grouped'}
+            <div class="grouped-view">
+              {#each groupedInvestments() as group (group.name)}
+                <div class="group-section">
+                  <div class="group-header">
+                    <span class="group-name">{group.name}</span>
+                    <span class="group-total">{store.formatCurrency(group.totalValue)}</span>
+                  </div>
+                  <div class="investments-grid">
+                    {#each group.items as investment (investment.id)}
+                      <div
+                        class="investment-row compact"
+                        class:highlighted={investment.highlight}
+                        onclick={() => handleViewDetails(investment)}
+                      >
+                        <div class="row-icon small" style="background-color: {investment.color}">
+                          {investment.icon}
+                        </div>
+                        <div class="row-info">
+                          <span class="row-name">{investment.name}</span>
+                        </div>
+                        <div class="row-value">
+                          <span class="value">{store.formatCurrency(investment.currentValue)}</span>
+                          {#if investment.netContributions > 0}
+                            <div class="profit-pills">
+                              <span
+                                class="pill amount"
+                                class:positive={investment.profit >= 0}
+                                class:negative={investment.profit < 0}
+                              >
+                                {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(
+                                  investment.profit
+                                )}
+                              </span>
+                              <span
+                                class="pill pct"
+                                class:positive={investment.profit >= 0}
+                                class:negative={investment.profit < 0}
+                              >
+                                {store.formatPercentage(investment.profitPercentage)}
+                              </span>
+                            </div>
+                          {/if}
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              {/each}
+            </div>
+
+            <!-- Monthly Contributions View -->
+          {:else if investmentViewMode === 'monthly'}
+            <div class="monthly-view">
+              <div class="monthly-header">
+                <Calendar size={16} />
+                <span>Aportaciones este mes</span>
+                <span class="monthly-total">
+                  {store.formatCurrency(
+                    monthlyContributions().reduce((sum, i) => sum + i.monthlyContribution, 0)
+                  )}
+                </span>
               </div>
+              {#if monthlyContributions().length === 0}
+                <div class="empty-monthly">
+                  <p>Sin aportaciones este mes</p>
+                </div>
+              {:else}
+                <div class="investments-grid">
+                  {#each monthlyContributions() as investment (investment.id)}
+                    <div
+                      class="investment-row monthly"
+                      onclick={() => handleViewDetails(investment)}
+                    >
+                      <div class="row-icon" style="background-color: {investment.color}">
+                        {investment.icon}
+                      </div>
+                      <div class="row-info">
+                        <span class="row-name">{investment.name}</span>
+                        <span class="row-symbol"
+                          >{investment.monthlyHistory.length} aportación(es)</span
+                        >
+                      </div>
+                      <div class="row-value">
+                        <span class="value monthly-contribution"
+                          >+{store.formatCurrency(investment.monthlyContribution)}</span
+                        >
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          {/if}
+        {/if}
+      </section>
+    {:else if viewMode === 'details' && store.selectedInvestment}
+      <!-- Investment Details -->
+      <header class="details-header">
+        <button class="back-btn" onclick={backToGrid}>
+          <ChevronLeft size={20} />
+          Volver
+        </button>
+      </header>
+
+      <div class="details-content">
+        <div class="details-main">
+          <div class="details-icon" style="background-color: {store.selectedInvestment.color}">
+            {store.selectedInvestment.icon}
+          </div>
+          <div class="details-info">
+            <h2>{store.selectedInvestment.name}</h2>
+            {#if store.selectedInvestment.symbol}
+              <span class="symbol">{store.selectedInvestment.symbol}</span>
             {/if}
           </div>
-        {/if}
-      {/if}
-    </section>
-  {:else if viewMode === 'details' && store.selectedInvestment}
-    <!-- Investment Details -->
-    <header class="details-header">
-      <button class="back-btn" onclick={backToGrid}>
-        <ChevronLeft size={20} />
-        Volver
-      </button>
-    </header>
-
-    <div class="details-content">
-      <div class="details-main">
-        <div class="details-icon" style="background-color: {store.selectedInvestment.color}">
-          {store.selectedInvestment.icon}
         </div>
-        <div class="details-info">
-          <h2>{store.selectedInvestment.name}</h2>
-          {#if store.selectedInvestment.symbol}
-            <span class="symbol">{store.selectedInvestment.symbol}</span>
+
+        <div class="details-stats">
+          <div class="stat">
+            <span class="stat-label">Valor actual</span>
+            <span class="stat-value"
+              >{store.formatCurrency(store.selectedInvestment.currentValue)}</span
+            >
+          </div>
+          <div class="stat">
+            <span class="stat-label">Aportado</span>
+            <span class="stat-value"
+              >{store.formatCurrency(store.selectedInvestment.netContributions)}</span
+            >
+          </div>
+          <div
+            class="stat"
+            class:positive={store.selectedInvestment.profit >= 0}
+            class:negative={store.selectedInvestment.profit < 0}
+          >
+            <span class="stat-label">Rentabilidad</span>
+            <span class="stat-value">
+              {store.formatCurrency(store.selectedInvestment.profit)}
+              ({store.formatPercentage(store.selectedInvestment.profitPercentage)})
+            </span>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="history-section">
+          <div class="history-header">
+            <h3><History size={16} /> Historial</h3>
+            <button
+              class="add-btn small"
+              onclick={() => store.startAddHistory(store.selectedInvestment?.id || '')}
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+
+          {#if store.selectedInvestment.history && store.selectedInvestment.history.length > 0}
+            <div class="history-list">
+              {#each store.selectedInvestment.history as entry (entry.id)}
+                {#if store.editingHistoryEntry?.historyId === entry.id}
+                  <!-- Editing Mode -->
+                  <div class="history-item editing">
+                    <div class="history-edit-row">
+                      <input
+                        type="date"
+                        class="form-input small"
+                        bind:value={store.editingHistoryEntry.date}
+                      />
+                      <select class="form-input small" bind:value={store.editingHistoryEntry.type}>
+                        <option value="CONTRIBUTION">Aportación</option>
+                        <option value="WITHDRAWAL">Retirada</option>
+                        <option value="VALUE_UPDATE">Actualización</option>
+                      </select>
+                      <input
+                        type="number"
+                        class="form-input small"
+                        bind:value={store.editingHistoryEntry.amount}
+                        step="0.01"
+                      />
+                    </div>
+                    <div class="history-edit-row">
+                      <input
+                        type="text"
+                        class="form-input small flex-1"
+                        bind:value={store.editingHistoryEntry.notes}
+                        placeholder="Notas (opcional)"
+                      />
+                      <button class="btn-icon small" onclick={() => store.cancelHistoryEntryEdit()}>
+                        <X size={12} />
+                      </button>
+                      <button
+                        class="btn-icon primary small"
+                        onclick={() => store.saveHistoryEntryEdit()}
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </div>
+                {:else}
+                  <!-- Display Mode -->
+                  <div
+                    class="history-item"
+                    class:linked={entry.transactionId}
+                    onclick={() =>
+                      entry.transactionId && navigateToTransaction(entry.transactionId)}
+                    role={entry.transactionId ? 'button' : undefined}
+                    tabindex={entry.transactionId ? 0 : undefined}
+                  >
+                    <div class="history-date">{store.formatDate(entry.date)}</div>
+                    <div class="history-type">
+                      {store.getHistoryTypeLabel(entry.type)}
+                      {#if entry.transactionId}
+                        <span class="linked-badge" title="Vinculado a transacción">
+                          <Link2 size={10} />
+                        </span>
+                      {/if}
+                    </div>
+                    <div class="history-amount {store.getHistoryTypeColor(entry.type)}">
+                      {entry.type === 'WITHDRAWAL' ? '-' : '+'}{store.formatCurrency(entry.amount)}
+                    </div>
+                    {#if entry.transactionId}
+                      <button
+                        class="btn-icon small link-btn"
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          navigateToTransaction(entry.transactionId!);
+                        }}
+                        title="Ver transacción"
+                      >
+                        <ExternalLink size={12} />
+                      </button>
+                    {/if}
+                    <button
+                      class="btn-icon small"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        store.startEditHistoryEntry(store.selectedInvestment?.id || '', entry);
+                      }}
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <button
+                      class="btn-icon danger small"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        store.deleteHistoryEntry(store.selectedInvestment?.id || '', entry.id);
+                      }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                {/if}
+              {/each}
+            </div>
+          {:else}
+            <p class="empty-history">Sin movimientos</p>
           {/if}
         </div>
       </div>
-
-      <div class="details-stats">
-        <div class="stat">
-          <span class="stat-label">Valor actual</span>
-          <span class="stat-value"
-            >{store.formatCurrency(store.selectedInvestment.currentValue)}</span
-          >
-        </div>
-        <div class="stat">
-          <span class="stat-label">Aportado</span>
-          <span class="stat-value"
-            >{store.formatCurrency(store.selectedInvestment.netContributions)}</span
-          >
-        </div>
-        <div
-          class="stat"
-          class:positive={store.selectedInvestment.profit >= 0}
-          class:negative={store.selectedInvestment.profit < 0}
-        >
-          <span class="stat-label">Rentabilidad</span>
-          <span class="stat-value">
-            {store.formatCurrency(store.selectedInvestment.profit)}
-            ({store.formatPercentage(store.selectedInvestment.profitPercentage)})
-          </span>
-        </div>
-      </div>
-
-      <!-- History -->
-      <div class="history-section">
-        <div class="history-header">
-          <h3><History size={16} /> Historial</h3>
-          <button
-            class="add-btn small"
-            onclick={() => store.startAddHistory(store.selectedInvestment?.id || '')}
-          >
-            <Plus size={14} />
-          </button>
-        </div>
-
-        {#if store.selectedInvestment.history && store.selectedInvestment.history.length > 0}
-          <div class="history-list">
-            {#each store.selectedInvestment.history as entry (entry.id)}
-              {#if store.editingHistoryEntry?.historyId === entry.id}
-                <!-- Editing Mode -->
-                <div class="history-item editing">
-                  <div class="history-edit-row">
-                    <input
-                      type="date"
-                      class="form-input small"
-                      bind:value={store.editingHistoryEntry.date}
-                    />
-                    <select class="form-input small" bind:value={store.editingHistoryEntry.type}>
-                      <option value="CONTRIBUTION">Aportación</option>
-                      <option value="WITHDRAWAL">Retirada</option>
-                      <option value="VALUE_UPDATE">Actualización</option>
-                    </select>
-                    <input
-                      type="number"
-                      class="form-input small"
-                      bind:value={store.editingHistoryEntry.amount}
-                      step="0.01"
-                    />
-                  </div>
-                  <div class="history-edit-row">
-                    <input
-                      type="text"
-                      class="form-input small flex-1"
-                      bind:value={store.editingHistoryEntry.notes}
-                      placeholder="Notas (opcional)"
-                    />
-                    <button class="btn-icon small" onclick={() => store.cancelHistoryEntryEdit()}>
-                      <X size={12} />
-                    </button>
-                    <button
-                      class="btn-icon primary small"
-                      onclick={() => store.saveHistoryEntryEdit()}
-                    >
-                      <Plus size={12} />
-                    </button>
-                  </div>
-                </div>
-              {:else}
-                <!-- Display Mode -->
-                <div
-                  class="history-item"
-                  class:linked={entry.transactionId}
-                  onclick={() => entry.transactionId && navigateToTransaction(entry.transactionId)}
-                  role={entry.transactionId ? 'button' : undefined}
-                  tabindex={entry.transactionId ? 0 : undefined}
-                >
-                  <div class="history-date">{store.formatDate(entry.date)}</div>
-                  <div class="history-type">
-                    {store.getHistoryTypeLabel(entry.type)}
-                    {#if entry.transactionId}
-                      <span class="linked-badge" title="Vinculado a transacción">
-                        <Link2 size={10} />
-                      </span>
-                    {/if}
-                  </div>
-                  <div class="history-amount {store.getHistoryTypeColor(entry.type)}">
-                    {entry.type === 'WITHDRAWAL' ? '-' : '+'}{store.formatCurrency(entry.amount)}
-                  </div>
-                  {#if entry.transactionId}
-                    <button
-                      class="btn-icon small link-btn"
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        navigateToTransaction(entry.transactionId!);
-                      }}
-                      title="Ver transacción"
-                    >
-                      <ExternalLink size={12} />
-                    </button>
-                  {/if}
-                  <button
-                    class="btn-icon small"
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      store.startEditHistoryEntry(store.selectedInvestment?.id || '', entry);
-                    }}
-                  >
-                    <Pencil size={12} />
-                  </button>
-                  <button
-                    class="btn-icon danger small"
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      store.deleteHistoryEntry(store.selectedInvestment?.id || '', entry.id);
-                    }}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              {/if}
-            {/each}
-          </div>
-        {:else}
-          <p class="empty-history">Sin movimientos</p>
-        {/if}
-      </div>
-    </div>
-  {/if}
-</div>
+    {/if}
+  </div>
+</PageContainer>
 
 <!-- Icon Picker Overlay -->
 {#if showIconPicker}
@@ -1050,11 +1067,8 @@
 
 <style>
   .portfolio-page {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 1.5rem;
+    width: 100%;
     min-height: 100vh;
-    background: var(--surface);
   }
 
   /* Balance Header */
@@ -2193,10 +2207,6 @@
   }
 
   @media (max-width: 640px) {
-    .portfolio-page {
-      padding: 1rem;
-    }
-
     .balance-header {
       flex-direction: column;
     }

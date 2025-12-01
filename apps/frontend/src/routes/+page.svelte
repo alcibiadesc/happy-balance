@@ -5,6 +5,10 @@
   import { currentCurrency } from '$lib/stores/currency';
   import { dashboardConfig } from '$lib/stores/dashboardConfig';
 
+  // Layout Components
+  import PageContainer from '$lib/components/atoms/PageContainer.svelte';
+  import PageHeader from '$lib/components/molecules/PageHeader.svelte';
+
   // Components
   import CleanPeriodNav from '$lib/components/molecules/CleanPeriodNav.svelte';
   import DateRangePicker from '$lib/components/molecules/DateRangePicker.svelte';
@@ -99,11 +103,9 @@
   <title>{$t('dashboard.title')} - Expense Tracker</title>
 </svelte:head>
 
-<main class="dashboard" class:edit-mode={$dashboardConfig.editMode}>
-  <!-- Header -->
-  <header class="dashboard-header">
-    <h1>{$t('dashboard.title')}</h1>
-    <div class="header-actions">
+<PageContainer>
+  <main class="dashboard" class:edit-mode={$dashboardConfig.editMode}>
+    <PageHeader title={$t('dashboard.title')}>
       <CleanPeriodNav
         currentPeriod={store.getCurrentPeriodLabel()}
         selectedPeriodType={store.selectedPeriodType}
@@ -125,18 +127,17 @@
           <Pencil size={16} />
         {/if}
       </button>
-    </div>
-  </header>
+    </PageHeader>
 
-  {#if $dashboardConfig.editMode}
-    <div class="edit-hint">
-      {$t('dashboard.config.edit_hint')}
-    </div>
-  {/if}
+    {#if $dashboardConfig.editMode}
+      <div class="edit-hint">
+        {$t('dashboard.config.edit_hint')}
+      </div>
+    {/if}
 
-  <!-- Dashboard Sections -->
-  <DashboardSections data={dashboardData} />
-</main>
+    <DashboardSections data={dashboardData} />
+  </main>
+</PageContainer>
 
 <!-- Floating UI -->
 <HiddenItemsBar />
@@ -150,32 +151,11 @@
 
 <style>
   .dashboard {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1.5rem;
-    min-height: 100vh;
-    background: var(--surface);
     transition: padding-bottom 0.2s ease;
   }
 
   .dashboard.edit-mode {
     padding-bottom: 5rem;
-  }
-
-  .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    gap: 1rem;
-  }
-
-  .dashboard-header h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-    flex-shrink: 0;
   }
 
   .header-actions {
