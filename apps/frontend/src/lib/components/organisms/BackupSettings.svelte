@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Download, Upload, Trash2, Clock, Calendar, HardDrive } from 'lucide-svelte';
+  import { Download, Trash2, Clock, Calendar, HardDrive } from 'lucide-svelte';
   import { onMount } from 'svelte';
   import { getApiUrl } from '$lib/utils/api-url';
   import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
@@ -209,15 +209,19 @@
   }
 </script>
 
-<div class="backup-settings">
+<div class="backup-settings" style="background: #f0f0f0; padding: 1rem; border: 2px solid blue;">
+  <p style="color: black; font-size: 16px; margin-bottom: 1rem;">
+    🔧 BackupSettings component loaded!
+  </p>
+
   {#if error}
-    <div class="error-message" in:fly={{ y: -10, duration: 200 }}>
+    <div class="message error" in:fly={{ y: -10, duration: 200 }}>
       {error}
     </div>
   {/if}
 
   {#if success}
-    <div class="success-message" in:fly={{ y: -10, duration: 200 }}>
+    <div class="message success" in:fly={{ y: -10, duration: 200 }}>
       {success}
     </div>
   {/if}
@@ -225,75 +229,71 @@
   <!-- Automatic Backup Policy -->
   <div class="section">
     <div class="section-header">
-      <Clock size={18} />
-      <h3>{$t('settings.backup_automatic') || 'Automatic Backups'}</h3>
+      <Clock size={16} />
+      <span>Automatic Backups</span>
     </div>
 
-    <div class="policy-form">
-      <label class="toggle-row">
-        <span>{$t('settings.backup_enabled') || 'Enable automatic backups'}</span>
-        <input type="checkbox" class="toggle" bind:checked={policyEnabled} />
-      </label>
+    <label class="toggle-row">
+      <span>Enable automatic backups</span>
+      <input type="checkbox" bind:checked={policyEnabled} />
+    </label>
 
-      {#if policyEnabled}
-        <div class="policy-options" in:fly={{ y: -10, duration: 200 }}>
-          <div class="form-row">
-            <label>
-              <span>{$t('settings.backup_frequency') || 'Frequency'}</span>
-              <select bind:value={policyFrequency}>
-                <option value="DAILY">{$t('settings.backup_daily') || 'Daily'}</option>
-                <option value="WEEKLY">{$t('settings.backup_weekly') || 'Weekly'}</option>
-                <option value="MONTHLY">{$t('settings.backup_monthly') || 'Monthly'}</option>
-              </select>
-            </label>
+    {#if policyEnabled}
+      <div class="policy-options" in:fly={{ y: -10, duration: 200 }}>
+        <div class="form-grid">
+          <label class="field">
+            <span>Frequency</span>
+            <select bind:value={policyFrequency}>
+              <option value="DAILY">Daily</option>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+            </select>
+          </label>
 
-            <label>
-              <span>{$t('settings.backup_hour') || 'Hour (UTC)'}</span>
-              <select bind:value={policyHour}>
-                {#each Array(24) as _, i}
-                  <option value={i}>{i.toString().padStart(2, '0')}:00</option>
-                {/each}
-              </select>
-            </label>
-          </div>
+          <label class="field">
+            <span>Hour (UTC)</span>
+            <select bind:value={policyHour}>
+              {#each Array(24) as _, i}
+                <option value={i}>{i.toString().padStart(2, '0')}:00</option>
+              {/each}
+            </select>
+          </label>
 
-          <div class="form-row">
-            <label>
-              <span>{$t('settings.backup_retention') || 'Keep for (days)'}</span>
-              <input type="number" min="1" max="365" bind:value={policyRetentionDays} />
-            </label>
+          <label class="field">
+            <span>Keep for (days)</span>
+            <input type="number" min="1" max="365" bind:value={policyRetentionDays} />
+          </label>
 
-            <label>
-              <span>{$t('settings.backup_max') || 'Max backups'}</span>
-              <input type="number" min="1" max="100" bind:value={policyMaxBackups} />
-            </label>
-          </div>
-
-          <button class="save-btn" onclick={savePolicy} disabled={savingPolicy}>
-            {#if savingPolicy}
-              <div class="spinner"></div>
-            {/if}
-            {$t('common.save') || 'Save'}
-          </button>
+          <label class="field">
+            <span>Max backups</span>
+            <input type="number" min="1" max="100" bind:value={policyMaxBackups} />
+          </label>
         </div>
-      {/if}
-    </div>
+
+        <button class="btn primary" onclick={savePolicy} disabled={savingPolicy}>
+          {#if savingPolicy}
+            <span class="spinner"></span>
+          {/if}
+          Save
+        </button>
+      </div>
+    {/if}
   </div>
 
   <!-- Manual Backup -->
   <div class="section">
     <div class="section-header">
-      <HardDrive size={18} />
-      <h3>{$t('settings.backup_manual') || 'Manual Backup'}</h3>
+      <HardDrive size={16} />
+      <span>Manual Backup</span>
     </div>
 
-    <button class="create-btn" onclick={createBackup} disabled={creating}>
+    <button class="btn accent" onclick={createBackup} disabled={creating}>
       {#if creating}
-        <div class="spinner"></div>
-        {$t('settings.backup_creating') || 'Creating...'}
+        <span class="spinner"></span>
+        Creating...
       {:else}
         <Download size={16} />
-        {$t('settings.backup_create_now') || 'Create Backup Now'}
+        Create Backup Now
       {/if}
     </button>
   </div>
@@ -301,14 +301,14 @@
   <!-- Backup List -->
   <div class="section">
     <div class="section-header">
-      <Calendar size={18} />
-      <h3>{$t('settings.backup_history') || 'Backup History'}</h3>
+      <Calendar size={16} />
+      <span>Backup History</span>
     </div>
 
     {#if loading}
-      <div class="loading">{$t('common.loading') || 'Loading...'}</div>
+      <p class="muted">Loading...</p>
     {:else if backups.length === 0}
-      <div class="empty">{$t('settings.backup_none') || 'No backups yet'}</div>
+      <p class="muted">No backups yet</p>
     {:else}
       <div class="backup-list">
         {#each backups as backup (backup.id)}
@@ -316,29 +316,21 @@
             <div class="backup-info">
               <div class="backup-date">{formatDate(backup.createdAt)}</div>
               <div class="backup-meta">
-                <span class="backup-type">{backup.type}</span>
-                <span class="backup-size">{formatBytes(backup.sizeBytes)}</span>
+                <span class="tag">{backup.type}</span>
+                <span>{formatBytes(backup.sizeBytes)}</span>
                 {#if backup.metadata}
-                  <span class="backup-counts">
-                    {backup.metadata.totalTransactions} txs, {backup.metadata.totalCategories} cats,
-                    {backup.metadata.totalInvestments}
-                    inv
-                  </span>
+                  <span>{backup.metadata.totalTransactions} txs</span>
                 {/if}
               </div>
             </div>
             <div class="backup-actions">
-              <button
-                class="action-btn download"
-                onclick={() => downloadBackup(backup.id)}
-                title={$t('common.download') || 'Download'}
-              >
-                <Upload size={16} />
+              <button class="icon-btn" onclick={() => downloadBackup(backup.id)} title="Download">
+                <Download size={16} />
               </button>
               <button
-                class="action-btn delete"
+                class="icon-btn danger"
                 onclick={() => deleteBackup(backup.id)}
-                title={$t('common.delete') || 'Delete'}
+                title="Delete"
               >
                 <Trash2 size={16} />
               </button>
@@ -354,27 +346,38 @@
   .backup-settings {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
+  }
+
+  .message {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+  }
+
+  .message.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  .message.success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
   }
 
   .section {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .section-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--text-primary);
-    font-weight: 500;
-    font-size: 0.875rem;
-  }
-
-  .section-header h3 {
-    margin: 0;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: inherit;
   }
 
   .toggle-row {
@@ -382,96 +385,103 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem;
-    background: var(--surface-muted);
+    background: rgba(0, 0, 0, 0.03);
     border-radius: 8px;
     cursor: pointer;
-  }
-
-  .toggle-row span {
     font-size: 0.875rem;
-    color: var(--text-primary);
+    color: inherit;
   }
 
-  .toggle {
-    width: 2.5rem;
-    height: 1.25rem;
-    accent-color: var(--primary);
+  :global(html.dark) .toggle-row {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .toggle-row input {
+    width: 18px;
+    height: 18px;
+    accent-color: #7abaa5;
   }
 
   .policy-options {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
     padding: 1rem;
-    background: var(--surface-muted);
+    background: rgba(0, 0, 0, 0.03);
     border-radius: 8px;
   }
 
-  .form-row {
+  :global(html.dark) .policy-options {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
-  .form-row label {
+  .field {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.375rem;
   }
 
-  .form-row label span {
+  .field span {
     font-size: 0.75rem;
-    color: var(--text-muted);
+    opacity: 0.7;
     font-weight: 500;
   }
 
-  .form-row select,
-  .form-row input {
+  .field select,
+  .field input {
     padding: 0.5rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(128, 128, 128, 0.3);
     border-radius: 6px;
-    background: var(--surface);
-    color: var(--text-primary);
-    font-size: 0.875rem;
+    background: transparent;
+    color: inherit;
+    font-size: 0.8125rem;
   }
 
-  .save-btn,
-  .create-btn {
+  .btn {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    padding: 0.625rem 1rem;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     font-weight: 500;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: opacity 0.15s;
   }
 
-  .save-btn {
-    background: var(--primary);
-    color: white;
-  }
-
-  .save-btn:hover:not(:disabled) {
-    background: var(--primary-dark);
-  }
-
-  .create-btn {
-    background: var(--acapulco);
-    color: white;
-  }
-
-  .create-btn:hover:not(:disabled) {
-    filter: brightness(1.1);
-  }
-
-  .save-btn:disabled,
-  .create-btn:disabled {
+  .btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  .btn.primary {
+    background: #023c46;
+    color: white;
+  }
+
+  :global(html.dark) .btn.primary {
+    background: #7abaa5;
+    color: #1c1917;
+  }
+
+  .btn.accent {
+    background: #7abaa5;
+    color: white;
+  }
+
+  .muted {
+    font-size: 0.8125rem;
+    opacity: 0.6;
+    text-align: center;
+    padding: 1rem;
   }
 
   .backup-list {
@@ -485,9 +495,13 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem;
-    background: var(--surface-muted);
+    background: rgba(0, 0, 0, 0.03);
     border-radius: 8px;
-    gap: 1rem;
+    gap: 0.75rem;
+  }
+
+  :global(html.dark) .backup-item {
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .backup-info {
@@ -499,9 +513,8 @@
   }
 
   .backup-date {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--text-primary);
   }
 
   .backup-meta {
@@ -509,13 +522,13 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     font-size: 0.75rem;
-    color: var(--text-muted);
+    opacity: 0.7;
   }
 
-  .backup-type {
+  .tag {
     padding: 0.125rem 0.375rem;
-    background: var(--primary-alpha, rgba(99, 102, 241, 0.1));
-    color: var(--primary);
+    background: rgba(122, 186, 165, 0.15);
+    color: #7abaa5;
     border-radius: 4px;
     font-weight: 500;
     text-transform: uppercase;
@@ -524,11 +537,11 @@
 
   .backup-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.375rem;
     flex-shrink: 0;
   }
 
-  .action-btn {
+  .icon-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -537,62 +550,33 @@
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    background: rgba(122, 186, 165, 0.15);
+    color: #7abaa5;
+    transition: all 0.15s;
   }
 
-  .action-btn.download {
-    background: var(--acapulco-alpha-10, rgba(0, 166, 153, 0.1));
-    color: var(--acapulco);
-  }
-
-  .action-btn.download:hover {
-    background: var(--acapulco);
+  .icon-btn:hover {
+    background: #7abaa5;
     color: white;
   }
 
-  .action-btn.delete {
+  .icon-btn.danger {
     background: rgba(244, 63, 94, 0.1);
     color: #f43f5e;
   }
 
-  .action-btn.delete:hover {
+  .icon-btn.danger:hover {
     background: #f43f5e;
     color: white;
   }
 
-  .loading,
-  .empty {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-muted);
-    font-size: 0.875rem;
-  }
-
-  .error-message {
-    background: var(--danger-bg);
-    border: 1px solid var(--danger-border);
-    color: var(--danger-text);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-  }
-
-  .success-message {
-    background: var(--success-bg);
-    border: 1px solid var(--success-border);
-    color: var(--success-text);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-  }
-
   .spinner {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     border-top-color: white;
-    animation: spin 1s ease-in-out infinite;
+    animation: spin 0.8s linear infinite;
   }
 
   @keyframes spin {
@@ -601,18 +585,9 @@
     }
   }
 
-  @media (max-width: 768px) {
-    .form-row {
+  @media (max-width: 480px) {
+    .form-grid {
       grid-template-columns: 1fr;
-    }
-
-    .backup-item {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .backup-actions {
-      justify-content: flex-end;
     }
   }
 </style>

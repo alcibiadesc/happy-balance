@@ -1,25 +1,23 @@
 <script lang="ts">
   import {
-    DollarSign,
-    Palette,
+    Sun,
+    Moon,
     Globe,
     Lock,
-    Info,
-    RefreshCw,
-    Menu,
-    ChevronUp,
     ChevronDown,
+    ChevronUp,
     Database,
+    Flame,
+    Menu,
+    Download,
+    Upload,
+    Trash2,
+    RotateCcw,
+    ExternalLink,
+    GripVertical,
   } from 'lucide-svelte';
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
   import SettingsStatusMessage from '$lib/components/molecules/SettingsStatusMessage.svelte';
-  import SettingsCard from '$lib/components/organisms/SettingsCard.svelte';
-  import SettingsThemeToggle from '$lib/components/molecules/SettingsThemeToggle.svelte';
-  import SettingsLanguageSelect from '$lib/components/molecules/SettingsLanguageSelect.svelte';
-  import SettingsCurrencySelect from '$lib/components/molecules/SettingsCurrencySelect.svelte';
-  import SettingsActionButtons from '$lib/components/organisms/SettingsActionButtons.svelte';
-  import BackupSettings from '$lib/components/organisms/BackupSettings.svelte';
-  import Input from '$lib/components/atoms/Input.svelte';
   import { createSettingsStore } from '$lib/modules/settings/presentation/stores/settingsStore.svelte.ts';
   import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
   import { t } from '$lib/stores/i18n';
@@ -28,18 +26,16 @@
   import { sidebarConfig } from '$lib/stores/sidebarConfig';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { fly } from 'svelte/transition';
+  import { investmentsApi } from '$lib/modules/investments/infrastructure/api/investmentsApi';
 
-  // API Configuration
   import { getApiUrl } from '$lib/utils/api-url';
   const API_BASE = getApiUrl();
 
-  // Create settings store instance
   const store = createSettingsStore(API_BASE);
 
   const currencyOptions = Object.values(currencies).map((curr) => ({
     value: curr.code,
-    label: `${curr.symbol} ${curr.name}`,
+    label: `${curr.symbol} ${curr.code}`,
     symbol: curr.symbol,
   }));
 
@@ -48,7 +44,12 @@
     { code: 'es', name: 'Español', flag: '🇪🇸' },
   ];
 
-  // Password change form state
+  // Collapsible sections
+  let securityExpanded = $state(false);
+  let sidebarExpanded = $state(false);
+  let backupExpanded = $state(false);
+
+  // Password form
   let currentPassword = $state('');
   let newPassword = $state('');
   let confirmPassword = $state('');
@@ -56,195 +57,324 @@
   let passwordSuccess = $state<string | null>(null);
   let isSubmittingPassword = $state(false);
 
-  // Version and update state
+  // Version
   let versionInfo = $state<any>(null);
-  let updateInfo = $state<any>(null);
-  let checkingUpdates = $state(false);
-  let updatingSystem = $state(false);
-  let updateMessage = $state<string | null>(null);
-  let updateError = $state<string | null>(null);
 
-  // Load user preferences on mount
+  // Backup state
+  interface BackupInfo {
+    id: string;
+    type: string;
+    status: string;
+    filename: string;
+    sizeBytes: number;
+    description: string | null;
+    metadata: {
+      totalTransactions: number;
+      totalCategories: number;
+      totalInvestments: number;
+    } | null;
+    createdAt: string;
+    expiresAt: string | null;
+  }
+
+  let backups = $state<BackupInfo[]>([]);
+  let backupPolicy = $state<{
+    enabled: boolean;
+    frequency: string;
+    hourUtc: number;
+    retentionDays: number;
+    maxBackups: number;
+  } | null>(null);
+  let backupsLoading = $state(false);
+  let creatingBackup = $state(false);
+  let savingPolicy = $state(false);
+  let backupError = $state<string | null>(null);
+  let backupSuccess = $state<string | null>(null);
+
+  // Policy form
+  let policyEnabled = $state(true);
+  let policyHour = $state(3);
+
+  // Sidebar drag state
+  let sidebarDraggedId = $state<string | null>(null);
+  let sidebarDragOverId = $state<string | null>(null);
+
+  // GoFire
+  let gofireFile = $state<File | null>(null);
+  let gofireLoading = $state(false);
+  let gofireError = $state('');
+  let gofireSuccess = $state(false);
+  let gofireImportResult = $state<{ imported: number; historyCount: number } | null>(null);
+
+  function getAuthHeaders() {
+    const token = authStore.getAccessToken();
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
+  async function loadBackups() {
+    try {
+      const res = await fetch(`${API_BASE}/backups`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        backups = data.data || [];
+      }
+    } catch (e) {
+      console.error('Failed to load backups:', e);
+    }
+  }
+
+  async function loadBackupPolicy() {
+    try {
+      const res = await fetch(`${API_BASE}/backups/policy/current`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        backupPolicy = data.data;
+        if (backupPolicy) {
+          policyEnabled = backupPolicy.enabled;
+          policyHour = backupPolicy.hourUtc;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load policy:', e);
+    }
+  }
+
+  async function createBackup() {
+    creatingBackup = true;
+    backupError = null;
+    backupSuccess = null;
+
+    try {
+      const res = await fetch(`${API_BASE}/backups`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ description: 'Manual backup' }),
+      });
+
+      if (res.ok) {
+        backupSuccess = 'Backup created successfully';
+        await loadBackups();
+        setTimeout(() => (backupSuccess = null), 3000);
+      } else {
+        const data = await res.json();
+        backupError = data.error || 'Failed to create backup';
+      }
+    } catch {
+      backupError = 'Failed to create backup';
+    } finally {
+      creatingBackup = false;
+    }
+  }
+
+  async function downloadBackup(id: string) {
+    try {
+      const res = await fetch(`${API_BASE}/backups/${id}/download`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      backupError = 'Failed to download backup';
+    }
+  }
+
+  async function deleteBackup(id: string) {
+    if (!confirm('Delete this backup?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/backups/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        await loadBackups();
+        backupSuccess = 'Backup deleted';
+        setTimeout(() => (backupSuccess = null), 3000);
+      }
+    } catch {
+      backupError = 'Failed to delete backup';
+    }
+  }
+
+  async function saveBackupPolicy() {
+    savingPolicy = true;
+    backupError = null;
+
+    try {
+      const res = await fetch(`${API_BASE}/backups/policy`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          enabled: policyEnabled,
+          frequency: 'DAILY',
+          hourUtc: policyHour,
+          retentionDays: 30,
+          maxBackups: 10,
+        }),
+      });
+
+      if (res.ok) {
+        backupSuccess = 'Policy saved';
+        await loadBackupPolicy();
+        setTimeout(() => (backupSuccess = null), 3000);
+      } else {
+        const data = await res.json();
+        backupError = data.error || 'Failed to save policy';
+      }
+    } catch {
+      backupError = 'Failed to save policy';
+    } finally {
+      savingPolicy = false;
+    }
+  }
+
+  function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function formatBackupDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleString();
+  }
+
+  // Sidebar drag handlers
+  function handleSidebarDragStart(e: DragEvent, id: string) {
+    sidebarDraggedId = id;
+    e.dataTransfer!.effectAllowed = 'move';
+    e.dataTransfer!.setData('sidebar-item', id);
+  }
+
+  function handleSidebarDragEnd() {
+    sidebarDraggedId = null;
+    sidebarDragOverId = null;
+  }
+
+  function handleSidebarDragOver(e: DragEvent, id: string) {
+    e.preventDefault();
+    if (sidebarDraggedId && sidebarDraggedId !== id) {
+      sidebarDragOverId = id;
+    }
+  }
+
+  function handleSidebarDragLeave() {
+    sidebarDragOverId = null;
+  }
+
+  function handleSidebarDrop(e: DragEvent, toId: string) {
+    e.preventDefault();
+    const fromId = e.dataTransfer!.getData('sidebar-item');
+    if (fromId && fromId !== toId) {
+      sidebarConfig.reorderItems(fromId, toId);
+    }
+    sidebarDraggedId = null;
+    sidebarDragOverId = null;
+  }
+
   onMount(async () => {
     await userPreferences.load();
-
-    // Redirect if not authenticated
     if (!authStore.isAuthenticated) {
       goto('/login');
     }
-
-    // Load version info
-    await loadVersionInfo();
-  });
-
-  async function loadVersionInfo() {
     try {
       const response = await fetch(`${API_BASE}/version`);
-      if (response.ok) {
-        versionInfo = await response.json();
-      }
-    } catch (_err) {
-      console.error('Failed to load version info:', _err);
-    }
-  }
+      if (response.ok) versionInfo = await response.json();
+    } catch {}
 
-  async function checkForUpdates() {
-    checkingUpdates = true;
-    updateError = null;
-    updateMessage = null;
-
-    try {
-      const token = authStore.getAccessToken();
-      const response = await fetch(`${API_BASE}/system/check-updates`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        updateInfo = await response.json();
-        if (updateInfo.updateAvailable) {
-          updateMessage = `New version available! Latest commit: ${updateInfo.latest.commit}`;
-        } else {
-          updateMessage = 'You are running the latest version';
-        }
-      }
-    } catch (_err) {
-      updateError = 'Failed to check for updates';
-    } finally {
-      checkingUpdates = false;
-    }
-  }
-
-  async function applyUpdate() {
-    updatingSystem = true;
-    updateError = null;
-    updateMessage = null;
-
-    try {
-      const token = authStore.getAccessToken();
-      const response = await fetch(`${API_BASE}/system/update`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const _result = await response.json();
-
-      if (response.ok) {
-        updateMessage = 'Update initiated! The application will restart shortly...';
-        // Reload after a delay to give containers time to restart
-        setTimeout(() => {
-          window.location.reload();
-        }, 15000);
-      } else {
-        updateError = _result.note || _result.error || 'Update failed';
-      }
-    } catch (_err) {
-      updateError = 'Failed to apply update. Try running manually: ./scripts/update-docker.sh';
-    } finally {
-      updatingSystem = false;
-    }
-  }
+    // Load backups
+    await Promise.all([loadBackups(), loadBackupPolicy()]);
+  });
 
   async function handlePasswordChange(event: Event) {
     event.preventDefault();
-
     if (!currentPassword || !newPassword || !confirmPassword) {
       passwordError = 'All fields are required';
       return;
     }
-
     if (newPassword !== confirmPassword) {
-      passwordError = 'New passwords do not match';
+      passwordError = 'Passwords do not match';
       return;
     }
-
     if (newPassword.length < 4) {
-      passwordError = 'New password must be at least 4 characters long';
-      return;
-    }
-
-    if (newPassword === currentPassword) {
-      passwordError = 'New password must be different from current password';
+      passwordError = 'Minimum 4 characters';
       return;
     }
 
     isSubmittingPassword = true;
     passwordError = null;
-    passwordSuccess = null;
 
     try {
       const token = authStore.getAccessToken();
       const response = await fetch(`${API_BASE}/auth/change-password`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword, newPassword }),
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Password change failed');
-      }
-
-      // Success
-      passwordSuccess = 'Password changed successfully';
+      if (!response.ok) throw new Error((await response.json()).error || 'Failed');
+      passwordSuccess = 'Password changed';
       currentPassword = '';
       newPassword = '';
       confirmPassword = '';
-
-      // Auto-hide success message after 5 seconds
-      setTimeout(() => {
-        passwordSuccess = null;
-      }, 5000);
-    } catch (_err) {
-      passwordError = _err instanceof Error ? _err.message : 'Password change failed';
+      setTimeout(() => (passwordSuccess = null), 3000);
+    } catch (err) {
+      passwordError = err instanceof Error ? err.message : 'Failed';
     } finally {
       isSubmittingPassword = false;
     }
   }
 
-  function clearPasswordMessages() {
-    passwordError = null;
-    passwordSuccess = null;
+  async function handleGofireFileSelect(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      gofireError = 'Must be a JSON file';
+      return;
+    }
+    gofireFile = file;
+    gofireError = '';
   }
 
-  // Compute import message based on data format
+  async function importGofire() {
+    if (!gofireFile) return;
+    gofireLoading = true;
+    gofireError = '';
+    try {
+      const data = JSON.parse(await gofireFile.text());
+      if (!data.data || !Array.isArray(data.data)) throw new Error('Invalid format');
+      gofireImportResult = await investmentsApi.importFromGofire({ data: data.data });
+      gofireSuccess = true;
+    } catch (err) {
+      gofireError = err instanceof Error ? err.message : 'Import failed';
+    } finally {
+      gofireLoading = false;
+    }
+  }
+
+  function resetGofire() {
+    gofireFile = null;
+    gofireError = '';
+    gofireSuccess = false;
+    gofireImportResult = null;
+  }
+
   function getImportMessage(): string {
     const data = store.pendingImportData;
     if (!data) return '';
-
-    // New complete format
     if (data.data) {
-      const txCount = data.data.transactions?.length || 0;
-      const catCount = data.data.categories?.length || 0;
-      const invCount = data.data.investments?.length || 0;
-      const hasSettings = !!data.frontendSettings;
-      const exportDate = data.exportDate
-        ? new Date(data.exportDate).toLocaleDateString()
-        : 'Unknown date';
-
-      let message = `Import ${txCount} transactions, ${catCount} categories, ${invCount} investments`;
-      if (hasSettings) {
-        message += ' and user settings';
-      }
-      message += ` from ${exportDate}?`;
-      return message;
+      const tx = data.data.transactions?.length || 0;
+      const cat = data.data.categories?.length || 0;
+      const inv = data.data.investments?.length || 0;
+      return `Import ${tx} transactions, ${cat} categories, ${inv} investments?`;
     }
-
-    // Legacy format
-    const txCount = data.transactions?.length || 0;
-    const exportDate = data.settings?.exportDate
-      ? new Date(data.settings.exportDate).toLocaleDateString()
-      : 'Unknown date';
-    return `Import ${txCount} transactions from ${exportDate}?`;
+    return `Import ${data.transactions?.length || 0} transactions?`;
   }
 </script>
 
@@ -253,293 +383,395 @@
 </svelte:head>
 
 <main class="settings-page">
-  <div class="settings-header">
-    <h1 class="page-title">{$t('settings.title')}</h1>
-  </div>
+  <header class="page-header">
+    <h1>{$t('settings.title')}</h1>
+  </header>
 
-  <!-- Status Messages -->
   <SettingsStatusMessage
     message={store.importStatus}
     type={store.importSuccess ? 'success' : 'info'}
   />
-
   <SettingsStatusMessage message={store.importError} type="error" />
 
-  <div class="settings-grid">
-    <!-- Appearance Settings -->
-    <SettingsCard title={$t('settings.theme')} icon={Palette} iconClass="appearance">
-      <div class="setting-item">
-        <div class="setting-info">
-          <span class="setting-label">{$t('settings.theme')}</span>
-          <span class="setting-desc">
-            {store.isDark ? $t('settings.themes.dark') : $t('settings.themes.light')}
-          </span>
-        </div>
-        <SettingsThemeToggle isDark={store.isDark} onToggle={store.toggleTheme} />
-      </div>
-    </SettingsCard>
+  <div class="settings-content">
+    <!-- SECTION: Preferences -->
+    <section class="settings-section">
+      <h2 class="section-title">
+        <Globe size={18} />
+        Preferences
+      </h2>
 
-    <!-- Localization Settings -->
-    <SettingsCard title="Localization" icon={Globe} iconClass="localization">
-      <div class="setting-item">
-        <div class="setting-info">
-          <span class="setting-label">{$t('settings.language')}</span>
-          <span class="setting-desc">
-            {store.currentLanguage.name}
-          </span>
+      <div class="settings-row">
+        <div class="row-label">
+          <span class="label-text">{$t('settings.theme')}</span>
         </div>
-        <SettingsLanguageSelect
+        <button class="theme-toggle" onclick={() => store.toggleTheme()} aria-label="Toggle theme">
+          {#if store.isDark}
+            <Moon size={18} />
+          {:else}
+            <Sun size={18} />
+          {/if}
+          <span>{store.isDark ? 'Dark' : 'Light'}</span>
+        </button>
+      </div>
+
+      <div class="settings-row">
+        <div class="row-label">
+          <span class="label-text">{$t('settings.language')}</span>
+        </div>
+        <select
+          class="select-control"
           value={store.currentLanguage.code}
-          {languages}
-          onChange={async (e) => await store.changeLanguage((e.target as HTMLSelectElement).value)}
-        />
+          onchange={async (e) => await store.changeLanguage((e.target as HTMLSelectElement).value)}
+        >
+          {#each languages as lang}
+            <option value={lang.code}>{lang.flag} {lang.name}</option>
+          {/each}
+        </select>
       </div>
 
-      <div class="setting-item">
-        <div class="setting-info">
-          <span class="setting-label">{$t('settings.currency')}</span>
-          <span class="setting-desc">
-            {currencyOptions.find((c) => c.value === store.settings.currency)?.label || 'EUR'}
-          </span>
+      <div class="settings-row">
+        <div class="row-label">
+          <span class="label-text">{$t('settings.currency')}</span>
         </div>
-        <SettingsCurrencySelect
+        <select
+          class="select-control"
           value={store.settings.currency}
-          options={currencyOptions}
-          onChange={async (e) => await store.changeCurrency((e.target as HTMLSelectElement).value)}
-        />
+          onchange={async (e) => await store.changeCurrency((e.target as HTMLSelectElement).value)}
+        >
+          {#each currencyOptions as curr}
+            <option value={curr.value}>{curr.label}</option>
+          {/each}
+        </select>
       </div>
-    </SettingsCard>
+    </section>
 
-    <!-- Security Settings -->
-    <SettingsCard title="Security" icon={Lock} iconClass="security">
-      <form onsubmit={handlePasswordChange} class="password-form">
-        {#if passwordError}
-          <div class="error-message" in:fly={{ y: -10, duration: 200 }}>
-            {passwordError}
-          </div>
-        {/if}
+    <!-- SECTION: Data -->
+    <section class="settings-section">
+      <h2 class="section-title">
+        <Database size={18} />
+        Data
+      </h2>
 
-        {#if passwordSuccess}
-          <div class="success-message" in:fly={{ y: -10, duration: 200 }}>
-            {passwordSuccess}
-          </div>
-        {/if}
+      <div class="data-actions">
+        <button class="action-btn" onclick={store.exportData}>
+          <Download size={16} />
+          Export
+        </button>
+        <label class="action-btn">
+          <Upload size={16} />
+          Import
+          <input
+            type="file"
+            accept=".json"
+            class="hidden-input"
+            onchange={store.handleFileImport}
+          />
+        </label>
+        <button class="action-btn warning" onclick={store.resetData}>
+          <RotateCcw size={16} />
+          Reset
+        </button>
+        <button class="action-btn danger" onclick={store.deleteAllData}>
+          <Trash2 size={16} />
+          Delete All
+        </button>
+      </div>
 
-        <div class="setting-item password-setting">
-          <div class="setting-info">
-            <span class="setting-label">Change Password</span>
-            <span class="setting-desc">Update your password to keep your account secure</span>
-          </div>
+      <!-- GoFire Import -->
+      <div class="gofire-section">
+        <div class="gofire-header">
+          <Flame size={16} class="gofire-icon" />
+          <span>Import from</span>
+          <a href="https://www.alci.dev/es/tools/gofire" target="_blank" rel="noopener">
+            GoFire <ExternalLink size={12} />
+          </a>
         </div>
 
-        <div class="password-fields">
-          <div class="form-group">
-            <label for="currentPassword">Current Password</label>
-            <Input
-              id="currentPassword"
-              type="password"
-              bind:value={currentPassword}
-              placeholder="Enter your current password"
-              required
-              disabled={isSubmittingPassword}
-              oninput={clearPasswordMessages}
-            />
-          </div>
+        {#if gofireError}
+          <div class="inline-error">{gofireError}</div>
+        {/if}
 
-          <div class="form-group">
-            <label for="newPassword">New Password</label>
-            <Input
-              id="newPassword"
-              type="password"
-              bind:value={newPassword}
-              placeholder="Enter your new password"
-              required
-              disabled={isSubmittingPassword}
-              oninput={clearPasswordMessages}
-            />
-            <small class="field-hint">Minimum 4 characters</small>
+        {#if gofireSuccess && gofireImportResult}
+          <div class="gofire-result">
+            <span class="result-text">
+              ✓ {gofireImportResult.imported} investments, {gofireImportResult.historyCount} entries
+            </span>
+            <button class="text-btn" onclick={resetGofire}>Import another</button>
           </div>
-
-          <div class="form-group">
-            <label for="confirmPassword">Confirm New Password</label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              bind:value={confirmPassword}
-              placeholder="Confirm your new password"
-              required
-              disabled={isSubmittingPassword}
-              oninput={clearPasswordMessages}
-            />
-          </div>
-
-          <button
-            type="submit"
-            class="password-submit-btn"
-            disabled={isSubmittingPassword || !currentPassword || !newPassword || !confirmPassword}
-          >
-            {#if isSubmittingPassword}
-              <div class="spinner"></div>
-              Changing...
-            {:else}
-              Change Password
-            {/if}
-          </button>
-        </div>
-      </form>
-    </SettingsCard>
-
-    <!-- System Information & Updates -->
-    <SettingsCard title="System Information" icon={Info} iconClass="system">
-      <div class="version-info">
-        {#if versionInfo}
-          <div class="setting-item">
-            <div class="setting-info">
-              <span class="setting-label">Version</span>
-              <span class="setting-desc">{versionInfo.version}</span>
-            </div>
-          </div>
-          <div class="setting-item">
-            <div class="setting-info">
-              <span class="setting-label">Commit</span>
-              <span class="setting-desc">{versionInfo.commit}</span>
-            </div>
-          </div>
-          {#if versionInfo.buildTimestamp}
-            <div class="setting-item">
-              <div class="setting-info">
-                <span class="setting-label">Build Date</span>
-                <span class="setting-desc"
-                  >{new Date(versionInfo.buildTimestamp).toLocaleString()}</span
-                >
-              </div>
-            </div>
-          {/if}
         {:else}
-          <div class="setting-item">
-            <div class="setting-info">
-              <span class="setting-desc">Loading version information...</span>
-            </div>
-          </div>
-        {/if}
-
-        {#if updateMessage}
-          <div class="success-message" in:fly={{ y: -10, duration: 200 }}>
-            {updateMessage}
-          </div>
-        {/if}
-
-        {#if updateError}
-          <div class="error-message" in:fly={{ y: -10, duration: 200 }}>
-            {updateError}
-          </div>
-        {/if}
-
-        <div class="update-actions">
-          <button
-            class="update-btn"
-            onclick={checkForUpdates}
-            disabled={checkingUpdates || updatingSystem}
-          >
-            {#if checkingUpdates}
-              <div class="spinner"></div>
-              Checking...
-            {:else}
-              <RefreshCw size={16} />
-              Check for Updates
-            {/if}
-          </button>
-
-          {#if updateInfo?.updateAvailable}
-            <button
-              class="update-btn primary"
-              onclick={applyUpdate}
-              disabled={updatingSystem || checkingUpdates}
+          <div class="gofire-upload">
+            <input
+              type="file"
+              id="gofire-input"
+              accept=".json"
+              class="hidden-input"
+              onchange={handleGofireFileSelect}
+              disabled={gofireLoading}
+            />
+            <label
+              for="gofire-input"
+              class="upload-zone"
+              class:selected={gofireFile}
+              class:loading={gofireLoading}
             >
-              {#if updatingSystem}
-                <div class="spinner"></div>
-                Updating...
+              {#if gofireLoading}
+                <span class="spinner-small"></span> Importing...
+              {:else if gofireFile}
+                ✓ {gofireFile.name}
               {:else}
-                <RefreshCw size={16} />
-                Apply Update
-              {/if}
-            </button>
-          {/if}
-        </div>
-      </div>
-    </SettingsCard>
-
-    <!-- Backup Settings -->
-    <SettingsCard title={$t('settings.backup') || 'Backups'} icon={Database} iconClass="backup">
-      <BackupSettings />
-    </SettingsCard>
-
-    <!-- Sidebar Settings -->
-    <SettingsCard title={$t('settings.sidebar') || 'Sidebar'} icon={Menu} iconClass="sidebar">
-      <div class="setting-item sidebar-header">
-        <div class="setting-info">
-          <span class="setting-label"
-            >{$t('settings.sidebar_sections') || 'Navigation Sections'}</span
-          >
-          <span class="setting-desc"
-            >{$t('settings.sidebar_sections_desc') ||
-              'Choose which sections to show in the sidebar'}</span
-          >
-        </div>
-      </div>
-
-      <div class="sidebar-items">
-        {#each [...$sidebarConfig.items].sort((a, b) => a.order - b.order) as item, index (item.id)}
-          <div class="sidebar-item">
-            <div class="sidebar-item-reorder">
-              <button
-                class="reorder-btn"
-                onclick={() => sidebarConfig.moveItem(item.id, 'up')}
-                disabled={index === 0}
-                aria-label="Move up"
-              >
-                <ChevronUp size={14} />
-              </button>
-              <button
-                class="reorder-btn"
-                onclick={() => sidebarConfig.moveItem(item.id, 'down')}
-                disabled={index === $sidebarConfig.items.length - 1}
-                aria-label="Move down"
-              >
-                <ChevronDown size={14} />
-              </button>
-            </div>
-            <label class="sidebar-item-label">
-              <input
-                type="checkbox"
-                checked={item.visible}
-                disabled={item.required}
-                onchange={() => sidebarConfig.toggleItem(item.id)}
-              />
-              <span class="sidebar-item-name">{$t(item.labelKey)}</span>
-              {#if item.required}
-                <span class="required-badge">{$t('common.required') || 'Required'}</span>
+                Select JSON file
               {/if}
             </label>
+            {#if gofireFile && !gofireLoading}
+              <button class="import-btn" onclick={importGofire}>Import</button>
+            {/if}
           </div>
-        {/each}
+        {/if}
       </div>
-    </SettingsCard>
 
-    <!-- Data Management -->
-    <SettingsCard title={$t('settings.data')} icon={DollarSign} iconClass="data">
-      <SettingsActionButtons
-        onExport={store.exportData}
-        onFileImport={store.handleFileImport}
-        onReset={store.resetData}
-        onDeleteAll={store.deleteAllData}
-        importing={store.importing}
-      />
-    </SettingsCard>
+      <!-- Backups (collapsible) -->
+      <button class="collapse-trigger" onclick={() => (backupExpanded = !backupExpanded)}>
+        <span>Automatic Backups</span>
+        {#if backupExpanded}<ChevronUp size={16} />{:else}<ChevronDown size={16} />{/if}
+      </button>
+      {#if backupExpanded}
+        <div class="expanded-content">
+          {#if backupError}
+            <div class="status-message error">{backupError}</div>
+          {/if}
+          {#if backupSuccess}
+            <div class="status-message success">{backupSuccess}</div>
+          {/if}
+
+          <div class="settings-row">
+            <div class="row-label">
+              <span class="label-text">Enable automatic backups</span>
+              <span class="label-hint"
+                >Daily at {policyHour.toString().padStart(2, '0')}:00 UTC</span
+              >
+            </div>
+            <div class="row-controls">
+              <label class="toggle-switch">
+                <input
+                  type="checkbox"
+                  bind:checked={policyEnabled}
+                  onchange={saveBackupPolicy}
+                  disabled={savingPolicy}
+                />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div class="row-label">
+              <span class="label-text">Create backup</span>
+              <span class="label-hint">Download a snapshot now</span>
+            </div>
+            <button class="action-btn" onclick={createBackup} disabled={creatingBackup}>
+              {#if creatingBackup}
+                <span class="spinner-small"></span>
+              {:else}
+                <Download size={16} />
+              {/if}
+              {creatingBackup ? 'Creating...' : 'Backup'}
+            </button>
+          </div>
+
+          <div class="settings-row last">
+            <div class="row-label">
+              <span class="label-text">Backup history</span>
+            </div>
+            {#if backups.length === 0}
+              <span class="muted-text">No backups yet</span>
+            {/if}
+          </div>
+
+          {#if backups.length > 0}
+            <div class="backup-list">
+              {#each backups as backup (backup.id)}
+                <div class="backup-item">
+                  <div class="backup-info">
+                    <span class="backup-date">{formatBackupDate(backup.createdAt)}</span>
+                    <span class="backup-meta">
+                      <span class="backup-type">{backup.type}</span>
+                      <span>{formatBytes(backup.sizeBytes)}</span>
+                    </span>
+                  </div>
+                  <div class="backup-actions">
+                    <button
+                      class="icon-btn"
+                      onclick={() => downloadBackup(backup.id)}
+                      title="Download"
+                    >
+                      <Download size={14} />
+                    </button>
+                    <button
+                      class="icon-btn danger"
+                      onclick={() => deleteBackup(backup.id)}
+                      title="Delete"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
+    </section>
+
+    <!-- SECTION: Sidebar (collapsible) -->
+    <section class="settings-section">
+      <button class="section-title clickable" onclick={() => (sidebarExpanded = !sidebarExpanded)}>
+        <Menu size={18} />
+        <span>Sidebar</span>
+        {#if sidebarExpanded}<ChevronUp size={16} />{:else}<ChevronDown size={16} />{/if}
+      </button>
+
+      {#if sidebarExpanded}
+        <div class="sidebar-config">
+          <p class="sidebar-hint">Drag to reorder, toggle to show/hide</p>
+
+          {#if $sidebarConfig.items && $sidebarConfig.items.length > 0}
+            <div class="sidebar-list">
+              {#each [...$sidebarConfig.items].sort((a, b) => a.order - b.order) as item (item.id)}
+                <div
+                  class="sidebar-item"
+                  class:disabled={!item.visible && !item.required}
+                  class:dragging={sidebarDraggedId === item.id}
+                  class:drag-over={sidebarDragOverId === item.id}
+                  draggable="true"
+                  ondragstart={(e) => handleSidebarDragStart(e, item.id)}
+                  ondragend={handleSidebarDragEnd}
+                  ondragover={(e) => handleSidebarDragOver(e, item.id)}
+                  ondragleave={handleSidebarDragLeave}
+                  ondrop={(e) => handleSidebarDrop(e, item.id)}
+                  role="listitem"
+                >
+                  <div class="sidebar-item-left">
+                    <span class="drag-handle">
+                      <GripVertical size={16} />
+                    </span>
+                    <span class="item-name">{$t(item.labelKey)}</span>
+                    {#if item.required}
+                      <span class="item-badge required">Required</span>
+                    {:else if !item.visible}
+                      <span class="item-badge hidden">Hidden</span>
+                    {/if}
+                  </div>
+
+                  <label class="toggle-switch" class:required={item.required}>
+                    <input
+                      type="checkbox"
+                      checked={item.visible}
+                      disabled={item.required}
+                      onchange={() => sidebarConfig.toggleItem(item.id)}
+                    />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <p class="muted-text">No items configured</p>
+          {/if}
+        </div>
+      {/if}
+    </section>
+
+    <!-- SECTION: Security (collapsible) -->
+    <section class="settings-section">
+      <button
+        class="section-title clickable"
+        onclick={() => (securityExpanded = !securityExpanded)}
+      >
+        <Lock size={18} />
+        <span>Security</span>
+        {#if securityExpanded}<ChevronUp size={16} />{:else}<ChevronDown size={16} />{/if}
+      </button>
+
+      {#if securityExpanded}
+        <div class="expanded-content">
+          {#if passwordError}
+            <div class="status-message error">{passwordError}</div>
+          {/if}
+          {#if passwordSuccess}
+            <div class="status-message success">{passwordSuccess}</div>
+          {/if}
+
+          <form onsubmit={handlePasswordChange} class="password-form-inline">
+            <div class="settings-row">
+              <div class="row-label">
+                <span class="label-text">Current password</span>
+              </div>
+              <input
+                type="password"
+                class="inline-input"
+                bind:value={currentPassword}
+                placeholder="••••••••"
+                disabled={isSubmittingPassword}
+              />
+            </div>
+
+            <div class="settings-row">
+              <div class="row-label">
+                <span class="label-text">New password</span>
+              </div>
+              <input
+                type="password"
+                class="inline-input"
+                bind:value={newPassword}
+                placeholder="••••••••"
+                disabled={isSubmittingPassword}
+              />
+            </div>
+
+            <div class="settings-row">
+              <div class="row-label">
+                <span class="label-text">Confirm password</span>
+              </div>
+              <input
+                type="password"
+                class="inline-input"
+                bind:value={confirmPassword}
+                placeholder="••••••••"
+                disabled={isSubmittingPassword}
+              />
+            </div>
+
+            <div class="settings-row last">
+              <div class="row-label"></div>
+              <button
+                type="submit"
+                class="action-btn primary"
+                disabled={isSubmittingPassword ||
+                  !currentPassword ||
+                  !newPassword ||
+                  !confirmPassword}
+              >
+                {isSubmittingPassword ? 'Updating...' : 'Update Password'}
+              </button>
+            </div>
+          </form>
+        </div>
+      {/if}
+    </section>
+
+    <!-- Footer: Version -->
+    {#if versionInfo}
+      <footer class="version-footer">
+        <span>v{versionInfo.version}</span>
+        <span class="separator">·</span>
+        <span class="commit">{versionInfo.commit?.slice(0, 7)}</span>
+      </footer>
+    {/if}
   </div>
 </main>
 
-<!-- Import Confirmation Modal -->
+<!-- Modals -->
 <ConfirmModal
   bind:isOpen={store.showImportModal}
   title="Import Data"
@@ -550,41 +782,36 @@
   onConfirm={store.confirmImport}
   onCancel={() => (store.showImportModal = false)}
 >
-  <div class="import-mode-selector">
-    <label class="import-mode-option">
+  <div class="import-mode-options">
+    <label class="import-option">
       <input
         type="radio"
-        name="importMode"
+        name="mode"
         value="merge"
         checked={store.importMode === 'merge'}
         onchange={() => (store.importMode = 'merge')}
       />
-      <div class="import-mode-content">
-        <span class="import-mode-label">{$t('settings.import_merge') || 'Merge'}</span>
-        <span class="import-mode-desc"
-          >{$t('settings.import_merge_desc') || 'Add to existing data'}</span
-        >
+      <div>
+        <strong>Merge</strong>
+        <small>Add to existing</small>
       </div>
     </label>
-    <label class="import-mode-option">
+    <label class="import-option">
       <input
         type="radio"
-        name="importMode"
+        name="mode"
         value="replace"
         checked={store.importMode === 'replace'}
         onchange={() => (store.importMode = 'replace')}
       />
-      <div class="import-mode-content">
-        <span class="import-mode-label">{$t('settings.import_replace') || 'Replace'}</span>
-        <span class="import-mode-desc"
-          >{$t('settings.import_replace_desc') || 'Delete all existing data first'}</span
-        >
+      <div>
+        <strong>Replace</strong>
+        <small>Delete existing first</small>
       </div>
     </label>
   </div>
 </ConfirmModal>
 
-<!-- Reset Data Confirmation Modal -->
 <ConfirmModal
   bind:isOpen={store.showResetModal}
   title={$t('modal.reset_title')}
@@ -596,7 +823,6 @@
   onCancel={() => (store.showResetModal = false)}
 />
 
-<!-- Delete All Data Confirmation Modal -->
 <ConfirmModal
   bind:isOpen={store.showDeleteAllModal}
   title={$t('modal.delete_all_title')}
@@ -610,152 +836,648 @@
 
 <style>
   .settings-page {
-    max-width: 1200px;
+    max-width: 640px;
     margin: 0 auto;
     padding: 1.5rem;
     min-height: 100vh;
-    background: var(--surface);
   }
 
-  .settings-header {
+  .page-header {
     margin-bottom: 2rem;
   }
 
-  .page-title {
-    font-size: 1.875rem;
-    font-weight: 300;
+  .page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 400;
     color: var(--text-primary);
     margin: 0;
-    letter-spacing: -0.025em;
   }
 
-  .settings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  .settings-content {
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
   }
 
-  .setting-item {
+  /* Sections */
+  .settings-section {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0 0 1rem 0;
+    padding: 0;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+  }
+
+  .section-title.clickable {
+    cursor: pointer;
+    margin-bottom: 0;
+  }
+
+  .section-title.clickable:hover {
+    color: var(--primary);
+  }
+
+  .section-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0.75rem 0;
+  }
+
+  /* Settings rows */
+  .settings-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
   }
 
-  .setting-info {
+  .settings-row:last-child {
+    border-bottom: none;
+  }
+
+  .row-label {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    flex: 1;
+    gap: 0.125rem;
   }
 
-  .setting-label {
+  .label-text {
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-primary);
   }
 
-  .setting-desc {
+  /* Controls */
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    background: var(--surface-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .theme-toggle:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary);
+  }
+
+  .select-control {
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 120px;
+  }
+
+  .select-control:hover {
+    border-color: var(--primary);
+  }
+
+  /* Data actions */
+  .data-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
     font-size: 0.75rem;
-    color: var(--text-muted);
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
   }
 
-  /* Password form styles */
-  .password-form {
+  .action-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary);
+  }
+
+  .action-btn.warning:hover {
+    border-color: var(--warning);
+    color: var(--warning);
+  }
+
+  .action-btn.danger:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  .hidden-input {
+    display: none;
+  }
+
+  /* GoFire */
+  .gofire-section {
+    padding: 1rem;
+    background: var(--surface-muted);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .gofire-header {
     display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
   }
 
-  .password-setting {
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1rem;
-    margin-bottom: 0.5rem;
+  .gofire-header :global(.gofire-icon) {
+    color: #f59e0b;
   }
 
-  .password-fields {
+  .gofire-header a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .gofire-header a:hover {
+    text-decoration: underline;
+  }
+
+  .gofire-upload {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
     gap: 0.5rem;
   }
 
-  .form-group label {
-    font-weight: 500;
+  .upload-zone {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .upload-zone:hover {
+    border-color: var(--primary);
     color: var(--text-primary);
-    font-size: 0.875rem;
   }
 
-  .field-hint {
-    color: var(--text-tertiary);
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
+  .upload-zone.selected {
+    border-style: solid;
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-bg, rgba(122, 186, 165, 0.08));
   }
 
-  .error-message {
-    background: var(--danger-bg);
-    border: 1px solid var(--danger-border);
-    color: var(--danger-text);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .success-message {
-    background: var(--success-bg);
-    border: 1px solid var(--success-border);
-    color: var(--success-text);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .password-submit-btn {
+  .import-btn {
+    padding: 0.625rem 1rem;
     background: var(--primary);
     color: white;
     border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
     font-weight: 500;
-    font-size: 0.875rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+  }
+
+  .import-btn:hover {
+    background: var(--primary-dark);
+  }
+
+  .gofire-result {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: 44px;
+    justify-content: space-between;
+    font-size: 0.8125rem;
+  }
+
+  .result-text {
+    color: var(--success-text, #10b981);
+  }
+
+  .text-btn {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  /* Collapsible */
+  .collapse-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0.75rem 0;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
     margin-top: 0.5rem;
   }
 
-  .password-submit-btn:hover:not(:disabled) {
-    background: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+  .collapse-trigger:hover {
+    color: var(--text-primary);
   }
 
-  .password-submit-btn:disabled {
+  .collapse-content {
+    padding-top: 0.75rem;
+  }
+
+  /* Expanded content for collapsible sections */
+  .expanded-content {
+    padding-top: 0.5rem;
+  }
+
+  .expanded-content .settings-row:first-child {
+    border-top: none;
+  }
+
+  /* Label hint (subtitle) */
+  .label-hint {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-top: 0.125rem;
+  }
+
+  /* Label badge */
+  .label-badge {
+    display: inline-block;
+    font-size: 0.5625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.125rem 0.375rem;
+    background: var(--surface-muted);
+    color: var(--text-muted);
+    border-radius: 3px;
+    margin-top: 0.25rem;
+  }
+
+  /* Muted text */
+  .muted-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* Sidebar Config */
+  .sidebar-config {
+    padding-top: 0.5rem;
+  }
+
+  .sidebar-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0 0 0.75rem 0;
+  }
+
+  .sidebar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .sidebar-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.625rem 0.75rem;
+    background: var(--surface-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    cursor: grab;
+  }
+
+  .sidebar-item:hover {
+    border-color: var(--primary-alpha, rgba(122, 186, 165, 0.4));
+  }
+
+  .sidebar-item:active {
+    cursor: grabbing;
+  }
+
+  .sidebar-item.disabled {
+    opacity: 0.5;
+  }
+
+  .sidebar-item.dragging {
+    opacity: 0.4;
+    transform: scale(0.98);
+  }
+
+  .sidebar-item.drag-over {
+    border-color: var(--primary);
+    background: var(--primary-alpha, rgba(122, 186, 165, 0.08));
+  }
+
+  .sidebar-item-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    cursor: grab;
+  }
+
+  .drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .item-name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .item-badge {
+    display: inline-block;
+    font-size: 0.5625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    margin-left: 0.375rem;
+  }
+
+  .item-badge.required {
+    background: var(--primary-alpha, rgba(122, 186, 165, 0.15));
+    color: var(--primary);
+  }
+
+  .item-badge.hidden {
+    background: var(--surface);
+    color: var(--text-muted);
+  }
+
+  /* Backup List */
+  .backup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .backup-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.625rem 0.75rem;
+    background: var(--surface-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+  }
+
+  .backup-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .backup-date {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .backup-meta {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+  }
+
+  .backup-type {
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  .backup-actions {
+    display: flex;
+    gap: 0.375rem;
+  }
+
+  .icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+
+  .icon-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+
+  .icon-btn.danger:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+  }
+
+  /* Toggle Switch */
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
     background: var(--border-color);
-    color: var(--text-tertiary);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
+    border-radius: 20px;
+    transition: 0.2s;
   }
 
-  .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
     border-radius: 50%;
-    border-top-color: white;
-    animation: spin 1s ease-in-out infinite;
+    transition: 0.2s;
+  }
+
+  .toggle-switch input:checked + .toggle-slider {
+    background: var(--acapulco);
+  }
+
+  .toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(16px);
+  }
+
+  .toggle-switch input:disabled + .toggle-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Inline input for password form */
+  .inline-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--surface-muted);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    min-width: 160px;
+    transition: border-color 0.15s;
+  }
+
+  .inline-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: var(--surface);
+  }
+
+  .inline-input:disabled {
+    opacity: 0.6;
+  }
+
+  .inline-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* Password form inline */
+  .password-form-inline {
+    display: contents;
+  }
+
+  /* Status message */
+  .status-message {
+    padding: 0.625rem 0.875rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .status-message.error {
+    background: var(--error-bg);
+    color: var(--error);
+  }
+
+  .status-message.success {
+    background: var(--success-light);
+    color: var(--success);
+  }
+
+  /* Action button primary variant */
+  .action-btn.primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-color: var(--primary);
+  }
+
+  .action-btn.primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+  }
+
+  .action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Version footer */
+  .version-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 1.5rem;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+  }
+
+  .separator {
+    opacity: 0.5;
+  }
+
+  .commit {
+    font-family: monospace;
+    opacity: 0.7;
+  }
+
+  /* Spinner */
+  .spinner-small {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
   }
 
   @keyframes spin {
@@ -764,246 +1486,69 @@
     }
   }
 
-  /* Version info and update styles */
-  .version-info {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .update-actions {
+  /* Import modal options */
+  .import-mode-options {
     display: flex;
     gap: 0.75rem;
-    margin-top: 0.5rem;
-    flex-wrap: wrap;
   }
 
-  .update-btn {
-    background: var(--surface-alt);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    padding: 0.625rem 1.25rem;
-    border-radius: 8px;
-    font-weight: 500;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: 40px;
+  .import-option {
     flex: 1;
-    min-width: 140px;
-  }
-
-  .update-btn:hover:not(:disabled) {
-    background: var(--surface-hover);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .update-btn.primary {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-  }
-
-  .update-btn.primary:hover:not(:disabled) {
-    background: var(--primary-dark);
-    box-shadow: var(--shadow-md);
-  }
-
-  .update-btn:disabled {
-    background: var(--border-color);
-    color: var(--text-tertiary);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
-  /* Sidebar settings styles */
-  .sidebar-header {
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .sidebar-items {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .sidebar-item {
-    display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
-  }
-
-  .sidebar-item-reorder {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .reorder-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 18px;
-    padding: 0;
-    border: 1px solid var(--border-color);
-    background: var(--surface);
-    color: var(--text-muted);
-    border-radius: 4px;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
-  .reorder-btn:hover:not(:disabled) {
-    background: var(--primary);
+  .import-option:hover {
     border-color: var(--primary);
-    color: white;
   }
 
-  .reorder-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
+  .import-option:has(input:checked) {
+    border-color: var(--primary);
+    background: var(--primary-bg, rgba(122, 186, 165, 0.08));
   }
 
-  .sidebar-item-label {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    cursor: pointer;
-    width: 100%;
-    padding: 0.5rem;
-    border-radius: 8px;
-    transition: background 0.15s ease;
-  }
-
-  .sidebar-item-label:hover {
-    background: var(--surface-muted);
-  }
-
-  .sidebar-item-label input[type='checkbox'] {
-    width: 1.125rem;
-    height: 1.125rem;
+  .import-option input {
     accent-color: var(--primary);
-    cursor: pointer;
+    margin-top: 2px;
   }
 
-  .sidebar-item-label input[type='checkbox']:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .sidebar-item-name {
-    flex: 1;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-primary);
-  }
-
-  .required-badge {
-    font-size: 0.6875rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    background: var(--surface-muted);
-    padding: 0.125rem 0.5rem;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-  }
-
-  /* Import mode selector styles */
-  .import-mode-selector {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .import-mode-option {
-    flex: 1;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 0.875rem;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: var(--surface);
-  }
-
-  .import-mode-option:hover {
-    border-color: var(--primary);
-    background: var(--surface-muted);
-  }
-
-  .import-mode-option:has(input:checked) {
-    border-color: var(--primary);
-    background: var(--primary-bg, rgba(59, 130, 246, 0.08));
-  }
-
-  .import-mode-option input[type='radio'] {
-    width: 1.125rem;
-    height: 1.125rem;
-    accent-color: var(--primary);
-    margin-top: 0.125rem;
-    flex-shrink: 0;
-  }
-
-  .import-mode-content {
+  .import-option div {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.125rem;
   }
 
-  .import-mode-label {
-    font-weight: 600;
-    font-size: 0.875rem;
+  .import-option strong {
+    font-size: 0.8125rem;
     color: var(--text-primary);
   }
 
-  .import-mode-desc {
-    font-size: 0.75rem;
+  .import-option small {
+    font-size: 0.6875rem;
     color: var(--text-muted);
-    line-height: 1.3;
   }
 
-  /* Mobile responsive */
-  @media (max-width: 768px) {
+  /* Mobile */
+  @media (max-width: 640px) {
     .settings-page {
       padding: 1rem;
     }
 
-    .settings-grid {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-
-    .setting-item {
+    .data-actions {
       flex-direction: column;
-      align-items: stretch;
-      gap: 1rem;
     }
 
-    .setting-info {
-      text-align: center;
+    .action-btn {
+      justify-content: center;
     }
 
-    .password-fields {
-      gap: 1rem;
-    }
-
-    .password-submit-btn {
-      width: 100%;
-    }
-
-    .import-mode-selector {
+    .import-mode-options {
       flex-direction: column;
     }
   }
