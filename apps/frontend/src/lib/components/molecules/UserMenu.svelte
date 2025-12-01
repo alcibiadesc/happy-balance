@@ -4,6 +4,12 @@
   import { fade, fly } from 'svelte/transition';
   import { clickOutside } from '$lib/utils/clickOutside';
 
+  interface Props {
+    collapsed?: boolean;
+  }
+
+  const { collapsed = false }: Props = $props();
+
   let isMenuOpen = $state(false);
   let menuButton: HTMLButtonElement;
   let dropdownStyle = $state('');
@@ -111,26 +117,29 @@
       bind:this={menuButton}
       onclick={toggleMenu}
       class="user-menu-trigger"
+      class:user-menu-trigger--collapsed={collapsed}
       aria-label="User menu"
       aria-expanded={isMenuOpen}
     >
       <div class="user-avatar">
         {authStore.currentUser.displayName.charAt(0).toUpperCase()}
       </div>
-      <svg
-        class="chevron"
-        class:chevron--open={isMenuOpen}
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
+      {#if !collapsed}
+        <svg
+          class="chevron"
+          class:chevron--open={isMenuOpen}
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      {/if}
     </button>
 
     {#if isMenuOpen}
@@ -235,6 +244,11 @@
 
   .user-menu-trigger:active {
     transform: scale(0.98);
+  }
+
+  .user-menu-trigger--collapsed {
+    padding: 0.25rem;
+    justify-content: center;
   }
 
   .user-avatar {

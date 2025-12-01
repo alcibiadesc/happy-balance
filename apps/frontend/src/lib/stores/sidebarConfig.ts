@@ -18,6 +18,8 @@ export interface NavItemConfig {
   order: number;
   /** If true, this item cannot be hidden */
   required?: boolean;
+  /** Position in sidebar: 'top' (main nav) or 'bottom' (footer area) */
+  position?: 'top' | 'bottom';
 }
 
 export interface SidebarConfig {
@@ -34,6 +36,7 @@ const DEFAULT_NAV_ITEMS: NavItemConfig[] = [
     visible: true,
     order: 0,
     required: true,
+    position: 'top',
   },
   {
     id: 'transactions',
@@ -43,6 +46,7 @@ const DEFAULT_NAV_ITEMS: NavItemConfig[] = [
     visible: true,
     order: 1,
     required: true,
+    position: 'top',
   },
   {
     id: 'categories',
@@ -51,6 +55,7 @@ const DEFAULT_NAV_ITEMS: NavItemConfig[] = [
     labelKey: 'navigation.categories',
     visible: true,
     order: 2,
+    position: 'top',
   },
   {
     id: 'portfolio',
@@ -59,6 +64,16 @@ const DEFAULT_NAV_ITEMS: NavItemConfig[] = [
     labelKey: 'navigation.portfolio',
     visible: true,
     order: 3,
+    position: 'top',
+  },
+  {
+    id: 'import',
+    href: '/import',
+    icon: 'upload',
+    labelKey: 'navigation.import',
+    visible: true,
+    order: 10,
+    position: 'bottom',
   },
   {
     id: 'settings',
@@ -66,8 +81,9 @@ const DEFAULT_NAV_ITEMS: NavItemConfig[] = [
     icon: 'settings',
     labelKey: 'navigation.settings',
     visible: true,
-    order: 4,
+    order: 11,
     required: true,
+    position: 'bottom',
   },
 ];
 
@@ -181,6 +197,24 @@ function createSidebarConfigStore() {
      */
     getVisibleItems(config: SidebarConfig): NavItemConfig[] {
       return config.items.filter((item) => item.visible).sort((a, b) => a.order - b.order);
+    },
+
+    /**
+     * Get visible top items (main navigation)
+     */
+    getTopItems(config: SidebarConfig): NavItemConfig[] {
+      return config.items
+        .filter((item) => item.visible && item.position !== 'bottom')
+        .sort((a, b) => a.order - b.order);
+    },
+
+    /**
+     * Get visible bottom items (footer area)
+     */
+    getBottomItems(config: SidebarConfig): NavItemConfig[] {
+      return config.items
+        .filter((item) => item.visible && item.position === 'bottom')
+        .sort((a, b) => a.order - b.order);
     },
 
     /**

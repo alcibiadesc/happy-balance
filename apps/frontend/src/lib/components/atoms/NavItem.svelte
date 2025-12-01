@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { LayoutDashboard, Settings, Receipt, Tag, TrendingUp } from 'lucide-svelte';
+  import { LayoutDashboard, Settings, Receipt, Tag, TrendingUp, Upload } from 'lucide-svelte';
 
   interface Props {
     href: string;
@@ -7,10 +7,19 @@
     children: any; // For slot content
     isActive?: boolean;
     isImportant?: boolean;
+    collapsed?: boolean;
     onclick?: () => void;
   }
 
-  const { href, icon, children, isActive = false, isImportant = false, onclick }: Props = $props();
+  const {
+    href,
+    icon,
+    children,
+    isActive = false,
+    isImportant = false,
+    collapsed = false,
+    onclick,
+  }: Props = $props();
 
   // Icon mapping
   const iconMap = {
@@ -19,9 +28,11 @@
     tag: Tag,
     'trending-up': TrendingUp,
     settings: Settings,
+    upload: Upload,
   };
 
   const IconComponent = iconMap[icon as keyof typeof iconMap];
+  const isImport = icon === 'upload';
 
   function handleClick() {
     if (onclick) {
@@ -35,6 +46,8 @@
   class="nav-item"
   class:nav-item--active={isActive}
   class:nav-item--important={isImportant}
+  class:nav-item--import={isImport}
+  class:nav-item--collapsed={collapsed}
   onclick={handleClick}
   aria-current={isActive ? 'page' : undefined}
 >
@@ -43,9 +56,11 @@
       <IconComponent size={18} strokeWidth={2} />
     {/if}
   </div>
-  <span class="nav-item__label">
-    {@render children?.()}
-  </span>
+  {#if !collapsed}
+    <span class="nav-item__label">
+      {@render children?.()}
+    </span>
+  {/if}
   {#if isImportant}
     <div class="nav-item__badge"></div>
   {/if}
@@ -102,6 +117,35 @@
     color: var(--accent);
     border-color: var(--accent);
     transform: translateX(3px) translateY(-1px);
+  }
+
+  /* Import button special style */
+  .nav-item--import {
+    background: var(--acapulco);
+    color: white;
+    font-weight: 500;
+    justify-content: center;
+  }
+
+  .nav-item--import:hover {
+    background: #6ba696;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(122, 186, 165, 0.3);
+  }
+
+  .nav-item--import.nav-item--active {
+    background: #5a9a86;
+    color: white;
+  }
+
+  .nav-item--import.nav-item--active::before {
+    display: none;
+  }
+
+  .nav-item--collapsed {
+    justify-content: center;
+    padding: 0.75rem;
   }
 
   .nav-item__icon {

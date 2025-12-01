@@ -633,51 +633,89 @@
 
       {#if sidebarExpanded}
         <div class="sidebar-config">
-          <p class="sidebar-hint">Drag to reorder, toggle to show/hide</p>
-
-          {#if $sidebarConfig.items && $sidebarConfig.items.length > 0}
-            <div class="sidebar-list">
-              {#each [...$sidebarConfig.items].sort((a, b) => a.order - b.order) as item (item.id)}
-                <div
-                  class="sidebar-item"
-                  class:disabled={!item.visible && !item.required}
-                  class:dragging={sidebarDraggedId === item.id}
-                  class:drag-over={sidebarDragOverId === item.id}
-                  draggable="true"
-                  ondragstart={(e) => handleSidebarDragStart(e, item.id)}
-                  ondragend={handleSidebarDragEnd}
-                  ondragover={(e) => handleSidebarDragOver(e, item.id)}
-                  ondragleave={handleSidebarDragLeave}
-                  ondrop={(e) => handleSidebarDrop(e, item.id)}
-                  role="listitem"
-                >
-                  <div class="sidebar-item-left">
-                    <span class="drag-handle">
-                      <GripVertical size={16} />
-                    </span>
-                    <span class="item-name">{$t(item.labelKey)}</span>
-                    {#if item.required}
-                      <span class="item-badge required">Required</span>
-                    {:else if !item.visible}
-                      <span class="item-badge hidden">Hidden</span>
-                    {/if}
-                  </div>
-
-                  <label class="toggle-switch" class:required={item.required}>
-                    <input
-                      type="checkbox"
-                      checked={item.visible}
-                      disabled={item.required}
-                      onchange={() => sidebarConfig.toggleItem(item.id)}
-                    />
-                    <span class="toggle-slider"></span>
-                  </label>
+          <!-- Main Navigation -->
+          <p class="sidebar-group-label">Main Navigation</p>
+          <div class="sidebar-list">
+            {#each sidebarConfig.getTopItems($sidebarConfig) as item (item.id)}
+              <div
+                class="sidebar-item"
+                class:disabled={!item.visible && !item.required}
+                class:dragging={sidebarDraggedId === item.id}
+                class:drag-over={sidebarDragOverId === item.id}
+                draggable="true"
+                ondragstart={(e) => handleSidebarDragStart(e, item.id)}
+                ondragend={handleSidebarDragEnd}
+                ondragover={(e) => handleSidebarDragOver(e, item.id)}
+                ondragleave={handleSidebarDragLeave}
+                ondrop={(e) => handleSidebarDrop(e, item.id)}
+                role="listitem"
+              >
+                <div class="sidebar-item-left">
+                  <span class="drag-handle">
+                    <GripVertical size={16} />
+                  </span>
+                  <span class="item-name">{$t(item.labelKey)}</span>
+                  {#if item.required}
+                    <span class="item-badge required">Required</span>
+                  {:else if !item.visible}
+                    <span class="item-badge hidden">Hidden</span>
+                  {/if}
                 </div>
-              {/each}
-            </div>
-          {:else}
-            <p class="muted-text">No items configured</p>
-          {/if}
+
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={item.visible}
+                    disabled={item.required}
+                    onchange={() => sidebarConfig.toggleItem(item.id)}
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            {/each}
+          </div>
+
+          <!-- Footer Items -->
+          <p class="sidebar-group-label">Footer</p>
+          <div class="sidebar-list">
+            {#each sidebarConfig.getBottomItems($sidebarConfig) as item (item.id)}
+              <div
+                class="sidebar-item"
+                class:disabled={!item.visible && !item.required}
+                class:dragging={sidebarDraggedId === item.id}
+                class:drag-over={sidebarDragOverId === item.id}
+                draggable="true"
+                ondragstart={(e) => handleSidebarDragStart(e, item.id)}
+                ondragend={handleSidebarDragEnd}
+                ondragover={(e) => handleSidebarDragOver(e, item.id)}
+                ondragleave={handleSidebarDragLeave}
+                ondrop={(e) => handleSidebarDrop(e, item.id)}
+                role="listitem"
+              >
+                <div class="sidebar-item-left">
+                  <span class="drag-handle">
+                    <GripVertical size={16} />
+                  </span>
+                  <span class="item-name">{$t(item.labelKey)}</span>
+                  {#if item.required}
+                    <span class="item-badge required">Required</span>
+                  {:else if !item.visible}
+                    <span class="item-badge hidden">Hidden</span>
+                  {/if}
+                </div>
+
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={item.visible}
+                    disabled={item.required}
+                    onchange={() => sidebarConfig.toggleItem(item.id)}
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            {/each}
+          </div>
         </div>
       {/if}
     </section>
@@ -836,7 +874,7 @@
 
 <style>
   .settings-page {
-    max-width: 640px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 1.5rem;
     min-height: 100vh;
@@ -1169,10 +1207,17 @@
     padding-top: 0.5rem;
   }
 
-  .sidebar-hint {
-    font-size: 0.75rem;
+  .sidebar-group-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--text-muted);
-    margin: 0 0 0.75rem 0;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .sidebar-group-label:not(:first-child) {
+    margin-top: 1rem;
   }
 
   .sidebar-list {
