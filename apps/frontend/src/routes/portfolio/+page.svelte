@@ -393,7 +393,12 @@
             <div class="goal-progress" style="width: {goalProgress}%"></div>
           </div>
           <div class="goal-info">
-            <span class="goal-text">{goalProgress.toFixed(0)}% de tu meta</span>
+            <span class="goal-text">
+              {goalProgress.toFixed(0)}% de tu meta
+              {#if goalProgress < 100}
+                <span class="goal-remaining">(faltan {store.formatCurrency(goal - store.totalPortfolioValue)})</span>
+              {/if}
+            </span>
             <button class="goal-edit" onclick={() => (showGoalEdit = !showGoalEdit)}>
               <Target size={14} />
               {store.formatCurrency(goal)}
@@ -423,8 +428,10 @@
             <TrendingDown size={18} />
           {/if}
         </div>
-        <div class="revenue-value">{store.formatCurrency(store.totalProfit)}</div>
-        <div class="revenue-percentage">{store.formatPercentage(store.profitPercentage)}</div>
+        <div class="revenue-value">
+          {store.formatCurrency(store.totalProfit)}
+          <span class="revenue-percentage">{store.formatPercentage(store.profitPercentage)}</span>
+        </div>
       </div>
     </header>
 
@@ -625,13 +632,16 @@
                         {store.formatCurrency(investment.currentValue)}
                       </span>
                     {/if}
-                    <span
-                      class="profit"
-                      class:positive={investment.profit >= 0}
-                      class:negative={investment.profit < 0}
-                    >
-                      {store.formatPercentage(investment.profitPercentage)}
-                    </span>
+                    {#if investment.netContributions > 0}
+                      <div class="profit-pills">
+                        <span class="pill amount" class:positive={investment.profit >= 0} class:negative={investment.profit < 0}>
+                          {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(investment.profit)}
+                        </span>
+                        <span class="pill pct" class:positive={investment.profit >= 0} class:negative={investment.profit < 0}>
+                          {store.formatPercentage(investment.profitPercentage)}
+                        </span>
+                      </div>
+                    {/if}
                   </div>
                   <div class="row-actions" onclick={(e) => e.stopPropagation()}>
                     <button
@@ -680,13 +690,16 @@
                       </div>
                       <div class="row-value">
                         <span class="value">{store.formatCurrency(investment.currentValue)}</span>
-                        <span
-                          class="profit"
-                          class:positive={investment.profit >= 0}
-                          class:negative={investment.profit < 0}
-                        >
-                          {store.formatPercentage(investment.profitPercentage)}
-                        </span>
+                        {#if investment.netContributions > 0}
+                          <div class="profit-pills">
+                            <span class="pill amount" class:positive={investment.profit >= 0} class:negative={investment.profit < 0}>
+                              {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(investment.profit)}
+                            </span>
+                            <span class="pill pct" class:positive={investment.profit >= 0} class:negative={investment.profit < 0}>
+                              {store.formatPercentage(investment.profitPercentage)}
+                            </span>
+                          </div>
+                        {/if}
                       </div>
                     </div>
                   {/each}
@@ -1074,6 +1087,11 @@
     color: var(--text-muted);
   }
 
+  .goal-remaining {
+    opacity: 0.7;
+    font-size: 0.7rem;
+  }
+
   .goal-edit {
     display: flex;
     align-items: center;
@@ -1171,15 +1189,21 @@
 
   .revenue-percentage {
     font-size: 0.875rem;
-    opacity: 0.8;
+    opacity: 0.9;
+    margin-left: 0.5rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    background: rgba(255, 255, 255, 0.15);
   }
 
   .revenue-card.positive .revenue-percentage {
     color: #10b981;
+    background: rgba(16, 185, 129, 0.15);
   }
 
   .revenue-card.negative .revenue-percentage {
     color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
   }
 
   /* Charts Section */
@@ -1462,21 +1486,22 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem;
+    padding: 0.875rem 1rem;
     background: var(--surface);
     border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
+    border-radius: 0.625rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
   }
 
   .investment-row:hover {
     border-color: var(--acapulco);
+    background: var(--surface-elevated);
   }
 
   .investment-row.highlighted {
     border-color: #f59e0b;
-    background: rgba(245, 158, 11, 0.05);
+    background: rgba(245, 158, 11, 0.04);
   }
 
   .investment-row.editing {
@@ -1599,8 +1624,8 @@
   }
 
   .row-icon {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
@@ -1612,12 +1637,15 @@
   .row-info {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
   }
 
   .row-name {
     display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 0.9375rem;
+    font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -1626,19 +1654,25 @@
 
   .row-symbol {
     font-size: 0.6875rem;
+    font-weight: 500;
     color: var(--text-muted);
     text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   .row-value {
     text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
   }
 
   .row-value .value {
     display: block;
-    font-size: 0.875rem;
-    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 700;
     color: var(--text-primary);
+    letter-spacing: -0.01em;
   }
 
   .row-value .value.editable {
@@ -1669,15 +1703,26 @@
     box-shadow: 0 0 0 2px rgba(75, 192, 169, 0.2);
   }
 
-  .row-value .profit {
-    font-size: 0.75rem;
+  .row-value .profit-pills {
+    display: flex;
+    gap: 0.375rem;
+    margin-top: 0.25rem;
   }
 
-  .row-value .profit.positive {
+  .row-value .pill {
+    padding: 0.125rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+  }
+
+  .row-value .pill.positive {
+    background: rgba(16, 185, 129, 0.12);
     color: #10b981;
   }
 
-  .row-value .profit.negative {
+  .row-value .pill.negative {
+    background: rgba(239, 68, 68, 0.12);
     color: #ef4444;
   }
 

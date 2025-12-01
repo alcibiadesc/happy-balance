@@ -597,21 +597,34 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       let totalValue = 0;
       let totalContributions = 0;
       let totalWithdrawals = 0;
+      let investmentValueWithContributions = 0; // Only investments that have contributions
 
       for (const inv of investments) {
         totalValue += Number(inv.currentValue);
 
+        let invContributions = 0;
+        let invWithdrawals = 0;
+
         for (const h of inv.history) {
           if (h.type === InvestmentHistoryType.CONTRIBUTION) {
+            invContributions += Number(h.amount);
             totalContributions += Number(h.amount);
           } else if (h.type === InvestmentHistoryType.WITHDRAWAL) {
+            invWithdrawals += Number(h.amount);
             totalWithdrawals += Number(h.amount);
           }
+        }
+
+        // Only count this investment's value for profit if it has contributions (not a "colchón")
+        const invNetContributions = invContributions - invWithdrawals;
+        if (invNetContributions > 0) {
+          investmentValueWithContributions += Number(inv.currentValue);
         }
       }
 
       const netContributions = totalContributions - totalWithdrawals;
-      const totalProfit = totalValue - netContributions;
+      // Profit is only calculated from investments that have contributions
+      const totalProfit = investmentValueWithContributions - netContributions;
       const profitPercentage =
         netContributions > 0 ? (totalProfit / netContributions) * 100 : 0;
 
