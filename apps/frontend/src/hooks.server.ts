@@ -20,9 +20,10 @@ export const handle: Handle = async ({ event, resolve }) => {
       const response = await fetch(backendUrl, {
         method: event.request.method,
         headers,
-        body: event.request.method !== 'GET' && event.request.method !== 'HEAD'
-          ? await event.request.text()
-          : undefined,
+        body:
+          event.request.method !== 'GET' && event.request.method !== 'HEAD'
+            ? await event.request.text()
+            : undefined,
         // @ts-expect-error - duplex is needed for streaming
         duplex: 'half',
       });
@@ -32,7 +33,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 
       // Build clean response headers
       const responseHeaders = new Headers();
-      responseHeaders.set('Content-Type', response.headers.get('Content-Type') || 'application/json');
+      responseHeaders.set(
+        'Content-Type',
+        response.headers.get('Content-Type') || 'application/json'
+      );
 
       return new Response(body, {
         status: response.status,
