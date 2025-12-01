@@ -28,7 +28,6 @@
     background: var(--surface-elevated);
     border-radius: 16px;
     padding: 1.5rem;
-    margin-bottom: 2rem;
     border: 1px solid var(--border-color, transparent);
   }
 

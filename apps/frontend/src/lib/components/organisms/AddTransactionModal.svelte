@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import type { Transaction, Category } from '$lib/types/transaction';
   import { t } from '$lib/stores/i18n';
+  import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
   // Props
   export let isOpen = false;
@@ -112,12 +113,6 @@
     }
   }
 
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      closeModal();
-    }
-  }
-
   function toggleType() {
     type = type === 'expense' ? 'income' : 'expense';
   }
@@ -128,7 +123,7 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<div use:modalKeyboard={{ onConfirm: handleSubmit, onCancel: closeModal, isOpen }}></div>
 
 {#if isOpen}
   <div class="modal-backdrop" on:click={handleBackdropClick} role="dialog" tabindex="-1">

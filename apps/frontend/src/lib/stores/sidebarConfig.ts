@@ -184,6 +184,51 @@ function createSidebarConfigStore() {
     },
 
     /**
+     * Reorder nav items
+     */
+    reorderItems(fromId: NavItemId, toId: NavItemId) {
+      update((config) => {
+        const items = [...config.items].sort((a, b) => a.order - b.order);
+        const fromIndex = items.findIndex((i) => i.id === fromId);
+        const toIndex = items.findIndex((i) => i.id === toId);
+
+        if (fromIndex === -1 || toIndex === -1) return config;
+
+        // Swap orders
+        const temp = items[fromIndex].order;
+        items[fromIndex].order = items[toIndex].order;
+        items[toIndex].order = temp;
+
+        const newConfig = { ...config, items };
+        saveConfig(newConfig);
+        return newConfig;
+      });
+    },
+
+    /**
+     * Move item up or down
+     */
+    moveItem(id: NavItemId, direction: 'up' | 'down') {
+      update((config) => {
+        const items = [...config.items].sort((a, b) => a.order - b.order);
+        const index = items.findIndex((i) => i.id === id);
+
+        if (index === -1) return config;
+        if (direction === 'up' && index === 0) return config;
+        if (direction === 'down' && index === items.length - 1) return config;
+
+        const swapIndex = direction === 'up' ? index - 1 : index + 1;
+        const temp = items[index].order;
+        items[index].order = items[swapIndex].order;
+        items[swapIndex].order = temp;
+
+        const newConfig = { ...config, items };
+        saveConfig(newConfig);
+        return newConfig;
+      });
+    },
+
+    /**
      * Reset to default configuration
      */
     reset() {

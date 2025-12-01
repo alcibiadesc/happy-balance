@@ -2,6 +2,7 @@
   import { Calendar, X } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { t } from '$lib/stores/i18n';
+  import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
   export let startDate: string = '';
   export let endDate: string = '';
@@ -38,6 +39,8 @@
     }
   }
 </script>
+
+<div use:modalKeyboard={{ onConfirm: handleApply, onCancel: handleCancel, isOpen }}></div>
 
 {#if isOpen}
   <div class="modal-backdrop" onclick={handleBackdropClick}>

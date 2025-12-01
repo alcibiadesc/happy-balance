@@ -1,6 +1,7 @@
 <script lang="ts">
   import { AlertTriangle, Check, X } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
+  import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
   interface Props {
     isOpen: boolean;
@@ -48,16 +49,9 @@
       closeModal();
     }
   }
-
-  // Handle escape key
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      closeModal();
-    }
-  }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<div use:modalKeyboard={{ onConfirm: confirm, onCancel: closeModal, isOpen }}></div>
 
 {#if isOpen}
   <!-- DaisyUI Modal -->

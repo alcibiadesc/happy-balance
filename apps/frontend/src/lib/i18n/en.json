@@ -204,7 +204,11 @@
       "file": "Identical transaction found in file",
       "database": "Transaction already exists in database",
       "both": "Duplicate in both file and database"
-    }
+    },
+    "compatible_banks": "Compatible Banks",
+    "supported": "Supported",
+    "coming_soon": "Coming soon",
+    "more_banks": "More banks"
   },
   "transactions": {
     "title": "Transactions",
@@ -361,7 +365,11 @@
     "import_invalid_format": "Invalid backup file format",
     "import_confirmation": "This will import {transactions} transactions from {date}. Continue?",
     "import_parse_error": "Error parsing backup file",
-    "import_read_error": "Error reading backup file"
+    "import_read_error": "Error reading backup file",
+    "import_merge": "Merge",
+    "import_merge_desc": "Add to existing data",
+    "import_replace": "Replace",
+    "import_replace_desc": "Delete all existing data first"
   },
   "errors": {
     "generic": "An error occurred",

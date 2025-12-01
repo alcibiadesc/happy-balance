@@ -107,6 +107,7 @@ export function createSettingsStore(apiBase: string) {
   let showDeleteAllModal = $state(false);
   let showResetModal = $state(false);
   let pendingImportData = $state<ImportData | null>(null);
+  let importMode = $state<'merge' | 'replace'>('merge');
 
   // Subscribe to store changes
   effectiveTheme.subscribe((value) => (currentTheme = value));
@@ -228,6 +229,11 @@ export function createSettingsStore(apiBase: string) {
 
     importing = true;
     try {
+      // If replace mode, delete all data first
+      if (importMode === 'replace') {
+        await deleteAllDataSilent();
+      }
+
       const _result = await importData(dataToImport);
 
       // Calculate count based on format
@@ -365,6 +371,28 @@ export function createSettingsStore(apiBase: string) {
   // Delete operations
   async function deleteAllData() {
     showDeleteAllModal = true;
+  }
+
+  // Silent delete for replace mode import
+  async function deleteAllDataSilent() {
+    try {
+      await fetch(`${apiBase}/transactions`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      await fetch(`${apiBase}/investments`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      // Clear localStorage
+      ['transactions', 'transaction-hashes', 'categories'].forEach((key) => {
+        localStorage.removeItem(key);
+      });
+    } catch (error) {
+      console.warn('Silent delete failed:', error);
+    }
   }
 
   async function confirmDeleteAll() {
@@ -559,6 +587,12 @@ export function createSettingsStore(apiBase: string) {
     },
     get pendingImportData() {
       return pendingImportData;
+    },
+    get importMode() {
+      return importMode;
+    },
+    set importMode(value: 'merge' | 'replace') {
+      importMode = value;
     },
 
     // Actions

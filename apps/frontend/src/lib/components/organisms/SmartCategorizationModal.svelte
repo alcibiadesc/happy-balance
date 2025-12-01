@@ -1,6 +1,7 @@
 <script lang="ts">
   import { X } from 'lucide-svelte';
   import type { Transaction, Category } from '$lib/types/transaction';
+  import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
   // Props
   export let isOpen = false;
@@ -82,6 +83,8 @@
 
   $: selectedCount = selectedTransactionIds.size + 1; // +1 for the current transaction
 </script>
+
+<div use:modalKeyboard={{ onConfirm: handleConfirm, onCancel, isOpen }}></div>
 
 {#if isOpen && transaction && selectedCategory}
   <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="categorization-title">

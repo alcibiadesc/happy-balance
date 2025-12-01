@@ -2,6 +2,7 @@
   import { X, Split, Check, Unlink } from 'lucide-svelte';
   import type { Transaction, PotentialReimbursement } from '$lib/types/transaction';
   import { apiTransactions } from '$lib/stores/api-transactions';
+  import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
   // Props
   export let isOpen = false;
@@ -146,12 +147,6 @@
     }
   }
 
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      onClose();
-    }
-  }
-
   function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
@@ -174,7 +169,7 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<div use:modalKeyboard={{ onConfirm: saveWithoutLinking, onCancel: onClose, isOpen }}></div>
 
 {#if isOpen && transaction}
   <div

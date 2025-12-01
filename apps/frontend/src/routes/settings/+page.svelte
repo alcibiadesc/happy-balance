@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DollarSign, Palette, Globe, Lock, Info, RefreshCw, Menu } from 'lucide-svelte';
+  import { DollarSign, Palette, Globe, Lock, Info, RefreshCw, Menu, GripVertical, ChevronUp, ChevronDown } from 'lucide-svelte';
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
   import SettingsStatusMessage from '$lib/components/molecules/SettingsStatusMessage.svelte';
   import SettingsCard from '$lib/components/organisms/SettingsCard.svelte';
@@ -472,8 +472,26 @@
       </div>
 
       <div class="sidebar-items">
-        {#each $sidebarConfig.items as item (item.id)}
+        {#each [...$sidebarConfig.items].sort((a, b) => a.order - b.order) as item, index (item.id)}
           <div class="sidebar-item">
+            <div class="sidebar-item-reorder">
+              <button
+                class="reorder-btn"
+                onclick={() => sidebarConfig.moveItem(item.id, 'up')}
+                disabled={index === 0}
+                aria-label="Move up"
+              >
+                <ChevronUp size={14} />
+              </button>
+              <button
+                class="reorder-btn"
+                onclick={() => sidebarConfig.moveItem(item.id, 'down')}
+                disabled={index === $sidebarConfig.items.length - 1}
+                aria-label="Move down"
+              >
+                <ChevronDown size={14} />
+              </button>
+            </div>
             <label class="sidebar-item-label">
               <input
                 type="checkbox"
@@ -508,13 +526,44 @@
 <ConfirmModal
   bind:isOpen={store.showImportModal}
   title="Import Data"
-  message={getImportMessage() + ' This will merge with your existing data.'}
+  message={getImportMessage()}
   confirmText="Import"
   cancelText="Cancel"
   type="info"
   onConfirm={store.confirmImport}
   onCancel={() => (store.showImportModal = false)}
-/>
+>
+  {#snippet children()}
+    <div class="import-mode-selector">
+      <label class="import-mode-option">
+        <input
+          type="radio"
+          name="importMode"
+          value="merge"
+          checked={store.importMode === 'merge'}
+          onchange={() => (store.importMode = 'merge')}
+        />
+        <div class="import-mode-content">
+          <span class="import-mode-label">{$t('settings.import_merge') || 'Merge'}</span>
+          <span class="import-mode-desc">{$t('settings.import_merge_desc') || 'Add to existing data'}</span>
+        </div>
+      </label>
+      <label class="import-mode-option">
+        <input
+          type="radio"
+          name="importMode"
+          value="replace"
+          checked={store.importMode === 'replace'}
+          onchange={() => (store.importMode = 'replace')}
+        />
+        <div class="import-mode-content">
+          <span class="import-mode-label">{$t('settings.import_replace') || 'Replace'}</span>
+          <span class="import-mode-desc">{$t('settings.import_replace_desc') || 'Delete all existing data first'}</span>
+        </div>
+      </label>
+    </div>
+  {/snippet}
+</ConfirmModal>
 
 <!-- Reset Data Confirmation Modal -->
 <ConfirmModal
@@ -770,6 +819,39 @@
   .sidebar-item {
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sidebar-item-reorder {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .reorder-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    background: var(--surface);
+    color: var(--text-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .reorder-btn:hover:not(:disabled) {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+
+  .reorder-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 
   .sidebar-item-label {
@@ -817,6 +899,62 @@
     letter-spacing: 0.025em;
   }
 
+  /* Import mode selector styles */
+  .import-mode-selector {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .import-mode-option {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.875rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--surface);
+  }
+
+  .import-mode-option:hover {
+    border-color: var(--primary);
+    background: var(--surface-muted);
+  }
+
+  .import-mode-option:has(input:checked) {
+    border-color: var(--primary);
+    background: var(--primary-bg, rgba(59, 130, 246, 0.08));
+  }
+
+  .import-mode-option input[type='radio'] {
+    width: 1.125rem;
+    height: 1.125rem;
+    accent-color: var(--primary);
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+  }
+
+  .import-mode-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .import-mode-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+  }
+
+  .import-mode-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+
   /* Mobile responsive */
   @media (max-width: 768px) {
     .settings-page {
@@ -844,6 +982,10 @@
 
     .password-submit-btn {
       width: 100%;
+    }
+
+    .import-mode-selector {
+      flex-direction: column;
     }
   }
 </style>

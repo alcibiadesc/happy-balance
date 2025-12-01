@@ -204,7 +204,11 @@
       "file": "Transacción idéntica encontrada en el archivo",
       "database": "La transacción ya existe en la base de datos",
       "both": "Duplicado tanto en el archivo como en la base de datos"
-    }
+    },
+    "compatible_banks": "Bancos Compatibles",
+    "supported": "Soportado",
+    "coming_soon": "Próximamente",
+    "more_banks": "Más bancos"
   },
   "transactions": {
     "title": "Transacciones",
@@ -361,7 +365,11 @@
     "import_invalid_format": "Formato de archivo de respaldo inválido",
     "import_confirmation": "Esto importará {transactions} transacciones desde {date}. ¿Continuar?",
     "import_parse_error": "Error al analizar archivo de respaldo",
-    "import_read_error": "Error al leer archivo de respaldo"
+    "import_read_error": "Error al leer archivo de respaldo",
+    "import_merge": "Combinar",
+    "import_merge_desc": "Añadir a los datos existentes",
+    "import_replace": "Reemplazar",
+    "import_replace_desc": "Eliminar todos los datos primero"
   },
   "errors": {
     "generic": "Ocurrió un error",

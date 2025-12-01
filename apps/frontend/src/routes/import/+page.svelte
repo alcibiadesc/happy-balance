@@ -5,6 +5,14 @@
   import { apiTransactions } from '$lib/stores/api-transactions';
   import { parseCSV } from '$lib/utils/csv-parser';
 
+  // Atomic Components
+  import ImportProgressSteps from '$lib/components/molecules/ImportProgressSteps.svelte';
+  import ImportStatsGrid from '$lib/components/molecules/ImportStatsGrid.svelte';
+  import CompatibleBanks from '$lib/components/molecules/CompatibleBanks.svelte';
+  import ImportFileUpload from '$lib/components/molecules/ImportFileUpload.svelte';
+  import ImportSettings from '$lib/components/molecules/ImportSettings.svelte';
+  import ImportComplete from '$lib/components/molecules/ImportComplete.svelte';
+
   import type { ParsedTransaction } from '$lib/utils/csv-parser';
 
   // ===== TYPES & CONSTANTS =====
@@ -505,70 +513,8 @@
       <p class="import-subtitle">{$t('import.subtitle')}</p>
     </div>
 
-    <!-- Progress Steps con círculos perfectos -->
-    <div class="progress-steps">
-      <div class="progress-container">
-        <div class="step-item">
-          <div class="step-circle {step >= 1 ? 'active' : ''}">
-            {#if step > 1}
-              <svg class="step-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            {:else}
-              1
-            {/if}
-          </div>
-          <div class="step-text">
-            <div class="step-title {step >= 1 ? 'active' : ''}">
-              {$t('import.steps.upload')}
-            </div>
-            <div class="step-desc">{$t('import.steps.upload_desc')}</div>
-          </div>
-        </div>
-
-        <div class="step-line {step >= 2 ? 'active' : ''}"></div>
-
-        <div class="step-item">
-          <div class="step-circle {step >= 2 ? 'active' : ''}">
-            {#if step > 2}
-              <svg class="step-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            {:else}
-              2
-            {/if}
-          </div>
-          <div class="step-text">
-            <div class="step-title {step >= 2 ? 'active' : ''}">
-              {$t('import.steps.preview')}
-            </div>
-            <div class="step-desc">{$t('import.steps.preview_desc')}</div>
-          </div>
-        </div>
-
-        <div class="step-line {step >= 3 ? 'active' : ''}"></div>
-
-        <div class="step-item">
-          <div class="step-circle {step >= 3 ? 'active' : ''}">3</div>
-          <div class="step-text">
-            <div class="step-title {step >= 3 ? 'active' : ''}">
-              {$t('import.steps.complete')}
-            </div>
-            <div class="step-desc">{$t('import.steps.complete_desc')}</div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Progress Steps -->
+    <ImportProgressSteps currentStep={step} />
 
     <!-- Content Card -->
     <div class="import-content">
@@ -603,106 +549,15 @@
       <!-- Step 1: Upload -->
       {#if step === 1}
         <div class="upload-step">
-          <!-- Settings Section con toggle personalizado -->
-          <div class="settings-section">
-            <h3 class="settings-title">{$t('import.settings.title')}</h3>
-            <div class="setting-item">
-              <label class="setting-label">
-                <input
-                  type="checkbox"
-                  bind:checked={previewEnabled}
-                  class="toggle toggle-acapulco"
-                />
-                <span class="setting-text">{$t('import.settings.enable_preview')}</span>
-              </label>
-              <div class="setting-desc">
-                {$t('import.settings.enable_preview_desc')}
-              </div>
-            </div>
-          </div>
-
-          <!-- File Upload Area -->
-          <div class="upload-area">
-            <input
-              type="file"
-              accept=".csv"
-              multiple
-              on:change={handleFileUpload}
-              class="upload-input"
-              id="file-upload"
-              disabled={loading}
-            />
-            <label for="file-upload" class="upload-label {loading ? 'loading' : ''}">
-              {#if loading}
-                <div class="upload-spinner"></div>
-              {:else}
-                <div class="upload-icon">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                </div>
-              {/if}
-
-              <div class="upload-text">
-                <p class="upload-title">
-                  {loading ? $t('import.upload.processing') : $t('import.upload.choose_file')}
-                </p>
-                <p class="upload-subtitle">
-                  {$t('import.upload.drag_drop')}
-                </p>
-              </div>
-            </label>
-          </div>
-
-          {#if selectedFiles.length > 0 && !loading}
-            <div class="files-container">
-              {#if totalFilesToProcess > 0 && importProgress > 0}
-                <div class="progress-info">
-                  <p class="progress-text">
-                    Procesando archivo {importProgress} de {totalFilesToProcess}...
-                  </p>
-                  <div class="progress-bar">
-                    <div
-                      class="progress-fill"
-                      style="width: {(importProgress / totalFilesToProcess) * 100}%"
-                    ></div>
-                  </div>
-                </div>
-              {/if}
-              <div class="files-list">
-                {#each selectedFiles as file (file.name)}
-                  <div class="file-info">
-                    <div class="file-details">
-                      <div class="file-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                      </div>
-                      <div class="file-text">
-                        <p class="file-name">{file.name}</p>
-                        <p class="file-size">
-                          {(file.size / 1024).toFixed(1)} KB
-                        </p>
-                      </div>
-                    </div>
-                    <div class="file-badge">
-                      {$t('import.upload.ready')}
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          {/if}
+          <ImportSettings {previewEnabled} onToggle={() => (previewEnabled = !previewEnabled)} />
+          <ImportFileUpload
+            {loading}
+            onFileSelect={handleFileUpload}
+            {selectedFiles}
+            {importProgress}
+            totalFiles={totalFilesToProcess}
+          />
+          <CompatibleBanks />
         </div>
       {/if}
 
@@ -710,38 +565,13 @@
       {#if step === 2}
         <div class="preview-step">
           <!-- Summary Cards -->
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-value">{transactions.length}</div>
-              <div class="stat-label">{$t('import.preview.stats.total')}</div>
-            </div>
-            <div class="stat-card accent">
-              <div class="stat-value">{selectedCount}</div>
-              <div class="stat-label">
-                {$t('import.preview.stats.selected')}
-              </div>
-            </div>
-            <div class="stat-card warning" class:pulse={duplicateCount > 0}>
-              <div class="stat-value">{duplicateCount}</div>
-              <div class="stat-label">
-                {$t('import.preview.stats.duplicates')}
-              </div>
-              {#if duplicateCount > 0}
-                <div class="stat-hint">Posibles duplicados detectados</div>
-              {/if}
-              {#if selectedDuplicatesCount > 0}
-                <div class="stat-hint accent">
-                  {selectedDuplicatesCount} seleccionados para importar
-                </div>
-              {/if}
-            </div>
-            <div class="stat-card error">
-              <div class="stat-value">
-                {transactions.length - selectedCount}
-              </div>
-              <div class="stat-label">{$t('import.preview.stats.skipped')}</div>
-            </div>
-          </div>
+          <ImportStatsGrid
+            total={transactions.length}
+            selected={selectedCount}
+            duplicates={duplicateCount}
+            selectedDuplicates={selectedDuplicatesCount}
+            skipped={transactions.length - selectedCount}
+          />
 
           <!-- Search Bar -->
           <div class="search-container">
@@ -1027,45 +857,12 @@
 
       <!-- Step 3: Complete -->
       {#if step === 3}
-        <div class="complete-step">
-          {#if loading}
-            <div class="complete-loading">
-              <div class="complete-spinner"></div>
-              <h3 class="complete-title">{$t('import.complete.importing')}</h3>
-              <p class="complete-subtitle">
-                {$t('import.complete.importing_desc')}
-              </p>
-            </div>
-          {:else}
-            <div class="complete-success">
-              <div class="success-icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <h3 class="complete-title">{$t('import.complete.success')}</h3>
-              <p class="complete-subtitle">
-                {$t('import.complete.success_desc', { count: importedCount })}
-              </p>
-              {#if (window as any).lastImportDuplicates > 0}
-                <p class="complete-info">
-                  ⚠️ {(window as any).lastImportDuplicates} transacciones duplicadas fueron omitidas
-                </p>
-              {/if}
-              {#if (window as any).lastImportDuplicatesForced > 0}
-                <p class="complete-info">
-                  ✅ {(window as any).lastImportDuplicatesForced} posibles duplicados fueron importados
-                  por petición del usuario
-                </p>
-              {/if}
-            </div>
-          {/if}
-        </div>
+        <ImportComplete
+          {loading}
+          {importedCount}
+          duplicatesSkipped={(window as any).lastImportDuplicates || 0}
+          duplicatesForced={(window as any).lastImportDuplicatesForced || 0}
+        />
       {/if}
 
       <!-- Footer -->
@@ -1341,6 +1138,101 @@
 
   .toggle-acapulco:focus {
     box-shadow: 0 0 0 2px rgba(122, 186, 165, 0.2);
+  }
+
+  /* Compatible Banks Section */
+  .compatible-banks {
+    background: var(--surface-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .banks-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .banks-list {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .bank-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: 0.625rem;
+    transition: all 0.2s ease;
+    min-width: 160px;
+  }
+
+  .bank-item:not(.coming-soon):hover {
+    border-color: var(--acapulco);
+    background: rgba(122, 186, 165, 0.02);
+  }
+
+  .bank-item.coming-soon {
+    opacity: 0.6;
+  }
+
+  .bank-logo {
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+  }
+
+  .bank-logo.n26 {
+    color: var(--text-primary);
+  }
+
+  .bank-logo-placeholder {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+  }
+
+  .bank-logo-placeholder svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .bank-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    flex: 1;
+  }
+
+  .bank-status {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  .bank-status.supported {
+    background: rgba(122, 186, 165, 0.15);
+    color: var(--acapulco);
+  }
+
+  .bank-status.upcoming {
+    background: var(--surface-muted);
+    color: var(--text-muted);
   }
 
   /* Upload Area */

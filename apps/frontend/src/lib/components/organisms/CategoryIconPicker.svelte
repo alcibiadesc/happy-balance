@@ -1,6 +1,7 @@
 <script lang="ts">
   import { X } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
+  import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
   interface PickerPosition {
     top: number;
@@ -19,6 +20,8 @@
 
   const { isOpen, position, availableEmojis, onSelect, onClose }: Props = $props();
 </script>
+
+<div use:modalKeyboard={{ onCancel: onClose, isOpen }}></div>
 
 {#if isOpen}
   <!-- Modal backdrop for better UX -->

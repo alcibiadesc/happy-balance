@@ -57,7 +57,6 @@
     background: var(--surface-elevated);
     border-radius: 8px;
     padding: 1rem 1.25rem;
-    margin-bottom: 1.5rem;
     border: 1px solid var(--border-color, transparent);
     display: inline-block;
     min-width: 280px;

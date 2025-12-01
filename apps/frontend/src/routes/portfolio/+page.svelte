@@ -26,6 +26,7 @@
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import { effectiveTheme } from '$lib/stores/theme';
   import { portfolioGoal, userPreferences } from '$lib/stores/user-preferences';
+  import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
   // Store
   import { createInvestmentsStore } from '$lib/modules/investments/presentation/stores/investmentsStore.svelte.ts';
@@ -945,6 +946,13 @@
 
 <!-- Add History Modal -->
 {#if store.showAddHistoryModal}
+  <div
+    use:modalKeyboard={{
+      onConfirm: store.saveHistoryEntry,
+      onCancel: store.cancelAddHistory,
+      isOpen: store.showAddHistoryModal,
+    }}
+  ></div>
   <div class="add-history-overlay" onclick={store.cancelAddHistory}>
     <div class="add-history-modal" onclick={(e) => e.stopPropagation()}>
       <div class="add-history-header">

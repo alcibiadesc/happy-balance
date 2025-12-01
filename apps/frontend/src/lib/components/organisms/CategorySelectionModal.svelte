@@ -3,6 +3,7 @@
   import { onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import type { Transaction, Category } from '$lib/types/transaction';
+  import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
   // Props
   export let isOpen = false;
@@ -42,12 +43,6 @@
 
   function handleBackdropClick(event: MouseEvent) {
     if (event.target === modalElement) {
-      closeModal();
-    }
-  }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
       closeModal();
     }
   }
@@ -118,7 +113,8 @@
   });
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<!-- This modal doesn't have a confirm action, only cancel (Escape) -->
+<div use:modalKeyboard={{ onCancel: closeModal, isOpen }}></div>
 
 {#if isOpen && transaction}
   <div

@@ -206,7 +206,7 @@
 
 <style>
   .metrics-section {
-    margin-bottom: 2rem;
+    /* gap controlled by parent */
   }
 
   .metrics-grid {

@@ -83,6 +83,7 @@
   });
 </script>
 
+<div class="dashboard-sections">
 {#each visibleSections as sectionId (sectionId)}
   <EditableSection {sectionId}>
     {#if sectionId === 'spending'}
@@ -154,3 +155,12 @@
     {/if}
   </EditableSection>
 {/each}
+</div>
+
+<style>
+  .dashboard-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+</style>
