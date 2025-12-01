@@ -4,6 +4,7 @@ export interface UserPreferences {
   currency: string;
   language: string;
   theme: string;
+  portfolioGoal: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,10 +14,12 @@ export interface CreateUserPreferencesData {
   currency?: string;
   language?: string;
   theme?: string;
+  portfolioGoal?: number;
 }
 
 export interface UpdateUserPreferencesData {
   currency?: string;
   language?: string;
   theme?: string;
+  portfolioGoal?: number;
 }

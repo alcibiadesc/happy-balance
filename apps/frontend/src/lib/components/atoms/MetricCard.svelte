@@ -108,6 +108,16 @@
     color: #8b5cf6;
   }
 
+  .metric-icon.profit-positive {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+
+  .metric-icon.profit-negative {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
   .metric-label {
     font-size: 0.875rem;
     color: var(--text-secondary);

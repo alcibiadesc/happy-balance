@@ -43,7 +43,7 @@ export class UserPreferencesController {
   async createUserPreferences(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.body.userId || req.user?.userId;
-      const { currency, language, theme } = req.body;
+      const { currency, language, theme, portfolioGoal } = req.body;
 
       if (!userId) {
         res.status(400).json({ error: "User ID is required" });
@@ -55,6 +55,7 @@ export class UserPreferencesController {
         currency,
         language,
         theme,
+        portfolioGoal,
       });
 
       if (!result.isSuccess()) {
@@ -71,7 +72,7 @@ export class UserPreferencesController {
   async updateUserPreferences(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.params.userId || req.user?.userId;
-      const { currency, language, theme } = req.body;
+      const { currency, language, theme, portfolioGoal } = req.body;
 
       if (!userId) {
         res.status(400).json({ error: "User ID is required" });
@@ -82,6 +83,7 @@ export class UserPreferencesController {
         currency,
         language,
         theme,
+        portfolioGoal,
       });
 
       if (!result.isSuccess()) {

@@ -3,6 +3,7 @@
   import MetricCard from '$lib/components/atoms/MetricCard.svelte';
   import ExpensesCard from './ExpensesCard.svelte';
   import PortfolioCard from './PortfolioCard.svelte';
+  import ProfitCard from './ProfitCard.svelte';
   import { dashboardConfig, type MetricType } from '$lib/stores/dashboardConfig';
   import { getMetricIcon } from '$lib/config/dashboardSections';
 
@@ -188,6 +189,12 @@
           <PortfolioCard
             value={formatCurrency(metrics.portfolio ?? 0)}
             profit={metrics.portfolioProfit ?? 0}
+            profitPercentage={metrics.portfolioProfitPercentage ?? 0}
+            {loading}
+          />
+        {:else if metric.id === 'profit'}
+          <ProfitCard
+            value={formatCurrency(metrics.portfolioProfit ?? 0)}
             profitPercentage={metrics.portfolioProfitPercentage ?? 0}
             {loading}
           />

@@ -25,6 +25,7 @@
   import { t as _t } from '$lib/stores/i18n';
   import { currentCurrency, formatCurrency } from '$lib/stores/currency';
   import { effectiveTheme } from '$lib/stores/theme';
+  import { portfolioGoal, userPreferences } from '$lib/stores/user-preferences';
 
   // Store
   import { createInvestmentsStore } from '$lib/modules/investments/presentation/stores/investmentsStore.svelte.ts';
@@ -44,9 +45,19 @@
   let activeForm = $state<'new' | 'edit' | null>(null);
   let pickerPosition = $state({ top: 0, left: 0 });
 
-  // Goal
-  let goal = $state(100000);
+  // Goal - use store value
+  let goalInput = $state(100000);
   let showGoalEdit = $state(false);
+
+  // Sync goalInput with store
+  $effect(() => {
+    goalInput = $portfolioGoal || 100000;
+  });
+
+  async function saveGoal() {
+    await userPreferences.updatePortfolioGoal(goalInput);
+    showGoalEdit = false;
+  }
 
   // Time period filter for chart
   type TimePeriod = '1M' | '3M' | '6M' | '1Y' | 'ALL';
@@ -339,7 +350,7 @@
   }
 
   // Goal progress
-  const goalProgress = $derived(Math.min(100, (store.totalPortfolioValue / goal) * 100));
+  const goalProgress = $derived(Math.min(100, (store.totalPortfolioValue / ($portfolioGoal || 100000)) * 100));
 
   // Reactivity for charts
   $effect(() => {
@@ -396,20 +407,20 @@
             <span class="goal-text">
               {goalProgress.toFixed(0)}% de tu meta
               {#if goalProgress < 100}
-                <span class="goal-remaining">(faltan {store.formatCurrency(goal - store.totalPortfolioValue)})</span>
+                <span class="goal-remaining">(faltan {store.formatCurrency(($portfolioGoal || 100000) - store.totalPortfolioValue)})</span>
               {/if}
             </span>
             <button class="goal-edit" onclick={() => (showGoalEdit = !showGoalEdit)}>
               <Target size={14} />
-              {store.formatCurrency(goal)}
+              {store.formatCurrency($portfolioGoal || 100000)}
             </button>
           </div>
         </div>
 
         {#if showGoalEdit}
           <div class="goal-input-wrapper">
-            <input type="number" bind:value={goal} class="goal-input" placeholder="Meta..." />
-            <button class="goal-save" onclick={() => (showGoalEdit = false)}>OK</button>
+            <input type="number" bind:value={goalInput} class="goal-input" placeholder="Meta..." />
+            <button class="goal-save" onclick={saveGoal}>OK</button>
           </div>
         {/if}
       </div>

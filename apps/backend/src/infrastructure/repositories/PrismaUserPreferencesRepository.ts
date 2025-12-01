@@ -18,7 +18,14 @@ export class PrismaUserPreferencesRepository
         where: { userId },
       });
 
-      return Result.ok(preferences);
+      if (!preferences) {
+        return Result.ok(null);
+      }
+
+      return Result.ok({
+        ...preferences,
+        portfolioGoal: Number(preferences.portfolioGoal),
+      });
     } catch (error) {
       return Result.failWithMessage(
         `Failed to find user preferences: ${error}`,
@@ -50,10 +57,14 @@ export class PrismaUserPreferencesRepository
           currency: data.currency || "EUR",
           language: data.language || "en",
           theme: data.theme || "light",
+          portfolioGoal: data.portfolioGoal || 100000,
         },
       });
 
-      return Result.ok(preferences);
+      return Result.ok({
+        ...preferences,
+        portfolioGoal: Number(preferences.portfolioGoal),
+      });
     } catch (error) {
       return Result.failWithMessage(
         `Failed to create user preferences: ${error}`,
@@ -72,10 +83,14 @@ export class PrismaUserPreferencesRepository
           ...(data.currency && { currency: data.currency }),
           ...(data.language && { language: data.language }),
           ...(data.theme && { theme: data.theme }),
+          ...(data.portfolioGoal !== undefined && { portfolioGoal: data.portfolioGoal }),
         },
       });
 
-      return Result.ok(preferences);
+      return Result.ok({
+        ...preferences,
+        portfolioGoal: Number(preferences.portfolioGoal),
+      });
     } catch (error) {
       return Result.failWithMessage(
         `Failed to update user preferences: ${error}`,

@@ -9,6 +9,7 @@ export interface UserPreferences {
   currency: string;
   language: string;
   theme: string;
+  portfolioGoal: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -35,6 +36,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   currency: 'EUR',
   language: 'en',
   theme: 'light',
+  portfolioGoal: 100000,
 };
 
 // Create writable store
@@ -126,6 +128,10 @@ function createUserPreferencesStore() {
     async updateTheme(theme: string) {
       await this.save({ theme });
     },
+
+    async updatePortfolioGoal(portfolioGoal: number) {
+      await this.save({ portfolioGoal });
+    },
   };
 }
 
@@ -135,3 +141,4 @@ export const userPreferences = createUserPreferencesStore();
 export const currency = derived(userPreferences, ($prefs) => $prefs.currency);
 export const language = derived(userPreferences, ($prefs) => $prefs.language);
 export const theme = derived(userPreferences, ($prefs) => $prefs.theme);
+export const portfolioGoal = derived(userPreferences, ($prefs) => $prefs.portfolioGoal);

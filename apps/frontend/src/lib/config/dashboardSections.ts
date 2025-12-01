@@ -13,7 +13,7 @@ import {
   Briefcase,
 } from 'lucide-svelte';
 
-export type MetricType = 'income' | 'expenses' | 'investments' | 'balance' | 'portfolio';
+export type MetricType = 'income' | 'expenses' | 'investments' | 'balance' | 'portfolio' | 'profit';
 export type SectionType =
   | 'spending'
   | 'metrics'
@@ -75,6 +75,13 @@ export const METRIC_DEFINITIONS: MetricDefinition[] = [
     i18nKey: 'dashboard.metrics.portfolio',
     defaultVisible: true,
     defaultOrder: 4,
+  },
+  {
+    id: 'profit',
+    icon: TrendingUp,
+    i18nKey: 'dashboard.metrics.profit',
+    defaultVisible: true,
+    defaultOrder: 5,
   },
 ];
 
