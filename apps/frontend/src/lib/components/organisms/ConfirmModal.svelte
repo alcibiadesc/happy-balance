@@ -2,6 +2,7 @@
   import { AlertTriangle, Check, X } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
   import { modalKeyboard } from '$lib/actions/modalKeyboard';
+  import type { Snippet } from 'svelte';
 
   interface Props {
     isOpen: boolean;
@@ -12,7 +13,7 @@
     type?: 'warning' | 'danger' | 'info';
     onConfirm?: () => void;
     onCancel?: () => void;
-    children?: any;
+    children?: Snippet;
   }
 
   const {
@@ -83,7 +84,7 @@
 
       <!-- Slot for additional content -->
       {#if children}
-        {@render children?.()}
+        {@render children()}
       {/if}
 
       <!-- Action buttons -->

@@ -47,13 +47,8 @@
   let pickerPosition = $state({ top: 0, left: 0 });
 
   // Goal - use store value
-  let goalInput = $state(100000);
+  let goalInput = $derived($portfolioGoal || 100000);
   let showGoalEdit = $state(false);
-
-  // Sync goalInput with store
-  $effect(() => {
-    goalInput = $portfolioGoal || 100000;
-  });
 
   async function saveGoal() {
     await userPreferences.updatePortfolioGoal(goalInput);

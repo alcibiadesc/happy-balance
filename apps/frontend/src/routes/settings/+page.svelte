@@ -7,7 +7,6 @@
     Info,
     RefreshCw,
     Menu,
-    GripVertical,
     ChevronUp,
     ChevronDown,
   } from 'lucide-svelte';
@@ -544,40 +543,38 @@
   onConfirm={store.confirmImport}
   onCancel={() => (store.showImportModal = false)}
 >
-  {#snippet children()}
-    <div class="import-mode-selector">
-      <label class="import-mode-option">
-        <input
-          type="radio"
-          name="importMode"
-          value="merge"
-          checked={store.importMode === 'merge'}
-          onchange={() => (store.importMode = 'merge')}
-        />
-        <div class="import-mode-content">
-          <span class="import-mode-label">{$t('settings.import_merge') || 'Merge'}</span>
-          <span class="import-mode-desc"
-            >{$t('settings.import_merge_desc') || 'Add to existing data'}</span
-          >
-        </div>
-      </label>
-      <label class="import-mode-option">
-        <input
-          type="radio"
-          name="importMode"
-          value="replace"
-          checked={store.importMode === 'replace'}
-          onchange={() => (store.importMode = 'replace')}
-        />
-        <div class="import-mode-content">
-          <span class="import-mode-label">{$t('settings.import_replace') || 'Replace'}</span>
-          <span class="import-mode-desc"
-            >{$t('settings.import_replace_desc') || 'Delete all existing data first'}</span
-          >
-        </div>
-      </label>
-    </div>
-  {/snippet}
+  <div class="import-mode-selector">
+    <label class="import-mode-option">
+      <input
+        type="radio"
+        name="importMode"
+        value="merge"
+        checked={store.importMode === 'merge'}
+        onchange={() => (store.importMode = 'merge')}
+      />
+      <div class="import-mode-content">
+        <span class="import-mode-label">{$t('settings.import_merge') || 'Merge'}</span>
+        <span class="import-mode-desc"
+          >{$t('settings.import_merge_desc') || 'Add to existing data'}</span
+        >
+      </div>
+    </label>
+    <label class="import-mode-option">
+      <input
+        type="radio"
+        name="importMode"
+        value="replace"
+        checked={store.importMode === 'replace'}
+        onchange={() => (store.importMode = 'replace')}
+      />
+      <div class="import-mode-content">
+        <span class="import-mode-label">{$t('settings.import_replace') || 'Replace'}</span>
+        <span class="import-mode-desc"
+          >{$t('settings.import_replace_desc') || 'Delete all existing data first'}</span
+        >
+      </div>
+    </label>
+  </div>
 </ConfirmModal>
 
 <!-- Reset Data Confirmation Modal -->
