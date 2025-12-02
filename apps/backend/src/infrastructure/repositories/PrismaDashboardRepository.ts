@@ -68,40 +68,44 @@ export class PrismaDashboardRepository {
         END
     `;
 
-    const typeMetrics = result.reduce((acc, row) => {
-      const total = parseFloat(row.total) || 0;
-      const count = parseInt(row.count) || 0;
-      const maxAmount = parseFloat(row.max_amount) || 0;
+    const typeMetrics = result.reduce(
+      (acc, row) => {
+        const total = parseFloat(row.total) || 0;
+        const count = parseInt(row.count) || 0;
+        const maxAmount = parseFloat(row.max_amount) || 0;
 
-      const typeMap: Record<string, string> = {
-        'INCOME': 'income',
-        'EXPENSE': 'expenses',
-        'INVESTMENT': 'investments',
-        'DEBT_PAYMENT': 'debtPayments'
-      };
+        const typeMap: Record<string, string> = {
+          INCOME: 'income',
+          EXPENSE: 'expenses',
+          INVESTMENT: 'investments',
+          DEBT_PAYMENT: 'debtPayments',
+        };
 
-      const metricKey = typeMap[row.effective_type] || 'expenses';
+        const metricKey = typeMap[row.effective_type] || 'expenses';
 
-      return {
-        ...acc,
-        [metricKey]: acc[metricKey] + total,
-        transactionCount: acc.transactionCount + count,
-        largestTransaction: Math.max(acc.largestTransaction, maxAmount)
-      };
-    }, {
-      income: 0,
-      expenses: 0,
-      investments: 0,
-      debtPayments: 0,
-      transactionCount: 0,
-      largestTransaction: 0
-    });
+        return {
+          ...acc,
+          [metricKey]: acc[metricKey] + total,
+          transactionCount: acc.transactionCount + count,
+          largestTransaction: Math.max(acc.largestTransaction, maxAmount),
+        };
+      },
+      {
+        income: 0,
+        expenses: 0,
+        investments: 0,
+        debtPayments: 0,
+        transactionCount: 0,
+        largestTransaction: 0,
+      }
+    );
 
     const metrics = {
       ...typeMetrics,
-      averageTransaction: typeMetrics.transactionCount > 0
-        ? (typeMetrics.income + typeMetrics.expenses) / typeMetrics.transactionCount
-        : 0
+      averageTransaction:
+        typeMetrics.transactionCount > 0
+          ? (typeMetrics.income + typeMetrics.expenses) / typeMetrics.transactionCount
+          : 0,
     };
 
     return metrics;
@@ -143,7 +147,7 @@ export class PrismaDashboardRepository {
       ORDER BY amount DESC
     `;
 
-    return result.map(row => ({
+    return result.map((row) => ({
       categoryId: row.categoryId,
       categoryName: row.categoryName,
       amount: parseFloat(row.amount) || 0,
@@ -176,6 +180,7 @@ export class PrismaDashboardRepository {
         AND t.date <= ${endDate}
         AND t.hidden = false
         AND t."userId" = ${this.userId}
+        AND (c.type IS NULL OR c.type != 'no_compute')
       GROUP BY
         EXTRACT(YEAR FROM t.date),
         EXTRACT(MONTH FROM t.date),
@@ -198,13 +203,13 @@ export class PrismaDashboardRepository {
         income: 0,
         expenses: 0,
         investments: 0,
-        transactionCount: 0
+        transactionCount: 0,
       };
 
       const typeMap: Record<string, keyof MonthlyMetrics> = {
-        'INCOME': 'income',
-        'EXPENSE': 'expenses',
-        'INVESTMENT': 'investments'
+        INCOME: 'income',
+        EXPENSE: 'expenses',
+        INVESTMENT: 'investments',
       };
 
       const metricKey = typeMap[row.effective_type];
@@ -214,12 +219,13 @@ export class PrismaDashboardRepository {
 
       return acc.set(key, {
         ...existing,
-        transactionCount: existing.transactionCount + count
+        transactionCount: existing.transactionCount + count,
       });
     }, new Map<string, MonthlyMetrics>());
 
-    return (Array.from(monthlyMap.values()) as MonthlyMetrics[])
-      .sort((a, b) => a.year === b.year ? a.month - b.month : a.year - b.year);
+    return (Array.from(monthlyMap.values()) as MonthlyMetrics[]).sort((a, b) =>
+      a.year === b.year ? a.month - b.month : a.year - b.year
+    );
   }
 
   /**
@@ -242,7 +248,7 @@ export class PrismaDashboardRepository {
       LIMIT ${limit}
     `;
 
-    return result.map(row => ({
+    return result.map((row) => ({
       year: row.year,
       month: row.month,
       transactionCount: row.transaction_count,
@@ -316,8 +322,8 @@ export class PrismaDashboardRepository {
       return { trends: [], predictions: [] };
     }
 
-    const incomes = history.map(h => h.income);
-    const expenses = history.map(h => h.expenses);
+    const incomes = history.map((h) => h.income);
+    const expenses = history.map((h) => h.expenses);
 
     // Tendencia lineal simple
     const incomeTrend = this.calculateLinearTrend(incomes);
@@ -375,7 +381,10 @@ export class PrismaDashboardRepository {
     return ((newValue - oldValue) / oldValue) * 100;
   }
 
-  private calculateLinearTrend(values: number[]): { slope: number; direction: 'up' | 'down' | 'stable' } {
+  private calculateLinearTrend(values: number[]): {
+    slope: number;
+    direction: 'up' | 'down' | 'stable';
+  } {
     if (values.length < 2) return { slope: 0, direction: 'stable' };
 
     // Regresión lineal simple
