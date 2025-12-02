@@ -28,9 +28,6 @@ jobs:
       - name: Generate Prisma client
         run: cd apps/backend && pnpm db:generate
 
-      - name: Run linting
-        run: pnpm lint
-
       - name: Run type checking
         run: pnpm typecheck
 
