@@ -61,6 +61,47 @@
   // Use actual portfolio value for FIRE calculation
   const totalInvestments = $derived(data.metrics.portfolio ?? 0);
 
+  // Default colors for categories without assigned colors
+  const defaultColors = [
+    '#6366f1',
+    '#8b5cf6',
+    '#a855f7',
+    '#d946ef',
+    '#ec4899',
+    '#f43f5e',
+    '#ef4444',
+    '#f97316',
+    '#f59e0b',
+    '#eab308',
+    '#84cc16',
+    '#22c55e',
+    '#10b981',
+    '#14b8a6',
+    '#06b6d4',
+  ];
+
+  // Create a map from category name to color/icon using data.categories
+  const categoryColorMap = $derived(() => {
+    const map = new Map<string, { color: string; icon?: string }>();
+    for (const cat of data.categories || []) {
+      map.set(cat.name.toLowerCase(), { color: cat.color, icon: cat.icon });
+    }
+    return map;
+  });
+
+  // Helper to get color for a category
+  function getCategoryColor(name: string, index: number): string {
+    const map = categoryColorMap();
+    const found = map.get(name.toLowerCase());
+    return found?.color || defaultColors[index % defaultColors.length];
+  }
+
+  function getCategoryIcon(name: string): string | undefined {
+    const map = categoryColorMap();
+    const found = map.get(name.toLowerCase());
+    return found?.icon;
+  }
+
   // Filter only expense categories for Top Expenses widget (exclude investments and income)
   // CategoryType values: ESSENTIAL, DISCRETIONARY, DEBT_PAYMENT, INVESTMENT, INCOME
   const expenseOnlyCategories = $derived(() => {
@@ -89,13 +130,16 @@
         const type = c.type || c.categoryType || '';
         return expenseTypes.includes(type);
       })
-      .map((c: any) => ({
-        name: c.name || c.categoryName,
-        amount: c.amount,
-        percentage: c.percentage,
-        color: c.color,
-        icon: c.icon,
-      }));
+      .map((c: any, index: number) => {
+        const name = c.name || c.categoryName;
+        return {
+          name,
+          amount: c.amount,
+          percentage: c.percentage,
+          color: c.color || getCategoryColor(name, index),
+          icon: c.icon || getCategoryIcon(name),
+        };
+      });
   });
 
   // Filter income categories for Top Income widget
@@ -115,13 +159,16 @@
         const type = (c.type || c.categoryType || '').toUpperCase();
         return type === 'INCOME';
       })
-      .map((c: any) => ({
-        name: c.name || c.categoryName,
-        amount: c.amount,
-        percentage: c.percentage,
-        color: c.color,
-        icon: c.icon,
-      }));
+      .map((c: any, index: number) => {
+        const name = c.name || c.categoryName;
+        return {
+          name,
+          amount: c.amount,
+          percentage: c.percentage,
+          color: c.color || getCategoryColor(name, index),
+          icon: c.icon || getCategoryIcon(name),
+        };
+      });
   });
 
   // Filter investment categories for Top Investments widget
@@ -141,13 +188,16 @@
         const type = (c.type || c.categoryType || '').toUpperCase();
         return type === 'INVESTMENT';
       })
-      .map((c: any) => ({
-        name: c.name || c.categoryName,
-        amount: c.amount,
-        percentage: c.percentage,
-        color: c.color,
-        icon: c.icon,
-      }));
+      .map((c: any, index: number) => {
+        const name = c.name || c.categoryName;
+        return {
+          name,
+          amount: c.amount,
+          percentage: c.percentage,
+          color: c.color || getCategoryColor(name, index),
+          icon: c.icon || getCategoryIcon(name),
+        };
+      });
   });
 
   // Get visible sections sorted by order
