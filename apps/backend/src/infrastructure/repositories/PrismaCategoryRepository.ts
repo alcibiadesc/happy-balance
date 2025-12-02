@@ -1,18 +1,8 @@
-import { PrismaClient, Category as PrismaCategory } from "@prisma/client";
-import { Result } from "@domain/shared/Result";
-import {
-  ICategoryRepository,
-  CategoryFilters,
-} from "@domain/repositories/ICategoryRepository";
-import {
-  Category,
-  CategoryId,
-  CategorySnapshot,
-} from "@domain/entities/Category";
-import {
-  CategoryType,
-  CategoryTypeHelper,
-} from "@domain/entities/CategoryType";
+import { PrismaClient, Category as PrismaCategory } from '@prisma/client';
+import { Result } from '@domain/shared/Result';
+import { ICategoryRepository, CategoryFilters } from '@domain/repositories/ICategoryRepository';
+import { Category, CategoryId, CategorySnapshot } from '@domain/entities/Category';
+import { CategoryType, CategoryTypeHelper } from '@domain/entities/CategoryType';
 
 export class PrismaCategoryRepository implements ICategoryRepository {
   constructor(
@@ -28,16 +18,14 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
     const categoryType = CategoryTypeHelper.fromString(prismaCategory.type);
     if (!categoryType) {
-      return Result.failWithMessage(
-        `Invalid category type: ${prismaCategory.type}`,
-      );
+      return Result.failWithMessage(`Invalid category type: ${prismaCategory.type}`);
     }
 
     return Category.fromSnapshot({
       id: prismaCategory.id,
       name: prismaCategory.name,
-      color: prismaCategory.color || "#3B82F6",
-      icon: prismaCategory.icon || "💰",
+      color: prismaCategory.color || '#3B82F6',
+      icon: prismaCategory.icon || '💰',
       type: categoryType,
       isActive: prismaCategory.isActive,
       annualBudget: prismaCategory.annualBudget ? Number(prismaCategory.annualBudget) : 0,
@@ -54,7 +42,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       type: category.type,
       isActive: category.isActive,
       annualBudget: category.annualBudget,
-      userId: forceUserId !== undefined ? forceUserId : (this.userId || 'default'),
+      userId: forceUserId !== undefined ? forceUserId : this.userId || 'default',
       isGlobal: false, // User-created categories are not global
     };
   }
@@ -64,13 +52,10 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       // Get both global categories and user-specific categories
       const categories = await this.prisma.category.findMany({
         where: {
-          OR: [
-            { isGlobal: true },
-            { userId: this.userId || 'default' }
-          ]
+          OR: [{ isGlobal: true }, { userId: this.userId || 'default' }],
         },
         orderBy: {
-          name: "asc",
+          name: 'asc',
         },
       });
 
@@ -86,7 +71,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(domainCategories);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch categories: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to fetch categories: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -96,13 +81,10 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       const categories = await this.prisma.category.findMany({
         where: {
           isActive: true,
-          OR: [
-            { isGlobal: true },
-            { userId: this.userId || 'default' }
-          ]
+          OR: [{ isGlobal: true }, { userId: this.userId || 'default' }],
         },
         orderBy: {
-          name: "asc",
+          name: 'asc',
         },
       });
 
@@ -118,7 +100,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(domainCategories);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch active categories: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to fetch active categories: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -143,7 +125,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(domainCategoryResult.getValue());
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch category: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to fetch category: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -156,7 +138,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save category: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to save category: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -169,20 +151,15 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(result.count);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save categories: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to save categories: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
-  async findWithFilters(
-    filters?: CategoryFilters,
-  ): Promise<Result<Category[]>> {
+  async findWithFilters(filters?: CategoryFilters): Promise<Result<Category[]>> {
     try {
       const where: any = {
-        OR: [
-          { isGlobal: true },
-          { userId: this.userId || 'default' }
-        ]
+        OR: [{ isGlobal: true }, { userId: this.userId || 'default' }],
       };
 
       if (filters?.type) {
@@ -196,14 +173,14 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       if (filters?.searchTerm) {
         where.name = {
           contains: filters.searchTerm,
-          mode: "insensitive",
+          mode: 'insensitive',
         };
       }
 
       const categories = await this.prisma.category.findMany({
         where,
         orderBy: {
-          name: "asc",
+          name: 'asc',
         },
       });
 
@@ -219,7 +196,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(domainCategories);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch categories with filters: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to fetch categories with filters: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -245,7 +222,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to update category: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to update category: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -263,7 +240,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to delete category: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to delete category: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -278,7 +255,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to permanently delete category: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to permanently delete category: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -293,26 +270,24 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(count > 0);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to check category existence: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to check category existence: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
-  async existsByName(
-    name: string,
-    type: CategoryType,
-  ): Promise<Result<boolean>> {
+  async existsByName(name: string, type: CategoryType): Promise<Result<boolean>> {
     try {
       const count = await this.prisma.category.count({
         where: {
           name,
           type,
+          isActive: true, // Only check active categories
         },
       });
       return Result.ok(count > 0);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to check category name existence: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to check category name existence: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -332,7 +307,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       if (filters?.searchTerm) {
         where.name = {
           contains: filters.searchTerm,
-          mode: "insensitive",
+          mode: 'insensitive',
         };
       }
 
@@ -340,7 +315,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(count);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to count categories: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to count categories: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -383,14 +358,14 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get usage statistics: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to get usage statistics: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async findMatchingCategories(
     merchantName: string,
-    type: CategoryType,
+    type: CategoryType
   ): Promise<Result<Category[]>> {
     // Simple keyword matching for now
     return this.findWithFilters({ searchTerm: merchantName, type });
@@ -400,18 +375,18 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     try {
       // CRITICAL: Only delete categories for the specific user
       if (!this.userId) {
-        return Result.failWithMessage("User ID is required to delete categories");
+        return Result.failWithMessage('User ID is required to delete categories');
       }
 
       await this.prisma.category.deleteMany({
         where: {
-          userId: this.userId
-        }
+          userId: this.userId,
+        },
       });
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to clear categories: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to clear categories: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -445,7 +420,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       return Result.ok(result.count);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to import categories: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to import categories: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

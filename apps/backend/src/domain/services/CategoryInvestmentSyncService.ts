@@ -1,9 +1,9 @@
-import { Result } from "@domain/shared/Result";
-import { IInvestmentRepository } from "@domain/repositories/IInvestmentRepository";
-import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
-import { Investment } from "@domain/entities/Investment";
-import { Category, CategoryId, CategorySnapshot } from "@domain/entities/Category";
-import { CategoryType } from "@domain/entities/CategoryType";
+import { Result } from '@domain/shared/Result';
+import { IInvestmentRepository } from '@domain/repositories/IInvestmentRepository';
+import { ICategoryRepository } from '@domain/repositories/ICategoryRepository';
+import { Investment } from '@domain/entities/Investment';
+import { Category, CategoryId, CategorySnapshot } from '@domain/entities/Category';
+import { CategoryType } from '@domain/entities/CategoryType';
 
 /**
  * Service that keeps Categories (type=INVESTMENT) and Investments in sync
@@ -54,7 +54,7 @@ export class CategoryInvestmentSyncService {
       const investmentResult = Investment.create(
         snapshot.name,
         0, // Initial value is 0
-        "EUR",
+        'EUR',
         this.userId,
         {
           categoryId: snapshot.id,
@@ -77,7 +77,7 @@ export class CategoryInvestmentSyncService {
       return Result.ok(investment);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to sync investment from category: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to sync investment from category: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -153,7 +153,7 @@ export class CategoryInvestmentSyncService {
       return Result.ok(category);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to sync category from investment: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to sync category from investment: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -203,7 +203,7 @@ export class CategoryInvestmentSyncService {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to sync investments from category update: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to sync investments from category update: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -262,7 +262,7 @@ export class CategoryInvestmentSyncService {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to sync category from investment update: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to sync category from investment update: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -288,7 +288,7 @@ export class CategoryInvestmentSyncService {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to deactivate investments on category deletion: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to deactivate investments on category deletion: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -305,15 +305,17 @@ export class CategoryInvestmentSyncService {
       }
 
       // Check if other active investments use this category
-      const investmentsResult = await this.investmentRepository.findByCategoryId(snapshot.categoryId);
+      const investmentsResult = await this.investmentRepository.findByCategoryId(
+        snapshot.categoryId
+      );
 
       if (investmentsResult.isFailure()) {
         return Result.fail(investmentsResult.getError());
       }
 
-      const activeInvestments = investmentsResult.getValue().filter(
-        (inv) => inv.isActive && inv.id.value !== snapshot.id
-      );
+      const activeInvestments = investmentsResult
+        .getValue()
+        .filter((inv) => inv.isActive && inv.id.value !== snapshot.id);
 
       // If no other active investments use this category, deactivate it
       if (activeInvestments.length === 0) {
@@ -326,7 +328,95 @@ export class CategoryInvestmentSyncService {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to handle category on investment deletion: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to handle category on investment deletion: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Sync all existing investments without categories - create categories for them
+   */
+  async syncAllInvestmentsToCategories(): Promise<Result<{ created: number; linked: number }>> {
+    try {
+      let created = 0;
+      let linked = 0;
+
+      // Get all active investments
+      const investmentsResult = await this.investmentRepository.findWithFilters({ isActive: true });
+      if (investmentsResult.isFailure()) {
+        return Result.fail(investmentsResult.getError());
+      }
+
+      const investments = investmentsResult.getValue();
+
+      for (const investment of investments) {
+        const snapshot = investment.toSnapshot();
+
+        // Skip if already linked
+        if (snapshot.categoryId) {
+          continue;
+        }
+
+        // Check if a category with same name exists
+        const existsResult = await this.categoryRepository.existsByName(
+          snapshot.name,
+          CategoryType.INVESTMENT
+        );
+
+        if (existsResult.isFailure()) {
+          console.warn(
+            `Failed to check category existence for ${snapshot.name}:`,
+            existsResult.getError()
+          );
+          continue;
+        }
+
+        if (existsResult.getValue()) {
+          // Category exists, link them
+          const categoriesResult = await this.categoryRepository.findWithFilters({
+            type: CategoryType.INVESTMENT,
+            searchTerm: snapshot.name,
+            isActive: true,
+          });
+
+          if (categoriesResult.isSuccess() && categoriesResult.getValue().length > 0) {
+            const category = categoriesResult.getValue()[0];
+            investment.linkToCategory(category.id.value);
+            await this.investmentRepository.update(investment);
+            linked++;
+          }
+        } else {
+          // Create new category
+          const categoryId = crypto.randomUUID();
+          const categorySnapshot: CategorySnapshot = {
+            id: categoryId,
+            name: snapshot.name,
+            type: CategoryType.INVESTMENT,
+            color: snapshot.color,
+            icon: snapshot.icon,
+            isActive: true,
+            annualBudget: 0,
+            createdAt: new Date().toISOString(),
+          };
+
+          const categoryResult = Category.fromSnapshot(categorySnapshot);
+          if (categoryResult.isSuccess()) {
+            const category = categoryResult.getValue();
+            const saveResult = await this.categoryRepository.save(category);
+
+            if (saveResult.isSuccess()) {
+              investment.linkToCategory(categoryId);
+              await this.investmentRepository.update(investment);
+              created++;
+            }
+          }
+        }
+      }
+
+      return Result.ok({ created, linked });
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to sync investments to categories: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
