@@ -33,7 +33,7 @@
       <Target size={20} />
     </div>
     <div class="header-text">
-      <h3>{$t('dashboard.savings.title') || 'Ahorro mensual'}</h3>
+      <h3>{$t('dashboard.savings.title') || 'Ahorro'}</h3>
       <span class="subtitle">{$t('dashboard.savings.target') || 'Meta: 20% de ingresos'}</span>
     </div>
   </div>

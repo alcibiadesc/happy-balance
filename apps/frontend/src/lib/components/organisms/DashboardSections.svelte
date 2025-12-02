@@ -268,6 +268,7 @@
           expenses={data.metrics.expenses}
           investments={data.metrics.investments}
           savingsRate={data.metrics.savingsRate}
+          periodType={data.selectedPeriodType}
           loading={data.loading}
           formatCurrency={data.formatCurrency}
         />

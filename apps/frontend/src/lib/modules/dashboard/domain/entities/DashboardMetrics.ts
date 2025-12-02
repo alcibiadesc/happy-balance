@@ -22,7 +22,9 @@ export class DashboardMetrics {
     const balance = income.subtract(expenses).subtract(investments);
     const totalIncome = income.getValue();
     const spendingRate = totalIncome > 0 ? (expenses.getValue() / totalIncome) * 100 : 0;
-    const savingsRate = 100 - spendingRate;
+    // Savings = Income - Expenses (investments are not expenses, they're where you put savings)
+    const savings = totalIncome - expenses.getValue();
+    const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
 
     return new DashboardMetrics(
       period,

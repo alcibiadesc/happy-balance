@@ -2,11 +2,14 @@
   import { TrendingUp, TrendingDown, Target, Wallet } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
 
+  type PeriodType = 'overview' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+
   interface Props {
     income: number;
     expenses: number;
     investments: number;
     savingsRate: number;
+    periodType?: PeriodType;
     loading?: boolean;
     formatCurrency: (amount: number) => string;
   }
@@ -16,15 +19,36 @@
     expenses,
     investments,
     savingsRate,
+    periodType = 'month',
     loading = false,
     formatCurrency,
   }: Props = $props();
 
-  const savings = $derived(income - expenses - investments);
+  // Savings = Income - Expenses (investments are where you put savings, not expenses)
+  const savings = $derived(income - expenses);
   const targetSavingsRate = 20; // 20% is a common savings target
-  const progressPercentage = $derived(Math.min((savingsRate / targetSavingsRate) * 100, 100));
+  const progressPercentage = $derived(
+    Math.max(0, Math.min((savingsRate / targetSavingsRate) * 100, 100))
+  );
   const isOnTrack = $derived(savingsRate >= targetSavingsRate);
-  const dailyAverage = $derived(expenses / 30);
+
+  // Calculate days based on period type
+  function getPeriodDays(period: PeriodType): number {
+    switch (period) {
+      case 'overview':
+      case 'year':
+        return 365;
+      case 'quarter':
+        return 90;
+      case 'week':
+        return 7;
+      case 'month':
+      default:
+        return 30;
+    }
+  }
+
+  const dailyAverage = $derived(expenses / getPeriodDays(periodType));
 </script>
 
 <div class="savings-card" class:loading>
@@ -33,7 +57,7 @@
       <Target size={20} />
     </div>
     <div class="header-text">
-      <h3>{$t('dashboard.savings.title') || 'Ahorro mensual'}</h3>
+      <h3>{$t('dashboard.savings.title') || 'Ahorro'}</h3>
       <span class="subtitle">{$t('dashboard.savings.target') || 'Meta: 20% de ingresos'}</span>
     </div>
   </div>

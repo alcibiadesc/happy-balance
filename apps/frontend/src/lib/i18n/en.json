@@ -97,7 +97,7 @@
       "fire_indicator": "FIRE"
     },
     "savings": {
-      "title": "Monthly savings",
+      "title": "Savings",
       "target": "Target: 20% of income",
       "daily_avg": "Daily spending"
     },
