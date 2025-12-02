@@ -292,6 +292,47 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     }
   }
 
+  async findByNameAndType(name: string, type: CategoryType): Promise<Result<Category | null>> {
+    try {
+      const category = await this.prisma.category.findFirst({
+        where: {
+          name,
+          type,
+          OR: [{ isGlobal: true }, { userId: this.userId || 'default' }],
+        },
+      });
+
+      if (!category) {
+        return Result.ok(null);
+      }
+
+      const domainCategoryResult = this.prismaToDomain(category);
+      if (domainCategoryResult.isFailure()) {
+        return Result.fail(domainCategoryResult.getError());
+      }
+
+      return Result.ok(domainCategoryResult.getValue());
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to find category by name and type: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async reactivate(id: CategoryId): Promise<Result<void>> {
+    try {
+      await this.prisma.category.update({
+        where: { id: id.value },
+        data: { isActive: true },
+      });
+      return Result.ok(undefined);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to reactivate category: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
   async count(filters?: CategoryFilters): Promise<Result<number>> {
     try {
       const where: any = {};

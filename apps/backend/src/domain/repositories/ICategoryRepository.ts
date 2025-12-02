@@ -1,6 +1,6 @@
-import { Result } from "../shared/Result";
-import { Category, CategoryId, CategorySnapshot } from "../entities/Category";
-import { CategoryType } from "../entities/CategoryType";
+import { Result } from '../shared/Result';
+import { Category, CategoryId, CategorySnapshot } from '../entities/Category';
+import { CategoryType } from '../entities/CategoryType';
 
 export interface CategoryFilters {
   type?: CategoryType;
@@ -74,9 +74,19 @@ export interface ICategoryRepository {
   exists(id: CategoryId): Promise<Result<boolean>>;
 
   /**
-   * Check if category name exists for a given type
+   * Check if category name exists for a given type (active only)
    */
   existsByName(name: string, type: CategoryType): Promise<Result<boolean>>;
+
+  /**
+   * Find category by name and type (including inactive)
+   */
+  findByNameAndType(name: string, type: CategoryType): Promise<Result<Category | null>>;
+
+  /**
+   * Reactivate an inactive category
+   */
+  reactivate(id: CategoryId): Promise<Result<void>>;
 
   /**
    * Count total categories
@@ -107,10 +117,7 @@ export interface ICategoryRepository {
   /**
    * Find categories that might match a merchant name
    */
-  findMatchingCategories(
-    merchantName: string,
-    type: CategoryType,
-  ): Promise<Result<Category[]>>;
+  findMatchingCategories(merchantName: string, type: CategoryType): Promise<Result<Category[]>>;
 
   /**
    * Clear all categories (for testing/reset purposes)

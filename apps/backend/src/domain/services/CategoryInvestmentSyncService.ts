@@ -336,10 +336,13 @@ export class CategoryInvestmentSyncService {
   /**
    * Sync all existing investments without categories - create categories for them
    */
-  async syncAllInvestmentsToCategories(): Promise<Result<{ created: number; linked: number }>> {
+  async syncAllInvestmentsToCategories(): Promise<
+    Result<{ created: number; linked: number; reactivated: number }>
+  > {
     try {
       let created = 0;
       let linked = 0;
+      let reactivated = 0;
 
       // Get all active investments
       const investmentsResult = await this.investmentRepository.findWithFilters({ isActive: true });
@@ -357,34 +360,32 @@ export class CategoryInvestmentSyncService {
           continue;
         }
 
-        // Check if a category with same name exists
-        const existsResult = await this.categoryRepository.existsByName(
+        // Check if a category with same name exists (including inactive)
+        const categoryResult = await this.categoryRepository.findByNameAndType(
           snapshot.name,
           CategoryType.INVESTMENT
         );
 
-        if (existsResult.isFailure()) {
-          console.warn(
-            `Failed to check category existence for ${snapshot.name}:`,
-            existsResult.getError()
-          );
+        if (categoryResult.isFailure()) {
+          console.warn(`Failed to find category for ${snapshot.name}:`, categoryResult.getError());
           continue;
         }
 
-        if (existsResult.getValue()) {
-          // Category exists, link them
-          const categoriesResult = await this.categoryRepository.findWithFilters({
-            type: CategoryType.INVESTMENT,
-            searchTerm: snapshot.name,
-            isActive: true,
-          });
+        const existingCategory = categoryResult.getValue();
 
-          if (categoriesResult.isSuccess() && categoriesResult.getValue().length > 0) {
-            const category = categoriesResult.getValue()[0];
-            investment.linkToCategory(category.id.value);
-            await this.investmentRepository.update(investment);
-            linked++;
+        if (existingCategory) {
+          // Category exists - check if it's active
+          if (!existingCategory.isActive) {
+            // Reactivate the category
+            const reactivateResult = await this.categoryRepository.reactivate(existingCategory.id);
+            if (reactivateResult.isSuccess()) {
+              reactivated++;
+            }
           }
+          // Link investment to category
+          investment.linkToCategory(existingCategory.id.value);
+          await this.investmentRepository.update(investment);
+          linked++;
         } else {
           // Create new category
           const categoryId = crypto.randomUUID();
@@ -399,9 +400,9 @@ export class CategoryInvestmentSyncService {
             createdAt: new Date().toISOString(),
           };
 
-          const categoryResult = Category.fromSnapshot(categorySnapshot);
-          if (categoryResult.isSuccess()) {
-            const category = categoryResult.getValue();
+          const newCategoryResult = Category.fromSnapshot(categorySnapshot);
+          if (newCategoryResult.isSuccess()) {
+            const category = newCategoryResult.getValue();
             const saveResult = await this.categoryRepository.save(category);
 
             if (saveResult.isSuccess()) {
@@ -413,7 +414,7 @@ export class CategoryInvestmentSyncService {
         }
       }
 
-      return Result.ok({ created, linked });
+      return Result.ok({ created, linked, reactivated });
     } catch (error) {
       return Result.failWithMessage(
         `Failed to sync investments to categories: ${error instanceof Error ? error.message : 'Unknown error'}`

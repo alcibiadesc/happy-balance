@@ -882,16 +882,17 @@ export class InvestmentController {
         return;
       }
 
-      const { created, linked } = syncResult.getValue();
+      const { created, linked, reactivated } = syncResult.getValue();
 
       res.json({
         success: true,
         data: {
           created,
           linked,
+          reactivated,
           total: created + linked,
         },
-        message: `Created ${created} new categories and linked ${linked} existing ones.`,
+        message: `Created ${created} new categories, linked ${linked} existing ones, reactivated ${reactivated}.`,
       });
     } catch (error) {
       console.error('Error syncing investments with categories:', error);
