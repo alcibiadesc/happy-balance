@@ -92,6 +92,8 @@
       "hidden_items": "Hidden items",
       "savings_goal": "Savings goal",
       "top_merchants": "Top expenses",
+      "top_income": "Top income",
+      "top_investments": "Top investments",
       "fire_indicator": "FIRE"
     },
     "savings": {
@@ -103,6 +105,16 @@
       "title": "Top expenses",
       "subtitle": "Categories with highest spending",
       "total": "Total expenses"
+    },
+    "top_income": {
+      "title": "Top income",
+      "subtitle": "Income sources",
+      "total": "Total income"
+    },
+    "top_investments": {
+      "title": "Top investments",
+      "subtitle": "Investment distribution",
+      "total": "Total invested"
     },
     "fire": {
       "title": "FIRE Indicator",

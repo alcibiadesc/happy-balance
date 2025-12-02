@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Store } from 'lucide-svelte';
+  import { Store, DollarSign, TrendingUp } from 'lucide-svelte';
+  import type { ComponentType } from 'svelte';
   import { t } from '$lib/stores/i18n';
 
   interface CategoryData {
@@ -10,16 +11,66 @@
     icon?: string;
   }
 
+  type CardVariant = 'expenses' | 'income' | 'investments';
+
   interface Props {
     categories: CategoryData[];
-    totalExpenses: number;
+    total: number;
     loading?: boolean;
     formatCurrency: (amount: number) => string;
+    variant?: CardVariant;
+    title?: string;
+    subtitle?: string;
+    totalLabel?: string;
   }
 
-  const { categories, totalExpenses, loading = false, formatCurrency }: Props = $props();
+  const {
+    categories,
+    total,
+    loading = false,
+    formatCurrency,
+    variant = 'expenses',
+    title,
+    subtitle,
+    totalLabel,
+  }: Props = $props();
 
-  // Show top 5 expense categories
+  // Variant-based defaults
+  const variantConfig = $derived(
+    {
+      expenses: {
+        icon: Store,
+        title: $t('dashboard.top_categories.title') || 'Top gastos',
+        subtitle: $t('dashboard.top_categories.subtitle') || 'Categorías con mayor gasto',
+        totalLabel: $t('dashboard.top_categories.total') || 'Total gastos',
+        iconColor: 'var(--primary)',
+        iconBg: 'var(--primary-alpha, rgba(99, 102, 241, 0.1))',
+      },
+      income: {
+        icon: DollarSign,
+        title: $t('dashboard.top_income.title') || 'Top ingresos',
+        subtitle: $t('dashboard.top_income.subtitle') || 'Fuentes de ingreso',
+        totalLabel: $t('dashboard.top_income.total') || 'Total ingresos',
+        iconColor: 'var(--success)',
+        iconBg: 'rgba(34, 197, 94, 0.1)',
+      },
+      investments: {
+        icon: TrendingUp,
+        title: $t('dashboard.top_investments.title') || 'Top inversiones',
+        subtitle: $t('dashboard.top_investments.subtitle') || 'Distribución de inversiones',
+        totalLabel: $t('dashboard.top_investments.total') || 'Total invertido',
+        iconColor: 'var(--accent)',
+        iconBg: 'rgba(249, 115, 22, 0.1)',
+      },
+    }[variant]
+  );
+
+  const displayTitle = $derived(title || variantConfig.title);
+  const displaySubtitle = $derived(subtitle || variantConfig.subtitle);
+  const displayTotalLabel = $derived(totalLabel || variantConfig.totalLabel);
+  const IconComponent = $derived(variantConfig.icon);
+
+  // Show top 5 categories
   const topCategories = $derived(
     [...categories]
       .filter((c) => c.amount > 0)
@@ -32,14 +83,15 @@
 
 <div class="merchants-card" class:loading>
   <div class="card-header">
-    <div class="header-icon">
-      <Store size={20} />
+    <div
+      class="header-icon"
+      style="background: {variantConfig.iconBg}; color: {variantConfig.iconColor}"
+    >
+      <IconComponent size={20} />
     </div>
     <div class="header-text">
-      <h3>{$t('dashboard.top_categories.title') || 'Top gastos'}</h3>
-      <span class="subtitle"
-        >{$t('dashboard.top_categories.subtitle') || 'Categorías con mayor gasto'}</span
-      >
+      <h3>{displayTitle}</h3>
+      <span class="subtitle">{displaySubtitle}</span>
     </div>
   </div>
 
@@ -74,8 +126,8 @@
   {/if}
 
   <div class="card-footer">
-    <span class="total-label">{$t('dashboard.top_categories.total') || 'Total gastos'}</span>
-    <span class="total-value">{formatCurrency(totalExpenses)}</span>
+    <span class="total-label">{displayTotalLabel}</span>
+    <span class="total-value">{formatCurrency(total)}</span>
   </div>
 </div>
 

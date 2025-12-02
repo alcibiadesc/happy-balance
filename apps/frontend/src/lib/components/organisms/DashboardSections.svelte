@@ -61,6 +61,95 @@
   // Use actual portfolio value for FIRE calculation
   const totalInvestments = $derived(data.metrics.portfolio ?? 0);
 
+  // Filter only expense categories for Top Expenses widget (exclude investments and income)
+  // CategoryType values: ESSENTIAL, DISCRETIONARY, DEBT_PAYMENT, INVESTMENT, INCOME
+  const expenseOnlyCategories = $derived(() => {
+    const breakdown = data.categoryBreakdown;
+    if (!breakdown || breakdown.length === 0) {
+      // Fallback: use categories, filter out investment/income
+      return (
+        data.categories?.filter((c: any) => {
+          const type = (c.type || '').toUpperCase();
+          return type !== 'INVESTMENT' && type !== 'INCOME';
+        }) ?? []
+      );
+    }
+
+    // Filter expense types (ESSENTIAL, DISCRETIONARY, DEBT_PAYMENT)
+    const expenseTypes = [
+      'ESSENTIAL',
+      'DISCRETIONARY',
+      'DEBT_PAYMENT',
+      'essential',
+      'discretionary',
+      'debt_payment',
+    ];
+    return breakdown
+      .filter((c: any) => {
+        const type = c.type || c.categoryType || '';
+        return expenseTypes.includes(type);
+      })
+      .map((c: any) => ({
+        name: c.name || c.categoryName,
+        amount: c.amount,
+        percentage: c.percentage,
+        color: c.color,
+        icon: c.icon,
+      }));
+  });
+
+  // Filter income categories for Top Income widget
+  const incomeOnlyCategories = $derived(() => {
+    const breakdown = data.categoryBreakdown;
+    if (!breakdown || breakdown.length === 0) {
+      return (
+        data.categories?.filter((c: any) => {
+          const type = (c.type || '').toUpperCase();
+          return type === 'INCOME';
+        }) ?? []
+      );
+    }
+
+    return breakdown
+      .filter((c: any) => {
+        const type = (c.type || c.categoryType || '').toUpperCase();
+        return type === 'INCOME';
+      })
+      .map((c: any) => ({
+        name: c.name || c.categoryName,
+        amount: c.amount,
+        percentage: c.percentage,
+        color: c.color,
+        icon: c.icon,
+      }));
+  });
+
+  // Filter investment categories for Top Investments widget
+  const investmentOnlyCategories = $derived(() => {
+    const breakdown = data.categoryBreakdown;
+    if (!breakdown || breakdown.length === 0) {
+      return (
+        data.categories?.filter((c: any) => {
+          const type = (c.type || '').toUpperCase();
+          return type === 'INVESTMENT';
+        }) ?? []
+      );
+    }
+
+    return breakdown
+      .filter((c: any) => {
+        const type = (c.type || c.categoryType || '').toUpperCase();
+        return type === 'INVESTMENT';
+      })
+      .map((c: any) => ({
+        name: c.name || c.categoryName,
+        amount: c.amount,
+        percentage: c.percentage,
+        color: c.color,
+        icon: c.icon,
+      }));
+  });
+
   // Get visible sections sorted by order
   const visibleSections = $derived(
     [...$dashboardConfig.sections]
@@ -134,10 +223,27 @@
         />
       {:else if sectionId === 'topMerchants'}
         <TopMerchantsCard
-          categories={data.categories}
-          totalExpenses={data.metrics.expenses}
+          categories={expenseOnlyCategories()}
+          total={data.metrics.expenses}
           loading={data.loading}
           formatCurrency={data.formatCurrency}
+          variant="expenses"
+        />
+      {:else if sectionId === 'topIncome'}
+        <TopMerchantsCard
+          categories={incomeOnlyCategories()}
+          total={data.metrics.income}
+          loading={data.loading}
+          formatCurrency={data.formatCurrency}
+          variant="income"
+        />
+      {:else if sectionId === 'topInvestments'}
+        <TopMerchantsCard
+          categories={investmentOnlyCategories()}
+          total={data.metrics.investments}
+          loading={data.loading}
+          formatCurrency={data.formatCurrency}
+          variant="investments"
         />
       {:else if sectionId === 'fireIndicator'}
         <FireIndicator

@@ -9,8 +9,10 @@ import {
   PiggyBank,
   Wallet,
   Store,
-  Infinity,
+  Infinity as InfinityIcon,
   Briefcase,
+  DollarSign,
+  ChartPie,
 } from 'lucide-svelte';
 
 export type MetricType = 'income' | 'expenses' | 'investments' | 'balance' | 'portfolio' | 'profit';
@@ -22,6 +24,8 @@ export type SectionType =
   | 'barChart'
   | 'savingsGoal'
   | 'topMerchants'
+  | 'topIncome'
+  | 'topInvestments'
   | 'fireIndicator';
 
 export interface MetricDefinition {
@@ -102,7 +106,7 @@ export const SECTION_DEFINITIONS: SectionDefinition[] = [
   },
   {
     id: 'fireIndicator',
-    icon: Infinity,
+    icon: InfinityIcon,
     i18nKey: 'dashboard.config.fire_indicator',
     defaultVisible: true,
     defaultOrder: 2,
@@ -129,18 +133,32 @@ export const SECTION_DEFINITIONS: SectionDefinition[] = [
     defaultOrder: 5,
   },
   {
+    id: 'topIncome',
+    icon: DollarSign,
+    i18nKey: 'dashboard.config.top_income',
+    defaultVisible: true,
+    defaultOrder: 6,
+  },
+  {
+    id: 'topInvestments',
+    icon: ChartPie,
+    i18nKey: 'dashboard.config.top_investments',
+    defaultVisible: true,
+    defaultOrder: 7,
+  },
+  {
     id: 'lineChart',
     icon: LineChart,
     i18nKey: 'dashboard.charts.temporal_evolution',
     defaultVisible: true,
-    defaultOrder: 6,
+    defaultOrder: 8,
   },
   {
     id: 'barChart',
     icon: BarChart3,
     i18nKey: 'dashboard.charts.expense_distribution',
     defaultVisible: true,
-    defaultOrder: 7,
+    defaultOrder: 9,
   },
 ];
 
