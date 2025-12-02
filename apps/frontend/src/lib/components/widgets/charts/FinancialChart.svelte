@@ -35,14 +35,32 @@
   // Reactive data processing
   const chartData = $derived(() => {
     if (!data?.length)
-      return { labels: [], income: [], expenses: [], investments: [], balance: [] };
+      return {
+        labels: [],
+        income: [],
+        expenses: [],
+        investments: [],
+        balance: [],
+        totals: { income: 0, expenses: 0, investments: 0, balance: 0 },
+      };
+
+    const income = data.map((d) => Math.abs(d.income));
+    const expenses = data.map((d) => Math.abs(d.expenses));
+    const investments = data.map((d) => Math.abs(d.investments || 0));
+    const balance = data.map((d) => d.balance);
 
     return {
       labels: data.map((d) => d.month),
-      income: data.map((d) => Math.abs(d.income)),
-      expenses: data.map((d) => Math.abs(d.expenses)),
-      investments: data.map((d) => Math.abs(d.investments || 0)),
-      balance: data.map((d) => d.balance),
+      income,
+      expenses,
+      investments,
+      balance,
+      totals: {
+        income: income.reduce((a, b) => a + b, 0),
+        expenses: expenses.reduce((a, b) => a + b, 0),
+        investments: investments.reduce((a, b) => a + b, 0),
+        balance: balance.reduce((a, b) => a + b, 0),
+      },
     };
   });
 
@@ -158,12 +176,43 @@
             labels: {
               color: colors.text,
               font: {
-                size: 13,
+                size: 12,
                 weight: '600',
               },
               usePointStyle: true,
               pointStyle: 'circle',
-              padding: 20,
+              padding: 16,
+              generateLabels: (chart: any) => {
+                const datasets = chart.data.datasets;
+                const totals = chartData().totals;
+                const signs: Record<string, string> = {
+                  Income: '+',
+                  Expenses: '−',
+                  Investments: '−',
+                  Balance: totals.balance >= 0 ? '+' : '',
+                };
+                const totalValues: Record<string, number> = {
+                  Income: totals.income,
+                  Expenses: totals.expenses,
+                  Investments: totals.investments,
+                  Balance: totals.balance,
+                };
+                return datasets.map((dataset: any, i: number) => {
+                  const label = dataset.label;
+                  const sign = signs[label] || '';
+                  const total = totalValues[label] || 0;
+                  const formattedTotal = formatTooltipValue(Math.abs(total));
+                  return {
+                    text: `${label}: ${sign}${formattedTotal}`,
+                    fillStyle: dataset.borderColor,
+                    strokeStyle: dataset.borderColor,
+                    lineWidth: 0,
+                    hidden: !chart.isDatasetVisible(i),
+                    index: i,
+                    pointStyle: 'circle',
+                  };
+                });
+              },
             },
           },
           tooltip: {
