@@ -34,33 +34,13 @@
 
   // Reactive data processing
   const chartData = $derived(() => {
-    if (!data?.length)
-      return {
-        labels: [],
-        income: [],
-        expenses: [],
-        investments: [],
-        balance: [],
-        totals: { income: 0, expenses: 0, investments: 0, balance: 0 },
-      };
-
-    const income = data.map((d) => Math.abs(d.income));
-    const expenses = data.map((d) => Math.abs(d.expenses));
-    const investments = data.map((d) => Math.abs(d.investments || 0));
-    const balance = data.map((d) => d.balance);
+    if (!data?.length) return { labels: [], income: [], expenses: [], investments: [] };
 
     return {
       labels: data.map((d) => d.month),
-      income,
-      expenses,
-      investments,
-      balance,
-      totals: {
-        income: income.reduce((a, b) => a + b, 0),
-        expenses: expenses.reduce((a, b) => a + b, 0),
-        investments: investments.reduce((a, b) => a + b, 0),
-        balance: balance.reduce((a, b) => a + b, 0),
-      },
+      income: data.map((d) => Math.abs(d.income)),
+      expenses: data.map((d) => Math.abs(d.expenses)),
+      investments: data.map((d) => Math.abs(d.investments || 0)),
     };
   });
 
@@ -144,23 +124,6 @@
               borderColor: colors.investments,
             },
           },
-          {
-            label: 'Balance',
-            data: chartData().balance,
-            borderColor: colors.balance,
-            backgroundColor: colors.balance + '20',
-            borderWidth: 2.5,
-            fill: false,
-            tension: 0.4,
-            pointBackgroundColor: colors.balance,
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            segment: {
-              borderColor: colors.balance,
-            },
-          },
         ],
       },
       options: {
@@ -176,43 +139,12 @@
             labels: {
               color: colors.text,
               font: {
-                size: 12,
+                size: 13,
                 weight: '600',
               },
               usePointStyle: true,
               pointStyle: 'circle',
-              padding: 16,
-              generateLabels: (chart: any) => {
-                const datasets = chart.data.datasets;
-                const totals = chartData().totals;
-                const signs: Record<string, string> = {
-                  Income: '+',
-                  Expenses: '−',
-                  Investments: '−',
-                  Balance: totals.balance >= 0 ? '+' : '',
-                };
-                const totalValues: Record<string, number> = {
-                  Income: totals.income,
-                  Expenses: totals.expenses,
-                  Investments: totals.investments,
-                  Balance: totals.balance,
-                };
-                return datasets.map((dataset: any, i: number) => {
-                  const label = dataset.label;
-                  const sign = signs[label] || '';
-                  const total = totalValues[label] || 0;
-                  const formattedTotal = formatTooltipValue(Math.abs(total));
-                  return {
-                    text: `${label}: ${sign}${formattedTotal}`,
-                    fillStyle: dataset.borderColor,
-                    strokeStyle: dataset.borderColor,
-                    lineWidth: 0,
-                    hidden: !chart.isDatasetVisible(i),
-                    index: i,
-                    pointStyle: 'circle',
-                  };
-                });
-              },
+              padding: 20,
             },
           },
           tooltip: {
@@ -310,7 +242,6 @@
     chart.data.datasets[0].data = newData.income;
     chart.data.datasets[1].data = newData.expenses;
     chart.data.datasets[2].data = newData.investments;
-    chart.data.datasets[3].data = newData.balance;
 
     chart.update('none');
   }
@@ -352,7 +283,6 @@
       updateChartDatasetColors(chart, 0, 'income');
       updateChartDatasetColors(chart, 1, 'expenses');
       updateChartDatasetColors(chart, 2, 'investments');
-      updateChartDatasetColors(chart, 3, 'balance');
     }
   });
 
@@ -367,7 +297,6 @@
         updateChartDatasetColors(chart, 0, 'income');
         updateChartDatasetColors(chart, 1, 'expenses');
         updateChartDatasetColors(chart, 2, 'investments');
-        updateChartDatasetColors(chart, 3, 'balance');
       });
     }
   });
