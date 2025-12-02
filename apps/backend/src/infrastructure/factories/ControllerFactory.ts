@@ -9,12 +9,14 @@ import { UserPreferencesController } from '../controllers/UserPreferencesControl
 import { SeedController } from '../controllers/SeedController';
 import { InvestmentController } from '../controllers/InvestmentController';
 import { ExportController } from '../controllers/ExportController';
+import { WidgetSettingsController } from '../controllers/WidgetSettingsController';
 import { PrismaTransactionRepository } from '../repositories/PrismaTransactionRepository';
 import { PrismaCategoryRepository } from '../repositories/PrismaCategoryRepository';
 import { PrismaDashboardRepository } from '../repositories/PrismaDashboardRepository';
 import { PrismaUserPreferencesRepository } from '../repositories/PrismaUserPreferencesRepository';
 import { CategoryPatternRepository } from '../repositories/CategoryPatternRepository';
 import { PrismaInvestmentRepository } from '../repositories/PrismaInvestmentRepository';
+import { PrismaWidgetSettingsRepository } from '../repositories/PrismaWidgetSettingsRepository';
 import { GetDashboardDataUseCase } from '@application/use-cases/GetDashboardDataUseCase';
 import { ImportTransactionsUseCase } from '@application/use-cases/ImportTransactionsUseCase';
 import { CheckDuplicateHashesUseCase } from '@application/use-cases/CheckDuplicateHashesUseCase';
@@ -266,5 +268,13 @@ export class ControllerFactory {
       investmentRepository,
       userId,
     );
+  }
+
+  /**
+   * Creates a WidgetSettingsController
+   */
+  createWidgetSettingsController(): WidgetSettingsController {
+    const widgetSettingsRepository = new PrismaWidgetSettingsRepository(this.prisma);
+    return new WidgetSettingsController(widgetSettingsRepository);
   }
 }

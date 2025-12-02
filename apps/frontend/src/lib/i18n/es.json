@@ -125,7 +125,10 @@
       "good": "Bueno",
       "moderate": "Moderado",
       "needs_improvement": "Mejorar",
-      "disclaimer": "Cálculo basado en la regla del 4%. Tu situación real puede variar según inflación, retornos y circunstancias personales."
+      "disclaimer": "Cálculo basado en la regla del 4%. Tu situación real puede variar según inflación, retornos y circunstancias personales.",
+      "target_expenses": "Gastos objetivo",
+      "withdrawal_rate": "Tasa de retiro",
+      "years_runway": "años autonomía"
     }
   },
   "import": {

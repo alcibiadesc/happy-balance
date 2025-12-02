@@ -25,6 +25,8 @@ export class PrismaUserPreferencesRepository
       return Result.ok({
         ...preferences,
         portfolioGoal: Number(preferences.portfolioGoal),
+        fireWithdrawalRate: Number(preferences.fireWithdrawalRate),
+        fireTargetExpenses: preferences.fireTargetExpenses ? Number(preferences.fireTargetExpenses) : null,
       });
     } catch (error) {
       return Result.failWithMessage(
@@ -58,12 +60,16 @@ export class PrismaUserPreferencesRepository
           language: data.language || "en",
           theme: data.theme || "light",
           portfolioGoal: data.portfolioGoal || 100000,
+          fireWithdrawalRate: data.fireWithdrawalRate || 0.04,
+          fireTargetExpenses: data.fireTargetExpenses ?? null,
         },
       });
 
       return Result.ok({
         ...preferences,
         portfolioGoal: Number(preferences.portfolioGoal),
+        fireWithdrawalRate: Number(preferences.fireWithdrawalRate),
+        fireTargetExpenses: preferences.fireTargetExpenses ? Number(preferences.fireTargetExpenses) : null,
       });
     } catch (error) {
       return Result.failWithMessage(
@@ -84,12 +90,16 @@ export class PrismaUserPreferencesRepository
           ...(data.language && { language: data.language }),
           ...(data.theme && { theme: data.theme }),
           ...(data.portfolioGoal !== undefined && { portfolioGoal: data.portfolioGoal }),
+          ...(data.fireWithdrawalRate !== undefined && { fireWithdrawalRate: data.fireWithdrawalRate }),
+          ...(data.fireTargetExpenses !== undefined && { fireTargetExpenses: data.fireTargetExpenses }),
         },
       });
 
       return Result.ok({
         ...preferences,
         portfolioGoal: Number(preferences.portfolioGoal),
+        fireWithdrawalRate: Number(preferences.fireWithdrawalRate),
+        fireTargetExpenses: preferences.fireTargetExpenses ? Number(preferences.fireTargetExpenses) : null,
       });
     } catch (error) {
       return Result.failWithMessage(

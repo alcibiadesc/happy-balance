@@ -125,7 +125,10 @@
       "good": "Good",
       "moderate": "Moderate",
       "needs_improvement": "Needs improvement",
-      "disclaimer": "Calculation based on the 4% rule. Your actual situation may vary depending on inflation, returns, and personal circumstances."
+      "disclaimer": "Calculation based on the 4% rule. Your actual situation may vary depending on inflation, returns, and personal circumstances.",
+      "target_expenses": "Target expenses",
+      "withdrawal_rate": "Withdrawal rate",
+      "years_runway": "years runway"
     }
   },
   "import": {

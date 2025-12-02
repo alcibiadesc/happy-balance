@@ -10,6 +10,8 @@ export interface UserPreferences {
   language: string;
   theme: string;
   portfolioGoal: number;
+  fireWithdrawalRate: number;
+  fireTargetExpenses: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -37,6 +39,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   language: 'en',
   theme: 'light',
   portfolioGoal: 100000,
+  fireWithdrawalRate: 0.04,
+  fireTargetExpenses: null,
 };
 
 // Create writable store
@@ -132,6 +136,10 @@ function createUserPreferencesStore() {
     async updatePortfolioGoal(portfolioGoal: number) {
       await this.save({ portfolioGoal });
     },
+
+    async updateFireSettings(fireWithdrawalRate: number, fireTargetExpenses: number | null) {
+      await this.save({ fireWithdrawalRate, fireTargetExpenses });
+    },
   };
 }
 
@@ -142,3 +150,5 @@ export const currency = derived(userPreferences, ($prefs) => $prefs.currency);
 export const language = derived(userPreferences, ($prefs) => $prefs.language);
 export const theme = derived(userPreferences, ($prefs) => $prefs.theme);
 export const portfolioGoal = derived(userPreferences, ($prefs) => $prefs.portfolioGoal);
+export const fireWithdrawalRate = derived(userPreferences, ($prefs) => $prefs.fireWithdrawalRate);
+export const fireTargetExpenses = derived(userPreferences, ($prefs) => $prefs.fireTargetExpenses);

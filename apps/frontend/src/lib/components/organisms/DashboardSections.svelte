@@ -58,12 +58,8 @@
 
   const { data }: Props = $props();
 
-  // Calculate cumulative investments from historical data for FIRE calculation
-  const totalInvestments = $derived(
-    data.monthlyTrendData.length > 0
-      ? data.monthlyTrendData.reduce((sum, month) => sum + (month.investments || 0), 0)
-      : data.metrics.investments * 12
-  );
+  // Use actual portfolio value for FIRE calculation
+  const totalInvestments = $derived(data.metrics.portfolio ?? 0);
 
   // Get visible sections sorted by order
   const visibleSections = $derived(
@@ -145,9 +141,10 @@
         />
       {:else if sectionId === 'fireIndicator'}
         <FireIndicator
-          monthlyIncome={data.metrics.income}
-          monthlyExpenses={data.metrics.expenses}
-          monthlyInvestments={data.metrics.investments}
+          periodIncome={data.metrics.income}
+          periodExpenses={data.metrics.expenses}
+          periodInvestments={data.metrics.investments}
+          periodType={data.selectedPeriodType}
           {totalInvestments}
           loading={data.loading}
           formatCurrency={data.formatCurrency}

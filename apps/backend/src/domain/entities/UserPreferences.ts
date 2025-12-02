@@ -5,6 +5,8 @@ export interface UserPreferences {
   language: string;
   theme: string;
   portfolioGoal: number;
+  fireWithdrawalRate: number;
+  fireTargetExpenses: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +17,8 @@ export interface CreateUserPreferencesData {
   language?: string;
   theme?: string;
   portfolioGoal?: number;
+  fireWithdrawalRate?: number;
+  fireTargetExpenses?: number | null;
 }
 
 export interface UpdateUserPreferencesData {
@@ -22,4 +26,6 @@ export interface UpdateUserPreferencesData {
   language?: string;
   theme?: string;
   portfolioGoal?: number;
+  fireWithdrawalRate?: number;
+  fireTargetExpenses?: number | null;
 }

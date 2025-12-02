@@ -17,6 +17,7 @@ import { createUserPreferencesRoutesV2 } from "@infrastructure/routes/userPrefer
 import { createSeedRoutesV2 } from "@infrastructure/routes/seedRoutesV2";
 import { createInvestmentRoutesV2 } from "@infrastructure/routes/investmentRoutesV2";
 import { createExportRoutes } from "@infrastructure/routes/exportRoutesV2";
+import { createWidgetSettingsRoutesV2 } from "@infrastructure/routes/widgetSettingsRoutesV2";
 import { createBackupRoutes } from "@infrastructure/routes/backupRoutes";
 import { ControllerFactory } from "@infrastructure/factories/ControllerFactory";
 import {
@@ -317,6 +318,12 @@ class App {
       createUserPreferencesRoutesV2(this.controllerFactory),
     );
     this.app.use("/api/seed", createSeedRoutesV2(this.controllerFactory));
+
+    // Widget Settings routes
+    this.app.use(
+      "/api/widgets",
+      createWidgetSettingsRoutesV2(this.controllerFactory),
+    );
 
     // Investment/Portfolio routes
     this.app.use(

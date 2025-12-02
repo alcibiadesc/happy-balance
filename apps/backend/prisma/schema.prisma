@@ -30,6 +30,7 @@ model User {
   investments     Investment[]
   backups         Backup[]
   backupPolicy    BackupPolicy?
+  widgetSettings  WidgetSettings[]
 
   @@index([username])
   @@index([role])
@@ -146,18 +147,35 @@ model AppSettings {
 }
 
 model UserPreferences {
-  id            String   @id @default(cuid()) @db.VarChar(36)
-  userId        String   @unique @db.VarChar(36)
-  currency      String   @default("EUR") @db.VarChar(3)
-  language      String   @default("en") @db.VarChar(5)
-  theme         String   @default("light") @db.VarChar(10)
-  portfolioGoal Decimal  @default(100000) @db.Decimal(15, 2)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String   @id @default(cuid()) @db.VarChar(36)
+  userId              String   @unique @db.VarChar(36)
+  currency            String   @default("EUR") @db.VarChar(3)
+  language            String   @default("en") @db.VarChar(5)
+  theme               String   @default("light") @db.VarChar(10)
+  portfolioGoal       Decimal  @default(100000) @db.Decimal(15, 2)
+  fireWithdrawalRate  Decimal  @default(0.04) @db.Decimal(4, 3)
+  fireTargetExpenses  Decimal? @db.Decimal(15, 2)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_preferences")
+}
+
+model WidgetSettings {
+  id        String   @id @default(cuid()) @db.VarChar(36)
+  userId    String   @db.VarChar(36)
+  widgetId  String   @db.VarChar(50)
+  settings  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, widgetId])
+  @@index([userId])
+  @@map("widget_settings")
 }
 
 model CategoryPattern {
