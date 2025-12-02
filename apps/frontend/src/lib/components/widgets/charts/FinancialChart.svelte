@@ -15,6 +15,7 @@
     month: string;
     income: number;
     expenses: number;
+    investments: number;
     balance: number;
   }
 
@@ -33,12 +34,14 @@
 
   // Reactive data processing
   const chartData = $derived(() => {
-    if (!data?.length) return { labels: [], income: [], expenses: [], balance: [] };
+    if (!data?.length)
+      return { labels: [], income: [], expenses: [], investments: [], balance: [] };
 
     return {
       labels: data.map((d) => d.month),
       income: data.map((d) => Math.abs(d.income)),
       expenses: data.map((d) => Math.abs(d.expenses)),
+      investments: data.map((d) => Math.abs(d.investments || 0)),
       balance: data.map((d) => d.balance),
     };
   });
@@ -104,6 +107,23 @@
             pointHoverRadius: 6,
             segment: {
               borderColor: colors.expenses,
+            },
+          },
+          {
+            label: 'Investments',
+            data: chartData().investments,
+            borderColor: colors.investments,
+            backgroundColor: colors.investments + '20',
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.4,
+            pointBackgroundColor: colors.investments,
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            segment: {
+              borderColor: colors.investments,
             },
           },
           {
@@ -240,7 +260,8 @@
     chart.data.labels = newData.labels;
     chart.data.datasets[0].data = newData.income;
     chart.data.datasets[1].data = newData.expenses;
-    chart.data.datasets[2].data = newData.balance;
+    chart.data.datasets[2].data = newData.investments;
+    chart.data.datasets[3].data = newData.balance;
 
     chart.update('none');
   }
@@ -281,7 +302,8 @@
       updateChartTheme(chart);
       updateChartDatasetColors(chart, 0, 'income');
       updateChartDatasetColors(chart, 1, 'expenses');
-      updateChartDatasetColors(chart, 2, 'balance');
+      updateChartDatasetColors(chart, 2, 'investments');
+      updateChartDatasetColors(chart, 3, 'balance');
     }
   });
 
@@ -295,7 +317,8 @@
       cleanupThemeObserver = setupChartThemeObserver(chart, () => {
         updateChartDatasetColors(chart, 0, 'income');
         updateChartDatasetColors(chart, 1, 'expenses');
-        updateChartDatasetColors(chart, 2, 'balance');
+        updateChartDatasetColors(chart, 2, 'investments');
+        updateChartDatasetColors(chart, 3, 'balance');
       });
     }
   });
