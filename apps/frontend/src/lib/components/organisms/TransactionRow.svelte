@@ -456,17 +456,126 @@
 
   @media (max-width: 768px) {
     .transaction-card {
+      flex-direction: column;
+      align-items: stretch;
       padding: 0.875rem;
-      gap: 0.75rem;
+      padding-bottom: 0.625rem;
+      gap: 0.375rem;
+    }
+
+    .transaction-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
     }
 
     .transaction-main {
-      flex-direction: column;
-      gap: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .transaction-main > div:first-child {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .transaction-description {
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 0.5rem;
+    }
+
+    .transaction-observations {
+      font-size: 0.75rem;
+    }
+
+    .transaction-meta {
+      font-size: 0.7rem;
+      flex-wrap: wrap;
+    }
+
+    .transaction-amount-wrapper {
+      align-items: flex-end;
+      flex-shrink: 0;
     }
 
     .transaction-amount {
-      font-size: 0.9375rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .category-selector {
+      margin-top: 0;
+    }
+
+    .category-btn {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+    }
+
+    /* Actions row at bottom */
+    .transaction-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.25rem;
+      margin-top: 0.25rem;
+      padding-top: 0.375rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .action-btn {
+      padding: 0.375rem 0.5rem;
+    }
+
+    .action-btn :global(svg) {
+      width: 14px;
+      height: 14px;
+    }
+
+    .split-indicator {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.375rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .transaction-card {
+      padding: 0.75rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .transaction-description {
+      font-size: 0.85rem;
+    }
+
+    .transaction-amount {
+      font-size: 0.9rem;
+    }
+
+    .transaction-meta {
+      font-size: 0.65rem;
+    }
+
+    .category-btn {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+    }
+
+    .category-icon-btn {
+      font-size: 0.75rem;
+    }
+
+    .action-btn {
+      padding: 0.25rem 0.375rem;
+    }
+
+    .action-btn :global(svg) {
+      width: 12px;
+      height: 12px;
     }
   }
 </style>

@@ -55,7 +55,7 @@ export class TransactionOperationsService {
       const selectedCategory = categoryId ? this.getCategory(categoryId) : null;
 
       const updates: Partial<Transaction> = {
-        categoryId: categoryId === null ? undefined : categoryId,
+        categoryId: categoryId, // null to remove, string to set
       };
 
       // Handle amount conversion based on category type

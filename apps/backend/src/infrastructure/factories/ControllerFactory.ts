@@ -10,11 +10,13 @@ import { SeedController } from '../controllers/SeedController';
 import { InvestmentController } from '../controllers/InvestmentController';
 import { ExportController } from '../controllers/ExportController';
 import { WidgetSettingsController } from '../controllers/WidgetSettingsController';
+import { MerchantAliasController } from '../controllers/MerchantAliasController';
 import { PrismaTransactionRepository } from '../repositories/PrismaTransactionRepository';
 import { PrismaCategoryRepository } from '../repositories/PrismaCategoryRepository';
 import { PrismaDashboardRepository } from '../repositories/PrismaDashboardRepository';
 import { PrismaUserPreferencesRepository } from '../repositories/PrismaUserPreferencesRepository';
 import { CategoryPatternRepository } from '../repositories/CategoryPatternRepository';
+import { MerchantAliasRepository } from '../repositories/MerchantAliasRepository';
 import { PrismaInvestmentRepository } from '../repositories/PrismaInvestmentRepository';
 import { PrismaWidgetSettingsRepository } from '../repositories/PrismaWidgetSettingsRepository';
 import { GetDashboardDataUseCase } from '@application/use-cases/GetDashboardDataUseCase';
@@ -34,6 +36,7 @@ import { SmartCategorizationService } from '@domain/services/SmartCategorization
 import { TransactionFactory } from '@domain/factories/TransactionFactory';
 import { SyncInvestmentFromTransactionUseCase } from '@application/use-cases/SyncInvestmentFromTransactionUseCase';
 import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/UnsyncInvestmentFromTransactionUseCase';
+import { AutoCategorizeTransactionsUseCase } from '@application/use-cases/AutoCategorizeTransactionsUseCase';
 
 /**
  * Factory that creates controller instances with user-specific repositories
@@ -53,6 +56,7 @@ export class ControllerFactory {
     const transactionRepository = new PrismaTransactionRepository(this.prisma, userId);
     const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
     const categoryPatternRepository = new CategoryPatternRepository(this.prisma, userId);
+    const merchantAliasRepository = new MerchantAliasRepository(this.prisma);
     const investmentRepository = new PrismaInvestmentRepository(this.prisma, userId);
 
     // Domain services
@@ -60,13 +64,14 @@ export class ControllerFactory {
     const smartCategorizationService = new SmartCategorizationService(
       categoryPatternRepository,
       transactionRepository as any,
+      merchantAliasRepository
     );
 
     // Use cases
     const getDashboardDataUseCase = new GetDashboardDataUseCase(
       transactionRepository,
       categoryRepository,
-      financialCalculationService,
+      financialCalculationService
     );
 
     const smartCategorizeUseCase = new SmartCategorizeTransactionUseCase(
@@ -92,38 +97,54 @@ export class ControllerFactory {
           }
         },
       },
-      smartCategorizationService,
+      smartCategorizationService
     );
 
     const findSimilarTransactionsUseCase = new FindSimilarTransactionsUseCase(
-      transactionRepository,
+      transactionRepository
     );
 
     const getDashboardMetricsUseCase = new GetDashboardMetricsUseCase(
       transactionRepository,
-      categoryRepository,
+      categoryRepository
     );
 
     const findPotentialReimbursementsUseCase = new FindPotentialReimbursementsUseCase(
-      transactionRepository,
+      transactionRepository
     );
 
-    const linkSplitTransactionsUseCase = new LinkSplitTransactionsUseCase(
-      transactionRepository,
-    );
+    const linkSplitTransactionsUseCase = new LinkSplitTransactionsUseCase(transactionRepository);
 
     const unlinkSplitTransactionsUseCase = new UnlinkSplitTransactionsUseCase(
-      transactionRepository,
+      transactionRepository
     );
 
     // Investment sync use cases
     const syncInvestmentUseCase = new SyncInvestmentFromTransactionUseCase(
       investmentRepository,
-      categoryRepository,
+      categoryRepository
     );
 
     const unsyncInvestmentUseCase = new UnsyncInvestmentFromTransactionUseCase(
-      investmentRepository,
+      investmentRepository
+    );
+
+    const autoCategorizeUseCase = new AutoCategorizeTransactionsUseCase(
+      {
+        getUncategorizedTransactions: async () => {
+          const result = await transactionRepository.findWithFilters(
+            { categoryId: null as any, includeHidden: false },
+            { offset: 0, limit: 10000 }
+          );
+          return result.isSuccess() ? result.getValue().transactions : [];
+        },
+        saveTransactions: async (ts) => {
+          for (const t of ts) {
+            await transactionRepository.update(t);
+          }
+        },
+      },
+      smartCategorizationService
     );
 
     return new TransactionController(
@@ -137,8 +158,9 @@ export class ControllerFactory {
       unlinkSplitTransactionsUseCase,
       syncInvestmentUseCase,
       unsyncInvestmentUseCase,
+      autoCategorizeUseCase,
       categoryRepository,
-      userId,
+      userId
     );
   }
 
@@ -164,13 +186,10 @@ export class ControllerFactory {
     const financialCalculationService = new FinancialCalculationService();
     const getDashboardMetricsUseCase = new GetDashboardMetricsUseCase(
       transactionRepository,
-      categoryRepository,
+      categoryRepository
     );
 
-    return new DashboardController(
-      getDashboardMetricsUseCase,
-      dashboardRepository,
-    );
+    return new DashboardController(getDashboardMetricsUseCase, dashboardRepository);
   }
 
   /**
@@ -182,7 +201,7 @@ export class ControllerFactory {
 
     const getDashboardMetricsUseCase = new GetDashboardMetricsUseCase(
       transactionRepository,
-      categoryRepository,
+      categoryRepository
     );
 
     return new MetricsController(getDashboardMetricsUseCase);
@@ -205,24 +224,24 @@ export class ControllerFactory {
       transactionRepository,
       categoryRepository,
       duplicateDetectionService,
-      categorizationService,
+      categorizationService
     );
 
     const checkDuplicateHashesUseCase = new CheckDuplicateHashesUseCase(
       transactionRepository,
-      duplicateDetectionService,
+      duplicateDetectionService
     );
 
     const importSelectedTransactionsUseCase = new ImportSelectedTransactionsUseCase(
       transactionRepository,
       duplicateDetectionService,
-      transactionFactory,
+      transactionFactory
     );
 
     return new ImportController(
       importTransactionsUseCase,
       checkDuplicateHashesUseCase,
-      importSelectedTransactionsUseCase,
+      importSelectedTransactionsUseCase
     );
   }
 
@@ -251,7 +270,12 @@ export class ControllerFactory {
     const investmentRepository = new PrismaInvestmentRepository(this.prisma, userId);
     const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
     const transactionRepository = new PrismaTransactionRepository(this.prisma, userId);
-    return new InvestmentController(investmentRepository, categoryRepository, transactionRepository, userId);
+    return new InvestmentController(
+      investmentRepository,
+      categoryRepository,
+      transactionRepository,
+      userId
+    );
   }
 
   /**
@@ -266,7 +290,7 @@ export class ControllerFactory {
       transactionRepository,
       categoryRepository,
       investmentRepository,
-      userId,
+      userId
     );
   }
 
@@ -276,5 +300,13 @@ export class ControllerFactory {
   createWidgetSettingsController(): WidgetSettingsController {
     const widgetSettingsRepository = new PrismaWidgetSettingsRepository(this.prisma);
     return new WidgetSettingsController(widgetSettingsRepository);
+  }
+
+  /**
+   * Creates a MerchantAliasController with user-specific context
+   */
+  createMerchantAliasController(userId: string): MerchantAliasController {
+    const merchantAliasRepository = new MerchantAliasRepository(this.prisma);
+    return new MerchantAliasController(merchantAliasRepository, userId);
   }
 }

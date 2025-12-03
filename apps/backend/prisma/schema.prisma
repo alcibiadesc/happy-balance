@@ -31,6 +31,7 @@ model User {
   backups         Backup[]
   backupPolicy    BackupPolicy?
   widgetSettings  WidgetSettings[]
+  merchantAliases MerchantAlias[]
 
   @@index([username])
   @@index([role])
@@ -196,6 +197,30 @@ model CategoryPattern {
   @@index([isActive])
   @@index([priority])
   @@map("category_patterns")
+}
+
+// Merchant Aliases - maps raw merchant strings to canonical names
+// Enables intelligent recognition of variations like "UBER *EATS NYC" → "Uber Eats"
+model MerchantAlias {
+  id              String    @id @default(cuid()) @db.VarChar(36)
+  rawPattern      String    @db.VarChar(200)    // Original pattern to match (lowercase)
+  canonicalName   String    @db.VarChar(100)    // Normalized merchant name
+  confidence      Decimal   @default(1.0) @db.Decimal(3, 2) // Match confidence 0.00-1.00
+  matchCount      Int       @default(0)         // Times this alias matched
+  lastMatchedAt   DateTime?                     // Last time this alias was used
+  source          String    @default("user") @db.VarChar(20) // "user", "system", "learned"
+  userId          String?   @db.VarChar(36)     // null = global alias
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rawPattern, userId])
+  @@index([canonicalName])
+  @@index([userId])
+  @@index([source])
+  @@index([confidence])
+  @@map("merchant_aliases")
 }
 
 // Portfolio Investment Holdings

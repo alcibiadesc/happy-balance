@@ -1,10 +1,10 @@
-import { Transaction } from "../../domain/entities/Transaction";
-import { Category } from "../../domain/entities/Category";
+import { Transaction } from '../../domain/entities/Transaction';
+import { Category } from '../../domain/entities/Category';
 import {
   SmartCategorizationService,
   CategorizationOptions,
   CategorizationResult,
-} from "../../domain/services/SmartCategorizationService";
+} from '../../domain/services/SmartCategorizationService';
 
 export interface SmartCategorizeRequest {
   transactionId: string;
@@ -12,6 +12,7 @@ export interface SmartCategorizeRequest {
   applyToAll: boolean;
   applyToFuture: boolean;
   createPattern: boolean;
+  selectedTransactionIds?: string[];
 }
 
 export interface SmartCategorizeResponse {
@@ -32,24 +33,20 @@ export interface ISmartCategorizeRepositories {
 export class SmartCategorizeTransactionUseCase {
   constructor(
     private readonly repositories: ISmartCategorizeRepositories,
-    private readonly smartCategorizationService: SmartCategorizationService,
+    private readonly smartCategorizationService: SmartCategorizationService
   ) {}
 
-  async execute(
-    request: SmartCategorizeRequest,
-  ): Promise<SmartCategorizeResponse> {
+  async execute(request: SmartCategorizeRequest): Promise<SmartCategorizeResponse> {
     try {
       // Fetch the transaction
-      const transaction = await this.repositories.getTransaction(
-        request.transactionId,
-      );
+      const transaction = await this.repositories.getTransaction(request.transactionId);
       if (!transaction) {
         return {
           success: false,
           categorizedCount: 0,
           patternCreated: false,
           affectedTransactionIds: [],
-          message: "Transaction not found",
+          message: 'Transaction not found',
         };
       }
 
@@ -61,7 +58,7 @@ export class SmartCategorizeTransactionUseCase {
           categorizedCount: 0,
           patternCreated: false,
           affectedTransactionIds: [],
-          message: "Category not found",
+          message: 'Category not found',
         };
       }
 
@@ -70,15 +67,15 @@ export class SmartCategorizeTransactionUseCase {
         applyToAll: request.applyToAll,
         applyToFuture: request.applyToFuture,
         createPattern: request.createPattern || request.applyToAll,
+        selectedTransactionIds: request.selectedTransactionIds,
       };
 
       // Perform smart categorization
-      const result =
-        await this.smartCategorizationService.categorizeTransaction(
-          transaction,
-          category,
-          options,
-        );
+      const result = await this.smartCategorizationService.categorizeTransaction(
+        transaction,
+        category,
+        options
+      );
 
       if (result.isFailure()) {
         return {
@@ -86,7 +83,7 @@ export class SmartCategorizeTransactionUseCase {
           categorizedCount: 0,
           patternCreated: false,
           affectedTransactionIds: [],
-          message: result.getError()?.message || "Failed to categorize",
+          message: result.getError()?.message || 'Failed to categorize',
         };
       }
 
@@ -103,13 +100,13 @@ export class SmartCategorizeTransactionUseCase {
         message: this.buildSuccessMessage(categorizationResult),
       };
     } catch (error) {
-      console.error("SmartCategorizeTransactionUseCase error:", error);
+      console.error('SmartCategorizeTransactionUseCase error:', error);
       return {
         success: false,
         categorizedCount: 0,
         patternCreated: false,
         affectedTransactionIds: [],
-        message: "An error occurred while categorizing the transaction",
+        message: 'An error occurred while categorizing the transaction',
       };
     }
   }
@@ -118,7 +115,7 @@ export class SmartCategorizeTransactionUseCase {
     let message = `Successfully categorized ${result.categorizedCount} transaction(s)`;
 
     if (result.patternCreated) {
-      message += " and created a pattern for future transactions";
+      message += ' and created a pattern for future transactions';
     }
 
     return message;

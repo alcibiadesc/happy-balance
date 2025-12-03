@@ -1,33 +1,34 @@
-import { Request, Response } from "express";
-import { z } from "zod";
-import { TransactionId } from "@domain/value-objects/TransactionId";
-import { TransactionDate } from "@domain/value-objects/TransactionDate";
-import { Money } from "@domain/value-objects/Money";
-import { Merchant } from "@domain/value-objects/Merchant";
-import { TransactionType } from "@domain/entities/TransactionType";
-import { Transaction } from "@domain/entities/Transaction";
-import { CategoryType } from "@domain/entities/CategoryType";
-import { CreateTransactionCommand } from "@application/commands/CreateTransactionCommand";
-import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
-import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
-import { GetDashboardDataUseCase } from "@application/use-cases/GetDashboardDataUseCase";
-import { DashboardQuery } from "@application/queries/DashboardQuery";
-import { TransactionListQuery } from "@application/queries/TransactionListQuery";
-import { SmartCategorizeTransactionUseCase } from "@application/use-cases/SmartCategorizeTransactionUseCase";
-import { FindSimilarTransactionsUseCase } from "@application/use-cases/FindSimilarTransactionsUseCase";
-import { GetDashboardMetricsUseCase } from "@application/use-cases/GetDashboardMetricsUseCase";
-import { FindPotentialReimbursementsUseCase } from "@application/use-cases/FindPotentialReimbursementsUseCase";
-import { LinkSplitTransactionsUseCase } from "@application/use-cases/LinkSplitTransactionsUseCase";
-import { UnlinkSplitTransactionsUseCase } from "@application/use-cases/UnlinkSplitTransactionsUseCase";
-import { SyncInvestmentFromTransactionUseCase } from "@application/use-cases/SyncInvestmentFromTransactionUseCase";
-import { UnsyncInvestmentFromTransactionUseCase } from "@application/use-cases/UnsyncInvestmentFromTransactionUseCase";
+import { Request, Response } from 'express';
+import { z } from 'zod';
+import { TransactionId } from '@domain/value-objects/TransactionId';
+import { TransactionDate } from '@domain/value-objects/TransactionDate';
+import { Money } from '@domain/value-objects/Money';
+import { Merchant } from '@domain/value-objects/Merchant';
+import { TransactionType } from '@domain/entities/TransactionType';
+import { Transaction } from '@domain/entities/Transaction';
+import { CategoryType } from '@domain/entities/CategoryType';
+import { CreateTransactionCommand } from '@application/commands/CreateTransactionCommand';
+import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
+import { ICategoryRepository } from '@domain/repositories/ICategoryRepository';
+import { GetDashboardDataUseCase } from '@application/use-cases/GetDashboardDataUseCase';
+import { DashboardQuery } from '@application/queries/DashboardQuery';
+import { TransactionListQuery } from '@application/queries/TransactionListQuery';
+import { SmartCategorizeTransactionUseCase } from '@application/use-cases/SmartCategorizeTransactionUseCase';
+import { FindSimilarTransactionsUseCase } from '@application/use-cases/FindSimilarTransactionsUseCase';
+import { GetDashboardMetricsUseCase } from '@application/use-cases/GetDashboardMetricsUseCase';
+import { FindPotentialReimbursementsUseCase } from '@application/use-cases/FindPotentialReimbursementsUseCase';
+import { LinkSplitTransactionsUseCase } from '@application/use-cases/LinkSplitTransactionsUseCase';
+import { UnlinkSplitTransactionsUseCase } from '@application/use-cases/UnlinkSplitTransactionsUseCase';
+import { SyncInvestmentFromTransactionUseCase } from '@application/use-cases/SyncInvestmentFromTransactionUseCase';
+import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/UnsyncInvestmentFromTransactionUseCase';
+import { AutoCategorizeTransactionsUseCase } from '@application/use-cases/AutoCategorizeTransactionsUseCase';
 
 const CreateTransactionSchema = z.object({
   amount: z.number().positive(),
   currency: z.string().min(3).max(3),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   merchant: z.string().min(1).max(200),
-  type: z.enum(["INCOME", "EXPENSE", "INVESTMENT"]),
+  type: z.enum(['INCOME', 'EXPENSE', 'INVESTMENT']),
   description: z.string().max(200).optional(),
   categoryId: z.string().optional(),
 });
@@ -49,7 +50,7 @@ const TransactionFiltersSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
-  type: z.enum(["INCOME", "EXPENSE", "INVESTMENT"]).optional(),
+  type: z.enum(['INCOME', 'EXPENSE', 'INVESTMENT']).optional(),
   categoryId: z.string().optional(),
   merchantName: z.string().optional(),
   minAmount: z.coerce.number().optional(),
@@ -61,10 +62,7 @@ const TransactionFiltersSchema = z.object({
 });
 
 const DashboardQuerySchema = z.object({
-  period: z
-    .enum(["week", "month", "quarter", "year"])
-    .optional()
-    .default("month"),
+  period: z.enum(['week', 'month', 'quarter', 'year']).optional().default('month'),
   startDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -73,7 +71,7 @@ const DashboardQuerySchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
-  currency: z.string().min(3).max(3).optional().default("EUR"),
+  currency: z.string().min(3).max(3).optional().default('EUR'),
   includeInvestments: z.coerce.boolean().optional().default(true),
   periodOffset: z.coerce.number().min(0).optional().default(0),
 });
@@ -83,13 +81,11 @@ const SmartCategorizeSchema = z.object({
   applyToAll: z.boolean().default(false),
   applyToFuture: z.boolean().default(true),
   createPattern: z.boolean().default(true),
+  selectedTransactionIds: z.array(z.string()).optional(),
 });
 
 const MetricsQuerySchema = z.object({
-  period: z
-    .enum(["week", "month", "quarter", "year", "custom"])
-    .optional()
-    .default("month"),
+  period: z.enum(['week', 'month', 'quarter', 'year', 'custom']).optional().default('month'),
   startDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -98,7 +94,7 @@ const MetricsQuerySchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
-  currency: z.string().min(3).max(3).optional().default("EUR"),
+  currency: z.string().min(3).max(3).optional().default('EUR'),
   includeInvestments: z.coerce.boolean().optional().default(true),
   periodOffset: z.coerce.number().min(0).optional().default(0),
 });
@@ -116,14 +112,20 @@ const LinkSplitTransactionsSchema = z.object({
 const PaginatedTransactionSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(200).default(50),
-  sortBy: z.enum(["date", "amount", "merchant"]).optional().default("date"),
-  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+  sortBy: z.enum(['date', 'amount', 'merchant']).optional().default('date'),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
   searchTerm: z.string().max(100).optional(),
-  type: z.enum(["INCOME", "EXPENSE", "INVESTMENT"]).optional(),
+  type: z.enum(['INCOME', 'EXPENSE', 'INVESTMENT']).optional(),
   categoryId: z.string().optional(),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  currency: z.string().min(3).max(3).optional().default("EUR"),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  currency: z.string().min(3).max(3).optional().default('EUR'),
   minAmount: z.coerce.number().optional(),
   maxAmount: z.coerce.number().optional(),
   includeHidden: z.coerce.boolean().optional().default(true),
@@ -141,8 +143,9 @@ export class TransactionController {
     private readonly unlinkSplitTransactionsUseCase?: UnlinkSplitTransactionsUseCase,
     private readonly syncInvestmentUseCase?: SyncInvestmentFromTransactionUseCase,
     private readonly unsyncInvestmentUseCase?: UnsyncInvestmentFromTransactionUseCase,
+    private readonly autoCategorizeUseCase?: AutoCategorizeTransactionsUseCase,
     private readonly categoryRepository?: ICategoryRepository,
-    private readonly userId?: string,
+    private readonly userId?: string
   ) {}
 
   /**
@@ -150,7 +153,7 @@ export class TransactionController {
    */
   private async syncInvestmentIfNeeded(
     transaction: Transaction,
-    categoryId: string | undefined,
+    categoryId: string | undefined
   ): Promise<void> {
     if (!this.syncInvestmentUseCase || !this.categoryRepository || !categoryId || !this.userId) {
       return;
@@ -183,7 +186,9 @@ export class TransactionController {
         transactionCounterparty: snapshot.merchant || undefined,
       });
 
-      console.log(`📈 Investment synced for transaction ${snapshot.id} → category ${category.name}`);
+      console.log(
+        `📈 Investment synced for transaction ${snapshot.id} → category ${category.name}`
+      );
     } catch (error) {
       console.error('Failed to sync investment from transaction:', error);
       // Don't throw - this is a non-critical operation
@@ -195,7 +200,7 @@ export class TransactionController {
       const validationResult = CreateTransactionSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
@@ -224,7 +229,7 @@ export class TransactionController {
         dateResult.getValue(),
         merchantResult.getValue(),
         data.type as TransactionType,
-        data.description || "",
+        data.description || ''
       );
 
       if (transactionResult.isFailure()) {
@@ -261,8 +266,8 @@ export class TransactionController {
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -272,7 +277,7 @@ export class TransactionController {
       const validationResult = TransactionFiltersSchema.safeParse(req.query);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
@@ -284,18 +289,14 @@ export class TransactionController {
       const domainFilters: any = {};
 
       if (transactionFilters.startDate) {
-        const dateResult = TransactionDate.fromString(
-          transactionFilters.startDate,
-        );
+        const dateResult = TransactionDate.fromString(transactionFilters.startDate);
         if (dateResult.isSuccess()) {
           domainFilters.startDate = dateResult.getValue();
         }
       }
 
       if (transactionFilters.endDate) {
-        const dateResult = TransactionDate.fromString(
-          transactionFilters.endDate,
-        );
+        const dateResult = TransactionDate.fromString(transactionFilters.endDate);
         if (dateResult.isSuccess()) {
           domainFilters.endDate = dateResult.getValue();
         }
@@ -333,10 +334,7 @@ export class TransactionController {
         limit,
       };
 
-      const result = await this.transactionRepository.findWithFilters(
-        domainFilters,
-        pagination,
-      );
+      const result = await this.transactionRepository.findWithFilters(domainFilters, pagination);
       if (result.isFailure()) {
         return res.status(500).json({ error: result.getError() });
       }
@@ -360,8 +358,8 @@ export class TransactionController {
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -371,7 +369,7 @@ export class TransactionController {
       const validationResult = PaginatedTransactionSchema.safeParse(req.query);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
@@ -415,7 +413,10 @@ export class TransactionController {
       if (searchTerm) {
         // Check if search term is numeric for amount-based search
         const numericValue = parseFloat(searchTerm);
-        const isNumeric = !isNaN(numericValue) && isFinite(numericValue) && searchTerm.trim() === numericValue.toString();
+        const isNumeric =
+          !isNaN(numericValue) &&
+          isFinite(numericValue) &&
+          searchTerm.trim() === numericValue.toString();
 
         if (isNumeric && filters.minAmount === undefined && filters.maxAmount === undefined) {
           // For numeric search, add amount filters with tolerance (only if no explicit amount filters)
@@ -440,15 +441,12 @@ export class TransactionController {
         limit,
       };
 
-      const result = await this.transactionRepository.findWithFilters(
-        domainFilters,
-        pagination,
-      );
+      const result = await this.transactionRepository.findWithFilters(domainFilters, pagination);
 
       if (result.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: result.getError()
+          error: result.getError(),
         });
       }
 
@@ -494,8 +492,8 @@ export class TransactionController {
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -509,16 +507,14 @@ export class TransactionController {
         return res.status(400).json({ error: transactionIdResult.getError() });
       }
 
-      const result = await this.transactionRepository.findById(
-        transactionIdResult.getValue(),
-      );
+      const result = await this.transactionRepository.findById(transactionIdResult.getValue());
       if (result.isFailure()) {
         return res.status(500).json({ error: result.getError() });
       }
 
       const transaction = result.getValue();
       if (!transaction) {
-        return res.status(404).json({ error: "Transaction not found" });
+        return res.status(404).json({ error: 'Transaction not found' });
       }
 
       // Include hidden field in the response
@@ -533,8 +529,8 @@ export class TransactionController {
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -551,14 +547,14 @@ export class TransactionController {
       const validationResult = UpdateTransactionSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
 
       // Find existing transaction
       const existingResult = await this.transactionRepository.findById(
-        transactionIdResult.getValue(),
+        transactionIdResult.getValue()
       );
       if (existingResult.isFailure()) {
         return res.status(500).json({ error: existingResult.getError() });
@@ -566,16 +562,14 @@ export class TransactionController {
 
       const existingTransaction = existingResult.getValue();
       if (!existingTransaction) {
-        return res.status(404).json({ error: "Transaction not found" });
+        return res.status(404).json({ error: 'Transaction not found' });
       }
 
       const data = validationResult.data;
 
       // Update description if provided
       if (data.description !== undefined) {
-        const updateResult = existingTransaction.updateDescription(
-          data.description,
-        );
+        const updateResult = existingTransaction.updateDescription(data.description);
         if (updateResult.isFailure()) {
           return res.status(400).json({ error: updateResult.getError() });
         }
@@ -583,9 +577,7 @@ export class TransactionController {
 
       // Update observations if provided
       if (data.observations !== undefined) {
-        const updateResult = existingTransaction.updateObservations(
-          data.observations,
-        );
+        const updateResult = existingTransaction.updateObservations(data.observations);
         if (updateResult.isFailure()) {
           return res.status(400).json({ error: updateResult.getError() });
         }
@@ -600,7 +592,12 @@ export class TransactionController {
 
       // Update categoryId if provided
       if (data.categoryId !== undefined) {
-        console.log('🔧 Controller: Updating categoryId from', existingTransaction.categoryId?.value, 'to', data.categoryId);
+        console.log(
+          '🔧 Controller: Updating categoryId from',
+          existingTransaction.categoryId?.value,
+          'to',
+          data.categoryId
+        );
         existingTransaction.setCategoryId(data.categoryId);
       } else {
         console.log('🔧 Controller: categoryId not provided in update data');
@@ -611,8 +608,7 @@ export class TransactionController {
         (existingTransaction as any).splitPercentage = data.splitPercentage;
       }
 
-      const saveResult =
-        await this.transactionRepository.update(existingTransaction);
+      const saveResult = await this.transactionRepository.update(existingTransaction);
       if (saveResult.isFailure()) {
         return res.status(500).json({ error: saveResult.getError() });
       }
@@ -637,8 +633,8 @@ export class TransactionController {
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -656,26 +652,27 @@ export class TransactionController {
       if (this.unsyncInvestmentUseCase) {
         const unsyncResult = await this.unsyncInvestmentUseCase.execute(id);
         if (unsyncResult.isFailure()) {
-          console.warn(`Failed to unsync investment for transaction ${id}:`, unsyncResult.getError());
+          console.warn(
+            `Failed to unsync investment for transaction ${id}:`,
+            unsyncResult.getError()
+          );
           // Continue with deletion even if unsync fails
         }
       }
 
-      const result = await this.transactionRepository.delete(
-        transactionIdResult.getValue(),
-      );
+      const result = await this.transactionRepository.delete(transactionIdResult.getValue());
       if (result.isFailure()) {
         return res.status(500).json({ error: result.getError() });
       }
 
       res.json({
         success: true,
-        message: "Transaction deleted successfully",
+        message: 'Transaction deleted successfully',
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -684,33 +681,24 @@ export class TransactionController {
     try {
       // Parse with defaults
       const queryData = {
-        period: req.query.period || "month",
-        currency: req.query.currency || "EUR",
-        includeInvestments:
-          req.query.includeInvestments === "false" ? false : true,
+        period: req.query.period || 'month',
+        currency: req.query.currency || 'EUR',
+        includeInvestments: req.query.includeInvestments === 'false' ? false : true,
         startDate: req.query.startDate as string | undefined,
         endDate: req.query.endDate as string | undefined,
-        periodOffset: req.query.periodOffset
-          ? parseInt(req.query.periodOffset as string, 10)
-          : 0,
+        periodOffset: req.query.periodOffset ? parseInt(req.query.periodOffset as string, 10) : 0,
       };
 
       const validationResult = DashboardQuerySchema.safeParse(queryData);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
 
-      const {
-        period,
-        startDate,
-        endDate,
-        currency,
-        includeInvestments,
-        periodOffset,
-      } = validationResult.data;
+      const { period, startDate, endDate, currency, includeInvestments, periodOffset } =
+        validationResult.data;
 
       const query = new DashboardQuery(
         currency,
@@ -718,42 +706,40 @@ export class TransactionController {
         startDate,
         endDate,
         includeInvestments,
-        periodOffset,
+        periodOffset
       );
 
-      console.log("Executing getDashboardDataUseCase with query:", query);
+      console.log('Executing getDashboardDataUseCase with query:', query);
       const result = await this.getDashboardDataUseCase.execute(query);
-      console.log("getDashboardDataUseCase result:", result);
+      console.log('getDashboardDataUseCase result:', result);
 
       if (result.isFailure()) {
-        console.error("Dashboard data failed:", result.getError());
+        console.error('Dashboard data failed:', result.getError());
         return res.status(500).json({ error: result.getError() });
       }
 
       const data = result.getValue();
-      console.log("Dashboard data success:", JSON.stringify(data, null, 2));
+      console.log('Dashboard data success:', JSON.stringify(data, null, 2));
 
       res.json({
         success: true,
         data: data,
       });
     } catch (error) {
-      console.error("Dashboard controller error:", error);
+      console.error('Dashboard controller error:', error);
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
 
   async getStatistics(req: Request, res: Response) {
     try {
-      const { startDate, endDate, currency = "EUR" } = req.query;
+      const { startDate, endDate, currency = 'EUR' } = req.query;
 
       if (!startDate || !endDate) {
-        return res
-          .status(400)
-          .json({ error: "startDate and endDate are required" });
+        return res.status(400).json({ error: 'startDate and endDate are required' });
       }
 
       const startDateResult = TransactionDate.fromString(startDate as string);
@@ -769,7 +755,7 @@ export class TransactionController {
       const result = await this.transactionRepository.getStatistics(
         startDateResult.getValue(),
         endDateResult.getValue(),
-        currency as string,
+        currency as string
       );
 
       if (result.isFailure()) {
@@ -782,8 +768,8 @@ export class TransactionController {
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -795,19 +781,19 @@ export class TransactionController {
 
       if (result.isFailure()) {
         return res.status(500).json({
-          error: "Failed to delete all transactions",
+          error: 'Failed to delete all transactions',
           message: result.getError(),
         });
       }
 
       res.json({
         success: true,
-        message: "All transactions deleted successfully",
+        message: 'All transactions deleted successfully',
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to delete all transactions",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Failed to delete all transactions',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -816,7 +802,7 @@ export class TransactionController {
     try {
       if (!this.smartCategorizeUseCase) {
         return res.status(501).json({
-          error: "Smart categorization is not configured",
+          error: 'Smart categorization is not configured',
         });
       }
 
@@ -825,7 +811,7 @@ export class TransactionController {
 
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
@@ -837,11 +823,12 @@ export class TransactionController {
         applyToAll: data.applyToAll,
         applyToFuture: data.applyToFuture,
         createPattern: data.createPattern,
+        selectedTransactionIds: data.selectedTransactionIds,
       });
 
       if (!result.success) {
         return res.status(400).json({
-          error: result.message || "Failed to categorize transaction",
+          error: result.message || 'Failed to categorize transaction',
         });
       }
 
@@ -854,8 +841,8 @@ export class TransactionController {
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -864,7 +851,7 @@ export class TransactionController {
     try {
       if (!this.findSimilarTransactionsUseCase) {
         return res.status(501).json({
-          error: "Find similar transactions feature is not configured",
+          error: 'Find similar transactions feature is not configured',
         });
       }
 
@@ -878,7 +865,7 @@ export class TransactionController {
       }
 
       const transactionResult = await this.transactionRepository.findById(
-        transactionIdResult.getValue(),
+        transactionIdResult.getValue()
       );
 
       if (transactionResult.isFailure()) {
@@ -887,7 +874,7 @@ export class TransactionController {
 
       const transaction = transactionResult.getValue();
       if (!transaction) {
-        return res.status(404).json({ error: "Transaction not found" });
+        return res.status(404).json({ error: 'Transaction not found' });
       }
 
       const snapshot = transaction.toSnapshot();
@@ -930,8 +917,8 @@ export class TransactionController {
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -940,14 +927,14 @@ export class TransactionController {
     try {
       if (!this.getDashboardMetricsUseCase) {
         return res.status(501).json({
-          error: "Dashboard metrics feature is not configured",
+          error: 'Dashboard metrics feature is not configured',
         });
       }
 
       const validationResult = MetricsQuerySchema.safeParse(req.query);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
@@ -955,12 +942,12 @@ export class TransactionController {
       const query = validationResult.data;
 
       const result = await this.getDashboardMetricsUseCase.execute({
-        currency: query.currency || "EUR",
-        period: query.period || "month",
+        currency: query.currency || 'EUR',
+        period: query.period || 'month',
         startDate: query.startDate,
         endDate: query.endDate,
         includeInvestments: query.includeInvestments ?? true,
-        periodOffset: query.periodOffset ?? 0
+        periodOffset: query.periodOffset ?? 0,
       });
 
       if (result.isFailure()) {
@@ -975,8 +962,8 @@ export class TransactionController {
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -984,7 +971,7 @@ export class TransactionController {
   async findPotentialReimbursements(req: Request, res: Response) {
     try {
       if (!this.findPotentialReimbursementsUseCase) {
-        return res.status(501).json({ error: "Feature not implemented" });
+        return res.status(501).json({ error: 'Feature not implemented' });
       }
 
       const { id } = req.params;
@@ -992,7 +979,7 @@ export class TransactionController {
 
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
@@ -1024,8 +1011,8 @@ export class TransactionController {
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -1033,7 +1020,7 @@ export class TransactionController {
   async linkSplitTransactions(req: Request, res: Response) {
     try {
       if (!this.linkSplitTransactionsUseCase) {
-        return res.status(501).json({ error: "Feature not implemented" });
+        return res.status(501).json({ error: 'Feature not implemented' });
       }
 
       const { id } = req.params; // Source transaction ID (can be expense or income)
@@ -1041,7 +1028,7 @@ export class TransactionController {
 
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
@@ -1060,12 +1047,12 @@ export class TransactionController {
 
       res.json({
         success: true,
-        message: "Transactions linked successfully",
+        message: 'Transactions linked successfully',
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -1073,7 +1060,7 @@ export class TransactionController {
   async unlinkSplitTransactions(req: Request, res: Response) {
     try {
       if (!this.unlinkSplitTransactionsUseCase) {
-        return res.status(501).json({ error: "Feature not implemented" });
+        return res.status(501).json({ error: 'Feature not implemented' });
       }
 
       const { id } = req.params;
@@ -1088,12 +1075,41 @@ export class TransactionController {
 
       res.json({
         success: true,
-        message: "Transactions unlinked successfully",
+        message: 'Transactions unlinked successfully',
       });
     } catch (error) {
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  async autoCategorizeTransactions(req: Request, res: Response) {
+    try {
+      if (!this.autoCategorizeUseCase) {
+        return res.status(501).json({
+          error: 'Auto-categorization is not configured',
+        });
+      }
+
+      const result = await this.autoCategorizeUseCase.execute({
+        userId: this.userId,
+      });
+
+      res.json({
+        success: result.success,
+        data: {
+          categorizedCount: result.categorizedCount,
+          patternsApplied: result.patternsApplied,
+          normalizedMatches: result.normalizedMatches,
+          message: result.message,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }

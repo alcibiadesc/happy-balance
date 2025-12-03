@@ -31,6 +31,7 @@
     findMatchingTransactions,
     getCategoryById,
     formatAmount as _formatAmount,
+    smartCategorize,
   } from '$lib/modules/transactions/application/services/CategoryService';
   import { createObservationsHandler } from '$lib/modules/transactions/application/services/ObservationsService';
   import { TransactionOperationsService } from '$lib/modules/transactions/application/services/TransactionOperationsService';
@@ -136,14 +137,12 @@
         return;
       }
 
-      const matchingTransactions = await findMatchingTransactions(transaction, $apiTransactions);
-      if (matchingTransactions.length > 0) {
-        const category = getCategoryById($apiCategories, categoryId);
-        if (category) {
-          pageStore.openSmartCategorization(transaction, category, matchingTransactions);
-        }
-      } else {
-        await transactionOps.categorize(transaction, categoryId, false);
+      // Always open smart categorization modal for intelligent tagging options
+      const category = getCategoryById($apiCategories, categoryId);
+      if (category) {
+        // Fetch matching transactions in background
+        const matchingTransactions = await findMatchingTransactions(transaction, $apiTransactions);
+        pageStore.openSmartCategorization(transaction, category, matchingTransactions);
       }
 
       pageStore.closeCategoryModal();
@@ -163,15 +162,25 @@
 
     if (!transaction || !category) return;
 
-    // Categorize the current transaction
-    await transactionOps.categorize(transaction, category.id, false);
+    try {
+      // Use smart categorization API for intelligent tagging
+      const hasSelectedTransactions = selectedTransactionIds && selectedTransactionIds.length > 0;
+      const result = await smartCategorize(transaction.id, category.id, {
+        applyToAll: false, // We use selectedTransactionIds instead
+        applyToFuture: applyToFuture,
+        createPattern: applyToFuture,
+        selectedTransactionIds: hasSelectedTransactions ? selectedTransactionIds : undefined,
+      });
 
-    // Apply to selected related transactions if pattern scope
-    if (scope === 'pattern' && selectedTransactionIds && selectedTransactionIds.length > 0) {
-      await transactionOps.categorizeSpecificTransactions(selectedTransactionIds, category.id);
+      if (result.success) {
+        // Reload to get updated transactions from backend
+        await apiTransactions.load();
+      }
+    } catch (error) {
+      console.error('Failed to smart categorize:', error);
+      // Fallback to simple categorization
+      await transactionOps.categorize(transaction, category.id, false);
     }
-
-    // TODO: Handle applyToFuture flag to save categorization rule
 
     pageStore.closeSmartCategorization();
   }

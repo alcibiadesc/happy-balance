@@ -5,7 +5,7 @@ export interface Transaction {
   merchant: string;
   description: string;
   amount: number;
-  categoryId?: string;
+  categoryId?: string | null;
   category?: Category;
   status: 'completed' | 'pending' | 'hidden';
   tags: string[];

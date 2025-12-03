@@ -1,6 +1,6 @@
-import { Result } from "@domain/shared/Result";
-import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
-import { Transaction } from "@domain/entities/Transaction";
+import { Result } from '@domain/shared/Result';
+import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
+import { Transaction } from '@domain/entities/Transaction';
 
 export interface SimilarTransactionQuery {
   transactionId: string;
@@ -24,9 +24,7 @@ export interface SimilarTransactionResult {
 export class FindSimilarTransactionsUseCase {
   constructor(private readonly transactionRepository: ITransactionRepository) {}
 
-  async execute(
-    query: SimilarTransactionQuery,
-  ): Promise<Result<SimilarTransactionResult[]>> {
+  async execute(query: SimilarTransactionQuery): Promise<Result<SimilarTransactionResult[]>> {
     try {
       const {
         transactionId,
@@ -38,11 +36,10 @@ export class FindSimilarTransactionsUseCase {
       } = query;
 
       // Get all transactions from database (not limited by frontend pagination)
-      const allTransactionsResult =
-        await this.transactionRepository.findWithFilters(
-          { includeHidden },
-          { offset: 0, limit: 10000 }, // Large limit to get all transactions
-        );
+      const allTransactionsResult = await this.transactionRepository.findWithFilters(
+        { includeHidden },
+        { offset: 0, limit: 10000 } // Large limit to get all transactions
+      );
 
       if (allTransactionsResult.isFailure()) {
         return Result.fail(allTransactionsResult.getError());
@@ -53,7 +50,7 @@ export class FindSimilarTransactionsUseCase {
 
       // Normalize search patterns
       const normalizedMerchant = this.normalizeText(merchantName);
-      const normalizedDescription = this.normalizeText(description || "");
+      const normalizedDescription = this.normalizeText(description || '');
 
       for (const transaction of transactions) {
         // Skip the source transaction itself
@@ -70,13 +67,12 @@ export class FindSimilarTransactionsUseCase {
         const similarity = this.calculateSimilarity(
           transaction,
           normalizedMerchant,
-          normalizedDescription,
+          normalizedDescription
         );
 
         // Only include transactions with meaningful similarity
-        // ULTRA-STRICT: Increased threshold to 0.85 for near-perfect matches
-        // This ensures only highly confident matches are shown to users
-        if (similarity.score >= 0.85) {
+        // Balanced threshold: 0.6 allows reasonable matches while filtering noise
+        if (similarity.score >= 0.6) {
           similarTransactions.push({
             transaction,
             similarity,
@@ -92,7 +88,7 @@ export class FindSimilarTransactionsUseCase {
       return Result.ok(sortedResults);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find similar transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find similar transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -100,13 +96,11 @@ export class FindSimilarTransactionsUseCase {
   private calculateSimilarity(
     transaction: Transaction,
     normalizedMerchant: string,
-    normalizedDescription: string,
-  ): SimilarTransactionResult["similarity"] {
+    normalizedDescription: string
+  ): SimilarTransactionResult['similarity'] {
     const snapshot = transaction.toSnapshot();
     const transactionMerchant = this.normalizeText(snapshot.merchant);
-    const transactionDescription = this.normalizeText(
-      snapshot.description || "",
-    );
+    const transactionDescription = this.normalizeText(snapshot.description || '');
 
     let score = 0;
     let merchantMatch = false;
@@ -136,12 +130,14 @@ export class FindSimilarTransactionsUseCase {
         // 3. SUBSTRING MATCHING - Only for longer strings (minimum 5 chars)
         else if (normalizedMerchant.length >= 5 && transactionMerchant.length >= 5) {
           // Check if one contains the other, but require meaningful length
-          const shorter = normalizedMerchant.length < transactionMerchant.length
-            ? normalizedMerchant
-            : transactionMerchant;
-          const longer = normalizedMerchant.length >= transactionMerchant.length
-            ? normalizedMerchant
-            : transactionMerchant;
+          const shorter =
+            normalizedMerchant.length < transactionMerchant.length
+              ? normalizedMerchant
+              : transactionMerchant;
+          const longer =
+            normalizedMerchant.length >= transactionMerchant.length
+              ? normalizedMerchant
+              : transactionMerchant;
 
           // Only match if the shorter string is at least 60% of the longer
           const lengthRatio = shorter.length / longer.length;
@@ -152,10 +148,7 @@ export class FindSimilarTransactionsUseCase {
           }
           // 4. LEVENSHTEIN - Very strict, only for near-identical strings
           else if (
-            this.calculateLevenshteinSimilarity(
-              transactionMerchant,
-              normalizedMerchant,
-            ) >= 0.9 // Increased from 0.8
+            this.calculateLevenshteinSimilarity(transactionMerchant, normalizedMerchant) >= 0.9 // Increased from 0.8
           ) {
             merchantMatch = true;
             score += 0.35;
@@ -186,8 +179,7 @@ export class FindSimilarTransactionsUseCase {
     // Amount similarity (lower priority, bonus only)
     const sourceAmount = Math.abs(snapshot.amount);
     if (sourceAmount > 0) {
-      const amountDifference =
-        Math.abs(sourceAmount - Math.abs(snapshot.amount)) / sourceAmount;
+      const amountDifference = Math.abs(sourceAmount - Math.abs(snapshot.amount)) / sourceAmount;
       amountSimilarity = Math.max(0, 1 - amountDifference);
 
       // Only give small bonus for exact or very similar amounts
@@ -214,20 +206,32 @@ export class FindSimilarTransactionsUseCase {
    */
   private extractSignificantTokens(text: string): string[] {
     const stopWords = new Set([
-      'the', 'and', 'or', 'of', 'to', 'in', 'for', 'on', 'at', 'by',
-      'de', 'la', 'el', 'en', 'y', 'del', 'los', 'las', 'con', 'por'
+      'the',
+      'and',
+      'or',
+      'of',
+      'to',
+      'in',
+      'for',
+      'on',
+      'at',
+      'by',
+      'de',
+      'la',
+      'el',
+      'en',
+      'y',
+      'del',
+      'los',
+      'las',
+      'con',
+      'por',
     ]);
 
-    return text
-      .split(/\s+/)
-      .filter(token => {
-        // Filter out empty, short, stop words, and pure numbers
-        return (
-          token.length >= 3 &&
-          !stopWords.has(token) &&
-          !/^\d+$/.test(token)
-        );
-      });
+    return text.split(/\s+/).filter((token) => {
+      // Filter out empty, short, stop words, and pure numbers
+      return token.length >= 3 && !stopWords.has(token) && !/^\d+$/.test(token);
+    });
   }
 
   /**
@@ -259,9 +263,9 @@ export class FindSimilarTransactionsUseCase {
     return text
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s]/g, "") // Remove special characters
-      .replace(/\s+/g, " ") // Normalize whitespace
-      .replace(/\b(ltd|llc|inc|corp|sa|sl|slu|s\.l\.)\b/g, "") // Remove common company suffixes
+      .replace(/[^\w\s]/g, '') // Remove special characters
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .replace(/\b(ltd|llc|inc|corp|sa|sl|slu|s\.l\.)\b/g, '') // Remove common company suffixes
       .trim();
   }
 
@@ -287,7 +291,7 @@ export class FindSimilarTransactionsUseCase {
         matrix[j][i] = Math.min(
           matrix[j][i - 1] + 1, // deletion
           matrix[j - 1][i] + 1, // insertion
-          matrix[j - 1][i - 1] + substitutionCost, // substitution
+          matrix[j - 1][i - 1] + substitutionCost // substitution
         );
       }
     }

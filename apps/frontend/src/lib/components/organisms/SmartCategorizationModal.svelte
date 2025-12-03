@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X } from 'lucide-svelte';
+  import { X, Check, Calendar, Sparkles } from 'lucide-svelte';
   import type { Transaction, Category } from '$lib/types/transaction';
   import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
@@ -22,8 +22,7 @@
   export let onCancel: () => void = () => {};
 
   // State
-  let selectedScope: 'single' | 'pattern' | 'all' = 'single';
-  let applyToFuture = false;
+  let applyToFuture = true; // Default to true for smart tagging
   let selectedTransactionIds = new Set<string>();
 
   $: hasMatches = matchingTransactions.length > 0;
@@ -31,13 +30,15 @@
   // Reset selected transactions when modal opens or matching transactions change
   $: if (isOpen) {
     selectedTransactionIds = new Set(matchingTransactions.map((t) => t.id));
+    applyToFuture = true; // Reset to true on open
   }
 
   function handleConfirm() {
-    if (selectedScope === 'pattern') {
-      onConfirm(selectedScope, applyToFuture, Array.from(selectedTransactionIds));
+    const hasSelectedMatches = selectedTransactionIds.size > 0;
+    if (hasSelectedMatches) {
+      onConfirm('pattern', applyToFuture, Array.from(selectedTransactionIds));
     } else {
-      onConfirm(selectedScope, applyToFuture);
+      onConfirm('single', applyToFuture);
     }
   }
 
@@ -46,6 +47,14 @@
       style: 'currency',
       currency: 'EUR',
     }).format(Math.abs(amount));
+  }
+
+  function formatDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'short',
+    });
   }
 
   function getPatternName(transaction: Transaction): string {
@@ -82,6 +91,7 @@
   }
 
   $: selectedCount = selectedTransactionIds.size + 1; // +1 for the current transaction
+  $: totalSelectedAmount = getTotalAmount();
 </script>
 
 <div use:modalKeyboard={{ onConfirm: handleConfirm, onCancel, isOpen }}></div>
@@ -89,15 +99,21 @@
 {#if isOpen && transaction && selectedCategory}
   <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="categorization-title">
     <div class="modal-content">
-      <!-- Header minimalista -->
+      <!-- Header -->
       <div class="modal-header">
         <div class="header-content">
-          <h2 id="categorization-title" class="modal-title">Aplicar categoría</h2>
+          <h2 id="categorization-title" class="modal-title">
+            <Sparkles size={18} />
+            Categorización inteligente
+          </h2>
           <div class="category-preview">
             <span class="merchant-name">{getPatternName(transaction)}</span>
             <div class="category-assignment">
               <span class="arrow">→</span>
-              <div class="category-chip">
+              <div
+                class="category-chip"
+                style="background-color: {selectedCategory.color}15; border-color: {selectedCategory.color}; color: {selectedCategory.color}"
+              >
                 <span class="category-icon">{selectedCategory.icon}</span>
                 <span class="category-name">{selectedCategory.name}</span>
               </div>
@@ -109,94 +125,118 @@
         </button>
       </div>
 
-      <!-- Application scope options -->
       <div class="content-section">
-        <div class="scope-options">
-          <!-- Single transaction option -->
-          <label class="scope-option" class:selected={selectedScope === 'single'}>
-            <input type="radio" bind:group={selectedScope} value="single" name="scope" />
-            <div class="option-content">
-              <div class="option-info">
-                <span class="option-title">Solo esta transacción</span>
-                <span class="option-detail">Aplicar únicamente a esta transacción</span>
-              </div>
-              <span class="option-count">1</span>
+        <!-- Current transaction -->
+        <div class="current-transaction">
+          <div class="section-label">Transacción actual</div>
+          <div class="transaction-card current">
+            <div class="transaction-info">
+              <span class="transaction-description">{transaction.description}</span>
+              <span class="transaction-meta"
+                >{transaction.merchant} • {formatDate(transaction.date)}</span
+              >
             </div>
-          </label>
-
-          <!-- Similar transactions option -->
-          {#if hasMatches}
-            <label class="scope-option" class:selected={selectedScope === 'pattern'}>
-              <input type="radio" bind:group={selectedScope} value="pattern" name="scope" />
-              <div class="option-content">
-                <div class="option-info">
-                  <span class="option-title">Transacciones similares</span>
-                  <span class="option-detail">Selecciona las transacciones a las que aplicar</span>
-                </div>
-                <span class="option-count">{selectedCount}</span>
-              </div>
-            </label>
-
-            <!-- Future transactions checkbox -->
-            {#if selectedScope === 'pattern'}
-              <div class="future-option">
-                <label class="checkbox-option">
-                  <input type="checkbox" bind:checked={applyToFuture} />
-                  <span class="checkbox-label"
-                    >Aplicar automáticamente a futuras transacciones similares</span
-                  >
-                </label>
-              </div>
-            {/if}
-          {/if}
+            <span
+              class="transaction-amount"
+              class:expense={transaction.amount < 0}
+              class:income={transaction.amount > 0}
+            >
+              {formatAmount(transaction.amount)}
+            </span>
+            <div class="check-badge">
+              <Check size={14} />
+            </div>
+          </div>
         </div>
 
-        <!-- Preview section -->
-        {#if selectedScope === 'pattern' && hasMatches && matchingTransactions.length > 0}
-          <div class="preview-section">
-            <div class="preview-header">
-              <div class="preview-header-left">
-                <span class="preview-title">Se aplicará también a:</span>
-                <button type="button" class="toggle-all-btn" on:click={toggleAll}>
-                  {selectedTransactionIds.size === matchingTransactions.length
-                    ? 'Deseleccionar todas'
-                    : 'Seleccionar todas'}
-                </button>
+        <!-- Matching transactions -->
+        {#if hasMatches}
+          <div class="matches-section">
+            <div class="section-header">
+              <div class="section-label">
+                Transacciones anteriores similares
+                <span class="match-count">{matchingTransactions.length}</span>
               </div>
-              <span class="preview-total">{getTotalAmount()}</span>
+              <button type="button" class="toggle-all-btn" on:click={toggleAll}>
+                {selectedTransactionIds.size === matchingTransactions.length
+                  ? 'Deseleccionar'
+                  : 'Seleccionar todas'}
+              </button>
             </div>
-            <div class="preview-list">
+            <div class="matches-list">
               {#each matchingTransactions as match (match.id)}
-                <label class="preview-item" class:selected={selectedTransactionIds.has(match.id)}>
+                <label
+                  class="transaction-card"
+                  class:selected={selectedTransactionIds.has(match.id)}
+                >
                   <input
                     type="checkbox"
                     checked={selectedTransactionIds.has(match.id)}
                     on:change={() => toggleTransaction(match.id)}
                   />
-                  <div class="preview-item-content">
-                    <span class="preview-merchant">{match.merchant}</span>
-                    <span
-                      class="preview-amount"
-                      class:income={match.amount > 0}
-                      class:expense={match.amount < 0}>{formatAmount(match.amount)}</span
+                  <div class="transaction-info">
+                    <span class="transaction-description"
+                      >{match.description || match.merchant}</span
                     >
+                    <span class="transaction-meta">
+                      <Calendar size={10} />
+                      {formatDate(match.date)}
+                      {#if match.description && match.merchant}
+                        • {match.merchant}
+                      {/if}
+                    </span>
                   </div>
+                  <span
+                    class="transaction-amount"
+                    class:expense={match.amount < 0}
+                    class:income={match.amount > 0}
+                  >
+                    {formatAmount(match.amount)}
+                  </span>
                 </label>
               {/each}
             </div>
+            {#if selectedTransactionIds.size > 0}
+              <div class="selection-summary">
+                <span>Total seleccionado:</span>
+                <strong>{totalSelectedAmount}</strong>
+              </div>
+            {/if}
+          </div>
+        {:else}
+          <div class="no-matches">
+            <span class="no-matches-text">No se encontraron transacciones anteriores similares</span
+            >
           </div>
         {/if}
+
+        <!-- Future transactions option -->
+        <div class="future-option">
+          <label class="checkbox-option">
+            <input type="checkbox" bind:checked={applyToFuture} />
+            <div class="checkbox-content">
+              <span class="checkbox-title">
+                <Sparkles size={14} />
+                Aplicar a futuras transacciones
+              </span>
+              <span class="checkbox-detail">
+                Las transacciones similares que importes en el futuro se categorizarán
+                automáticamente
+              </span>
+            </div>
+          </label>
+        </div>
       </div>
 
       <!-- Action buttons -->
       <div class="modal-actions">
-        <button class="btn-secondary" on:click={onCancel}> Cancelar </button>
-        <button
-          class="btn-primary"
-          on:click={handleConfirm}
-          disabled={selectedScope === 'pattern' && selectedTransactionIds.size === 0}
-        >
-          {selectedScope === 'single' ? 'Aplicar categoría' : `Aplicar a ${selectedCount}`}
+        <button class="btn-secondary" on:click={onCancel}>Cancelar</button>
+        <button class="btn-primary" on:click={handleConfirm}>
+          {#if selectedTransactionIds.size > 0}
+            Aplicar a {selectedCount} transacciones
+          {:else}
+            Aplicar categoría
+          {/if}
         </button>
       </div>
     </div>
@@ -220,10 +260,10 @@
   }
 
   .modal-content {
-    background: white;
+    background: var(--surface-elevated);
     border-radius: 16px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    max-width: 450px;
+    box-shadow: var(--shadow-lg);
+    max-width: 480px;
     width: 100%;
     max-height: 90vh;
     overflow: hidden;
@@ -245,8 +285,9 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    padding: 24px;
-    border-bottom: 1px solid #f1f5f9;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-muted);
   }
 
   .header-content {
@@ -254,22 +295,29 @@
   }
 
   .modal-title {
-    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text-primary);
     margin: 0 0 12px 0;
     line-height: 1.3;
+  }
+
+  .modal-title :global(svg) {
+    color: var(--primary);
   }
 
   .category-preview {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
   .merchant-name {
-    font-size: 14px;
-    color: #64748b;
+    font-size: 13px;
+    color: var(--text-secondary);
     font-weight: 500;
   }
 
@@ -280,396 +328,408 @@
   }
 
   .arrow {
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 12px;
   }
 
   .category-chip {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 8px;
+    gap: 5px;
+    padding: 5px 10px;
+    border: 1px solid;
+    border-radius: 6px;
   }
 
   .category-icon {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .category-name {
     font-size: 12px;
-    font-weight: 500;
-    color: #059669;
+    font-weight: 600;
   }
 
   .close-btn {
-    padding: 8px;
+    padding: 6px;
     border: none;
     background: none;
-    color: #64748b;
+    color: var(--text-secondary);
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 6px;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 16px;
   }
 
   .close-btn:hover {
-    background: #f1f5f9;
-    color: #374151;
+    background: var(--surface-hover);
+    color: var(--text-primary);
   }
 
   .content-section {
-    padding: 8px 24px 24px;
-    max-height: calc(90vh - 200px);
+    padding: 16px 24px 20px;
+    max-height: calc(90vh - 220px);
     overflow-y: auto;
   }
 
-  .scope-options {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  /* Current transaction */
+  .current-transaction {
     margin-bottom: 16px;
   }
 
-  .scope-option {
-    display: block;
-    cursor: pointer;
-  }
-
-  .scope-option input[type='radio'] {
-    display: none;
-  }
-
-  .option-content {
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 16px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 12px;
-    background: white;
+    gap: 6px;
+  }
+
+  .match-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    background: var(--primary);
+    border-radius: 9px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--primary-foreground);
+    padding: 0 5px;
+  }
+
+  .transaction-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface-elevated);
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
     transition: all 0.2s ease;
   }
 
-  .scope-option:hover .option-content {
-    border-color: #cbd5e1;
-    background: #f8fafc;
+  .transaction-card:hover {
+    border-color: var(--text-muted);
+    background: var(--surface-muted);
   }
 
-  .scope-option.selected .option-content {
-    border-color: #059669;
-    background: #f0fdf4;
+  .transaction-card.current {
+    background: var(--acapulco-alpha-10);
+    border-color: var(--acapulco);
+    cursor: default;
   }
 
-  .option-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  .transaction-card.selected {
+    background: var(--primary-alpha-10);
+    border-color: var(--primary);
   }
 
-  .option-title {
-    font-size: 14px;
+  .transaction-card input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .transaction-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .transaction-description {
+    font-size: 13px;
     font-weight: 500;
-    color: #1e293b;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
   }
 
-  .option-detail {
-    font-size: 12px;
-    color: #64748b;
-    line-height: 1.3;
+  .transaction-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
   }
 
-  .option-count {
+  .transaction-meta :global(svg) {
+    flex-shrink: 0;
+  }
+
+  .transaction-amount {
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .transaction-amount.expense {
+    color: var(--froly);
+  }
+
+  .transaction-amount.income {
+    color: var(--acapulco);
+  }
+
+  .check-badge {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 24px;
-    height: 24px;
-    background: #f1f5f9;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #475569;
-  }
-
-  .scope-option.selected .option-count {
-    background: #059669;
+    width: 22px;
+    height: 22px;
+    background: var(--acapulco);
+    border-radius: 50%;
     color: white;
+    flex-shrink: 0;
   }
 
+  /* Matches section */
+  .matches-section {
+    margin-bottom: 16px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .toggle-all-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-elevated);
+    color: var(--primary);
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .toggle-all-btn:hover {
+    background: var(--primary-alpha-10);
+    border-color: var(--primary);
+  }
+
+  .matches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .selection-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--primary-alpha-10);
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--primary);
+  }
+
+  .selection-summary strong {
+    font-weight: 600;
+  }
+
+  /* No matches */
+  .no-matches {
+    padding: 16px;
+    background: var(--surface-muted);
+    border: 1px dashed var(--border-color);
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .no-matches-text {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Future option */
   .future-option {
-    margin-top: 8px;
-    margin-left: 16px;
+    padding: 14px 16px;
+    background: var(--primary-alpha-10);
+    border: 1.5px solid var(--primary);
+    border-radius: 10px;
   }
 
   .checkbox-option {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
     cursor: pointer;
   }
 
   .checkbox-option input[type='checkbox'] {
-    margin: 2px 0 0 0;
-    accent-color: #059669;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    accent-color: var(--primary);
+    flex-shrink: 0;
   }
 
-  .checkbox-label {
-    font-size: 12px;
-    color: #64748b;
+  .checkbox-content {
+    flex: 1;
+  }
+
+  .checkbox-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 2px;
+  }
+
+  .checkbox-title :global(svg) {
+    color: var(--primary);
+  }
+
+  .checkbox-detail {
+    font-size: 11px;
+    color: var(--text-secondary);
     line-height: 1.4;
   }
 
-  .preview-section {
-    padding: 16px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    margin-top: 16px;
-  }
-
-  .preview-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
-    gap: 8px;
-  }
-
-  .preview-header-left {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1;
-  }
-
-  .preview-title {
-    font-size: 12px;
-    font-weight: 500;
-    color: #64748b;
-  }
-
-  .toggle-all-btn {
-    padding: 4px 8px;
-    border: 1px solid #e2e8f0;
-    background: white;
-    color: #059669;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    align-self: flex-start;
-  }
-
-  .toggle-all-btn:hover {
-    background: #f0fdf4;
-    border-color: #bbf7d0;
-  }
-
-  .preview-total {
-    font-size: 12px;
-    font-weight: 600;
-    color: #059669;
-    white-space: nowrap;
-  }
-
-  .preview-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-
-  .preview-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    background: white;
-    border-radius: 8px;
-    border: 1.5px solid #e2e8f0;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .preview-item:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-  }
-
-  .preview-item.selected {
-    background: #f0fdf4;
-    border-color: #059669;
-  }
-
-  .preview-item input[type='checkbox'] {
-    margin: 0;
-    accent-color: #059669;
-    cursor: pointer;
-  }
-
-  .preview-item-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex: 1;
-  }
-
-  .preview-merchant {
-    font-size: 12px;
-    color: #374151;
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 180px;
-  }
-
-  .preview-amount {
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .preview-amount.expense {
-    color: #dc2626;
-  }
-
-  .preview-amount.income {
-    color: #22c55e;
-  }
-
-  .preview-list::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .preview-list::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .preview-list::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-  }
-
-  .preview-list::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
-
+  /* Actions */
   .modal-actions {
     display: flex;
     gap: 12px;
-    padding: 24px;
-    border-top: 1px solid #f1f5f9;
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border-color);
   }
 
   .btn-secondary {
     flex: 1;
-    padding: 12px 16px;
-    border: 1.5px solid #e2e8f0;
-    background: white;
-    color: #64748b;
+    padding: 11px 16px;
+    border: 1.5px solid var(--border-color);
+    background: var(--surface-elevated);
+    color: var(--text-secondary);
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
   .btn-secondary:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-    color: #475569;
+    background: var(--surface-muted);
+    border-color: var(--text-muted);
+    color: var(--text-primary);
   }
 
   .btn-primary {
     flex: 2;
-    padding: 12px 16px;
-    border: 1.5px solid #059669;
-    background: #059669;
-    color: white;
+    padding: 11px 16px;
+    border: none;
+    background: var(--primary);
+    color: var(--primary-foreground);
     border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
   }
 
-  .btn-primary:hover:not(:disabled) {
-    background: #047857;
-    border-color: #047857;
+  .btn-primary:hover {
+    background: var(--primary-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
   }
 
-  .btn-primary:disabled {
-    background: #cbd5e1;
-    border-color: #cbd5e1;
-    color: #94a3b8;
-    cursor: not-allowed;
-    opacity: 0.6;
+  /* Scrollbars */
+  .matches-list::-webkit-scrollbar,
+  .content-section::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .matches-list::-webkit-scrollbar-track,
+  .content-section::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .matches-list::-webkit-scrollbar-thumb,
+  .content-section::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+  }
+
+  .matches-list::-webkit-scrollbar-thumb:hover,
+  .content-section::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
   }
 
   /* Responsive */
   @media (max-width: 480px) {
     .modal-overlay {
-      padding: 16px;
+      padding: 12px;
+      align-items: flex-end;
     }
 
     .modal-content {
       max-width: none;
       width: 100%;
+      max-height: 85vh;
+      border-radius: 16px 16px 0 0;
     }
 
     .modal-header {
-      padding: 20px;
+      padding: 16px 20px;
+    }
+
+    .modal-title {
+      font-size: 15px;
     }
 
     .content-section {
-      padding: 8px 20px 20px;
+      padding: 12px 20px 16px;
+      max-height: calc(85vh - 200px);
+    }
+
+    .transaction-card {
+      padding: 10px 12px;
+    }
+
+    .transaction-description {
+      font-size: 12px;
+    }
+
+    .matches-list {
+      max-height: 150px;
     }
 
     .modal-actions {
-      padding: 20px;
-      flex-direction: column;
+      padding: 16px 20px;
+      flex-direction: column-reverse;
       gap: 8px;
     }
 
     .btn-secondary,
     .btn-primary {
       flex: none;
+      width: 100%;
     }
-
-    .category-assignment {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
-    }
-
-    .arrow {
-      transform: rotate(90deg);
-    }
-  }
-
-  /* Scrollbar styling */
-  .content-section::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .content-section::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .content-section::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-  }
-
-  .content-section::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
   }
 </style>
