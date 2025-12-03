@@ -18,9 +18,9 @@ export interface UpdateInfo {
 }
 
 const initialState: UpdateInfo = {
-  updateAvailable: true, // TODO: cambiar a false cuando termines de probar
-  current: { version: '1.0.0', commit: 'abc123' },
-  latest: { version: '1.5.0', commit: 'modal-v2', lastPushed: '2025-12-03' },
+  updateAvailable: false,
+  current: { version: '', commit: '' },
+  latest: null,
 };
 
 export const updateInfo = writable<UpdateInfo>(initialState);

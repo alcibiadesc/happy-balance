@@ -975,18 +975,16 @@
   /* Modal Styles */
   .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 99999;
+    z-index: 1100;
     padding: 1rem;
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn 0.15s ease-out;
   }
 
   .modal-content {

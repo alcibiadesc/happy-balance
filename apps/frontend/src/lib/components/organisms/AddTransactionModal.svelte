@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { Plus, X } from 'lucide-svelte';
+  import { Plus } from 'lucide-svelte';
   import { goto } from '$app/navigation';
   import type { Transaction, Category } from '$lib/types/transaction';
   import { t } from '$lib/stores/i18n';
-  import { modalKeyboard } from '$lib/actions/modalKeyboard';
+  import Modal from '$lib/components/atoms/Modal.svelte';
 
   // Props
   export let isOpen = false;
@@ -107,12 +107,6 @@
     onCancel();
   }
 
-  function handleBackdropClick(event: MouseEvent) {
-    if (event.target === event.currentTarget) {
-      closeModal();
-    }
-  }
-
   function toggleType() {
     type = type === 'expense' ? 'income' : 'expense';
   }
@@ -123,220 +117,147 @@
   }
 </script>
 
-<div use:modalKeyboard={{ onConfirm: handleSubmit, onCancel: closeModal, isOpen }}></div>
-
-{#if isOpen}
-  <div class="modal-backdrop" on:click={handleBackdropClick} role="dialog" tabindex="-1">
-    <div class="modal-content">
-      <!-- Close button -->
-      <button class="close-btn" on:click={closeModal} aria-label="Close">
-        <X size={20} />
-      </button>
-
-      <!-- Header -->
-      <div class="modal-header">
-        <h3>{$t('transactions.modal.new_transaction')}</h3>
-      </div>
-
-      <!-- Form -->
-      <form on:submit|preventDefault={handleSubmit} class="form">
-        <!-- Amount and Type -->
-        <div class="field-group">
-          <div class="amount-container">
-            <div class="amount-input">
-              <span class="currency">€</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                bind:value={amount}
-                placeholder={$t('transactions.modal.amount_placeholder')}
-                class="amount-field"
-                class:error={errors.amount}
-                id="amount"
-                autocomplete="off"
-              />
-            </div>
-            <div class="type-toggle">
-              <button
-                type="button"
-                class="type-btn"
-                class:expense={type === 'expense'}
-                class:income={type === 'income'}
-                on:click={toggleType}
-              >
-                {type === 'expense'
-                  ? $t('transactions.modal.expense')
-                  : $t('transactions.modal.income')}
-              </button>
-            </div>
-          </div>
-          {#if errors.amount}
-            <span class="error-text">{errors.amount}</span>
-          {/if}
-        </div>
-
-        <!-- Merchant -->
-        <div class="field-group">
-          <label class="field-label" for="merchant">{$t('transactions.modal.where_label')}</label>
+<Modal
+  open={isOpen}
+  onclose={closeModal}
+  title={$t('transactions.modal.new_transaction')}
+  size="sm"
+>
+  <form on:submit|preventDefault={handleSubmit} class="form">
+    <!-- Amount and Type -->
+    <div class="field-group">
+      <div class="amount-container">
+        <div class="amount-input">
+          <span class="currency">€</span>
           <input
-            type="text"
-            bind:value={merchant}
-            placeholder={$t('transactions.modal.merchant_placeholder')}
-            class="field-input"
-            class:error={errors.merchant}
-            id="merchant"
-            autocomplete="organization"
+            type="number"
+            step="0.01"
+            min="0"
+            bind:value={amount}
+            placeholder={$t('transactions.modal.amount_placeholder')}
+            class="amount-field"
+            class:error={errors.amount}
+            id="amount"
+            autocomplete="off"
           />
-          {#if errors.merchant}
-            <span class="error-text">{errors.merchant}</span>
-          {/if}
         </div>
-
-        <!-- Description -->
-        <div class="field-group">
-          <label class="field-label" for="description"
-            >{$t('transactions.modal.what_for_label')}</label
+        <div class="type-toggle">
+          <button
+            type="button"
+            class="type-btn"
+            class:expense={type === 'expense'}
+            class:income={type === 'income'}
+            on:click={toggleType}
           >
-          <input
-            type="text"
-            bind:value={description}
-            placeholder={$t('transactions.modal.description_placeholder')}
-            class="field-input"
-            id="description"
-            maxlength="200"
-          />
-        </div>
-
-        <!-- Date -->
-        <div class="field-group">
-          <label class="field-label" for="date">{$t('transactions.modal.when_label')}</label>
-          <input
-            type="date"
-            bind:value={date}
-            class="field-input date-input"
-            class:error={errors.date}
-            id="date"
-          />
-          {#if errors.date}
-            <span class="error-text">{errors.date}</span>
-          {/if}
-        </div>
-
-        <!-- Category -->
-        <div class="field-group">
-          <label class="field-label" for="category">{$t('transactions.category')}</label>
-          {#if categories.length > 0}
-            <div class="category-grid">
-              {#each categories.filter((c) => (type === 'income' && ['income', 'no_compute'].includes(c.type)) || (type === 'expense' && ['essential', 'discretionary', 'investment', 'debt_payment', 'no_compute'].includes(c.type))) as category (category.id)}
-                <button
-                  type="button"
-                  class="category-chip"
-                  class:selected={categoryId === category.id}
-                  style="--category-color: {category.color}"
-                  on:click={() => (categoryId = categoryId === category.id ? '' : category.id)}
-                >
-                  <span class="category-icon">{category.icon}</span>
-                  <span class="category-name">{category.name}</span>
-                </button>
-              {/each}
-            </div>
-          {:else}
-            <div class="empty-categories">
-              <div class="empty-categories-content">
-                <span class="empty-categories-icon">🏷️</span>
-                <p class="empty-categories-text">
-                  No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar
-                  mejor tus gastos e ingresos.
-                </p>
-                <button type="button" class="create-categories-btn" on:click={navigateToCategories}>
-                  <Plus size={16} />
-                  Crear categorías
-                </button>
-              </div>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Submit buttons -->
-        <div class="form-actions">
-          <button type="button" class="btn-secondary" on:click={closeModal}>
-            {$t('common.cancel')}
-          </button>
-          <button type="submit" class="btn-primary" disabled={isSubmitting}>
-            {#if isSubmitting}
-              <div class="spinner"></div>
-              {$t('transactions.modal.saving')}
-            {:else}
-              {$t('transactions.modal.save_transaction')}
-            {/if}
+            {type === 'expense'
+              ? $t('transactions.modal.expense')
+              : $t('transactions.modal.income')}
           </button>
         </div>
-      </form>
+      </div>
+      {#if errors.amount}
+        <span class="error-text">{errors.amount}</span>
+      {/if}
     </div>
-  </div>
-{/if}
+
+    <!-- Merchant -->
+    <div class="field-group">
+      <label class="field-label" for="merchant">{$t('transactions.modal.where_label')}</label>
+      <input
+        type="text"
+        bind:value={merchant}
+        placeholder={$t('transactions.modal.merchant_placeholder')}
+        class="field-input"
+        class:error={errors.merchant}
+        id="merchant"
+        autocomplete="organization"
+      />
+      {#if errors.merchant}
+        <span class="error-text">{errors.merchant}</span>
+      {/if}
+    </div>
+
+    <!-- Description -->
+    <div class="field-group">
+      <label class="field-label" for="description">{$t('transactions.modal.what_for_label')}</label>
+      <input
+        type="text"
+        bind:value={description}
+        placeholder={$t('transactions.modal.description_placeholder')}
+        class="field-input"
+        id="description"
+        maxlength="200"
+      />
+    </div>
+
+    <!-- Date -->
+    <div class="field-group">
+      <label class="field-label" for="date">{$t('transactions.modal.when_label')}</label>
+      <input
+        type="date"
+        bind:value={date}
+        class="field-input date-input"
+        class:error={errors.date}
+        id="date"
+      />
+      {#if errors.date}
+        <span class="error-text">{errors.date}</span>
+      {/if}
+    </div>
+
+    <!-- Category -->
+    <div class="field-group">
+      <label class="field-label" for="category">{$t('transactions.category')}</label>
+      {#if categories.length > 0}
+        <div class="category-grid">
+          {#each categories.filter((c) => (type === 'income' && ['income', 'no_compute'].includes(c.type)) || (type === 'expense' && ['essential', 'discretionary', 'investment', 'debt_payment', 'no_compute'].includes(c.type))) as category (category.id)}
+            <button
+              type="button"
+              class="category-chip"
+              class:selected={categoryId === category.id}
+              style="--category-color: {category.color}"
+              on:click={() => (categoryId = categoryId === category.id ? '' : category.id)}
+            >
+              <span class="category-icon">{category.icon}</span>
+              <span class="category-name">{category.name}</span>
+            </button>
+          {/each}
+        </div>
+      {:else}
+        <div class="empty-categories">
+          <div class="empty-categories-content">
+            <span class="empty-categories-icon">🏷️</span>
+            <p class="empty-categories-text">
+              No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar
+              mejor tus gastos e ingresos.
+            </p>
+            <button type="button" class="create-categories-btn" on:click={navigateToCategories}>
+              <Plus size={16} />
+              Crear categorías
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
+
+    <!-- Submit buttons -->
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" on:click={closeModal}>
+        {$t('common.cancel')}
+      </button>
+      <button type="submit" class="btn-primary" disabled={isSubmitting}>
+        {#if isSubmitting}
+          <div class="spinner"></div>
+          {$t('transactions.modal.saving')}
+        {:else}
+          {$t('transactions.modal.save_transaction')}
+        {/if}
+      </button>
+    </div>
+  </form>
+</Modal>
 
 <style>
-  .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: rgba(0, 0, 0, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    animation: fade-in 0.15s ease-out;
-  }
-
-  .modal-content {
-    background: var(--surface-elevated);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
-    width: 100%;
-    max-width: 380px;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    animation: slide-up 0.2s ease-out;
-  }
-
-  .close-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--gray-200);
-    background: var(--surface);
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-
-  .close-btn:hover {
-    border-color: var(--text-secondary);
-    color: var(--text-secondary);
-  }
-
-  .modal-header {
-    margin-bottom: 1.5rem;
-  }
-
-  .modal-header h3 {
-    font-size: 1.125rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    margin: 0;
-  }
-
   .form {
     display: flex;
     flex-direction: column;
@@ -607,30 +528,10 @@
   .spinner {
     width: 1rem;
     height: 1rem;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top: 2px solid white;
+    border: 2px solid rgba(122, 186, 165, 0.3);
+    border-top: 2px solid var(--acapulco);
     border-radius: 50%;
     animation: spin 1s linear infinite;
-  }
-
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
 
   @keyframes spin {
