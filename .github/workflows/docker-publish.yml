@@ -38,7 +38,7 @@ jobs:
     needs: quality-checks
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout code
@@ -127,6 +127,48 @@ jobs:
             BUILD_TIMESTAMP=${{ steps.version.outputs.timestamp }}
           cache-from: type=registry,ref=alcibiadesc/happy-balance:frontend-latest
           cache-to: type=inline
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get commits since last release tag or last 20 commits
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            COMMITS=$(git log $LAST_TAG..HEAD --pretty=format:"- %s" --no-merges | head -20)
+          else
+            COMMITS=$(git log --pretty=format:"- %s" --no-merges -20)
+          fi
+
+          # Escape for GitHub Actions
+          COMMITS="${COMMITS//'%'/'%25'}"
+          COMMITS="${COMMITS//$'\n'/'%0A'}"
+          COMMITS="${COMMITS//$'\r'/'%0D'}"
+          echo "commits=$COMMITS" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}-${{ steps.version.outputs.short_sha }}
+          name: Release ${{ steps.version.outputs.version }} (${{ steps.version.outputs.short_sha }})
+          body: |
+            ## 🚀 Nueva versión disponible
+
+            **Versión:** ${{ steps.version.outputs.version }}
+            **Commit:** ${{ steps.version.outputs.short_sha }}
+            **Fecha:** ${{ steps.version.outputs.timestamp }}
+
+            ### 📝 Cambios
+            ${{ steps.changelog.outputs.commits }}
+
+            ### 🐳 Docker
+            ```bash
+            docker pull alcibiadesc/happy-balance:backend-latest
+            docker pull alcibiadesc/happy-balance:frontend-latest
+            ```
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Summary
         run: |

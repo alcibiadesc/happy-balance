@@ -3,6 +3,9 @@
   import '../app.css';
   import '../lib/styles/japan-palette.css';
   import NewNavbar from '../lib/components/organisms/NewNavbar.svelte';
+  import UpdateBanner from '../lib/components/molecules/UpdateBanner.svelte';
+  import ChangelogModal from '../lib/components/molecules/ChangelogModal.svelte';
+  import { showChangelogModal } from '$lib/stores/updates';
   import { setLanguage } from '$lib/stores/i18n';
   import { setCurrency } from '$lib/stores/currency';
   import { setTheme, applyTheme } from '$lib/stores/theme';
@@ -10,6 +13,7 @@
   import { sidebarCollapsed } from '$lib/stores/sidebar';
   import { userPreferences } from '$lib/stores/user-preferences';
   import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
+  import { checkForUpdates } from '$lib/stores/updates';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
 
@@ -47,12 +51,18 @@
       transactions.load();
       window.__transactions_loaded__ = true;
     }
+
+    // Check for updates in background
+    if (authStore.isAuthenticated) {
+      checkForUpdates();
+    }
   });
 </script>
 
 <div class="app-shell">
   {#if authStore.isAuthenticated}
     <NewNavbar />
+    <UpdateBanner />
   {/if}
 
   <main
@@ -65,6 +75,8 @@
     </div>
   </main>
 </div>
+
+<ChangelogModal open={$showChangelogModal} onclose={() => showChangelogModal.set(false)} />
 
 <style>
   .app-shell {

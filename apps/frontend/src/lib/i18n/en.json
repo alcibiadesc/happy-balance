@@ -492,5 +492,16 @@
       "unauthorized_message": "You don't have permission to access this page.",
       "go_home": "Go Home"
     }
+  },
+  "updates": {
+    "new_version_available": "New version available",
+    "view_changes": "View changes",
+    "changelog_title": "Changelog",
+    "loading_releases": "Loading releases...",
+    "no_releases": "No releases available",
+    "could_not_load": "Could not load releases",
+    "view_on_github": "View on GitHub",
+    "view_all_on_github": "View all on GitHub",
+    "latest": "Latest"
   }
 }

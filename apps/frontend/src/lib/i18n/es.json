@@ -492,5 +492,16 @@
       "unauthorized_message": "No tienes permiso para acceder a esta página.",
       "go_home": "Ir al Inicio"
     }
+  },
+  "updates": {
+    "new_version_available": "Nueva versión disponible",
+    "view_changes": "Ver cambios",
+    "changelog_title": "Historial de cambios",
+    "loading_releases": "Cargando releases...",
+    "no_releases": "No hay releases disponibles",
+    "could_not_load": "No se pudieron cargar las releases",
+    "view_on_github": "Ver en GitHub",
+    "view_all_on_github": "Ver todas en GitHub",
+    "latest": "Última"
   }
 }
