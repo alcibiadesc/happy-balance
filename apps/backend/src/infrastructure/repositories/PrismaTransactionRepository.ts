@@ -1,17 +1,17 @@
-import { PrismaClient, Transaction as PrismaTransaction } from "@prisma/client";
-import { Result } from "@domain/shared/Result";
-import { Transaction, TransactionSnapshot } from "@domain/entities/Transaction";
-import { TransactionId } from "@domain/value-objects/TransactionId";
-import { TransactionDate } from "@domain/value-objects/TransactionDate";
-import { TransactionType } from "@domain/entities/TransactionType";
-import { Money } from "@domain/value-objects/Money";
-import { Merchant } from "@domain/value-objects/Merchant";
+import { PrismaClient, Transaction as PrismaTransaction } from '@prisma/client';
+import { Result } from '@domain/shared/Result';
+import { Transaction, TransactionSnapshot } from '@domain/entities/Transaction';
+import { TransactionId } from '@domain/value-objects/TransactionId';
+import { TransactionDate } from '@domain/value-objects/TransactionDate';
+import { TransactionType } from '@domain/entities/TransactionType';
+import { Money } from '@domain/value-objects/Money';
+import { Merchant } from '@domain/value-objects/Merchant';
 import {
   ITransactionRepository,
   TransactionFilters,
   PaginationOptions,
   TransactionQueryResult,
-} from "@domain/repositories/ITransactionRepository";
+} from '@domain/repositories/ITransactionRepository';
 
 /**
  * PostgreSQL implementation of Transaction Repository using Prisma
@@ -33,7 +33,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
         amount: snapshot.amount,
         splitPercentage: snapshot.splitPercentage,
         linkedTransactionId: snapshot.linkedTransactionId,
-        isReimbursement: snapshot.isReimbursement
+        isReimbursement: snapshot.isReimbursement,
       });
 
       await this.prisma.transaction.upsert({
@@ -78,7 +78,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save transaction: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to save transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -116,10 +116,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
             savedCount++;
           } catch (error) {
             // Skip if already exists (unique constraint violation)
-            if (
-              error instanceof Error &&
-              error.message.includes("unique constraint")
-            ) {
+            if (error instanceof Error && error.message.includes('unique constraint')) {
               continue;
             }
             throw error;
@@ -132,7 +129,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return Result.ok(result);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to save transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -142,7 +139,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       const prismaTransaction = await this.prisma.transaction.findFirst({
         where: {
           id: id.value,
-          userId: this.userId || 'default'
+          userId: this.userId || 'default',
         },
       });
 
@@ -154,7 +151,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return transactionResult;
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find transaction: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -163,9 +160,9 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     try {
       const prismaTransactions = await this.prisma.transaction.findMany({
         where: {
-          userId: this.userId || 'default'
+          userId: this.userId || 'default',
         },
-        orderBy: { date: "desc" },
+        orderBy: [{ date: 'desc' }, { id: 'desc' }],
       });
 
       const transactions: Transaction[] = [];
@@ -179,14 +176,14 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return Result.ok(transactions);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find all transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find all transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async findWithFilters(
     filters?: TransactionFilters,
-    pagination?: PaginationOptions,
+    pagination?: PaginationOptions
   ): Promise<Result<TransactionQueryResult>> {
     try {
       const where = this.buildWhereClause(filters);
@@ -194,7 +191,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       const [prismaTransactions, totalCount] = await Promise.all([
         this.prisma.transaction.findMany({
           where,
-          orderBy: { date: "desc" },
+          orderBy: [{ date: 'desc' }, { id: 'desc' }],
           skip: pagination?.offset,
           take: pagination?.limit,
         }),
@@ -215,14 +212,14 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find transactions with filters: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find transactions with filters: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async findByDateRange(
     startDate: TransactionDate,
-    endDate: TransactionDate,
+    endDate: TransactionDate
   ): Promise<Result<Transaction[]>> {
     const filters: TransactionFilters = { startDate, endDate };
     const result = await this.findWithFilters(filters);
@@ -272,7 +269,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       const prismaTransactions = await this.prisma.transaction.findMany({
         where: {
           hash,
-          userId: this.userId || 'default'
+          userId: this.userId || 'default',
         },
       });
 
@@ -287,7 +284,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return Result.ok(transactions);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find transactions by hash: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find transactions by hash: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -319,15 +316,13 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       const existingTransaction = await this.prisma.transaction.findFirst({
         where: {
           id: snapshot.id,
-          userId: this.userId || 'default'
+          userId: this.userId || 'default',
         },
       });
 
       if (existingTransaction) {
         // Format existing date to compare
-        const existingDateStr = this.formatDateToString(
-          existingTransaction.date,
-        );
+        const existingDateStr = this.formatDateToString(existingTransaction.date);
 
         // Only update date if it's different from the current one
         if (existingDateStr !== snapshot.date) {
@@ -337,7 +332,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       await this.prisma.transaction.update({
         where: {
-          id: snapshot.id
+          id: snapshot.id,
         },
         data: updateData,
       });
@@ -345,7 +340,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to update transaction: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to update transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -355,14 +350,14 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       await this.prisma.transaction.delete({
         where: {
           id: id.value,
-          userId: this.userId || 'default'
+          userId: this.userId || 'default',
         },
       });
 
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to delete transaction: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to delete transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -372,14 +367,14 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       const result = await this.prisma.transaction.deleteMany({
         where: {
           id: { in: ids.map((id) => id.value) },
-          userId: this.userId || 'default'
+          userId: this.userId || 'default',
         },
       });
 
       return Result.ok(result.count);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to delete transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to delete transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -389,14 +384,14 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       const count = await this.prisma.transaction.count({
         where: {
           id: id.value,
-          userId: this.userId || 'default'
+          userId: this.userId || 'default',
         },
       });
 
       return Result.ok(count > 0);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to check transaction existence: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to check transaction existence: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -408,7 +403,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return Result.ok(count);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to count transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to count transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -416,7 +411,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   async getStatistics(
     startDate: TransactionDate,
     endDate: TransactionDate,
-    currency: string,
+    currency: string
   ): Promise<
     Result<{
       totalIncome: number;
@@ -431,25 +426,24 @@ export class PrismaTransactionRepository implements ITransactionRepository {
         date: {
           gte: startDate.value,
           lte: endDate.value,
-        }
+        },
       };
 
-      const [income, expenses, investments, transactionCount] =
-        await Promise.all([
-          this.prisma.transaction.aggregate({
-            where: { ...where, type: TransactionType.INCOME },
-            _sum: { amount: true },
-          }),
-          this.prisma.transaction.aggregate({
-            where: { ...where, type: TransactionType.EXPENSE },
-            _sum: { amount: true },
-          }),
-          this.prisma.transaction.aggregate({
-            where: { ...where, type: TransactionType.INVESTMENT },
-            _sum: { amount: true },
-          }),
-          this.prisma.transaction.count({ where }),
-        ]);
+      const [income, expenses, investments, transactionCount] = await Promise.all([
+        this.prisma.transaction.aggregate({
+          where: { ...where, type: TransactionType.INCOME },
+          _sum: { amount: true },
+        }),
+        this.prisma.transaction.aggregate({
+          where: { ...where, type: TransactionType.EXPENSE },
+          _sum: { amount: true },
+        }),
+        this.prisma.transaction.aggregate({
+          where: { ...where, type: TransactionType.INVESTMENT },
+          _sum: { amount: true },
+        }),
+        this.prisma.transaction.count({ where }),
+      ]);
 
       return Result.ok({
         totalIncome: Number(income._sum.amount) || 0,
@@ -459,22 +453,20 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get statistics: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to get statistics: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async findPotentialDuplicates(
     transaction: Transaction,
-    toleranceHours = 24,
+    toleranceHours = 24
   ): Promise<Result<Transaction[]>> {
     try {
       const startTime = new Date(
-        transaction.date.value.getTime() - toleranceHours * 60 * 60 * 1000,
+        transaction.date.value.getTime() - toleranceHours * 60 * 60 * 1000
       );
-      const endTime = new Date(
-        transaction.date.value.getTime() + toleranceHours * 60 * 60 * 1000,
-      );
+      const endTime = new Date(transaction.date.value.getTime() + toleranceHours * 60 * 60 * 1000);
 
       const prismaTransactions = await this.prisma.transaction.findMany({
         where: {
@@ -487,7 +479,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           },
           merchant: {
             contains: transaction.merchant.name,
-            mode: "insensitive",
+            mode: 'insensitive',
           },
         },
       });
@@ -506,14 +498,14 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return Result.ok(transactions);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to find duplicates: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to find duplicates: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async bulkImport(
     transactions: Transaction[],
-    conflictStrategy: "skip" | "update" | "fail",
+    conflictStrategy: 'skip' | 'update' | 'fail'
   ): Promise<
     Result<{
       imported: number;
@@ -523,7 +515,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   > {
     try {
       if (!this.userId) {
-        return Result.failWithMessage("User ID is required for bulk import");
+        return Result.failWithMessage('User ID is required for bulk import');
       }
       const userId = this.userId;
       const snapshots = transactions.map((t) => t.toSnapshot());
@@ -534,7 +526,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       for (const snapshot of snapshots) {
         try {
-          if (conflictStrategy === "skip") {
+          if (conflictStrategy === 'skip') {
             await this.prisma.transaction.create({
               data: {
                 id: snapshot.id,
@@ -584,14 +576,11 @@ export class PrismaTransactionRepository implements ITransactionRepository {
             imported++;
           }
         } catch (error) {
-          if (
-            error instanceof Error &&
-            error.message.includes("unique constraint")
-          ) {
+          if (error instanceof Error && error.message.includes('unique constraint')) {
             skipped++;
           } else {
             errors.push(
-              `Transaction ${snapshot.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
+              `Transaction ${snapshot.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
             );
           }
         }
@@ -600,7 +589,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return Result.ok({ imported, skipped, errors });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to bulk import: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to bulk import: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -609,30 +598,28 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     try {
       // CRITICAL: Only delete transactions for the specific user
       if (!this.userId) {
-        return Result.failWithMessage("User ID is required to delete transactions");
+        return Result.failWithMessage('User ID is required to delete transactions');
       }
 
       await this.prisma.transaction.deleteMany({
         where: {
-          userId: this.userId
-        }
+          userId: this.userId,
+        },
       });
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to clear transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to clear transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
-  async export(
-    filters?: TransactionFilters,
-  ): Promise<Result<TransactionSnapshot[]>> {
+  async export(filters?: TransactionFilters): Promise<Result<TransactionSnapshot[]>> {
     try {
       const where = this.buildWhereClause(filters);
       const prismaTransactions = await this.prisma.transaction.findMany({
         where,
-        orderBy: { date: "desc" },
+        orderBy: [{ date: 'desc' }, { id: 'desc' }],
       });
 
       const snapshots: TransactionSnapshot[] = [];
@@ -646,7 +633,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return Result.ok(snapshots);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to export: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to export: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -666,7 +653,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       return result;
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to import: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to import: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -675,21 +662,21 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   private createDateFromDateString(dateString: string): Date {
     // Parse YYYY-MM-DD format consistently
     // to avoid timezone issues that can shift dates
-    const [year, month, day] = dateString.split("-").map(Number);
+    const [year, month, day] = dateString.split('-').map(Number);
     return new Date(year, month - 1, day); // month is 0-indexed in Date constructor
   }
 
   private formatDateToString(date: Date): string {
     // Format date to YYYY-MM-DD without timezone conversion
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
   private buildWhereClause(filters?: TransactionFilters) {
     const where: any = {
-      userId: this.userId || 'default' // Always filter by userId
+      userId: this.userId || 'default', // Always filter by userId
     };
 
     if (!filters) {
@@ -714,7 +701,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
     // Category filter - use null check for uncategorized
     if (filters.categoryId !== undefined) {
-      if (filters.categoryId === null || filters.categoryId === "") {
+      if (filters.categoryId === null || filters.categoryId === '') {
         where.categoryId = null;
       } else {
         where.categoryId = filters.categoryId;
@@ -731,13 +718,13 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           {
             merchant: {
               startsWith: searchTerm,
-              mode: "insensitive",
+              mode: 'insensitive',
             },
           },
           {
             description: {
               startsWith: searchTerm,
-              mode: "insensitive",
+              mode: 'insensitive',
             },
           },
         ];
@@ -747,13 +734,13 @@ export class PrismaTransactionRepository implements ITransactionRepository {
           {
             merchant: {
               contains: searchTerm,
-              mode: "insensitive",
+              mode: 'insensitive',
             },
           },
           {
             description: {
               contains: searchTerm,
-              mode: "insensitive",
+              mode: 'insensitive',
             },
           },
         ];
@@ -771,7 +758,6 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       }
     }
 
-
     // Hidden transactions filter - optimize for common case
     const includeHidden = (filters as any).includeHidden;
     if (!includeHidden) {
@@ -782,9 +768,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     return where;
   }
 
-  private mapFromPrisma(
-    prismaTransaction: PrismaTransaction,
-  ): Result<Transaction> {
+  private mapFromPrisma(prismaTransaction: PrismaTransaction): Result<Transaction> {
     const snapshot: TransactionSnapshot = {
       id: prismaTransaction.id,
       amount: Number(prismaTransaction.amount),
@@ -798,7 +782,9 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       isSelected: prismaTransaction.isSelected,
       hash: prismaTransaction.hash || undefined,
       createdAt: prismaTransaction.createdAt.toISOString(),
-      splitPercentage: prismaTransaction.splitPercentage ? Number(prismaTransaction.splitPercentage) : undefined,
+      splitPercentage: prismaTransaction.splitPercentage
+        ? Number(prismaTransaction.splitPercentage)
+        : undefined,
       linkedTransactionId: prismaTransaction.linkedTransactionId || undefined,
       isReimbursement: prismaTransaction.isReimbursement,
     };
@@ -810,7 +796,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
         amount: snapshot.amount,
         splitPercentage: snapshot.splitPercentage,
         linkedTransactionId: snapshot.linkedTransactionId,
-        isReimbursement: snapshot.isReimbursement
+        isReimbursement: snapshot.isReimbursement,
       });
     }
 
@@ -821,7 +807,6 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     return result;
   }
 
-
   async findByPattern(pattern: string): Promise<Transaction[]> {
     try {
       const prismaTransactions = await this.prisma.transaction.findMany({
@@ -831,18 +816,18 @@ export class PrismaTransactionRepository implements ITransactionRepository {
             {
               merchant: {
                 contains: pattern,
-                mode: "insensitive",
+                mode: 'insensitive',
               },
             },
             {
               description: {
                 contains: pattern,
-                mode: "insensitive",
+                mode: 'insensitive',
               },
             },
           ],
         },
-        orderBy: { date: "desc" },
+        orderBy: [{ date: 'desc' }, { id: 'desc' }],
       });
 
       const transactions: Transaction[] = [];
@@ -855,7 +840,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       return transactions;
     } catch (error) {
-      console.error("Error finding transactions by pattern:", error);
+      console.error('Error finding transactions by pattern:', error);
       return [];
     }
   }
@@ -876,7 +861,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       await this.prisma.$transaction(updates);
     } catch (error) {
-      console.error("Error updating multiple transactions:", error);
+      console.error('Error updating multiple transactions:', error);
       throw error;
     }
   }
