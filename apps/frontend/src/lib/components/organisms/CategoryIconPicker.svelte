@@ -150,7 +150,7 @@
   /* Scrollable content area */
   .emoji-picker-content {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
     gap: 8px;
     padding: var(--space-md);
     overflow-y: auto;
@@ -161,6 +161,22 @@
     flex: 1;
     min-height: 0; /* Important for flex child scrolling */
     box-sizing: border-box;
+  }
+
+  /* Desktop: 4 columns */
+  @media (min-width: 480px) {
+    .emoji-picker-content {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* Small screens: 3 columns */
+  @media (max-width: 479px) {
+    .emoji-picker-content {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      padding: var(--space-sm);
+    }
   }
 
   .emoji-picker-content::-webkit-scrollbar {

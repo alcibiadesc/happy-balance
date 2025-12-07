@@ -230,4 +230,34 @@
       padding: 0.5rem;
     }
   }
+
+  @media (max-width: 480px) {
+    .dashboard {
+      padding: 0.75rem;
+    }
+
+    .dashboard-header h1 {
+      font-size: 1.125rem;
+    }
+
+    .edit-hint {
+      font-size: 0.6875rem;
+      padding: 0.375rem;
+      margin-bottom: 1rem;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .dashboard {
+      padding: 0.5rem;
+    }
+
+    .dashboard-header h1 {
+      font-size: 1rem;
+    }
+
+    .header-actions {
+      gap: 0.25rem;
+    }
+  }
 </style>

@@ -2555,4 +2555,68 @@
       text-align: center;
     }
   }
+
+  /* Extra small screens */
+  @media (max-width: 360px) {
+    .import-header {
+      margin-bottom: 1rem;
+    }
+
+    .import-title {
+      font-size: 1.5rem;
+    }
+
+    .import-subtitle {
+      font-size: 0.75rem;
+    }
+
+    .progress-steps {
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+    }
+
+    .step-circle {
+      width: 32px;
+      height: 32px;
+      font-size: 0.75rem;
+    }
+
+    .step-title {
+      font-size: 0.6875rem;
+    }
+
+    .step-desc {
+      display: none;
+    }
+
+    .upload-step {
+      padding: 1rem;
+    }
+
+    .settings-section {
+      padding: 1rem;
+    }
+
+    .bank-item {
+      min-width: 140px;
+      padding: 0.5rem 0.75rem;
+    }
+
+    .filter-group {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 0.625rem;
+      font-size: 0.75rem;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      padding: 0.625rem 1rem;
+      font-size: 0.8125rem;
+    }
+  }
 </style>

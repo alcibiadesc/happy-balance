@@ -393,4 +393,38 @@
       grid-template-columns: repeat(3, 1fr);
     }
   }
+
+  @media (max-width: 360px) {
+    .categories-section {
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+    }
+
+    .section-header {
+      margin-bottom: 0.75rem;
+    }
+
+    .type-tabs {
+      gap: 0.25rem;
+    }
+
+    .type-tab {
+      padding: 0.375rem 0.5rem;
+      font-size: 0.6875rem;
+    }
+
+    .tab-count {
+      font-size: 0.5625rem;
+      padding: 0 0.1875rem;
+    }
+
+    .categories-grid {
+      gap: 0.5rem;
+    }
+
+    .expand-button {
+      padding: 0.5rem;
+      font-size: 0.75rem;
+    }
+  }
 </style>

@@ -578,4 +578,54 @@
       height: 12px;
     }
   }
+
+  @media (max-width: 360px) {
+    .transaction-card {
+      padding: 0.625rem;
+      padding-bottom: 0.375rem;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .transaction-description {
+      font-size: 0.8rem;
+      max-width: 140px;
+    }
+
+    .transaction-amount {
+      font-size: 0.85rem;
+    }
+
+    .transaction-meta {
+      font-size: 0.6rem;
+      gap: 0.25rem;
+    }
+
+    .transaction-meta span:nth-child(2) {
+      display: none;
+    }
+
+    .category-btn {
+      font-size: 0.6rem;
+      padding: 2px 4px;
+      gap: 0.25rem;
+    }
+
+    .category-icon-btn {
+      font-size: 0.7rem;
+    }
+
+    .transaction-actions {
+      gap: 0.125rem;
+    }
+
+    .action-btn {
+      padding: 0.25rem;
+    }
+
+    .split-indicator {
+      font-size: 0.6rem;
+      padding: 0.0625rem 0.25rem;
+    }
+  }
 </style>

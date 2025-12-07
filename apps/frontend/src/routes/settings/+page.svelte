@@ -1595,5 +1595,72 @@
     .import-mode-options {
       flex-direction: column;
     }
+
+    .settings-section {
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .settings-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .select-control,
+    .theme-toggle,
+    .inline-input {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .settings-page {
+      padding: 0.75rem;
+    }
+
+    .settings-content {
+      gap: 1rem;
+    }
+
+    .settings-section {
+      padding: 0.875rem;
+    }
+
+    .section-title {
+      font-size: 0.8125rem;
+    }
+
+    .label-text {
+      font-size: 0.8125rem;
+    }
+
+    .gofire-section {
+      padding: 0.75rem;
+    }
+
+    .gofire-upload {
+      flex-direction: column;
+    }
+
+    .upload-zone {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .settings-page {
+      padding: 0.5rem;
+    }
+
+    .settings-section {
+      padding: 0.75rem;
+      border-radius: 6px;
+    }
+
+    .action-btn {
+      font-size: 0.6875rem;
+      padding: 0.375rem 0.5rem;
+    }
   }
 </style>

@@ -370,4 +370,23 @@
       width: 240px;
     }
   }
+
+  @media (max-width: 360px) {
+    .user-menu-dropdown {
+      width: min(220px, calc(100vw - 2rem));
+    }
+
+    .menu-item {
+      padding: 0.625rem 0.875rem;
+      font-size: 0.8125rem;
+    }
+
+    .user-display-name {
+      font-size: 0.875rem;
+    }
+
+    .menu-header {
+      padding: 1rem 0.875rem 0.875rem;
+    }
+  }
 </style>

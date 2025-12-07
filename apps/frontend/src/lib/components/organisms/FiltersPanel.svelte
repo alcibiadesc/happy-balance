@@ -691,34 +691,61 @@
   @media (max-width: 360px) {
     .filters-bento {
       padding: var(--space-sm);
+      margin: 0.5rem auto 1rem auto;
+      border-radius: 0.75rem;
     }
 
     .bento-item {
       padding: var(--space-xs);
+      border-radius: 0.5rem;
+    }
+
+    .quick-filters {
+      gap: 0.25rem;
     }
 
     .filter-pill,
     .category-pill,
     .clear-pill {
-      padding: var(--space-xs);
-      font-size: 0.75rem;
+      padding: 0.375rem 0.625rem;
+      font-size: 0.6875rem;
+      min-height: 2rem;
+      gap: 0.25rem;
+    }
+
+    .filter-pill :global(svg),
+    .category-pill :global(svg),
+    .clear-pill :global(svg) {
+      width: 10px;
+      height: 10px;
     }
 
     .tag-mini {
       font-size: 0.625rem;
-      padding: 1px var(--space-xs);
+      padding: 0.25rem 0.5rem;
+      min-height: 1.5rem;
     }
 
-    .category-dropdown-compact {
-      min-width: 200px;
-      max-width: 240px;
-      left: auto;
-      right: 0;
+    .active-tags-mini {
+      padding: 0.5rem;
+      margin-top: 0.75rem;
+      min-height: 2rem;
+      gap: 0.375rem;
     }
 
-    .category-grid-item {
-      width: 32px;
-      height: 32px;
+    .category-dropdown-mini {
+      min-width: 180px;
+      max-width: calc(100vw - 2rem);
+      max-height: 120px;
+    }
+
+    .category-chip-mini {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .chip-emoji {
+      font-size: 0.75rem;
     }
   }
 </style>

@@ -405,4 +405,30 @@
       max-width: 320px;
     }
   }
+
+  @media (max-width: 480px) {
+    .selection-mode-btn {
+      font-size: 0.8125rem;
+      padding: 0.5rem 0.75rem;
+    }
+
+    .helper-tooltip {
+      width: calc(100vw - 1.5rem);
+      max-width: 280px;
+      font-size: 0.75rem;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .selection-mode-btn {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.5rem;
+    }
+
+    .helper-tooltip {
+      width: calc(100vw - 1rem);
+      max-width: 260px;
+      font-size: 0.6875rem;
+    }
+  }
 </style>

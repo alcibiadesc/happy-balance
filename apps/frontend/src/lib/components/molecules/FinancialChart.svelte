@@ -329,7 +329,8 @@
     position: relative;
     background: var(--surface);
     border-radius: 8px;
-    padding: 1rem;
+    padding: clamp(0.5rem, 2vw, 1rem);
+    min-height: 200px;
   }
 
   .chart-empty {
@@ -339,10 +340,26 @@
     justify-content: center;
     height: 100%;
     color: var(--text-secondary);
+    text-align: center;
+    padding: 1rem;
   }
 
   canvas {
     max-width: 100%;
-    height: auto;
+    height: auto !important;
+  }
+
+  /* Responsive height adjustments */
+  @media (max-width: 768px) {
+    .financial-chart {
+      min-height: 180px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .financial-chart {
+      min-height: 160px;
+      border-radius: 6px;
+    }
   }
 </style>

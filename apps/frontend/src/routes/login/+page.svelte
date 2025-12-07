@@ -193,4 +193,48 @@
       font-size: 0.938rem;
     }
   }
+
+  @media (max-width: 480px) {
+    .login-container {
+      padding: 2rem 1.5rem;
+      margin: 0.75rem;
+      border-radius: 1rem;
+    }
+
+    .logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+    }
+
+    .login-title {
+      font-size: 1.5rem;
+    }
+
+    .login-subtitle {
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .login-container {
+      padding: 1.5rem 1rem;
+      margin: 0.5rem;
+      border-radius: 0.75rem;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+    }
+
+    .login-title {
+      font-size: 1.25rem;
+    }
+
+    .login-subtitle {
+      font-size: 0.8125rem;
+    }
+  }
 </style>

@@ -16,9 +16,6 @@
     Wallet,
     PiggyBank,
     GripVertical,
-    LayoutGrid,
-    List,
-    Calendar,
     Link2,
     ExternalLink,
   } from 'lucide-svelte';
@@ -124,62 +121,6 @@
     draggedIndex = null;
     dragOverIndex = null;
   }
-
-  // View modes for investments list
-  type InvestmentViewMode = 'individual' | 'grouped' | 'monthly';
-  let investmentViewMode = $state<InvestmentViewMode>('individual');
-
-  // Grouped investments by category
-  const groupedInvestments = $derived(() => {
-    const groups: Record<string, typeof store.investments> = {
-      'Sin categoría': [],
-    };
-
-    for (const inv of store.investments) {
-      const groupName = inv.categoryId ? inv.categoryName || 'Categoría' : 'Sin categoría';
-      if (!groups[groupName]) {
-        groups[groupName] = [];
-      }
-      groups[groupName].push(inv);
-    }
-
-    return Object.entries(groups)
-      .filter(([_, items]) => items.length > 0)
-      .map(([name, items]) => ({
-        name,
-        items,
-        totalValue: items.reduce((sum, i) => sum + i.currentValue, 0),
-        totalProfit: items.reduce((sum, i) => sum + i.profit, 0),
-      }));
-  });
-
-  // Monthly contributions (current month)
-  const monthlyContributions = $derived(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    return store.investments
-      .map((inv) => {
-        const monthlyHistory = (inv.history || []).filter((h) => {
-          const date = new Date(h.date);
-          return (
-            date.getMonth() === currentMonth &&
-            date.getFullYear() === currentYear &&
-            h.type === 'CONTRIBUTION'
-          );
-        });
-
-        const monthlyTotal = monthlyHistory.reduce((sum, h) => sum + Number(h.amount), 0);
-
-        return {
-          ...inv,
-          monthlyContribution: monthlyTotal,
-          monthlyHistory,
-        };
-      })
-      .filter((inv) => inv.monthlyContribution > 0);
-  });
 
   // Chart theme colors
   function getChartColors() {
@@ -491,32 +432,6 @@
         <div class="section-header">
           <h2><Wallet size={18} /> Inversiones</h2>
           <div class="header-actions">
-            <div class="view-mode-toggle">
-              <button
-                class="view-btn"
-                class:active={investmentViewMode === 'individual'}
-                onclick={() => (investmentViewMode = 'individual')}
-                title="Vista individual"
-              >
-                <List size={14} />
-              </button>
-              <button
-                class="view-btn"
-                class:active={investmentViewMode === 'grouped'}
-                onclick={() => (investmentViewMode = 'grouped')}
-                title="Agrupar por categoría"
-              >
-                <LayoutGrid size={14} />
-              </button>
-              <button
-                class="view-btn"
-                class:active={investmentViewMode === 'monthly'}
-                onclick={() => (investmentViewMode = 'monthly')}
-                title="Aportaciones del mes"
-              >
-                <Calendar size={14} />
-              </button>
-            </div>
             <button class="add-btn" onclick={() => store.startNewInvestment()}>
               <Plus size={16} />
               Añadir
@@ -575,227 +490,126 @@
             <p>Añade tu primera inversión</p>
           </div>
         {:else}
-          <!-- Individual View -->
-          {#if investmentViewMode === 'individual'}
-            <div class="investments-grid">
-              {#each store.investments as investment, index (investment.id)}
-                {#if store.editingInvestment === investment.id}
-                  <!-- Edit Mode -->
-                  <div class="investment-row editing">
-                    <button
-                      class="icon-picker-btn small"
-                      onclick={(e) => handleIconClick(e, 'edit')}
-                      style="background-color: {store.editForm.color}"
-                    >
-                      {store.editForm.icon}
-                    </button>
-                    <input type="text" class="form-input name" bind:value={store.editForm.name} />
-                    <input
-                      type="number"
-                      class="form-input value"
-                      bind:value={store.editForm.currentValue}
-                      step="0.01"
-                    />
-                    <div class="row-actions">
-                      <button class="btn-icon" onclick={store.cancelEdit}>
-                        <X size={16} />
-                      </button>
-                      <button class="btn-icon primary" onclick={store.saveEdit}>
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  </div>
-                {:else}
-                  <!-- Display Mode with Drag-and-Drop -->
-                  <div
-                    class="investment-row"
-                    class:highlighted={investment.highlight}
-                    class:dragging={draggedIndex === index}
-                    class:drag-over={dragOverIndex === index}
-                    draggable="true"
-                    ondragstart={(e) => handleDragStart(e, index)}
-                    ondragover={(e) => handleDragOver(e, index)}
-                    ondragleave={handleDragLeave}
-                    ondrop={(e) => handleDrop(e, index)}
-                    ondragend={handleDragEnd}
-                    onclick={() => handleViewDetails(investment)}
+          <div class="investments-grid">
+            {#each store.investments as investment, index (investment.id)}
+              {#if store.editingInvestment === investment.id}
+                <!-- Edit Mode -->
+                <div class="investment-row editing">
+                  <button
+                    class="icon-picker-btn small"
+                    onclick={(e) => handleIconClick(e, 'edit')}
+                    style="background-color: {store.editForm.color}"
                   >
-                    <div class="drag-handle" onclick={(e) => e.stopPropagation()}>
-                      <GripVertical size={14} />
-                    </div>
-                    <div class="row-icon" style="background-color: {investment.color}">
-                      {investment.icon}
-                    </div>
-                    <div class="row-info">
-                      <span class="row-name">{investment.name}</span>
-                      {#if investment.symbol}
-                        <span class="row-symbol">{investment.symbol}</span>
-                      {/if}
-                    </div>
-                    <div class="row-value" onclick={(e) => e.stopPropagation()}>
-                      {#if store.inlineEditingId === investment.id}
-                        <input
-                          type="number"
-                          class="inline-edit-input"
-                          bind:value={store.inlineEditValue}
-                          onblur={() => store.saveInlineEdit()}
-                          onkeydown={(e) => {
-                            if (e.key === 'Enter') store.saveInlineEdit();
-                            if (e.key === 'Escape') store.cancelInlineEdit();
-                          }}
-                          step="0.01"
-                        />
-                      {:else}
-                        <span
-                          class="value editable"
-                          onclick={() => store.startInlineEdit(investment)}
-                          title="Click para editar"
-                        >
-                          {store.formatCurrency(investment.currentValue)}
-                        </span>
-                      {/if}
-                      {#if investment.netContributions > 0}
-                        <div class="profit-pills">
-                          <span
-                            class="pill amount"
-                            class:positive={investment.profit >= 0}
-                            class:negative={investment.profit < 0}
-                          >
-                            {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(
-                              investment.profit
-                            )}
-                          </span>
-                          <span
-                            class="pill pct"
-                            class:positive={investment.profit >= 0}
-                            class:negative={investment.profit < 0}
-                          >
-                            {store.formatPercentage(investment.profitPercentage)}
-                          </span>
-                        </div>
-                      {/if}
-                    </div>
-                    <div class="row-actions" onclick={(e) => e.stopPropagation()}>
-                      <button
-                        class="btn-icon"
-                        class:active={investment.highlight}
-                        onclick={() => store.toggleHighlight(investment)}
-                      >
-                        <Star size={14} fill={investment.highlight ? 'currentColor' : 'none'} />
-                      </button>
-                      <button class="btn-icon" onclick={() => store.startAddHistory(investment.id)}>
-                        <Plus size={14} />
-                      </button>
-                      <button class="btn-icon" onclick={() => store.startEdit(investment)}>
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        class="btn-icon danger"
-                        onclick={() => store.prepareDelete(investment)}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                    {store.editForm.icon}
+                  </button>
+                  <input type="text" class="form-input name" bind:value={store.editForm.name} />
+                  <input
+                    type="number"
+                    class="form-input value"
+                    bind:value={store.editForm.currentValue}
+                    step="0.01"
+                  />
+                  <div class="row-actions">
+                    <button class="btn-icon" onclick={store.cancelEdit}>
+                      <X size={16} />
+                    </button>
+                    <button class="btn-icon primary" onclick={store.saveEdit}>
+                      <Plus size={16} />
+                    </button>
                   </div>
-                {/if}
-              {/each}
-            </div>
-
-            <!-- Grouped by Category View -->
-          {:else if investmentViewMode === 'grouped'}
-            <div class="grouped-view">
-              {#each groupedInvestments() as group (group.name)}
-                <div class="group-section">
-                  <div class="group-header">
-                    <span class="group-name">{group.name}</span>
-                    <span class="group-total">{store.formatCurrency(group.totalValue)}</span>
-                  </div>
-                  <div class="investments-grid">
-                    {#each group.items as investment (investment.id)}
-                      <div
-                        class="investment-row compact"
-                        class:highlighted={investment.highlight}
-                        onclick={() => handleViewDetails(investment)}
-                      >
-                        <div class="row-icon small" style="background-color: {investment.color}">
-                          {investment.icon}
-                        </div>
-                        <div class="row-info">
-                          <span class="row-name">{investment.name}</span>
-                        </div>
-                        <div class="row-value">
-                          <span class="value">{store.formatCurrency(investment.currentValue)}</span>
-                          {#if investment.netContributions > 0}
-                            <div class="profit-pills">
-                              <span
-                                class="pill amount"
-                                class:positive={investment.profit >= 0}
-                                class:negative={investment.profit < 0}
-                              >
-                                {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(
-                                  investment.profit
-                                )}
-                              </span>
-                              <span
-                                class="pill pct"
-                                class:positive={investment.profit >= 0}
-                                class:negative={investment.profit < 0}
-                              >
-                                {store.formatPercentage(investment.profitPercentage)}
-                              </span>
-                            </div>
-                          {/if}
-                        </div>
-                      </div>
-                    {/each}
-                  </div>
-                </div>
-              {/each}
-            </div>
-
-            <!-- Monthly Contributions View -->
-          {:else if investmentViewMode === 'monthly'}
-            <div class="monthly-view">
-              <div class="monthly-header">
-                <Calendar size={16} />
-                <span>Aportaciones este mes</span>
-                <span class="monthly-total">
-                  {store.formatCurrency(
-                    monthlyContributions().reduce((sum, i) => sum + i.monthlyContribution, 0)
-                  )}
-                </span>
-              </div>
-              {#if monthlyContributions().length === 0}
-                <div class="empty-monthly">
-                  <p>Sin aportaciones este mes</p>
                 </div>
               {:else}
-                <div class="investments-grid">
-                  {#each monthlyContributions() as investment (investment.id)}
-                    <div
-                      class="investment-row monthly"
-                      onclick={() => handleViewDetails(investment)}
+                <!-- Display Mode with Drag-and-Drop -->
+                <div
+                  class="investment-row"
+                  class:highlighted={investment.highlight}
+                  class:dragging={draggedIndex === index}
+                  class:drag-over={dragOverIndex === index}
+                  draggable="true"
+                  ondragstart={(e) => handleDragStart(e, index)}
+                  ondragover={(e) => handleDragOver(e, index)}
+                  ondragleave={handleDragLeave}
+                  ondrop={(e) => handleDrop(e, index)}
+                  ondragend={handleDragEnd}
+                  onclick={() => handleViewDetails(investment)}
+                >
+                  <div class="drag-handle" onclick={(e) => e.stopPropagation()}>
+                    <GripVertical size={14} />
+                  </div>
+                  <div class="row-icon" style="background-color: {investment.color}">
+                    {investment.icon}
+                  </div>
+                  <div class="row-info">
+                    <span class="row-name">{investment.name}</span>
+                    {#if investment.symbol}
+                      <span class="row-symbol">{investment.symbol}</span>
+                    {/if}
+                  </div>
+                  <div class="row-value" onclick={(e) => e.stopPropagation()}>
+                    {#if store.inlineEditingId === investment.id}
+                      <input
+                        type="number"
+                        class="inline-edit-input"
+                        bind:value={store.inlineEditValue}
+                        onblur={() => store.saveInlineEdit()}
+                        onkeydown={(e) => {
+                          if (e.key === 'Enter') store.saveInlineEdit();
+                          if (e.key === 'Escape') store.cancelInlineEdit();
+                        }}
+                        step="0.01"
+                      />
+                    {:else}
+                      <span
+                        class="value editable"
+                        onclick={() => store.startInlineEdit(investment)}
+                        title="Click para editar"
+                      >
+                        {store.formatCurrency(investment.currentValue)}
+                      </span>
+                    {/if}
+                    {#if investment.netContributions > 0}
+                      <div class="profit-pills">
+                        <span
+                          class="pill amount"
+                          class:positive={investment.profit >= 0}
+                          class:negative={investment.profit < 0}
+                        >
+                          {investment.profit >= 0 ? '+' : ''}{store.formatCurrency(
+                            investment.profit
+                          )}
+                        </span>
+                        <span
+                          class="pill pct"
+                          class:positive={investment.profit >= 0}
+                          class:negative={investment.profit < 0}
+                        >
+                          {store.formatPercentage(investment.profitPercentage)}
+                        </span>
+                      </div>
+                    {/if}
+                  </div>
+                  <div class="row-actions" onclick={(e) => e.stopPropagation()}>
+                    <button
+                      class="btn-icon"
+                      class:active={investment.highlight}
+                      onclick={() => store.toggleHighlight(investment)}
                     >
-                      <div class="row-icon" style="background-color: {investment.color}">
-                        {investment.icon}
-                      </div>
-                      <div class="row-info">
-                        <span class="row-name">{investment.name}</span>
-                        <span class="row-symbol"
-                          >{investment.monthlyHistory.length} aportación(es)</span
-                        >
-                      </div>
-                      <div class="row-value">
-                        <span class="value monthly-contribution"
-                          >+{store.formatCurrency(investment.monthlyContribution)}</span
-                        >
-                      </div>
-                    </div>
-                  {/each}
+                      <Star size={14} fill={investment.highlight ? 'currentColor' : 'none'} />
+                    </button>
+                    <button class="btn-icon" onclick={() => store.startAddHistory(investment.id)}>
+                      <Plus size={14} />
+                    </button>
+                    <button class="btn-icon" onclick={() => store.startEdit(investment)}>
+                      <Pencil size={14} />
+                    </button>
+                    <button class="btn-icon danger" onclick={() => store.prepareDelete(investment)}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               {/if}
-            </div>
-          {/if}
+            {/each}
+          </div>
         {/if}
       </section>
     {:else if viewMode === 'details' && store.selectedInvestment}
@@ -1268,7 +1082,13 @@
     margin-bottom: 2rem;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 900px) {
+    .charts-section {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
     .charts-section {
       grid-template-columns: 1fr;
     }
@@ -1279,6 +1099,7 @@
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     padding: 1rem;
+    min-width: 0;
   }
 
   .chart-card h3 {
@@ -1306,6 +1127,7 @@
     background: var(--surface);
     border-radius: 0.375rem;
     padding: 0.125rem;
+    flex-wrap: wrap;
   }
 
   .period-btn {
@@ -1330,11 +1152,64 @@
   }
 
   .chart-container.donut {
-    height: 200px;
+    height: 220px;
+    min-height: 180px;
   }
 
   .chart-container.line {
-    height: 200px;
+    height: 220px;
+    min-height: 180px;
+  }
+
+  @media (max-width: 480px) {
+    .chart-card {
+      padding: 0.75rem;
+    }
+
+    .chart-card h3 {
+      font-size: 0.8125rem;
+    }
+
+    .chart-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .period-filters {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .period-btn {
+      flex: 1;
+      text-align: center;
+      padding: 0.375rem 0.25rem;
+      font-size: 0.625rem;
+    }
+
+    .chart-container.donut,
+    .chart-container.line {
+      height: 180px;
+      min-height: 150px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .chart-card {
+      padding: 0.625rem;
+    }
+
+    .chart-container.donut,
+    .chart-container.line {
+      height: 160px;
+      min-height: 140px;
+    }
+
+    .period-btn {
+      padding: 0.25rem 0.125rem;
+      font-size: 0.5625rem;
+    }
   }
 
   /* Investments Section */
@@ -1366,38 +1241,6 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-  }
-
-  .view-mode-toggle {
-    display: flex;
-    gap: 0.125rem;
-    background: var(--surface);
-    border: 1px solid var(--border-color);
-    border-radius: 0.375rem;
-    padding: 0.125rem;
-  }
-
-  .view-btn {
-    padding: 0.375rem;
-    background: transparent;
-    border: none;
-    border-radius: 0.25rem;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .view-btn:hover {
-    color: var(--text-primary);
-    background: var(--surface-elevated);
-  }
-
-  .view-btn.active {
-    background: var(--acapulco);
-    color: white;
   }
 
   .add-btn {
@@ -1546,6 +1389,9 @@
     border-radius: 0.625rem;
     cursor: pointer;
     transition: all 0.15s ease;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .investment-row:hover {
@@ -1592,91 +1438,6 @@
     opacity: 1;
   }
 
-  /* Grouped View Styles */
-  .grouped-view {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .group-section {
-    background: var(--surface);
-    border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
-    padding: 1rem;
-  }
-
-  .group-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-  }
-
-  .group-name {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .group-total {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--acapulco);
-  }
-
-  .investment-row.compact {
-    padding: 0.5rem;
-  }
-
-  .row-icon.small {
-    width: 28px;
-    height: 28px;
-    font-size: 0.875rem;
-  }
-
-  /* Monthly View Styles */
-  .monthly-view {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .monthly-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    border-radius: 0.5rem;
-    color: #10b981;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .monthly-total {
-    margin-left: auto;
-    font-weight: 600;
-  }
-
-  .empty-monthly {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-muted);
-  }
-
-  .investment-row.monthly {
-    border-color: rgba(16, 185, 129, 0.2);
-    background: rgba(16, 185, 129, 0.02);
-  }
-
-  .monthly-contribution {
-    color: #10b981 !important;
-  }
-
   .row-icon {
     width: 38px;
     height: 38px;
@@ -1719,6 +1480,8 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
   .row-value .value {
@@ -1785,6 +1548,7 @@
     gap: 0.25rem;
     opacity: 0;
     transition: opacity 0.2s ease;
+    flex-shrink: 0;
   }
 
   .investment-row:hover .row-actions {
@@ -2242,8 +2006,215 @@
       font-size: 2rem;
     }
 
+    /* Investment row stacks vertically on mobile */
+    .investment-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+      padding: 0.875rem;
+      padding-bottom: 0.625rem;
+    }
+
+    .drag-handle {
+      display: none;
+    }
+
+    .investment-row > .row-icon {
+      position: absolute;
+      top: 0.875rem;
+      left: 0.875rem;
+      width: 36px;
+      height: 36px;
+      font-size: 1rem;
+    }
+
+    .investment-row {
+      position: relative;
+    }
+
+    .row-info {
+      padding-left: 44px;
+    }
+
+    .row-name {
+      font-size: 0.9rem;
+    }
+
+    .row-value {
+      padding-left: 44px;
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .row-value .value {
+      font-size: 1.125rem;
+      font-weight: 700;
+    }
+
+    .row-value .profit-pills {
+      gap: 0.375rem;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    .row-value .pill {
+      padding: 0.1875rem 0.625rem;
+      font-size: 0.75rem;
+    }
+
+    /* Actions at bottom like transactions */
     .row-actions {
       opacity: 1;
+      justify-content: flex-end;
+      padding-top: 0.5rem;
+      margin-top: 0.25rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .btn-icon {
+      padding: 0.375rem 0.5rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .amount {
+      font-size: 1.75rem;
+    }
+
+    .charts-section {
+      gap: 1rem;
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: 0.5rem 0.625rem;
+      font-size: 0.8125rem;
+    }
+
+    .investment-row {
+      padding: 0.75rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .investment-row > .row-icon {
+      top: 0.75rem;
+      left: 0.75rem;
+      width: 32px;
+      height: 32px;
+      font-size: 0.875rem;
+    }
+
+    .row-info {
+      padding-left: 40px;
+    }
+
+    .row-value {
+      padding-left: 40px;
+    }
+
+    .row-name {
+      font-size: 0.85rem;
+    }
+
+    .row-symbol {
+      font-size: 0.625rem;
+    }
+
+    .row-value .value {
+      font-size: 1rem;
+    }
+
+    .row-value .pill {
+      padding: 0.125rem 0.5rem;
+      font-size: 0.6875rem;
+    }
+
+    .btn-icon {
+      padding: 0.25rem 0.375rem;
+    }
+
+    .btn-icon :global(svg) {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .amount {
+      font-size: 1.5rem;
+    }
+
+    .revenue-card {
+      padding: 0.75rem;
+    }
+
+    .form-group label {
+      font-size: 0.6875rem;
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: 0.375rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .investment-row {
+      padding: 0.625rem;
+      padding-bottom: 0.375rem;
+      border-radius: 0.5rem;
+    }
+
+    .investment-row > .row-icon {
+      top: 0.625rem;
+      left: 0.625rem;
+      width: 28px;
+      height: 28px;
+      font-size: 0.75rem;
+    }
+
+    .row-info {
+      padding-left: 36px;
+      gap: 0;
+    }
+
+    .row-value {
+      padding-left: 36px;
+      gap: 0.25rem;
+    }
+
+    .row-name {
+      font-size: 0.8rem;
+    }
+
+    .row-symbol {
+      font-size: 0.5625rem;
+    }
+
+    .row-value .value {
+      font-size: 0.9rem;
+    }
+
+    .row-value .profit-pills {
+      gap: 0.25rem;
+    }
+
+    .row-value .pill {
+      font-size: 0.625rem;
+      padding: 0.1rem 0.375rem;
+    }
+
+    .row-actions {
+      gap: 0.125rem;
+    }
+
+    .btn-icon {
+      padding: 0.25rem 0.375rem;
+    }
+
+    .btn-icon :global(svg) {
+      width: 12px;
+      height: 12px;
     }
   }
 </style>

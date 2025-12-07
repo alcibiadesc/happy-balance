@@ -695,26 +695,88 @@
   }
 
   @media (max-width: 360px) {
+    .modal-overlay {
+      padding: 0.5rem;
+    }
+
+    .modal-content {
+      max-height: min(90vh, calc(100dvh - 1rem));
+      border-radius: var(--radius-lg);
+    }
+
     .modal-header {
-      padding: 16px;
+      padding: 12px 14px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+    }
+
+    .modal-subtitle {
+      font-size: 12px;
+    }
+
+    .transaction-preview {
+      padding: 10px 12px;
+    }
+
+    .merchant-name {
+      font-size: 13px;
+    }
+
+    .transaction-details {
+      font-size: 11px;
+    }
+
+    .amount {
+      font-size: 12px;
     }
 
     .category-content {
-      padding: 12px 16px 20px;
+      padding: 10px 14px 16px;
     }
 
     .search-section {
-      padding: 16px 16px 16px;
+      padding: 12px 14px;
     }
 
     .search-input {
-      padding: 12px 12px 12px 40px;
-      font-size: 14px;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .group-title {
+      font-size: 11px;
+      margin-bottom: 8px;
+      padding-left: 0;
+    }
+
+    .category-option {
+      padding: 10px 12px;
+      gap: 10px;
+    }
+
+    .category-icon {
+      font-size: 18px;
+    }
+
+    .category-name {
+      font-size: 13px;
     }
 
     .uncategorize-btn {
-      padding: 16px 18px;
-      gap: 12px;
+      padding: 12px 14px;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .uncategorize-icon {
+      font-size: 16px;
+    }
+
+    .close-btn {
+      padding: 6px;
+      margin-left: 8px;
     }
   }
 

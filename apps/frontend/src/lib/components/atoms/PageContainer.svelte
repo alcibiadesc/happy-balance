@@ -16,8 +16,9 @@
   .page-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1.5rem;
+    padding: clamp(1rem, 4vw, 2rem);
     width: 100%;
+    box-sizing: border-box;
   }
 
   .page-container.narrow {
@@ -28,9 +29,10 @@
     max-width: 1400px;
   }
 
-  @media (min-width: 768px) {
+  /* Extra small screens */
+  @media (max-width: 360px) {
     .page-container {
-      padding: 2rem;
+      padding: 0.75rem;
     }
   }
 </style>

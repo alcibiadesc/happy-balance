@@ -298,16 +298,44 @@
   @media (max-width: 768px) {
     .metrics-grid {
       grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .metric-wrapper.large {
+      grid-column: span 2;
     }
   }
 
   @media (max-width: 480px) {
+    .metrics-section {
+      margin-bottom: 1.5rem;
+    }
+
     .metrics-grid {
       grid-template-columns: 1fr;
+      gap: 0.5rem;
     }
 
     .metric-wrapper.large {
       grid-column: span 1;
+    }
+
+    .metric-controls {
+      top: -4px;
+      right: -4px;
+    }
+
+    .drag-handle,
+    .hide-btn,
+    .size-btn {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .metrics-grid {
+      gap: 0.375rem;
     }
   }
 </style>
