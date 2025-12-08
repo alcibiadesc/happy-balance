@@ -3,9 +3,9 @@
 # Uses pre-built images from Docker Hub for fast deployment
 #
 # Usage:
-#   ./start.sh          - Pull latest images and start
+#   ./start.sh          - Pull latest images and start (always pulls first)
 #   ./start.sh --build  - Build images locally (slow, for development)
-#   ./start.sh --update - Force pull latest images
+#   ./start.sh --update - Force pull and recreate containers
 #   ./start.sh --stop   - Stop all services
 
 set -e
@@ -56,20 +56,10 @@ case "${1:-}" in
         docker compose up -d --force-recreate
         ;;
     *)
-        # Default: pull only if images don't exist, then start
+        # Default: always pull latest images, then start
         echo "🚀 Starting Happy Balance..."
-
-        # Check if images exist locally
-        if ! docker images alcibiadesc/happy-balance:backend-latest -q | grep -q .; then
-            echo "📥 Downloading backend image..."
-            docker compose pull backend
-        fi
-
-        if ! docker images alcibiadesc/happy-balance:frontend-latest -q | grep -q .; then
-            echo "📥 Downloading frontend image..."
-            docker compose pull frontend
-        fi
-
+        echo "📥 Pulling latest images..."
+        docker compose pull
         docker compose up -d
         ;;
 esac
