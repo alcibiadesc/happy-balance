@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { X, Split, Check, Unlink } from 'lucide-svelte';
+  import { Split, Check, Unlink } from 'lucide-svelte';
   import type { Transaction, PotentialReimbursement } from '$lib/types/transaction';
   import { apiTransactions } from '$lib/stores/api-transactions';
   import { modalKeyboard } from '$lib/actions/modalKeyboard';
   import { formatCurrency } from '$lib/stores/currency';
   import PercentageSlider from '$lib/components/molecules/PercentageSlider.svelte';
+  import ModalHeader from '../molecules/ModalHeader.svelte';
+  import ModalActions from '../molecules/ModalActions.svelte';
 
   interface Props {
     isOpen: boolean;
@@ -14,14 +16,12 @@
 
   let { isOpen = false, transaction = null, onClose = () => {} }: Props = $props();
 
-  // State
   let loading = $state(false);
   let potentialReimbursements = $state<PotentialReimbursement[]>([]);
   let splitPercentage = $state(50);
   let selectedReimbursementId = $state<string | null>(null);
   let error = $state<string | null>(null);
 
-  // Derived values
   const isExpense = $derived(transaction ? transaction.amount < 0 : true);
   const modalTitle = $derived(
     isExpense
@@ -43,7 +43,6 @@
   const resultLabel = $derived(isExpense ? 'Monto real' : 'Monto cubierto');
   const resultAmount = $derived(transaction ? (transaction.amount * splitPercentage) / 100 : 0);
 
-  // Effects
   $effect(() => {
     if (isOpen && transaction) {
       preventBodyScroll();
@@ -56,7 +55,6 @@
     }
   });
 
-  // Helper functions
   function preventBodyScroll() {
     if (typeof document !== 'undefined') document.body.style.overflow = 'hidden';
   }
@@ -86,7 +84,6 @@
     return '#ef4444';
   }
 
-  // API functions
   async function loadPotentialReimbursements() {
     if (!transaction) return;
     loading = true;
@@ -155,6 +152,7 @@
 <div use:modalKeyboard={{ onConfirm: saveWithoutLinking, onCancel: onClose, isOpen }}></div>
 
 {#if isOpen && transaction}
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions a11y_click_events_have_key_events -->
   <div
     class="modal-backdrop"
     onclick={(e) => e.target === e.currentTarget && onClose()}
@@ -162,133 +160,134 @@
     aria-modal="true"
     tabindex="-1"
   >
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions a11y_click_events_have_key_events -->
     <div class="modal-content" onclick={(e) => e.stopPropagation()} role="document">
-      <!-- Header -->
-      <div class="modal-header">
-        <div class="header-icon"><Split size={20} /></div>
-        <h3 class="modal-title">{modalTitle}</h3>
-        <button class="close-btn" onclick={onClose}><X size={20} /></button>
-      </div>
+      <ModalHeader title={modalTitle} icon={Split} {onClose} />
 
-      <!-- Transaction Info -->
-      <div class="transaction-info">
-        <div class="merchant">{transaction.merchant}</div>
-        <div class="details">
-          {formatCurrency(transaction.amount)} • {formatDate(transaction.date)}
-        </div>
-      </div>
-
-      {#if transaction.linkedTransactionId}
-        <!-- Already linked -->
-        <div class="linked-info">
-          <div class="linked-badge">
-            <Check size={16} />
-            <span>{isExpense ? 'Vinculado con reembolso' : 'Vinculado con gasto compartido'}</span>
+      <div class="modal-body">
+        <!-- Transaction Info -->
+        <div class="transaction-info">
+          <div class="merchant">{transaction.merchant}</div>
+          <div class="details">
+            {formatCurrency(transaction.amount)} • {formatDate(transaction.date)}
           </div>
-          {#if transaction.splitPercentage !== undefined}
-            <div class="split-details">
-              <span>
-                {isExpense ? 'Pagas el' : 'Este ingreso cubre el'}
-                <strong>{transaction.splitPercentage}%</strong>
-                {isExpense ? 'del gasto total' : 'de un gasto compartido'}
-              </span>
-              <span class="real-amount">
-                {isExpense ? 'Monto real' : 'Monto cubierto'}:
-                {formatCurrency((transaction.amount * transaction.splitPercentage) / 100)}
-              </span>
+        </div>
+
+        {#if transaction.linkedTransactionId}
+          <!-- Already linked -->
+          <div class="linked-info">
+            <div class="linked-badge">
+              <Check size={16} />
+              <span>{isExpense ? 'Vinculado con reembolso' : 'Vinculado con gasto compartido'}</span
+              >
             </div>
-          {/if}
-        </div>
-
-        <div class="actions">
-          <button class="btn btn-secondary" onclick={onClose}>Cerrar</button>
-          <button class="btn btn-danger" onclick={unlinkTransaction} disabled={loading}>
-            <Unlink size={16} /> Desvincular
-          </button>
-        </div>
-      {:else}
-        <!-- Not linked - configure split -->
-        <PercentageSlider
-          bind:value={splitPercentage}
-          label={sliderLabel}
-          {resultLabel}
-          {resultAmount}
-          {formatCurrency}
-        />
-
-        {#if loading}
-          <div class="loading-state">
-            <div class="spinner"></div>
-            <span>{isExpense ? 'Buscando reembolsos...' : 'Buscando gastos compartidos...'}</span>
+            {#if transaction.splitPercentage !== undefined}
+              <div class="split-details">
+                <span>
+                  {isExpense ? 'Pagas el' : 'Este ingreso cubre el'}
+                  <strong>{transaction.splitPercentage}%</strong>
+                  {isExpense ? 'del gasto total' : 'de un gasto compartido'}
+                </span>
+                <span class="real-amount">
+                  {isExpense ? 'Monto real' : 'Monto cubierto'}:
+                  {formatCurrency((transaction.amount * transaction.splitPercentage) / 100)}
+                </span>
+              </div>
+            {/if}
           </div>
-        {:else if potentialReimbursements.length > 0}
-          <div class="reimbursements-section">
-            <div class="section-label">{potentialsLabel}</div>
-            <div class="reimbursements-list">
-              {#each potentialReimbursements as r (r.transaction.id)}
-                <label
-                  class="reimbursement-item"
-                  class:selected={selectedReimbursementId === r.transaction.id}
-                >
-                  <input
-                    type="radio"
-                    name="reimbursement"
-                    class="radio-input"
-                    value={r.transaction.id}
-                    bind:group={selectedReimbursementId}
-                  />
-                  <div class="reimbursement-content">
-                    <div class="reimbursement-header">
-                      <div class="reimbursement-left">
-                        {#if r.transaction.description}
-                          <div class="reimbursement-title">{r.transaction.description}</div>
-                        {/if}
-                        <div class="reimbursement-merchant">{r.transaction.merchant}</div>
-                        <div class="reimbursement-date">{formatDate(r.transaction.date)}</div>
-                      </div>
-                      <div class="reimbursement-right">
-                        <div
-                          class="reimbursement-amount"
-                          class:income={isExpense}
-                          class:expense={!isExpense}
-                        >
-                          {formatCurrency(r.transaction.amount)}
-                        </div>
-                        <div class="match-score" style="color: {getMatchScoreColor(r.matchScore)}">
-                          {Math.round(r.matchScore)}% coincidencia
-                        </div>
-                      </div>
-                    </div>
-                    {#if r.matchReasons.length > 0}
-                      <div class="match-reasons">
-                        {#each r.matchReasons as reason}
-                          <span class="reason-badge">{reason}</span>
-                        {/each}
-                      </div>
-                    {/if}
-                  </div>
-                </label>
-              {/each}
-            </div>
-          </div>
-        {/if}
 
-        {#if error}
-          <div class="error-message">{error}</div>
-        {/if}
-
-        <div class="actions">
-          <button class="btn btn-secondary" onclick={onClose} disabled={loading}>Cancelar</button>
-          <button class="btn btn-primary" onclick={saveWithoutLinking} disabled={loading}>
-            <Check size={16} /> Guardar
-          </button>
-          {#if selectedReimbursementId}
-            <button class="btn btn-accent" onclick={linkTransaction} disabled={loading}>
-              <Split size={16} /> Vincular
+          <ModalActions>
+            <button class="btn btn-secondary" onclick={onClose}>Cerrar</button>
+            <button class="btn btn-danger" onclick={unlinkTransaction} disabled={loading}>
+              <Unlink size={16} /> Desvincular
             </button>
+          </ModalActions>
+        {:else}
+          <PercentageSlider
+            bind:value={splitPercentage}
+            label={sliderLabel}
+            {resultLabel}
+            {resultAmount}
+            {formatCurrency}
+          />
+
+          {#if loading}
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <span>{isExpense ? 'Buscando reembolsos...' : 'Buscando gastos compartidos...'}</span>
+            </div>
+          {:else if potentialReimbursements.length > 0}
+            <div class="reimbursements-section">
+              <div class="section-label">{potentialsLabel}</div>
+              <div class="reimbursements-list">
+                {#each potentialReimbursements as r (r.transaction.id)}
+                  <label
+                    class="reimbursement-item"
+                    class:selected={selectedReimbursementId === r.transaction.id}
+                  >
+                    <input
+                      type="radio"
+                      name="reimbursement"
+                      class="radio-input"
+                      value={r.transaction.id}
+                      bind:group={selectedReimbursementId}
+                    />
+                    <div class="reimbursement-content">
+                      <div class="reimbursement-header">
+                        <div class="reimbursement-left">
+                          {#if r.transaction.description}
+                            <div class="reimbursement-title">{r.transaction.description}</div>
+                          {/if}
+                          <div class="reimbursement-merchant">{r.transaction.merchant}</div>
+                          <div class="reimbursement-date">{formatDate(r.transaction.date)}</div>
+                        </div>
+                        <div class="reimbursement-right">
+                          <div
+                            class="reimbursement-amount"
+                            class:income={isExpense}
+                            class:expense={!isExpense}
+                          >
+                            {formatCurrency(r.transaction.amount)}
+                          </div>
+                          <div
+                            class="match-score"
+                            style="color: {getMatchScoreColor(r.matchScore)}"
+                          >
+                            {Math.round(r.matchScore)}% coincidencia
+                          </div>
+                        </div>
+                      </div>
+                      {#if r.matchReasons.length > 0}
+                        <div class="match-reasons">
+                          {#each r.matchReasons as reason}
+                            <span class="reason-badge">{reason}</span>
+                          {/each}
+                        </div>
+                      {/if}
+                    </div>
+                  </label>
+                {/each}
+              </div>
+            </div>
           {/if}
-        </div>
-      {/if}
+
+          {#if error}
+            <div class="error-message">{error}</div>
+          {/if}
+
+          <ModalActions>
+            <button class="btn btn-secondary" onclick={onClose} disabled={loading}>Cancelar</button>
+            <button class="btn btn-primary" onclick={saveWithoutLinking} disabled={loading}>
+              <Check size={16} /> Guardar
+            </button>
+            {#if selectedReimbursementId}
+              <button class="btn btn-accent" onclick={linkTransaction} disabled={loading}>
+                <Split size={16} /> Vincular
+              </button>
+            {/if}
+          </ModalActions>
+        {/if}
+      </div>
     </div>
   </div>
 {/if}
@@ -314,56 +313,13 @@
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-body {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     padding: 1.5rem;
-  }
-
-  .modal-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
-  }
-
-  .header-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.75rem;
-    background: rgba(122, 186, 165, 0.1);
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .modal-title {
-    flex: 1;
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-  }
-
-  .close-btn {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 0.5rem;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-  }
-
-  .close-btn:hover {
-    background: var(--surface-muted);
-    color: var(--text-primary);
   }
 
   .transaction-info {
@@ -571,14 +527,6 @@
     font-size: 0.875rem;
   }
 
-  .actions {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: flex-end;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
-  }
-
   .btn {
     padding: 0.625rem 1.25rem;
     border-radius: 0.5rem;
@@ -630,19 +578,9 @@
   }
 
   @media (max-width: 640px) {
-    .modal-content {
+    .modal-body {
       padding: 1rem;
       gap: 1rem;
-    }
-
-    .actions {
-      flex-direction: column-reverse;
-      gap: 0.5rem;
-    }
-
-    .btn {
-      width: 100%;
-      justify-content: center;
     }
 
     .reimbursement-header {

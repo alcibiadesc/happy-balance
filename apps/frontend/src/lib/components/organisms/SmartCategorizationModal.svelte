@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { X, Check, Calendar, Sparkles } from 'lucide-svelte';
+  import { Sparkles } from 'lucide-svelte';
   import type { Transaction, Category } from '$lib/types/transaction';
   import { modalKeyboard } from '$lib/actions/modalKeyboard';
   import { formatCurrency } from '$lib/stores/currency';
+  import TransactionCard from '../molecules/TransactionCard.svelte';
+  import ModalActions from '../molecules/ModalActions.svelte';
 
   interface Props {
     isOpen: boolean;
@@ -26,16 +28,13 @@
     onCancel = () => {},
   }: Props = $props();
 
-  // State
   let applyToFuture = $state(true);
   let selectedTransactionIds = $state(new Set<string>());
 
-  // Derived values
   const hasMatches = $derived(matchingTransactions.length > 0);
   const selectedCount = $derived(selectedTransactionIds.size + 1);
   const totalSelectedAmount = $derived(getTotalAmount());
 
-  // Reset when modal opens
   $effect(() => {
     if (isOpen) {
       selectedTransactionIds = new Set(matchingTransactions.map((t) => t.id));
@@ -49,10 +48,6 @@
     } else {
       onConfirm('single', applyToFuture);
     }
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   }
 
   function getPatternName(tx: Transaction): string {
@@ -113,33 +108,20 @@
             </div>
           </div>
         </div>
-        <button class="close-btn" onclick={onCancel} aria-label="Cerrar">
-          <X size={20} />
-        </button>
+        <button class="close-btn" onclick={onCancel} aria-label="Cerrar">×</button>
       </div>
 
       <div class="content-section">
         <!-- Current transaction -->
         <div class="current-transaction">
           <div class="section-label">Transacción actual</div>
-          <div class="transaction-card current">
-            <div class="transaction-info">
-              <span class="transaction-description">{transaction.description}</span>
-              <span class="transaction-meta"
-                >{transaction.merchant} • {formatDate(transaction.date)}</span
-              >
-            </div>
-            <span
-              class="transaction-amount"
-              class:expense={transaction.amount < 0}
-              class:income={transaction.amount > 0}
-            >
-              {formatCurrency(transaction.amount)}
-            </span>
-            <div class="check-badge">
-              <Check size={14} />
-            </div>
-          </div>
+          <TransactionCard
+            description={transaction.description}
+            merchant={transaction.merchant}
+            date={transaction.date}
+            amount={transaction.amount}
+            current
+          />
         </div>
 
         <!-- Matching transactions -->
@@ -158,35 +140,16 @@
             </div>
             <div class="matches-list">
               {#each matchingTransactions as match (match.id)}
-                <label
-                  class="transaction-card"
-                  class:selected={selectedTransactionIds.has(match.id)}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedTransactionIds.has(match.id)}
-                    onchange={() => toggleTransaction(match.id)}
-                  />
-                  <div class="transaction-info">
-                    <span class="transaction-description"
-                      >{match.description || match.merchant}</span
-                    >
-                    <span class="transaction-meta">
-                      <Calendar size={10} />
-                      {formatDate(match.date)}
-                      {#if match.description && match.merchant}
-                        • {match.merchant}
-                      {/if}
-                    </span>
-                  </div>
-                  <span
-                    class="transaction-amount"
-                    class:expense={match.amount < 0}
-                    class:income={match.amount > 0}
-                  >
-                    {formatCurrency(match.amount)}
-                  </span>
-                </label>
+                <TransactionCard
+                  description={match.description}
+                  merchant={match.merchant}
+                  date={match.date}
+                  amount={match.amount}
+                  selected={selectedTransactionIds.has(match.id)}
+                  showCheckbox
+                  checked={selectedTransactionIds.has(match.id)}
+                  onchange={() => toggleTransaction(match.id)}
+                />
               {/each}
             </div>
             {#if selectedTransactionIds.size > 0}
@@ -221,8 +184,7 @@
         </div>
       </div>
 
-      <!-- Action buttons -->
-      <div class="modal-actions">
+      <ModalActions>
         <button class="btn-secondary" onclick={onCancel}>Cancelar</button>
         <button class="btn-primary" onclick={handleConfirm}>
           {#if selectedTransactionIds.size > 0}
@@ -231,7 +193,7 @@
             Aplicar categoría
           {/if}
         </button>
-      </div>
+      </ModalActions>
     </div>
   </div>
 {/if}
@@ -293,7 +255,6 @@
     font-weight: 600;
     color: var(--text-primary);
     margin: 0 0 12px 0;
-    line-height: 1.3;
   }
 
   .modal-title :global(svg) {
@@ -342,16 +303,16 @@
   }
 
   .close-btn {
-    padding: 6px;
+    width: 2rem;
+    height: 2rem;
     border: none;
     background: none;
     color: var(--text-secondary);
     cursor: pointer;
-    border-radius: 6px;
+    font-size: 1.5rem;
+    line-height: 1;
+    border-radius: 0.5rem;
     transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   .close-btn:hover {
@@ -365,7 +326,6 @@
     overflow-y: auto;
   }
 
-  /* Current transaction */
   .current-transaction {
     margin-bottom: 16px;
   }
@@ -396,97 +356,6 @@
     padding: 0 5px;
   }
 
-  .transaction-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    background: var(--surface-elevated);
-    border: 1.5px solid var(--border-color);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .transaction-card:hover {
-    border-color: var(--text-muted);
-    background: var(--surface-muted);
-  }
-
-  .transaction-card.current {
-    background: var(--acapulco-alpha-10);
-    border-color: var(--acapulco);
-    cursor: default;
-  }
-
-  .transaction-card.selected {
-    background: var(--primary-alpha-10);
-    border-color: var(--primary);
-  }
-
-  .transaction-card input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--primary);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  .transaction-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .transaction-description {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-  }
-
-  .transaction-meta {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-
-  .transaction-meta :global(svg) {
-    flex-shrink: 0;
-  }
-
-  .transaction-amount {
-    font-size: 13px;
-    font-weight: 600;
-    flex-shrink: 0;
-  }
-
-  .transaction-amount.expense {
-    color: var(--froly);
-  }
-
-  .transaction-amount.income {
-    color: var(--acapulco);
-  }
-
-  .check-badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    background: var(--acapulco);
-    border-radius: 50%;
-    color: white;
-    flex-shrink: 0;
-  }
-
-  /* Matches section */
   .matches-section {
     margin-bottom: 16px;
   }
@@ -537,11 +406,6 @@
     color: var(--primary);
   }
 
-  .selection-summary strong {
-    font-weight: 600;
-  }
-
-  /* No matches */
   .no-matches {
     padding: 16px;
     background: var(--surface-muted);
@@ -556,7 +420,6 @@
     color: var(--text-muted);
   }
 
-  /* Future option */
   .future-option {
     padding: 14px 16px;
     background: var(--primary-alpha-10);
@@ -603,14 +466,6 @@
     line-height: 1.4;
   }
 
-  /* Actions */
-  .modal-actions {
-    display: flex;
-    gap: 12px;
-    padding: 16px 24px 20px;
-    border-top: 1px solid var(--border-color);
-  }
-
   .btn-secondary {
     flex: 1;
     padding: 11px 16px;
@@ -650,7 +505,6 @@
     transform: translateY(-1px);
   }
 
-  /* Scrollbars */
   .matches-list::-webkit-scrollbar,
   .content-section::-webkit-scrollbar {
     width: 5px;
@@ -667,12 +521,6 @@
     border-radius: 3px;
   }
 
-  .matches-list::-webkit-scrollbar-thumb:hover,
-  .content-section::-webkit-scrollbar-thumb:hover {
-    background: var(--text-muted);
-  }
-
-  /* Responsive */
   @media (max-width: 480px) {
     .modal-overlay {
       padding: 12px;
@@ -699,28 +547,8 @@
       max-height: calc(85vh - 200px);
     }
 
-    .transaction-card {
-      padding: 10px 12px;
-    }
-
-    .transaction-description {
-      font-size: 12px;
-    }
-
     .matches-list {
       max-height: 150px;
-    }
-
-    .modal-actions {
-      padding: 16px 20px;
-      flex-direction: column-reverse;
-      gap: 8px;
-    }
-
-    .btn-secondary,
-    .btn-primary {
-      flex: none;
-      width: 100%;
     }
   }
 </style>

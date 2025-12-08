@@ -1,7 +1,10 @@
 <script lang="ts">
-  import { Tag, Eye, EyeOff, Trash2, Split } from 'lucide-svelte';
+  import { Eye, EyeOff, Trash2, Split } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
   import type { Transaction, Category } from '$lib/types/transaction';
+  import AmountDisplay from '../atoms/AmountDisplay.svelte';
+  import SplitIndicator from '../atoms/SplitIndicator.svelte';
+  import CategoryButton from '../atoms/CategoryButton.svelte';
 
   interface TransactionRowProps {
     transaction: Transaction;
@@ -19,7 +22,6 @@
     onToggleHide: () => void;
     onDelete: () => void;
     onOpenSplitModal?: () => void;
-    formatAmount: (amount: number) => string;
   }
 
   let {
@@ -38,10 +40,8 @@
     onToggleHide,
     onDelete,
     onOpenSplitModal,
-    formatAmount,
   }: TransactionRowProps = $props();
 
-  // Focus directive for auto-focusing input
   function focus(node: HTMLElement) {
     node.focus();
   }
@@ -59,12 +59,17 @@
     await onSaveObservations();
     setTimeout(() => onCancelEditingObservations(), 50);
   }
+
+  const hasSplit = $derived(transaction.splitPercentage !== undefined);
+  const isLinked = $derived(!!transaction.linkedTransactionId);
+  const isExpense = $derived(transaction.amount < 0);
 </script>
 
 <div
   class="transaction-card"
   class:selected={isSelected}
   class:hidden={transaction.hidden}
+  class:has-split={hasSplit}
   data-testid="transaction-item"
   data-transaction-id={transaction.id}
 >
@@ -79,7 +84,7 @@
 
   <div class="transaction-details">
     <div class="transaction-main">
-      <div>
+      <div class="transaction-content">
         <div class="transaction-description">{transaction.description}</div>
         {#if isEditingObservations}
           <div class="observations-editor">
@@ -96,6 +101,7 @@
             />
           </div>
         {:else}
+          <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
           <div
             class="transaction-observations"
             class:empty={!transaction.observations}
@@ -114,56 +120,23 @@
           <span>{transaction.time}</span>
         </div>
       </div>
+
       <div class="transaction-amount-wrapper">
-        <div class="transaction-amount" class:income={transaction.amount > 0}>
-          {formatAmount(transaction.amount)}
-        </div>
-        {#if transaction.linkedTransactionId && transaction.splitPercentage !== undefined}
-          <div
-            class="split-indicator"
-            title={transaction.amount < 0
-              ? `Gasto compartido - Pagas el ${transaction.splitPercentage}%`
-              : `Reembolso vinculado - Cubre el ${transaction.splitPercentage}%`}
-          >
-            <Split size={12} />
-            <span>{transaction.splitPercentage}%</span>
-          </div>
-        {:else if transaction.splitPercentage !== undefined}
-          <div
-            class="split-indicator split-unlinked"
-            title={transaction.amount < 0
-              ? `Gasto compartido - Pagas el ${transaction.splitPercentage}% (sin vincular)`
-              : `Reembolso - Cubre el ${transaction.splitPercentage}% (sin vincular)`}
-          >
-            <Split size={12} />
-            <span>{transaction.splitPercentage}%</span>
-          </div>
+        <AmountDisplay amount={transaction.amount} showSign={false} />
+        {#if hasSplit && transaction.splitPercentage !== undefined}
+          <SplitIndicator percentage={transaction.splitPercentage} {isLinked} {isExpense} />
         {/if}
       </div>
     </div>
 
     <div class="category-selector">
-      <button
-        class="category-btn"
-        class:has-category={category}
-        style={category
-          ? `background-color: ${category.color}20; border-color: ${category.color}; color: ${category.color}`
-          : ''}
-        title={category ? `Categoría: ${category.name}` : 'Asignar categoría'}
-        data-testid="transaction-category"
+      <CategoryButton
+        {category}
         onclick={(e) => {
           e.stopPropagation();
           onOpenCategoryModal();
         }}
-      >
-        {#if category}
-          <span class="category-icon-btn">{category.icon}</span>
-          <span>{category.name}</span>
-        {:else}
-          <Tag size={14} />
-          {$t('transactions.add_category')}
-        {/if}
-      </button>
+      />
     </div>
   </div>
 
@@ -171,12 +144,12 @@
     {#if onOpenSplitModal}
       <button
         class="action-btn split-btn"
-        class:linked={transaction.linkedTransactionId}
-        title={transaction.linkedTransactionId
-          ? transaction.amount < 0
+        class:linked={isLinked}
+        title={isLinked
+          ? isExpense
             ? 'Gasto compartido vinculado'
             : 'Reembolso vinculado'
-          : transaction.amount < 0
+          : isExpense
             ? 'Marcar como gasto compartido'
             : 'Vincular con gasto compartido'}
         onclick={(e) => {
@@ -251,7 +224,7 @@
     background: var(--surface-muted);
   }
 
-  .transaction-card:has(.split-indicator) {
+  .transaction-card.has-split {
     border-left: 3px solid var(--primary);
   }
 
@@ -263,6 +236,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+
+  .transaction-content {
+    min-width: 0;
+    flex: 1;
   }
 
   .transaction-description {
@@ -311,7 +289,7 @@
 
   .transaction-meta {
     display: flex;
-    gap: var(--space-xs);
+    gap: 0.25rem;
     font-size: 0.75rem;
     color: var(--text-secondary);
     margin-top: 4px;
@@ -324,86 +302,10 @@
     gap: 0.25rem;
   }
 
-  .transaction-amount {
-    font-weight: 600;
-    color: var(--froly);
-  }
-
-  .transaction-amount.income {
-    color: var(--acapulco);
-  }
-
-  .split-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.125rem 0.5rem;
-    background: var(--primary-alpha-10);
-    border: 1px solid var(--primary);
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--primary);
-    cursor: help;
-    transition: all 0.2s ease;
-  }
-
-  .split-indicator:hover {
-    background: var(--primary-alpha-20);
-    transform: scale(1.05);
-  }
-
-  .split-indicator.split-unlinked {
-    background: var(--surface-muted);
-    border-color: var(--text-secondary);
-    color: var(--text-secondary);
-    border-style: dashed;
-  }
-
-  .split-indicator.split-unlinked:hover {
-    background: var(--surface-hover);
-    border-color: var(--text-primary);
-    color: var(--text-primary);
-  }
-
   .category-selector {
     position: relative;
-    margin-top: var(--space-xs);
+    margin-top: 0.25rem;
     z-index: 1;
-  }
-
-  .category-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: 4px var(--space-sm);
-    border: 1px dashed var(--acapulco);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--acapulco);
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .category-btn:hover {
-    transform: scale(1.02);
-    opacity: 0.9;
-  }
-
-  .category-btn:not(.has-category):hover {
-    background: var(--acapulco-alpha-10);
-    border-color: var(--acapulco);
-  }
-
-  .category-btn.has-category {
-    border-width: 1px;
-    border-style: solid;
-    font-weight: 500;
-  }
-
-  .category-icon-btn {
-    font-size: 0.875rem;
   }
 
   .transaction-actions {
@@ -476,7 +378,7 @@
       gap: 0.75rem;
     }
 
-    .transaction-main > div:first-child {
+    .transaction-content {
       min-width: 0;
       flex: 1;
     }
@@ -503,21 +405,10 @@
       flex-shrink: 0;
     }
 
-    .transaction-amount {
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
     .category-selector {
       margin-top: 0;
     }
 
-    .category-btn {
-      font-size: 0.7rem;
-      padding: 3px 8px;
-    }
-
-    /* Actions row at bottom */
     .transaction-actions {
       display: flex;
       justify-content: flex-end;
@@ -535,11 +426,6 @@
       width: 14px;
       height: 14px;
     }
-
-    .split-indicator {
-      font-size: 0.65rem;
-      padding: 0.1rem 0.375rem;
-    }
   }
 
   @media (max-width: 480px) {
@@ -552,21 +438,8 @@
       font-size: 0.85rem;
     }
 
-    .transaction-amount {
-      font-size: 0.9rem;
-    }
-
     .transaction-meta {
       font-size: 0.65rem;
-    }
-
-    .category-btn {
-      font-size: 0.65rem;
-      padding: 2px 6px;
-    }
-
-    .category-icon-btn {
-      font-size: 0.75rem;
     }
 
     .action-btn {
@@ -592,10 +465,6 @@
       max-width: 140px;
     }
 
-    .transaction-amount {
-      font-size: 0.85rem;
-    }
-
     .transaction-meta {
       font-size: 0.6rem;
       gap: 0.25rem;
@@ -605,27 +474,12 @@
       display: none;
     }
 
-    .category-btn {
-      font-size: 0.6rem;
-      padding: 2px 4px;
-      gap: 0.25rem;
-    }
-
-    .category-icon-btn {
-      font-size: 0.7rem;
-    }
-
     .transaction-actions {
       gap: 0.125rem;
     }
 
     .action-btn {
       padding: 0.25rem;
-    }
-
-    .split-indicator {
-      font-size: 0.6rem;
-      padding: 0.0625rem 0.25rem;
     }
   }
 </style>
