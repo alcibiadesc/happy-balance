@@ -47,7 +47,8 @@ RUN pnpm build && \
 # ====================================
 # Stage 3: Production Runtime
 # ====================================
-FROM node:20-alpine AS production
+# Using debian-slim instead of alpine to avoid busybox trigger bug on Synology NAS
+FROM node:20-slim AS production
 
 # Re-declare ARGs for this stage
 ARG VERSION=unknown
@@ -55,9 +56,10 @@ ARG COMMIT_SHA=unknown
 ARG BUILD_TIMESTAMP=unknown
 
 # Install only essential runtime dependencies
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     dumb-init && \
+    rm -rf /var/lib/apt/lists/* && \
     corepack enable && \
     corepack prepare pnpm@latest --activate
 
@@ -78,8 +80,8 @@ COPY --from=builder /app/apps/frontend/build ./apps/frontend/build
 RUN echo "{\"version\":\"${VERSION}\",\"commit\":\"${COMMIT_SHA}\",\"buildTimestamp\":\"${BUILD_TIMESTAMP}\",\"component\":\"frontend\"}" > /app/.version.json
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S frontend -u 1001 -G nodejs && \
+RUN groupadd -g 1001 nodejs && \
+    useradd -u 1001 -g nodejs -m frontend && \
     chown -R frontend:nodejs /app
 
 USER frontend
