@@ -3,56 +3,66 @@
   import type { Transaction, PotentialReimbursement } from '$lib/types/transaction';
   import { apiTransactions } from '$lib/stores/api-transactions';
   import { modalKeyboard } from '$lib/actions/modalKeyboard';
+  import { formatCurrency } from '$lib/stores/currency';
+  import PercentageSlider from '$lib/components/molecules/PercentageSlider.svelte';
 
-  // Props
-  export let isOpen = false;
-  export let transaction: Transaction | null = null;
-  export let onClose: () => void = () => {};
-
-  let modalElement: HTMLDivElement;
-  let loading = false;
-  let potentialReimbursements: PotentialReimbursement[] = [];
-  let splitPercentage = 50; // Default to 50%
-  let selectedReimbursementId: string | null = null;
-  let error: string | null = null;
-
-  // Determine if transaction is expense or income
-  $: isExpense = transaction ? transaction.amount < 0 : true;
-  $: modalTitle = isExpense
-    ? transaction?.linkedTransactionId
-      ? 'Gasto Compartido Vinculado'
-      : 'Marcar como Gasto Compartido'
-    : transaction?.linkedTransactionId
-      ? 'Reembolso Vinculado'
-      : 'Vincular con Gasto Compartido';
-  $: potentialsLabel = isExpense
-    ? 'Reembolsos Disponibles (Opcional)'
-    : 'Gastos Compartidos Disponibles (Opcional)';
-  $: saveButtonLabel = 'Guardar';
-  $: linkButtonLabel = 'Vincular';
-
-  // Prevent body scroll when modal is open
-  $: if (isOpen && transaction) {
-    preventBodyScroll();
-    loadPotentialReimbursements();
-    // Initialize splitPercentage from transaction if exists
-    splitPercentage = transaction.splitPercentage ?? 50;
-    selectedReimbursementId = null;
-  } else {
-    restoreBodyScroll();
-    resetState();
+  interface Props {
+    isOpen: boolean;
+    transaction: Transaction | null;
+    onClose: () => void;
   }
 
-  function preventBodyScroll() {
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = 'hidden';
+  let { isOpen = false, transaction = null, onClose = () => {} }: Props = $props();
+
+  // State
+  let loading = $state(false);
+  let potentialReimbursements = $state<PotentialReimbursement[]>([]);
+  let splitPercentage = $state(50);
+  let selectedReimbursementId = $state<string | null>(null);
+  let error = $state<string | null>(null);
+
+  // Derived values
+  const isExpense = $derived(transaction ? transaction.amount < 0 : true);
+  const modalTitle = $derived(
+    isExpense
+      ? transaction?.linkedTransactionId
+        ? 'Gasto Compartido Vinculado'
+        : 'Marcar como Gasto Compartido'
+      : transaction?.linkedTransactionId
+        ? 'Reembolso Vinculado'
+        : 'Vincular con Gasto Compartido'
+  );
+  const potentialsLabel = $derived(
+    isExpense ? 'Reembolsos Disponibles (Opcional)' : 'Gastos Compartidos Disponibles (Opcional)'
+  );
+  const sliderLabel = $derived(
+    isExpense
+      ? '¿Qué porcentaje del gasto pagas tú?'
+      : '¿Qué porcentaje del gasto cubre este reembolso?'
+  );
+  const resultLabel = $derived(isExpense ? 'Monto real' : 'Monto cubierto');
+  const resultAmount = $derived(transaction ? (transaction.amount * splitPercentage) / 100 : 0);
+
+  // Effects
+  $effect(() => {
+    if (isOpen && transaction) {
+      preventBodyScroll();
+      loadPotentialReimbursements();
+      splitPercentage = transaction.splitPercentage ?? 50;
+      selectedReimbursementId = null;
+    } else {
+      restoreBodyScroll();
+      resetState();
     }
+  });
+
+  // Helper functions
+  function preventBodyScroll() {
+    if (typeof document !== 'undefined') document.body.style.overflow = 'hidden';
   }
 
   function restoreBodyScroll() {
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = '';
-    }
+    if (typeof document !== 'undefined') document.body.style.overflow = '';
   }
 
   function resetState() {
@@ -60,98 +70,6 @@
     splitPercentage = 50;
     selectedReimbursementId = null;
     error = null;
-  }
-
-  async function loadPotentialReimbursements() {
-    if (!transaction) return;
-
-    loading = true;
-    error = null;
-
-    try {
-      const results = await apiTransactions.findPotentialReimbursements(transaction.id);
-      potentialReimbursements = results;
-    } catch (err) {
-      console.error('Error al cargar reembolsos potenciales:', err);
-      // No mostramos error si no hay reembolsos, es normal
-      potentialReimbursements = [];
-    } finally {
-      loading = false;
-    }
-  }
-
-  async function saveWithoutLinking() {
-    if (!transaction) return;
-
-    loading = true;
-    error = null;
-
-    try {
-      await apiTransactions.updateSplitPercentage(transaction.id, splitPercentage);
-      onClose();
-    } catch (err) {
-      console.error('Error al guardar el porcentaje:', err);
-      error = err instanceof Error ? err.message : 'Error al guardar el porcentaje';
-    } finally {
-      loading = false;
-    }
-  }
-
-  async function linkTransaction() {
-    if (!transaction || !selectedReimbursementId) return;
-
-    loading = true;
-    error = null;
-
-    try {
-      await apiTransactions.linkSplitTransaction(
-        transaction.id,
-        selectedReimbursementId,
-        splitPercentage
-      );
-
-      // Refresh transactions to update stats immediately
-      console.log('[SplitModal] Reloading transactions after link...');
-      await apiTransactions.load();
-      console.log('[SplitModal] Transactions reloaded');
-
-      onClose();
-    } catch (err) {
-      console.error('Error al vincular transacción:', err);
-      error = err instanceof Error ? err.message : 'Error al vincular transacción';
-    } finally {
-      loading = false;
-    }
-  }
-
-  async function unlinkTransaction() {
-    if (!transaction) return;
-
-    loading = true;
-    error = null;
-
-    try {
-      await apiTransactions.unlinkSplitTransaction(transaction.id);
-      onClose();
-    } catch (err) {
-      console.error('Error al desvincular transacción:', err);
-      error = err instanceof Error ? err.message : 'Error al desvincular transacción';
-    } finally {
-      loading = false;
-    }
-  }
-
-  function handleBackdropClick(event: MouseEvent) {
-    if (event.target === modalElement) {
-      onClose();
-    }
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(amount);
   }
 
   function formatDate(dateStr: string): string {
@@ -167,37 +85,95 @@
     if (score >= 60) return '#f59e0b';
     return '#ef4444';
   }
+
+  // API functions
+  async function loadPotentialReimbursements() {
+    if (!transaction) return;
+    loading = true;
+    error = null;
+
+    try {
+      potentialReimbursements = await apiTransactions.findPotentialReimbursements(transaction.id);
+    } catch {
+      potentialReimbursements = [];
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function saveWithoutLinking() {
+    if (!transaction) return;
+    loading = true;
+    error = null;
+
+    try {
+      await apiTransactions.updateSplitPercentage(transaction.id, splitPercentage);
+      onClose();
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Error al guardar';
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function linkTransaction() {
+    if (!transaction || !selectedReimbursementId) return;
+    loading = true;
+    error = null;
+
+    try {
+      await apiTransactions.linkSplitTransaction(
+        transaction.id,
+        selectedReimbursementId,
+        splitPercentage
+      );
+      await apiTransactions.load();
+      onClose();
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Error al vincular';
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function unlinkTransaction() {
+    if (!transaction) return;
+    loading = true;
+    error = null;
+
+    try {
+      await apiTransactions.unlinkSplitTransaction(transaction.id);
+      onClose();
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Error al desvincular';
+    } finally {
+      loading = false;
+    }
+  }
 </script>
 
 <div use:modalKeyboard={{ onConfirm: saveWithoutLinking, onCancel: onClose, isOpen }}></div>
 
 {#if isOpen && transaction}
   <div
-    bind:this={modalElement}
     class="modal-backdrop"
-    on:click={handleBackdropClick}
+    onclick={(e) => e.target === e.currentTarget && onClose()}
     role="dialog"
     aria-modal="true"
-    aria-labelledby="modal-title"
+    tabindex="-1"
   >
-    <div class="modal-content">
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} role="document">
       <!-- Header -->
       <div class="modal-header">
-        <div class="header-icon">
-          <Split size={20} />
-        </div>
-        <h3 id="modal-title" class="modal-title">
-          {modalTitle}
-        </h3>
-        <button class="close-btn" on:click={onClose} aria-label="Cerrar">
-          <X size={20} />
-        </button>
+        <div class="header-icon"><Split size={20} /></div>
+        <h3 class="modal-title">{modalTitle}</h3>
+        <button class="close-btn" onclick={onClose}><X size={20} /></button>
       </div>
 
       <!-- Transaction Info -->
       <div class="transaction-info">
-        <div class="transaction-merchant">{transaction.merchant}</div>
-        <div class="transaction-details">
+        <div class="merchant">{transaction.merchant}</div>
+        <div class="details">
           {formatCurrency(transaction.amount)} • {formatDate(transaction.date)}
         </div>
       </div>
@@ -211,64 +187,34 @@
           </div>
           {#if transaction.splitPercentage !== undefined}
             <div class="split-details">
-              {#if isExpense}
-                <span>Pagas el <strong>{transaction.splitPercentage}%</strong> del gasto total</span
-                >
-                <span class="real-amount"
-                  >Monto real: {formatCurrency(
-                    (transaction.amount * transaction.splitPercentage) / 100
-                  )}</span
-                >
-              {:else}
-                <span
-                  >Este ingreso cubre el <strong>{transaction.splitPercentage}%</strong> de un gasto
-                  compartido</span
-                >
-                <span class="real-amount"
-                  >Monto cubierto: {formatCurrency(
-                    (transaction.amount * transaction.splitPercentage) / 100
-                  )}</span
-                >
-              {/if}
+              <span>
+                {isExpense ? 'Pagas el' : 'Este ingreso cubre el'}
+                <strong>{transaction.splitPercentage}%</strong>
+                {isExpense ? 'del gasto total' : 'de un gasto compartido'}
+              </span>
+              <span class="real-amount">
+                {isExpense ? 'Monto real' : 'Monto cubierto'}:
+                {formatCurrency((transaction.amount * transaction.splitPercentage) / 100)}
+              </span>
             </div>
           {/if}
         </div>
 
         <div class="actions">
-          <button class="btn btn-secondary" on:click={onClose}> Cerrar </button>
-          <button class="btn btn-danger" on:click={unlinkTransaction} disabled={loading}>
-            <Unlink size={16} />
-            Desvincular
+          <button class="btn btn-secondary" onclick={onClose}>Cerrar</button>
+          <button class="btn btn-danger" onclick={unlinkTransaction} disabled={loading}>
+            <Unlink size={16} /> Desvincular
           </button>
         </div>
       {:else}
         <!-- Not linked - configure split -->
-        <div class="split-config">
-          <label class="label">
-            {isExpense
-              ? '¿Qué porcentaje del gasto pagas tú?'
-              : '¿Qué porcentaje del gasto cubre este reembolso?'}
-          </label>
-          <div class="slider-container">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              bind:value={splitPercentage}
-              class="slider"
-              step="5"
-            />
-            <div class="slider-labels">
-              <span>0%</span>
-              <span class="current-value">{splitPercentage}%</span>
-              <span>100%</span>
-            </div>
-          </div>
-          <div class="real-amount-display">
-            {isExpense ? 'Monto real' : 'Monto cubierto'}:
-            <strong>{formatCurrency((transaction.amount * splitPercentage) / 100)}</strong>
-          </div>
-        </div>
+        <PercentageSlider
+          bind:value={splitPercentage}
+          label={sliderLabel}
+          {resultLabel}
+          {resultAmount}
+          {formatCurrency}
+        />
 
         {#if loading}
           <div class="loading-state">
@@ -279,49 +225,43 @@
           <div class="reimbursements-section">
             <div class="section-label">{potentialsLabel}</div>
             <div class="reimbursements-list">
-              {#each potentialReimbursements as reimbursement (reimbursement.transaction.id)}
-                <label class="reimbursement-item">
+              {#each potentialReimbursements as r (r.transaction.id)}
+                <label
+                  class="reimbursement-item"
+                  class:selected={selectedReimbursementId === r.transaction.id}
+                >
                   <input
                     type="radio"
                     name="reimbursement"
                     class="radio-input"
-                    value={reimbursement.transaction.id}
+                    value={r.transaction.id}
                     bind:group={selectedReimbursementId}
                   />
                   <div class="reimbursement-content">
                     <div class="reimbursement-header">
                       <div class="reimbursement-left">
-                        {#if reimbursement.transaction.description}
-                          <div class="reimbursement-title">
-                            {reimbursement.transaction.description}
-                          </div>
+                        {#if r.transaction.description}
+                          <div class="reimbursement-title">{r.transaction.description}</div>
                         {/if}
-                        <div class="reimbursement-merchant">
-                          {reimbursement.transaction.merchant}
-                        </div>
-                        <div class="reimbursement-date">
-                          {formatDate(reimbursement.transaction.date)}
-                        </div>
+                        <div class="reimbursement-merchant">{r.transaction.merchant}</div>
+                        <div class="reimbursement-date">{formatDate(r.transaction.date)}</div>
                       </div>
                       <div class="reimbursement-right">
                         <div
                           class="reimbursement-amount"
-                          class:expense={!isExpense}
                           class:income={isExpense}
+                          class:expense={!isExpense}
                         >
-                          {formatCurrency(reimbursement.transaction.amount)}
+                          {formatCurrency(r.transaction.amount)}
                         </div>
-                        <div
-                          class="match-score"
-                          style="color: {getMatchScoreColor(reimbursement.matchScore)}"
-                        >
-                          {Math.round(reimbursement.matchScore)}% coincidencia
+                        <div class="match-score" style="color: {getMatchScoreColor(r.matchScore)}">
+                          {Math.round(r.matchScore)}% coincidencia
                         </div>
                       </div>
                     </div>
-                    {#if reimbursement.matchReasons.length > 0}
+                    {#if r.matchReasons.length > 0}
                       <div class="match-reasons">
-                        {#each reimbursement.matchReasons as reason (reason)}
+                        {#each r.matchReasons as reason}
                           <span class="reason-badge">{reason}</span>
                         {/each}
                       </div>
@@ -334,23 +274,17 @@
         {/if}
 
         {#if error}
-          <div class="error-message">
-            {error}
-          </div>
+          <div class="error-message">{error}</div>
         {/if}
 
         <div class="actions">
-          <button class="btn btn-secondary" on:click={onClose} disabled={loading}>
-            Cancelar
-          </button>
-          <button class="btn btn-primary" on:click={saveWithoutLinking} disabled={loading}>
-            <Check size={16} />
-            {saveButtonLabel}
+          <button class="btn btn-secondary" onclick={onClose} disabled={loading}>Cancelar</button>
+          <button class="btn btn-primary" onclick={saveWithoutLinking} disabled={loading}>
+            <Check size={16} /> Guardar
           </button>
           {#if selectedReimbursementId}
-            <button class="btn btn-accent" on:click={linkTransaction} disabled={loading}>
-              <Split size={16} />
-              {linkButtonLabel}
+            <button class="btn btn-accent" onclick={linkTransaction} disabled={loading}>
+              <Split size={16} /> Vincular
             </button>
           {/if}
         </div>
@@ -362,10 +296,7 @@
 <style>
   .modal-backdrop {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     display: flex;
@@ -382,9 +313,7 @@
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow:
-      0 20px 25px -5px rgba(0, 0, 0, 0.1),
-      0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -403,7 +332,7 @@
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 0.75rem;
-    background: var(--primary-alpha-10);
+    background: rgba(122, 186, 165, 0.1);
     color: var(--primary);
     display: flex;
     align-items: center;
@@ -444,13 +373,13 @@
     border: 1px solid var(--border-color);
   }
 
-  .transaction-merchant {
+  .merchant {
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 0.25rem;
   }
 
-  .transaction-details {
+  .details {
     font-size: 0.875rem;
     color: var(--text-secondary);
   }
@@ -460,7 +389,7 @@
     flex-direction: column;
     gap: 1rem;
     padding: 1rem;
-    background: var(--acapulco-alpha-10);
+    background: rgba(122, 186, 165, 0.1);
     border: 1px solid var(--acapulco);
     border-radius: 0.75rem;
   }
@@ -481,88 +410,9 @@
     color: var(--text-secondary);
   }
 
-  .split-config {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .label {
-    font-size: 0.875rem;
+  .real-amount {
     font-weight: 500;
     color: var(--text-primary);
-  }
-
-  .slider-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .slider {
-    width: 100%;
-    height: 0.5rem;
-    border-radius: 0.25rem;
-    background: var(--surface-muted);
-    outline: none;
-    -webkit-appearance: none;
-  }
-
-  .slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s;
-  }
-
-  .slider::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  .slider::-moz-range-thumb {
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s;
-  }
-
-  .slider::-moz-range-thumb:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  .slider-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-  }
-
-  .current-value {
-    font-weight: 600;
-    color: var(--primary);
-  }
-
-  .real-amount-display,
-  .real-amount {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-  }
-
-  .real-amount-display strong,
-  .real-amount {
-    color: var(--text-primary);
-    font-weight: 600;
   }
 
   .loading-state {
@@ -625,8 +475,8 @@
     border-color: var(--primary);
   }
 
-  .reimbursement-item:has(.radio-input:checked) {
-    background: var(--primary-alpha-10);
+  .reimbursement-item.selected {
+    background: rgba(122, 186, 165, 0.1);
     border-color: var(--primary);
   }
 
@@ -664,7 +514,6 @@
   }
 
   .reimbursement-merchant {
-    font-weight: 400;
     color: var(--text-secondary);
     font-size: 0.8125rem;
   }
@@ -715,10 +564,10 @@
 
   .error-message {
     padding: 0.75rem 1rem;
-    background: var(--error-alpha-10);
-    border: 1px solid var(--error);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #ef4444;
     border-radius: 0.5rem;
-    color: var(--error);
+    color: #ef4444;
     font-size: 0.875rem;
   }
 
@@ -764,8 +613,6 @@
 
   .btn-primary:hover:not(:disabled) {
     opacity: 0.9;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
   .btn-accent {
@@ -775,42 +622,21 @@
 
   .btn-accent:hover:not(:disabled) {
     opacity: 0.9;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
   .btn-danger {
-    background: var(--error);
+    background: #ef4444;
     color: white;
-  }
-
-  .btn-danger:hover:not(:disabled) {
-    opacity: 0.9;
   }
 
   @media (max-width: 640px) {
     .modal-content {
       padding: 1rem;
       gap: 1rem;
-      max-height: 95vh;
-    }
-
-    .modal-header {
-      padding-bottom: 0.75rem;
-    }
-
-    .header-icon {
-      width: 2rem;
-      height: 2rem;
-    }
-
-    .modal-title {
-      font-size: 1rem;
     }
 
     .actions {
       flex-direction: column-reverse;
-      padding-top: 0.75rem;
       gap: 0.5rem;
     }
 
@@ -822,30 +648,11 @@
     .reimbursement-header {
       flex-direction: column;
       gap: 0.5rem;
-      align-items: stretch;
-    }
-
-    .reimbursement-left {
-      gap: 0.375rem;
     }
 
     .reimbursement-right {
       flex-direction: row;
-      align-items: center;
       justify-content: space-between;
-    }
-
-    .reimbursement-title {
-      font-size: 0.875rem;
-    }
-
-    .match-reasons {
-      gap: 0.25rem;
-    }
-
-    .reason-badge {
-      font-size: 0.6875rem;
-      padding: 0.125rem 0.375rem;
     }
   }
 </style>

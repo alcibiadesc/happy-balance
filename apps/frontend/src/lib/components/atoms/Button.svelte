@@ -1,11 +1,27 @@
 <script lang="ts">
-  export let variant: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline' = 'primary';
-  export let size: 'sm' | 'md' | 'lg' = 'md';
-  export let disabled = false;
-  export let loading = false;
-  export let type: 'button' | 'submit' | 'reset' = 'button';
-  export let fullWidth = false;
-  export let onclick: ((event: MouseEvent) => void) | undefined = undefined;
+  import type { Snippet } from 'svelte';
+
+  interface Props {
+    variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
+    size?: 'sm' | 'md' | 'lg';
+    disabled?: boolean;
+    loading?: boolean;
+    type?: 'button' | 'submit' | 'reset';
+    fullWidth?: boolean;
+    onclick?: (event: MouseEvent) => void;
+    children?: Snippet;
+  }
+
+  const {
+    variant = 'primary',
+    size = 'md',
+    disabled = false,
+    loading = false,
+    type = 'button',
+    fullWidth = false,
+    onclick,
+    children,
+  }: Props = $props();
 
   const baseClasses =
     'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
@@ -25,15 +41,12 @@
       'border border-evening-sea text-evening-sea hover:bg-evening-sea hover:text-bridesmaid focus:ring-evening-sea',
   };
 
-  $: classes = [
-    baseClasses,
-    sizeClasses[size],
-    variantClasses[variant],
-    fullWidth ? 'w-full' : '',
-  ].join(' ');
+  const classes = $derived(
+    [baseClasses, sizeClasses[size], variantClasses[variant], fullWidth ? 'w-full' : ''].join(' ')
+  );
 </script>
 
-<button {type} {disabled} {onclick} class={classes} {...$$restProps}>
+<button {type} {disabled} {onclick} class={classes}>
   {#if loading}
     <svg
       class="-ml-1 mr-2 h-4 w-4 animate-spin"
@@ -50,5 +63,5 @@
       ></path>
     </svg>
   {/if}
-  <slot />
+  {@render children?.()}
 </button>

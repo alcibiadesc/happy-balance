@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { ComponentType, Snippet } from 'svelte';
   import { Plus, Info, Trash2 } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
   import type { Category } from '$lib/types/transaction';
@@ -6,7 +7,7 @@
   interface Props {
     title: string;
     description: string;
-    icon: any;
+    icon: ComponentType;
     iconClass: string;
     categories: Category[];
     onAddNew: () => void;
@@ -16,7 +17,7 @@
     selectedCount?: number;
     onToggleSelectionMode?: () => void;
     onBulkDelete?: () => void;
-    children?: any;
+    children?: Snippet;
   }
 
   const {

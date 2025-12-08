@@ -1,23 +1,29 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  interface Props {
+    accept?: string;
+    disabled?: boolean;
+    multiple?: boolean;
+    dragActive?: boolean;
+    onupload?: (files: FileList) => void;
+    ondragover?: (active: boolean) => void;
+  }
 
-  export let accept = '.csv';
-  export let disabled = false;
-  export let multiple = false;
-  export let dragActive = false;
+  let {
+    accept = '.csv',
+    disabled = false,
+    multiple = false,
+    dragActive = false,
+    onupload,
+    ondragover,
+  }: Props = $props();
 
-  const dispatch = createEventDispatcher<{
-    upload: { files: FileList };
-    dragover: boolean;
-  }>();
-
-  let fileInput: HTMLInputElement;
-  let isDragActive = false;
+  let fileInput = $state<HTMLInputElement | null>(null);
+  let isDragActive = $state(false);
 
   function handleFileSelect(event: Event) {
     const target = event.target as HTMLInputElement;
     if (target.files && target.files.length > 0) {
-      dispatch('upload', { files: target.files });
+      onupload?.(target.files);
     }
   }
 
@@ -25,25 +31,25 @@
     event.preventDefault();
     if (!isDragActive) {
       isDragActive = true;
-      dispatch('dragover', true);
+      ondragover?.(true);
     }
   }
 
   function handleDragLeave(event: DragEvent) {
     event.preventDefault();
-    if (!event.currentTarget?.contains(event.relatedTarget as Node)) {
+    if (!(event.currentTarget as HTMLElement)?.contains(event.relatedTarget as Node)) {
       isDragActive = false;
-      dispatch('dragover', false);
+      ondragover?.(false);
     }
   }
 
   function handleDrop(event: DragEvent) {
     event.preventDefault();
     isDragActive = false;
-    dispatch('dragover', false);
+    ondragover?.(false);
 
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-      dispatch('upload', { files: event.dataTransfer.files });
+      onupload?.(event.dataTransfer.files);
     }
   }
 
@@ -61,11 +67,11 @@
     : 'border-evening-sea hover:border-acapulco hover:bg-acapulco border-opacity-30 hover:bg-opacity-5'}
     {disabled ? 'cursor-not-allowed opacity-50' : ''}
   "
-  on:dragover={handleDragOver}
-  on:dragleave={handleDragLeave}
-  on:drop={handleDrop}
-  on:click={openFileDialog}
-  on:keydown={(e) => e.key === 'Enter' && openFileDialog()}
+  ondragover={handleDragOver}
+  ondragleave={handleDragLeave}
+  ondrop={handleDrop}
+  onclick={openFileDialog}
+  onkeydown={(e) => e.key === 'Enter' && openFileDialog()}
   role="button"
   tabindex="0"
 >
@@ -76,7 +82,7 @@
     {multiple}
     {disabled}
     class="sr-only"
-    on:change={handleFileSelect}
+    onchange={handleFileSelect}
     data-testid="file-upload"
   />
 

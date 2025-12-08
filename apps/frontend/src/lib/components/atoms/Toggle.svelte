@@ -1,21 +1,28 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  interface Props {
+    checked?: boolean;
+    disabled?: boolean;
+    label?: string;
+    size?: 'sm' | 'md';
+    onchange?: (checked: boolean) => void;
+  }
 
-  export let checked = false;
-  export let disabled = false;
-  export let label = '';
-  export let size: 'sm' | 'md' = 'md';
-
-  const dispatch = createEventDispatcher<{ change: boolean }>();
+  let {
+    checked = $bindable(false),
+    disabled = false,
+    label = '',
+    size = 'md',
+    onchange,
+  }: Props = $props();
 
   function handleChange() {
     if (!disabled) {
       checked = !checked;
-      dispatch('change', checked);
+      onchange?.(checked);
     }
   }
 
-  const sizeClasses = {
+  const sizeClasses = $derived({
     sm: {
       toggle: 'w-8 h-5',
       thumb: 'w-4 h-4',
@@ -26,7 +33,7 @@
       thumb: 'w-5 h-5',
       translate: checked ? 'translate-x-5' : 'translate-x-0',
     },
-  };
+  });
 </script>
 
 <div class="flex items-center space-x-3">
@@ -40,8 +47,8 @@
       {checked ? 'bg-acapulco' : 'bg-evening-sea/20'}
       {disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
     "
-    on:click={handleChange}
-    on:keydown={(e) => e.key === 'Enter' && handleChange()}
+    onclick={handleChange}
+    onkeydown={(e) => e.key === 'Enter' && handleChange()}
     {disabled}
   >
     <span
@@ -67,11 +74,13 @@
   </button>
 
   {#if label}
-    <label
+    <span
       class="text-evening-sea cursor-pointer text-sm font-medium {disabled ? 'opacity-50' : ''}"
-      on:click={!disabled ? handleChange : null}
+      onclick={!disabled ? handleChange : undefined}
+      role="button"
+      tabindex="-1"
     >
       {label}
-    </label>
+    </span>
   {/if}
 </div>

@@ -100,14 +100,18 @@
   const targetMonthlyExpenses = $derived(customMonthlyExpenses ?? actualMonthlyExpenses);
 
   // Slider bounds
-  const minExpenses = $derived(Math.max(500, Math.round(actualMonthlyExpenses * 0.3 / 100) * 100));
-  const maxExpenses = $derived(Math.max(5000, Math.round(actualMonthlyExpenses * 2 / 100) * 100));
+  const minExpenses = $derived(
+    Math.max(500, Math.round((actualMonthlyExpenses * 0.3) / 100) * 100)
+  );
+  const maxExpenses = $derived(Math.max(5000, Math.round((actualMonthlyExpenses * 2) / 100) * 100));
 
   // Core calculations
   const annualExpenses = $derived(targetMonthlyExpenses * 12);
   const fireMultiplier = $derived(1 / withdrawalRate());
   const fireNumber = $derived(annualExpenses * fireMultiplier);
-  const fireProgress = $derived(fireNumber > 0 ? Math.min((totalInvestments / fireNumber) * 100, 100) : 0);
+  const fireProgress = $derived(
+    fireNumber > 0 ? Math.min((totalInvestments / fireNumber) * 100, 100) : 0
+  );
   const yearsOfRunway = $derived(annualExpenses > 0 ? totalInvestments / annualExpenses : 0);
 
   // Savings for FIRE calculation
@@ -169,7 +173,11 @@
       </div>
     </div>
 
-    <div class="progress-ring" class:achieved={statusLevel() === 'achieved'} class:good={statusLevel() === 'good'}>
+    <div
+      class="progress-ring"
+      class:achieved={statusLevel() === 'achieved'}
+      class:good={statusLevel() === 'good'}
+    >
       <svg viewBox="0 0 36 36">
         <path
           class="ring-bg"
@@ -196,7 +204,9 @@
     <!-- Expenses slider -->
     <div class="control-row">
       <span class="control-label">{$t('dashboard.fire.target_expenses') || 'Gastos'}</span>
-      <span class="control-value">{formatCurrency(targetMonthlyExpenses)}<span class="unit">/mes</span></span>
+      <span class="control-value"
+        >{formatCurrency(targetMonthlyExpenses)}<span class="unit">/mes</span></span
+      >
     </div>
     <input
       type="range"
@@ -236,7 +246,9 @@
         {/if}
       </span>
       <span class="stat-label">
-        {yearsOfRunway >= 1 ? $t('dashboard.fire.years_runway') || 'años autonomía' : $t('dashboard.fire.months') || 'meses'}
+        {yearsOfRunway >= 1
+          ? $t('dashboard.fire.years_runway') || 'años autonomía'
+          : $t('dashboard.fire.months') || 'meses'}
       </span>
     </div>
 
@@ -258,7 +270,7 @@
     <div class="stat-divider"></div>
 
     <div class="stat">
-      <span class="stat-value">{formatCurrency(totalInvestments * withdrawalRate() / 12)}</span>
+      <span class="stat-value">{formatCurrency((totalInvestments * withdrawalRate()) / 12)}</span>
       <span class="stat-label">{$t('dashboard.fire.safe_withdrawal') || 'retiro'}/mes</span>
     </div>
   </div>

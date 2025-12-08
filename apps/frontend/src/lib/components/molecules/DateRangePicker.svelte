@@ -1,27 +1,38 @@
 <script lang="ts">
   import { Calendar, X } from 'lucide-svelte';
-  import { createEventDispatcher } from 'svelte';
   import { t } from '$lib/stores/i18n';
   import { modalKeyboard } from '$lib/actions/modalKeyboard';
 
-  export let startDate: string = '';
-  export let endDate: string = '';
-  export let isOpen: boolean = false;
-
-  const dispatch = createEventDispatcher();
-
-  let tempStartDate = startDate;
-  let tempEndDate = endDate;
-
-  $: if (isOpen) {
-    tempStartDate = startDate;
-    tempEndDate = endDate;
+  interface Props {
+    startDate: string;
+    endDate: string;
+    isOpen: boolean;
+    onapply?: (dates: { startDate: string; endDate: string }) => void;
+    onclose?: () => void;
   }
+
+  let {
+    startDate = '',
+    endDate = '',
+    isOpen = $bindable(false),
+    onapply,
+    onclose,
+  }: Props = $props();
+
+  let tempStartDate = $state(startDate);
+  let tempEndDate = $state(endDate);
+
+  $effect(() => {
+    if (isOpen) {
+      tempStartDate = startDate;
+      tempEndDate = endDate;
+    }
+  });
 
   function handleApply() {
     if (tempStartDate && tempEndDate) {
       if (new Date(tempStartDate) <= new Date(tempEndDate)) {
-        dispatch('apply', { startDate: tempStartDate, endDate: tempEndDate });
+        onapply?.({ startDate: tempStartDate, endDate: tempEndDate });
         isOpen = false;
       }
     }
@@ -31,6 +42,7 @@
     tempStartDate = startDate;
     tempEndDate = endDate;
     isOpen = false;
+    onclose?.();
   }
 
   function handleBackdropClick(event: MouseEvent) {

@@ -5,28 +5,36 @@
   import { t } from '$lib/stores/i18n';
   import Modal from '$lib/components/atoms/Modal.svelte';
 
-  // Props
-  export let isOpen = false;
-  export let categories: Category[] = [];
-  export let onSubmit: (
-    transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>
-  ) => void = () => {};
-  export let onCancel: () => void = () => {};
+  interface Props {
+    isOpen: boolean;
+    categories: Category[];
+    onSubmit: (
+      transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'tags' | 'hash'>
+    ) => void;
+    onCancel: () => void;
+  }
+
+  let {
+    isOpen = false,
+    categories = [],
+    onSubmit = () => {},
+    onCancel = () => {},
+  }: Props = $props();
 
   // Form state
-  let amount = '';
-  let type: 'income' | 'expense' = 'expense';
-  let merchant = '';
-  let description = '';
-  let date = new Date().toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
-  let categoryId = '';
-  let isSubmitting = false;
-  let errors: Record<string, string> = {};
+  let amount = $state('');
+  let type = $state<'income' | 'expense'>('expense');
+  let merchant = $state('');
+  let description = $state('');
+  let date = $state(new Date().toISOString().split('T')[0]);
+  let categoryId = $state('');
+  let isSubmitting = $state(false);
+  let errors = $state<Record<string, string>>({});
 
   // Reset form when modal opens
-  $: if (isOpen) {
-    resetForm();
-  }
+  $effect(() => {
+    if (isOpen) resetForm();
+  });
 
   function resetForm() {
     amount = '';
@@ -123,7 +131,13 @@
   title={$t('transactions.modal.new_transaction')}
   size="sm"
 >
-  <form on:submit|preventDefault={handleSubmit} class="form">
+  <form
+    onsubmit={(e) => {
+      e.preventDefault();
+      handleSubmit();
+    }}
+    class="form"
+  >
     <!-- Amount and Type -->
     <div class="field-group">
       <div class="amount-container">
@@ -147,7 +161,7 @@
             class="type-btn"
             class:expense={type === 'expense'}
             class:income={type === 'income'}
-            on:click={toggleType}
+            onclick={toggleType}
           >
             {type === 'expense'
               ? $t('transactions.modal.expense')
@@ -216,7 +230,7 @@
               class="category-chip"
               class:selected={categoryId === category.id}
               style="--category-color: {category.color}"
-              on:click={() => (categoryId = categoryId === category.id ? '' : category.id)}
+              onclick={() => (categoryId = categoryId === category.id ? '' : category.id)}
             >
               <span class="category-icon">{category.icon}</span>
               <span class="category-name">{category.name}</span>
@@ -231,7 +245,7 @@
               No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar
               mejor tus gastos e ingresos.
             </p>
-            <button type="button" class="create-categories-btn" on:click={navigateToCategories}>
+            <button type="button" class="create-categories-btn" onclick={navigateToCategories}>
               <Plus size={16} />
               Crear categorías
             </button>
@@ -242,7 +256,7 @@
 
     <!-- Submit buttons -->
     <div class="form-actions">
-      <button type="button" class="btn-secondary" on:click={closeModal}>
+      <button type="button" class="btn-secondary" onclick={closeModal}>
         {$t('common.cancel')}
       </button>
       <button type="submit" class="btn-primary" disabled={isSubmitting}>

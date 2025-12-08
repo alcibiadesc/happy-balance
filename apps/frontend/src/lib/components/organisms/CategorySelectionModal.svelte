@@ -4,97 +4,29 @@
   import { goto } from '$app/navigation';
   import type { Transaction, Category } from '$lib/types/transaction';
   import { modalKeyboard } from '$lib/actions/modalKeyboard';
+  import { formatCurrency } from '$lib/stores/currency';
 
-  // Props
-  export let isOpen = false;
-  export let transaction: Transaction | null = null;
-  export let categories: Category[] = [];
-  export let onSelect: (categoryId: string | null) => void = () => {};
-  export let onCancel: () => void = () => {};
-
-  let modalElement: HTMLDivElement;
-  let searchTerm = '';
-  let searchInput: HTMLInputElement;
-
-  // Prevent body scroll when modal is open
-  $: if (isOpen) {
-    preventBodyScroll();
-    // Focus search input when modal opens
-    setTimeout(() => {
-      searchInput?.focus();
-    }, 100);
-  } else {
-    restoreBodyScroll();
-    // Reset search when modal closes
-    searchTerm = '';
+  interface Props {
+    isOpen: boolean;
+    transaction: Transaction | null;
+    categories: Category[];
+    onSelect: (categoryId: string | null) => void;
+    onCancel: () => void;
   }
 
-  function preventBodyScroll() {
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = 'hidden';
-    }
-  }
+  let {
+    isOpen = false,
+    transaction = null,
+    categories = [],
+    onSelect = () => {},
+    onCancel = () => {},
+  }: Props = $props();
 
-  function restoreBodyScroll() {
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = '';
-    }
-  }
-
-  function handleBackdropClick(event: MouseEvent) {
-    if (event.target === modalElement) {
-      closeModal();
-    }
-  }
-
-  function closeModal() {
-    onCancel();
-  }
-
-  function selectCategory(categoryId: string) {
-    onSelect(categoryId);
-  }
-
-  function uncategorizeTransaction() {
-    console.log('🔄 Uncategorize button clicked');
-    onSelect(null); // Pass null instead of empty string
-  }
-
-  // Normalize string for search: remove accents, lowercase, and normalize spaces
-  function normalizeForSearch(text: string): string {
-    return text
-      .normalize('NFD') // Decompose combined characters
-      .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
-      .toLowerCase()
-      .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
-      .trim();
-  }
-
-  // Group categories by type and filter by search term
-  $: isIncomeTransaction = transaction ? transaction.amount > 0 : false;
-  $: filteredCategories = categories.filter(
-    (cat) =>
-      searchTerm === '' || normalizeForSearch(cat.name).includes(normalizeForSearch(searchTerm))
-  );
-  $: groupedCategories = (() => {
-    if (isIncomeTransaction) {
-      return {
-        income: filteredCategories.filter((cat) => cat.type === 'income' || cat.type === 'INCOME'),
-        no_compute: filteredCategories.filter((cat) => cat.type === 'no_compute'),
-      };
-    } else {
-      return {
-        essential: filteredCategories.filter((cat) => cat.type === 'essential'),
-        discretionary: filteredCategories.filter((cat) => cat.type === 'discretionary'),
-        investment: filteredCategories.filter((cat) => cat.type === 'investment'),
-        debt_payment: filteredCategories.filter((cat) => cat.type === 'debt_payment'),
-        no_compute: filteredCategories.filter((cat) => cat.type === 'no_compute'),
-      };
-    }
-  })();
+  let searchTerm = $state('');
+  let searchInput = $state<HTMLInputElement | null>(null);
 
   // Type display names
-  const typeDisplayNames = {
+  const typeDisplayNames: Record<string, string> = {
     essential: 'Gastos Esenciales',
     discretionary: 'Gastos Discrecionales',
     investment: 'Inversiones',
@@ -103,123 +35,134 @@
     income: 'Ingresos',
   };
 
-  function navigateToCategories() {
-    onCancel();
-    goto('/categories');
+  // Derived values
+  const isIncomeTransaction = $derived(transaction ? transaction.amount > 0 : false);
+
+  const filteredCategories = $derived(
+    categories.filter(
+      (cat) =>
+        searchTerm === '' || normalizeForSearch(cat.name).includes(normalizeForSearch(searchTerm))
+    )
+  );
+
+  const groupedCategories = $derived.by(() => {
+    if (isIncomeTransaction) {
+      return {
+        income: filteredCategories.filter((cat) => cat.type === 'income' || cat.type === 'INCOME'),
+        no_compute: filteredCategories.filter((cat) => cat.type === 'no_compute'),
+      };
+    }
+    return {
+      essential: filteredCategories.filter((cat) => cat.type === 'essential'),
+      discretionary: filteredCategories.filter((cat) => cat.type === 'discretionary'),
+      investment: filteredCategories.filter((cat) => cat.type === 'investment'),
+      debt_payment: filteredCategories.filter((cat) => cat.type === 'debt_payment'),
+      no_compute: filteredCategories.filter((cat) => cat.type === 'no_compute'),
+    };
+  });
+
+  // Effects
+  $effect(() => {
+    if (isOpen) {
+      preventBodyScroll();
+      setTimeout(() => searchInput?.focus(), 100);
+    } else {
+      restoreBodyScroll();
+      searchTerm = '';
+    }
+  });
+
+  // Helper functions
+  function preventBodyScroll() {
+    if (typeof document !== 'undefined') document.body.style.overflow = 'hidden';
   }
 
-  onDestroy(() => {
-    restoreBodyScroll();
-  });
+  function restoreBodyScroll() {
+    if (typeof document !== 'undefined') document.body.style.overflow = '';
+  }
+
+  function normalizeForSearch(text: string): string {
+    return text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  onDestroy(() => restoreBodyScroll());
 </script>
 
-<!-- This modal doesn't have a confirm action, only cancel (Escape) -->
-<div use:modalKeyboard={{ onCancel: closeModal, isOpen }}></div>
+<div use:modalKeyboard={{ onCancel, isOpen }}></div>
 
 {#if isOpen && transaction}
   <div
     class="modal-overlay"
-    bind:this={modalElement}
-    on:click={handleBackdropClick}
+    onclick={(e) => e.target === e.currentTarget && onCancel()}
     role="dialog"
     aria-modal="true"
-    aria-labelledby="category-selection-title"
-    data-testid="category-modal"
+    tabindex="-1"
   >
-    <div class="modal-content">
-      <!-- Header with modern design -->
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} role="document">
+      <!-- Header -->
       <div class="modal-header">
         <div class="header-content">
           <div class="title-section">
-            <h2 id="category-selection-title" class="modal-title">Categorizar</h2>
+            <h2 class="modal-title">Categorizar</h2>
             <p class="modal-subtitle">Selecciona una categoría para organizar esta transacción</p>
           </div>
           <div class="transaction-preview">
-            <div class="transaction-info">
-              <div class="merchant-name">{transaction.merchant}</div>
-              <div class="transaction-details">
-                <span class="amount" class:income={transaction.amount > 0}>
-                  {new Intl.NumberFormat('es-ES', {
-                    style: 'currency',
-                    currency: 'EUR',
-                  }).format(Math.abs(transaction.amount))}
-                </span>
-                <span class="separator">•</span>
-                <span class="date">{transaction.time}</span>
-              </div>
+            <div class="merchant-name">{transaction.merchant}</div>
+            <div class="transaction-details">
+              <span class="amount" class:income={transaction.amount > 0}>
+                {formatCurrency(transaction.amount)}
+              </span>
+              <span class="separator">•</span>
+              <span class="date">{transaction.time}</span>
             </div>
           </div>
         </div>
-        <button class="close-btn" on:click={closeModal} aria-label="Cerrar">
-          <X size={18} />
-        </button>
+        <button class="close-btn" onclick={onCancel}><X size={18} /></button>
       </div>
 
-      <!-- Search section -->
+      <!-- Search -->
       <div class="search-section">
-        <div class="search-input-container">
-          <input
-            bind:this={searchInput}
-            bind:value={searchTerm}
-            type="text"
-            placeholder="🔍 Buscar categorías..."
-            class="search-input"
-          />
-        </div>
+        <input
+          bind:this={searchInput}
+          bind:value={searchTerm}
+          type="text"
+          placeholder="🔍 Buscar categorías..."
+          class="search-input"
+        />
       </div>
 
-      <!-- Category sections -->
+      <!-- Categories -->
       <div class="category-content">
-        <!-- Uncategorize option - only show if transaction already has a category -->
-        {#if transaction?.categoryId}
+        {#if transaction.categoryId}
           <div class="uncategorize-section">
-            <button
-              class="uncategorize-btn"
-              on:click={uncategorizeTransaction}
-              data-testid="uncategorize-btn"
-            >
-              <span class="uncategorize-icon">❌</span>
-              <span class="uncategorize-text">Quitar categoría</span>
+            <button class="uncategorize-btn" onclick={() => onSelect(null)}>
+              <span>❌</span>
+              <span>Quitar categoría</span>
             </button>
           </div>
         {/if}
 
         {#if categories.length === 0}
           <div class="empty-categories">
-            <div class="empty-categories-content">
-              <span class="empty-categories-icon">🏷️</span>
-              <p class="empty-categories-text">
-                No tienes categorías configuradas. Las categorías te ayudan a organizar y analizar
-                mejor tus gastos e ingresos.
-              </p>
-              <button class="create-categories-btn" on:click={navigateToCategories}>
-                <Plus size={16} />
-                Crear categorías
-              </button>
-            </div>
+            <span class="empty-icon">🏷️</span>
+            <p>No tienes categorías configuradas.</p>
+            <button
+              class="create-btn"
+              onclick={() => {
+                onCancel();
+                goto('/categories');
+              }}
+            >
+              <Plus size={16} /> Crear categorías
+            </button>
           </div>
-        {:else if isIncomeTransaction}
-          {#each Object.entries(groupedCategories) as [type, categoryList] (type)}
-            {#if categoryList.length > 0}
-              <div class="category-group">
-                <h3 class="group-title">{typeDisplayNames[type]}</h3>
-                <div class="category-list">
-                  {#each categoryList as category (category.id)}
-                    <button
-                      class="category-option {type}-type"
-                      style="background-color: {category.color}20; border-color: {category.color};"
-                      on:click={() => selectCategory(category.id)}
-                    >
-                      <span class="category-icon">{category.icon}</span>
-                      <span class="category-name">{category.name}</span>
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-          {/each}
         {:else}
-          {#each Object.entries(groupedCategories) as [type, categoryList] (type)}
+          {#each Object.entries(groupedCategories) as [type, categoryList]}
             {#if categoryList.length > 0}
               <div class="category-group">
                 <h3 class="group-title">{typeDisplayNames[type]}</h3>
@@ -228,7 +171,7 @@
                     <button
                       class="category-option {type}-type"
                       style="background-color: {category.color}20; border-color: {category.color};"
-                      on:click={() => selectCategory(category.id)}
+                      onclick={() => onSelect(category.id)}
                     >
                       <span class="category-icon">{category.icon}</span>
                       <span class="category-name">{category.name}</span>
@@ -247,33 +190,30 @@
 <style>
   .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1100;
     padding: 1rem;
-    backdrop-filter: blur(4px);
   }
 
   .modal-content {
     background: var(--surface-elevated);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg);
+    border-radius: 1rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     max-width: 500px;
     width: 100%;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  @keyframes modalSlideIn {
+  @keyframes slideIn {
     from {
       opacity: 0;
       transform: translateY(-30px) scale(0.9);
@@ -288,9 +228,8 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    padding: 24px;
+    padding: 1.5rem;
     border-bottom: 1px solid var(--border-color);
-    flex-shrink: 0;
   }
 
   .header-content {
@@ -298,83 +237,68 @@
   }
 
   .title-section {
-    margin-bottom: 12px;
+    margin-bottom: 0.75rem;
   }
 
   .modal-title {
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin: 0 0 4px 0;
-    line-height: 1.3;
+    margin: 0 0 0.25rem;
   }
 
   .modal-subtitle {
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--text-secondary);
     margin: 0;
-    font-weight: 400;
-    line-height: 1.4;
   }
 
   .transaction-preview {
     background: var(--surface-muted);
-    border-radius: var(--radius-md);
-    padding: 12px 14px;
-  }
-
-  .transaction-info {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
   }
 
   .merchant-name {
-    font-size: 15px;
-    color: var(--text-primary);
+    font-size: 0.9375rem;
     font-weight: 600;
-    line-height: 1.3;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
   }
 
   .transaction-details {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13px;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
   }
 
   .amount {
     font-weight: 700;
-    color: var(--accent);
-    font-size: 14px;
+    color: var(--froly);
   }
 
   .amount.income {
-    color: var(--success);
+    color: var(--acapulco);
   }
 
   .separator {
-    color: var(--gray-300);
-    font-weight: 400;
+    color: var(--text-muted);
   }
 
   .date {
     color: var(--text-secondary);
-    font-weight: 500;
   }
 
   .close-btn {
-    padding: 8px;
+    padding: 0.5rem;
     border: none;
     background: none;
     color: var(--text-secondary);
     cursor: pointer;
-    border-radius: var(--radius-md);
-    transition: var(--transition-theme);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 16px;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    margin-left: 1rem;
   }
 
   .close-btn:hover {
@@ -383,125 +307,87 @@
   }
 
   .search-section {
-    padding: 16px 24px;
+    padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
-    flex-shrink: 0;
-  }
-
-  .search-input-container {
-    display: flex;
-    align-items: center;
   }
 
   .search-input {
     width: 100%;
-    padding: 12px 16px;
+    padding: 0.75rem 1rem;
     border: 2px solid var(--border-color);
-    border-radius: var(--radius-md);
-    font-size: 14px;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
     color: var(--text-primary);
     background: var(--surface-elevated);
-    transition: var(--transition-theme);
-    outline: none;
+    transition: all 0.2s;
   }
 
   .search-input:focus {
+    outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
-  }
-
-  .search-input::placeholder {
-    color: var(--text-muted);
   }
 
   .category-content {
-    padding: 8px 24px 32px;
+    padding: 0.5rem 1.5rem 1.5rem;
     flex: 1;
-    min-height: 0;
     overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
   }
 
   .uncategorize-section {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-color);
   }
 
   .uncategorize-btn {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 0.75rem;
     width: 100%;
-    padding: 16px;
-    border: 2px dashed var(--accent);
-    border-radius: var(--radius-lg);
-    background: var(--accent-light);
-    color: var(--accent);
+    padding: 1rem;
+    border: 2px dashed var(--froly);
+    border-radius: 0.75rem;
+    background: rgba(245, 121, 108, 0.1);
+    color: var(--froly);
     font-weight: 600;
-    font-size: 14px;
+    font-size: 0.875rem;
     cursor: pointer;
-    transition: var(--transition-theme);
-    text-align: left;
+    transition: all 0.2s;
   }
 
   .uncategorize-btn:hover {
-    background: var(--accent-light);
-    border-color: var(--accent-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(245, 121, 108, 0.15);
-  }
-
-  .uncategorize-btn:active {
-    transform: scale(0.98);
-  }
-
-  .uncategorize-icon {
-    font-size: 18px;
-    line-height: 1;
-  }
-
-  .uncategorize-text {
-    font-size: 14px;
-    font-weight: 600;
   }
 
   .category-group {
-    margin-bottom: 24px;
-  }
-
-  .category-group:last-child {
-    margin-bottom: 0;
+    margin-bottom: 1.5rem;
   }
 
   .group-title {
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin: 0 0 12px 0;
-    padding-left: 2px;
+    margin: 0 0 0.75rem;
   }
 
   .category-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.25rem;
   }
 
   .category-option {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
     border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: 0.5rem;
     background: var(--surface-elevated);
     cursor: pointer;
-    transition: var(--transition-theme);
-    position: relative;
+    transition: all 0.2s;
     text-align: left;
     width: 100%;
   }
@@ -511,186 +397,91 @@
     opacity: 0.9;
   }
 
-  .category-option:active {
-    transform: scale(0.98);
-  }
-
-  /* Type-specific background colors using app's palette */
-  .essential-type {
-    background: var(--warning-light);
-    border-color: var(--warning);
-  }
-
-  .essential-type:hover {
-    background: var(--warning-light);
-    border-color: var(--warning-hover);
-    box-shadow: 0 8px 25px rgba(254, 205, 44, 0.15);
-  }
-
-  .discretionary-type {
-    background: var(--accent-light);
-    border-color: var(--accent);
-  }
-
-  .discretionary-type:hover {
-    background: var(--accent-light);
-    border-color: var(--accent-hover);
-    box-shadow: 0 8px 25px rgba(245, 121, 108, 0.15);
-  }
-
-  .investment-type {
-    background: var(--success-light);
-    border-color: var(--success);
-  }
-
-  .investment-type:hover {
-    background: var(--success-light);
-    border-color: var(--success-hover);
-    box-shadow: 0 8px 25px rgba(122, 186, 165, 0.15);
-  }
-
-  .debt_payment-type {
-    background: var(--accent-light);
-    border-color: var(--accent);
-  }
-
-  .debt_payment-type:hover {
-    background: var(--accent-light);
-    border-color: var(--accent-hover);
-    box-shadow: 0 8px 25px rgba(245, 121, 108, 0.15);
-  }
-
-  .income-type {
-    background: var(--success-light);
-    border-color: var(--success);
-  }
-
-  .income-type:hover {
-    background: var(--success-light);
-    border-color: var(--success-hover);
-    box-shadow: 0 8px 25px rgba(122, 186, 165, 0.15);
-  }
-
-  .no_compute-type {
-    background: var(--surface-muted);
-    border-color: var(--gray-300);
-  }
-
-  .no_compute-type:hover {
-    background: var(--surface-muted);
-    border-color: var(--gray-400);
-    box-shadow: 0 8px 25px rgba(120, 113, 108, 0.08);
-  }
-
   .category-icon {
-    font-size: 20px;
-    line-height: 1;
-    flex-shrink: 0;
+    font-size: 1.25rem;
   }
 
   .category-name {
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-primary);
-    line-height: 1.3;
     flex: 1;
   }
 
   .empty-categories {
-    padding: 2rem 1.5rem;
+    padding: 2rem;
     text-align: center;
     background: var(--surface-muted);
-    border-radius: var(--radius-lg);
-    margin: 0 8px;
+    border-radius: 0.75rem;
   }
 
-  .empty-categories-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .empty-categories-icon {
+  .empty-icon {
     font-size: 2.5rem;
+    display: block;
+    margin-bottom: 1rem;
     opacity: 0.7;
   }
 
-  .empty-categories-text {
-    font-size: 14px;
+  .empty-categories p {
+    font-size: 0.875rem;
     color: var(--text-secondary);
-    line-height: 1.5;
-    margin: 0;
-    max-width: 300px;
+    margin: 0 0 1rem;
   }
 
-  .create-categories-btn {
-    padding: 12px 20px;
-    border: 2px solid var(--success);
-    border-radius: var(--radius-lg);
-    background: var(--success);
-    color: var(--surface-elevated);
+  .create-btn {
+    padding: 0.75rem 1.25rem;
+    background: var(--acapulco);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 0.875rem;
     cursor: pointer;
-    transition: var(--transition-theme);
-    outline: none;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
+    transition: all 0.2s;
   }
 
-  .create-categories-btn:hover {
-    background: var(--success-hover);
-    border-color: var(--success-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(122, 186, 165, 0.25);
+  .create-btn:hover {
+    opacity: 0.9;
   }
 
-  /* Responsive design */
+  /* Type-specific colors */
+  .essential-type {
+    background: rgba(254, 205, 44, 0.1);
+    border-color: #fecd2c;
+  }
+  .discretionary-type {
+    background: rgba(245, 121, 108, 0.1);
+    border-color: #f5796c;
+  }
+  .investment-type,
+  .income-type {
+    background: rgba(122, 186, 165, 0.1);
+    border-color: #7abaa5;
+  }
+  .debt_payment-type {
+    background: rgba(245, 121, 108, 0.1);
+    border-color: #f5796c;
+  }
+  .no_compute-type {
+    background: var(--surface-muted);
+    border-color: var(--border-color);
+  }
+
   @media (max-width: 480px) {
-    .modal-overlay {
-      padding: 16px;
-    }
-
-    .modal-content {
-      max-width: none;
-      width: 100%;
-    }
-
     .modal-header {
-      padding: 24px 20px 16px;
+      padding: 1rem;
     }
-
-    .category-content {
-      padding: 16px 20px 24px;
-    }
-
     .search-section {
-      padding: 16px 20px;
+      padding: 0.75rem 1rem;
     }
-
-    .search-input {
-      padding: 12px 16px;
-      font-size: 14px;
+    .category-content {
+      padding: 0.5rem 1rem 1rem;
     }
-
-    .category-option {
-      padding: 14px 14px;
-      gap: 14px;
-    }
-
-    .category-icon {
-      font-size: 20px;
-    }
-
-    .category-name {
-      font-size: 14px;
-    }
-
-    .group-title {
-      padding: 14px 16px 10px;
-      font-size: 12px;
+    .modal-title {
+      font-size: 1rem;
     }
   }
 
@@ -698,103 +489,16 @@
     .modal-overlay {
       padding: 0.5rem;
     }
-
     .modal-content {
-      max-height: min(90vh, calc(100dvh - 1rem));
-      border-radius: var(--radius-lg);
-    }
-
-    .modal-header {
-      padding: 12px 14px;
-    }
-
-    .modal-title {
-      font-size: 16px;
-    }
-
-    .modal-subtitle {
-      font-size: 12px;
-    }
-
-    .transaction-preview {
-      padding: 10px 12px;
-    }
-
-    .merchant-name {
-      font-size: 13px;
-    }
-
-    .transaction-details {
-      font-size: 11px;
-    }
-
-    .amount {
-      font-size: 12px;
-    }
-
-    .category-content {
-      padding: 10px 14px 16px;
-    }
-
-    .search-section {
-      padding: 12px 14px;
-    }
-
-    .search-input {
-      padding: 10px 12px;
-      font-size: 13px;
-    }
-
-    .group-title {
-      font-size: 11px;
-      margin-bottom: 8px;
-      padding-left: 0;
-    }
-
-    .category-option {
-      padding: 10px 12px;
-      gap: 10px;
-    }
-
-    .category-icon {
-      font-size: 18px;
-    }
-
-    .category-name {
-      font-size: 13px;
-    }
-
-    .uncategorize-btn {
-      padding: 12px 14px;
-      gap: 10px;
-      font-size: 13px;
-    }
-
-    .uncategorize-icon {
-      font-size: 16px;
-    }
-
-    .close-btn {
-      padding: 6px;
-      margin-left: 8px;
+      max-height: 90vh;
     }
   }
 
-  /* Scrollbar styling */
   .category-content::-webkit-scrollbar {
     width: 6px;
   }
-
-  .category-content::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
   .category-content::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 3px;
-  }
-
-  .category-content::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
   }
 </style>

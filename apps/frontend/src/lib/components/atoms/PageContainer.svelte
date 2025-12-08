@@ -1,6 +1,8 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   interface Props {
-    children: any;
+    children: Snippet;
     /** Maximum width variant */
     size?: 'default' | 'narrow' | 'wide';
   }

@@ -1,6 +1,13 @@
 <script lang="ts">
-  export let variant: 'default' | 'success' | 'warning' | 'danger' | 'info' = 'default';
-  export let size: 'sm' | 'md' = 'md';
+  import type { Snippet } from 'svelte';
+
+  interface Props {
+    variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
+    size?: 'sm' | 'md';
+    children?: Snippet;
+  }
+
+  const { variant = 'default', size = 'md', children }: Props = $props();
 
   const sizeClasses = {
     sm: 'px-2 py-1 text-xs',
@@ -21,5 +28,5 @@
     variant
   ]}"
 >
-  <slot />
+  {@render children?.()}
 </span>

@@ -62,7 +62,7 @@
     <p>Hello <strong>{username}</strong>, you must change your temporary password to continue.</p>
   </div>
 
-  <form on:submit={handleSubmit} class="form">
+  <form onsubmit={handleSubmit} class="form">
     {#if error}
       <div class="error-message" in:fly={{ y: -10, duration: 200 }}>
         {error}

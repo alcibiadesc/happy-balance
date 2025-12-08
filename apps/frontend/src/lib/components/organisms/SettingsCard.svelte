@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { ComponentType } from 'svelte';
+  import type { ComponentType, Snippet } from 'svelte';
 
   interface Props {
     title: string;
     icon: ComponentType;
     iconClass?: string;
-    children?: any;
+    children?: Snippet;
   }
 
   const { title, icon: Icon, iconClass = '', children }: Props = $props();

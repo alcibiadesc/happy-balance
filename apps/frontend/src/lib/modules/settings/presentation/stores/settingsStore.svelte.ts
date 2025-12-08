@@ -7,14 +7,67 @@ import { currentCurrency, setCurrency } from '$lib/stores/currency';
 import { setTheme, effectiveTheme } from '$lib/stores/theme';
 import { userPreferences } from '$lib/stores/user-preferences';
 import { get } from 'svelte/store';
-import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
+import { authFetch, TOAST_DURATION } from '$lib/utils/authFetch';
 import { browser } from '$app/environment';
 
-/**
- * Complete export format including:
- * - Backend data (transactions, categories, investments, history)
- * - Frontend settings (dashboard config, sidebar config, user preferences)
- */
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Transaction {
+  id: string;
+  date: string;
+  amount: number;
+  merchant: string;
+  description?: string;
+  categoryId?: string;
+  hash?: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+  type: string;
+}
+
+export interface Investment {
+  id: string;
+  name: string;
+  ticker?: string;
+  currentValue: number;
+  totalInvested: number;
+}
+
+export interface InvestmentHistoryEntry {
+  id: string;
+  investmentId: string;
+  date: string;
+  value: number;
+}
+
+export interface ExportSummary {
+  totalTransactions: number;
+  totalCategories: number;
+  totalInvestments: number;
+  totalHistoryEntries: number;
+  dateRange: {
+    from: string | null;
+    to: string | null;
+  };
+}
+
+export interface FrontendSettings {
+  dashboardConfig: Record<string, unknown> | null;
+  sidebarConfig: Record<string, unknown> | null;
+  userPreferences: {
+    theme?: ThemeType;
+    language?: string;
+    currency?: string;
+  } | null;
+}
+
 export interface CompleteExportData {
   exportDate: string;
   version: string;
@@ -23,45 +76,28 @@ export interface CompleteExportData {
     exportedAt: string;
   };
   data: {
-    transactions: any[];
-    categories: any[];
-    investments: any[];
-    investmentHistory: any[];
-    summary: {
-      totalTransactions: number;
-      totalCategories: number;
-      totalInvestments: number;
-      totalHistoryEntries: number;
-      dateRange: {
-        from: string | null;
-        to: string | null;
-      };
-    };
+    transactions: Transaction[];
+    categories: Category[];
+    investments: Investment[];
+    investmentHistory: InvestmentHistoryEntry[];
+    summary: ExportSummary;
   };
-  frontendSettings: {
-    dashboardConfig: any;
-    sidebarConfig: any;
-    userPreferences: any;
-  };
+  frontendSettings: FrontendSettings;
 }
 
 export interface ImportData {
   // New complete format
   data?: {
-    transactions?: any[];
-    categories?: any[];
-    investments?: any[];
-    investmentHistory?: any[];
+    transactions?: Transaction[];
+    categories?: Category[];
+    investments?: Investment[];
+    investmentHistory?: InvestmentHistoryEntry[];
   };
-  frontendSettings?: {
-    dashboardConfig?: any;
-    sidebarConfig?: any;
-    userPreferences?: any;
-  };
+  frontendSettings?: FrontendSettings;
   // Legacy format compatibility
-  transactions?: any[];
-  transactionHashes?: any[];
-  categories?: any[];
+  transactions?: Transaction[];
+  transactionHashes?: string[];
+  categories?: Category[];
   settings?: {
     currency?: string;
     language?: string;
@@ -69,21 +105,13 @@ export interface ImportData {
   };
 }
 
+export type ImportMode = 'merge' | 'replace';
+
+// ============================================================================
+// Store Factory
+// ============================================================================
+
 export function createSettingsStore(apiBase: string) {
-  // Helper function to create authenticated headers
-  function getAuthHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    const token = authStore.getAccessToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
-  }
-
   // Store values
   let currentTheme = $state(get(effectiveTheme));
   let currentLangCode = $state(get(currentLanguage));
@@ -107,7 +135,7 @@ export function createSettingsStore(apiBase: string) {
   let showDeleteAllModal = $state(false);
   let showResetModal = $state(false);
   let pendingImportData = $state<ImportData | null>(null);
-  let importMode = $state<'merge' | 'replace'>('merge');
+  let importMode = $state<ImportMode>('merge');
 
   // Subscribe to store changes
   effectiveTheme.subscribe((value) => (currentTheme = value));
@@ -119,31 +147,43 @@ export function createSettingsStore(apiBase: string) {
   const availableLanguages = $derived(Language.getAvailable());
   const currentLang = $derived(Language.fromCode(currentLangCode));
 
-  // Theme operations
-  async function toggleTheme() {
+  // ============================================================================
+  // Theme Operations
+  // ============================================================================
+
+  async function toggleTheme(): Promise<void> {
     const newTheme = isDark ? 'light' : 'dark';
     setTheme(newTheme);
     await userPreferences.updateTheme(newTheme);
     settings = settings.setTheme(Theme.fromString(newTheme));
   }
 
-  // Language operations
-  async function changeLanguage(code: string) {
+  // ============================================================================
+  // Language Operations
+  // ============================================================================
+
+  async function changeLanguage(code: string): Promise<void> {
     setLanguage(code);
     await userPreferences.updateLanguage(code);
     settings = settings.setLanguage(Language.fromCode(code));
   }
 
-  // Currency operations
-  async function changeCurrency(code: string) {
+  // ============================================================================
+  // Currency Operations
+  // ============================================================================
+
+  async function changeCurrency(code: string): Promise<void> {
     setCurrency(code);
     await userPreferences.updateCurrency(code);
     currentCurrencyCode = code;
     settings = settings.setCurrency(code);
   }
 
-  // Get frontend settings from localStorage
-  function getFrontendSettings() {
+  // ============================================================================
+  // Frontend Settings
+  // ============================================================================
+
+  function getFrontendSettings(): FrontendSettings | null {
     if (!browser) return null;
 
     return {
@@ -153,16 +193,34 @@ export function createSettingsStore(apiBase: string) {
     };
   }
 
-  // Export operations - now fetches from API and includes frontend settings
-  async function exportData() {
+  function applyFrontendSettings(frontendSettings: FrontendSettings | undefined): void {
+    if (!browser || !frontendSettings) return;
+
+    if (frontendSettings.dashboardConfig) {
+      localStorage.setItem('dashboard-config', JSON.stringify(frontendSettings.dashboardConfig));
+    }
+    if (frontendSettings.sidebarConfig) {
+      localStorage.setItem('sidebar-config', JSON.stringify(frontendSettings.sidebarConfig));
+    }
+    if (frontendSettings.userPreferences) {
+      localStorage.setItem('user-preferences', JSON.stringify(frontendSettings.userPreferences));
+      const prefs = frontendSettings.userPreferences;
+      if (prefs.theme) setTheme(prefs.theme);
+      if (prefs.language) setLanguage(prefs.language);
+      if (prefs.currency) setCurrency(prefs.currency);
+    }
+  }
+
+  // ============================================================================
+  // Export Operations
+  // ============================================================================
+
+  async function exportData(): Promise<void> {
     importing = true;
     importError = '';
 
     try {
-      // Fetch backend data
-      const response = await fetch(`${apiBase}/export/all`, {
-        headers: getAuthHeaders(),
-      });
+      const response = await authFetch(`${apiBase}/export/all`);
 
       if (!response.ok) {
         throw new Error('Failed to export data from server');
@@ -174,7 +232,6 @@ export function createSettingsStore(apiBase: string) {
         throw new Error(result.error || 'Export failed');
       }
 
-      // Merge backend data with frontend settings
       const completeExport: CompleteExportData = {
         ...result.data,
         frontendSettings: getFrontendSettings() || {
@@ -197,13 +254,7 @@ export function createSettingsStore(apiBase: string) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      // Show success feedback
-      importStatus = get(t)('settings.export_success');
-      importSuccess = true;
-      setTimeout(() => {
-        importStatus = '';
-        importSuccess = false;
-      }, 3000);
+      showSuccessMessage(get(t)('settings.export_success'));
     } catch (error) {
       console.error('Export error:', error);
       importError =
@@ -213,30 +264,30 @@ export function createSettingsStore(apiBase: string) {
     }
   }
 
-  // Import operations
-  async function prepareImport(data: ImportData) {
+  // ============================================================================
+  // Import Operations
+  // ============================================================================
+
+  function prepareImport(data: ImportData): void {
     pendingImportData = data;
     showImportModal = true;
   }
 
-  async function confirmImport() {
+  async function confirmImport(): Promise<void> {
     if (!pendingImportData) return;
 
-    // Capture data before it gets nulled in finally
     const dataToImport = pendingImportData;
     const isNewFormat = !!dataToImport.data;
-    const hasFrontendSettings = !!(dataToImport as any).frontendSettings;
+    const hasFrontendSettings = !!dataToImport.frontendSettings;
 
     importing = true;
     try {
-      // If replace mode, delete all data first
       if (importMode === 'replace') {
         await deleteAllDataSilent();
       }
 
-      const _result = await importData(dataToImport);
+      await importDataToBackend(dataToImport);
 
-      // Calculate count based on format
       const count = isNewFormat
         ? (dataToImport.data?.transactions?.length || 0) +
           (dataToImport.data?.categories?.length || 0) +
@@ -250,7 +301,6 @@ export function createSettingsStore(apiBase: string) {
       setTimeout(() => {
         importStatus = '';
         importSuccess = false;
-        // Reload to apply changes if frontend settings were imported
         if (isNewFormat && hasFrontendSettings) {
           window.location.reload();
         }
@@ -266,127 +316,78 @@ export function createSettingsStore(apiBase: string) {
     }
   }
 
-  // Apply frontend settings from import
-  function applyFrontendSettings(frontendSettings: ImportData['frontendSettings']) {
-    if (!browser || !frontendSettings) return;
-
-    if (frontendSettings.dashboardConfig) {
-      localStorage.setItem('dashboard-config', JSON.stringify(frontendSettings.dashboardConfig));
-    }
-    if (frontendSettings.sidebarConfig) {
-      localStorage.setItem('sidebar-config', JSON.stringify(frontendSettings.sidebarConfig));
-    }
-    if (frontendSettings.userPreferences) {
-      localStorage.setItem('user-preferences', JSON.stringify(frontendSettings.userPreferences));
-      // Apply user preferences immediately
-      const prefs = frontendSettings.userPreferences;
-      if (prefs.theme) {
-        setTheme(prefs.theme as ThemeType);
-      }
-      if (prefs.language) {
-        setLanguage(prefs.language);
-      }
-      if (prefs.currency) {
-        setCurrency(prefs.currency);
-      }
-    }
-  }
-
-  async function importData(data: ImportData) {
-    // Detect format: new complete format or legacy format
+  async function importDataToBackend(data: ImportData): Promise<void> {
     const isNewFormat = !!data.data;
 
     if (isNewFormat) {
-      // New complete format - use API endpoint
-      try {
-        const response = await fetch(`${apiBase}/export/import-all`, {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify(data),
-        });
+      const response = await authFetch(`${apiBase}/export/import-all`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Import failed');
-        }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Import failed');
+      }
 
-        const result = await response.json();
-        console.log('Import result:', result);
-
-        // Apply frontend settings after backend import
-        if (data.frontendSettings) {
-          applyFrontendSettings(data.frontendSettings);
-        }
-
-        return result;
-      } catch (error) {
-        console.error('API import error:', error);
-        throw error;
+      if (data.frontendSettings) {
+        applyFrontendSettings(data.frontendSettings);
       }
     } else {
       // Legacy format - local storage based import
-      // Import transactions
-      if (data.transactions && Array.isArray(data.transactions)) {
-        const existingTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-        const existingHashes = JSON.parse(localStorage.getItem('transaction-hashes') || '[]');
+      await importLegacyData(data);
+    }
+  }
 
-        const newTransactions = data.transactions.filter((t: any) => {
-          const hash = t.hash || `${t.date}_${t.amount}_${t.merchant}`;
-          return !existingHashes.includes(hash);
-        });
+  async function importLegacyData(data: ImportData): Promise<void> {
+    if (data.transactions && Array.isArray(data.transactions)) {
+      const existingTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+      const existingHashes = JSON.parse(localStorage.getItem('transaction-hashes') || '[]');
 
-        const mergedTransactions = [...existingTransactions, ...newTransactions];
-        const mergedHashes = [
-          ...existingHashes,
-          ...newTransactions.map((t: any) => t.hash || `${t.date}_${t.amount}_${t.merchant}`),
-        ];
+      const newTransactions = data.transactions.filter((t) => {
+        const hash = t.hash || `${t.date}_${t.amount}_${t.merchant}`;
+        return !existingHashes.includes(hash);
+      });
 
-        localStorage.setItem('transactions', JSON.stringify(mergedTransactions));
-        localStorage.setItem('transaction-hashes', JSON.stringify(mergedHashes));
-      }
+      const mergedTransactions = [...existingTransactions, ...newTransactions];
+      const mergedHashes = [
+        ...existingHashes,
+        ...newTransactions.map((t) => t.hash || `${t.date}_${t.amount}_${t.merchant}`),
+      ];
 
-      // Import categories
-      if (data.categories && Array.isArray(data.categories)) {
-        const existingCategories = JSON.parse(localStorage.getItem('categories') || '[]');
-        const mergedCategories = [...existingCategories, ...data.categories];
-        localStorage.setItem('categories', JSON.stringify(mergedCategories));
-      }
+      localStorage.setItem('transactions', JSON.stringify(mergedTransactions));
+      localStorage.setItem('transaction-hashes', JSON.stringify(mergedHashes));
+    }
 
-      // Import settings
-      if (data.settings) {
-        if (data.settings.currency) {
-          await changeCurrency(data.settings.currency);
-        }
-        if (data.settings.language) {
-          await changeLanguage(data.settings.language);
-        }
-        if (data.settings.theme) {
-          setTheme(data.settings.theme as ThemeType);
-          await userPreferences.updateTheme(data.settings.theme as ThemeType);
-        }
+    if (data.categories && Array.isArray(data.categories)) {
+      const existingCategories = JSON.parse(localStorage.getItem('categories') || '[]');
+      const mergedCategories = [...existingCategories, ...data.categories];
+      localStorage.setItem('categories', JSON.stringify(mergedCategories));
+    }
+
+    if (data.settings) {
+      if (data.settings.currency) await changeCurrency(data.settings.currency);
+      if (data.settings.language) await changeLanguage(data.settings.language);
+      if (data.settings.theme) {
+        setTheme(data.settings.theme as ThemeType);
+        await userPreferences.updateTheme(data.settings.theme as ThemeType);
       }
     }
   }
 
-  // Delete operations
-  async function deleteAllData() {
+  // ============================================================================
+  // Delete Operations
+  // ============================================================================
+
+  function deleteAllData(): void {
     showDeleteAllModal = true;
   }
 
-  // Silent delete for replace mode import
-  async function deleteAllDataSilent() {
+  async function deleteAllDataSilent(): Promise<void> {
     try {
-      await fetch(`${apiBase}/transactions`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      await authFetch(`${apiBase}/transactions`, { method: 'DELETE' });
+      await authFetch(`${apiBase}/investments`, { method: 'DELETE' });
 
-      await fetch(`${apiBase}/investments`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-
-      // Clear localStorage
       ['transactions', 'transaction-hashes', 'categories'].forEach((key) => {
         localStorage.removeItem(key);
       });
@@ -395,54 +396,24 @@ export function createSettingsStore(apiBase: string) {
     }
   }
 
-  async function confirmDeleteAll() {
+  async function confirmDeleteAll(): Promise<void> {
     try {
-      // Delete from database first
-      try {
-        // Delete all transactions for the authenticated user
-        const transactionsResponse = await fetch(`${apiBase}/transactions`, {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        });
-
-        if (!transactionsResponse.ok) {
-          console.warn('Failed to delete transactions from database');
-        }
-
-        // Delete all investments for the authenticated user
-        const investmentsResponse = await fetch(`${apiBase}/investments`, {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        });
-
-        if (!investmentsResponse.ok) {
-          console.warn('Failed to delete investments from database');
-        }
-
-        // Note: Categories are user-specific and stored locally
-        // They will be reset when localStorage is cleared below
-      } catch (apiError) {
-        console.warn('API delete operation failed, continuing with local cleanup:', apiError);
+      const transactionsResponse = await authFetch(`${apiBase}/transactions`, { method: 'DELETE' });
+      if (!transactionsResponse.ok) {
+        console.warn('Failed to delete transactions from database');
       }
 
-      // Clear localStorage
+      const investmentsResponse = await authFetch(`${apiBase}/investments`, { method: 'DELETE' });
+      if (!investmentsResponse.ok) {
+        console.warn('Failed to delete investments from database');
+      }
+
       const keysToDelete = ['transactions', 'transaction-hashes', 'categories', 'user-preferences'];
+      keysToDelete.forEach((key) => localStorage.removeItem(key));
 
-      keysToDelete.forEach((key) => {
-        localStorage.removeItem(key);
-      });
-
-      // Reset to defaults
       settings = Settings.default();
 
-      importStatus = get(t)('settings.delete_success');
-      importSuccess = true;
-
-      setTimeout(() => {
-        importStatus = '';
-        importSuccess = false;
-        window.location.reload();
-      }, 2000);
+      showSuccessMessage(get(t)('settings.delete_success'), true);
     } catch (error) {
       console.error('Error deleting data:', error);
       importError = 'Failed to delete all data';
@@ -451,43 +422,31 @@ export function createSettingsStore(apiBase: string) {
     }
   }
 
-  // Reset operations
-  async function resetData() {
+  // ============================================================================
+  // Reset Operations
+  // ============================================================================
+
+  function resetData(): void {
     showResetModal = true;
   }
 
-  async function confirmReset() {
+  async function confirmReset(): Promise<void> {
     try {
-      // Reset to default categories via seed endpoint
-      const seedResponse = await fetch(`${apiBase}/seed`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
+      const seedResponse = await authFetch(`${apiBase}/seed`, { method: 'POST' });
 
       if (!seedResponse.ok) {
         const errorData = await seedResponse.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(errorData.error || 'Failed to reset data');
       }
 
-      const result = await seedResponse.json();
-      console.log('Reset successful:', result);
+      ['categories', 'user-preferences', 'transactions', 'transaction-hashes'].forEach((key) => {
+        localStorage.removeItem(key);
+      });
 
-      // Clear local storage to ensure fresh state
-      localStorage.removeItem('categories');
-      localStorage.removeItem('user-preferences');
-      localStorage.removeItem('transactions');
-      localStorage.removeItem('transaction-hashes');
-
-      // Show success message
-      importStatus = get(t)('settings.reset_success') || 'Data reset to defaults successfully';
-      importSuccess = true;
-
-      // Reload after a short delay
-      setTimeout(() => {
-        importStatus = '';
-        importSuccess = false;
-        window.location.reload();
-      }, 2000);
+      showSuccessMessage(
+        get(t)('settings.reset_success') || 'Data reset to defaults successfully',
+        true
+      );
     } catch (error) {
       console.error('Error resetting data:', error);
       importError = error instanceof Error ? error.message : 'Failed to reset data';
@@ -497,20 +456,21 @@ export function createSettingsStore(apiBase: string) {
     }
   }
 
-  // File handling
-  function handleFileImport(event: Event) {
+  // ============================================================================
+  // File Handling
+  // ============================================================================
+
+  function handleFileImport(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
     if (!file) return;
 
-    // Reset states
     importError = '';
     importStatus = '';
     importSuccess = false;
     importing = true;
 
-    // Validate file type
     if (!file.name.toLowerCase().endsWith('.json')) {
       importError = get(t)('settings.file_type_error');
       importing = false;
@@ -520,7 +480,7 @@ export function createSettingsStore(apiBase: string) {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string);
+        const data = JSON.parse(e.target?.result as string) as ImportData;
         prepareImport(data);
       } catch (error) {
         console.error('Parse error:', error);
@@ -539,8 +499,30 @@ export function createSettingsStore(apiBase: string) {
     reader.readAsText(file);
   }
 
+  // ============================================================================
+  // Helpers
+  // ============================================================================
+
+  function showSuccessMessage(message: string, reload = false): void {
+    importStatus = message;
+    importSuccess = true;
+
+    setTimeout(
+      () => {
+        importStatus = '';
+        importSuccess = false;
+        if (reload) window.location.reload();
+      },
+      reload ? 2000 : TOAST_DURATION
+    );
+  }
+
+  // ============================================================================
+  // Public API
+  // ============================================================================
+
   return {
-    // State
+    // State (read-only)
     get settings() {
       return settings;
     },
@@ -591,7 +573,7 @@ export function createSettingsStore(apiBase: string) {
     get importMode() {
       return importMode;
     },
-    set importMode(value: 'merge' | 'replace') {
+    set importMode(value: ImportMode) {
       importMode = value;
     },
 

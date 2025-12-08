@@ -2,74 +2,70 @@
   import { X, Check, Calendar, Sparkles } from 'lucide-svelte';
   import type { Transaction, Category } from '$lib/types/transaction';
   import { modalKeyboard } from '$lib/actions/modalKeyboard';
+  import { formatCurrency } from '$lib/stores/currency';
 
-  // Props
-  export let isOpen = false;
-  export let transaction: Transaction | null = null;
-  export let selectedCategory: Category | null = null;
-  export let matchingTransactions: Transaction[] = [];
-  export let suggestions: Array<{
-    categoryId: string;
-    confidence: number;
-    reason: string;
-    potentialMatches: number;
-  }> = [];
-  export let onConfirm: (
-    scope: 'single' | 'pattern' | 'all',
-    applyToFuture: boolean,
-    selectedTransactionIds?: string[]
-  ) => void = () => {};
-  export let onCancel: () => void = () => {};
-
-  // State
-  let applyToFuture = true; // Default to true for smart tagging
-  let selectedTransactionIds = new Set<string>();
-
-  $: hasMatches = matchingTransactions.length > 0;
-
-  // Reset selected transactions when modal opens or matching transactions change
-  $: if (isOpen) {
-    selectedTransactionIds = new Set(matchingTransactions.map((t) => t.id));
-    applyToFuture = true; // Reset to true on open
+  interface Props {
+    isOpen: boolean;
+    transaction: Transaction | null;
+    selectedCategory: Category | null;
+    matchingTransactions: Transaction[];
+    onConfirm: (
+      scope: 'single' | 'pattern' | 'all',
+      applyToFuture: boolean,
+      selectedTransactionIds?: string[]
+    ) => void;
+    onCancel: () => void;
   }
 
+  let {
+    isOpen = false,
+    transaction = null,
+    selectedCategory = null,
+    matchingTransactions = [],
+    onConfirm = () => {},
+    onCancel = () => {},
+  }: Props = $props();
+
+  // State
+  let applyToFuture = $state(true);
+  let selectedTransactionIds = $state(new Set<string>());
+
+  // Derived values
+  const hasMatches = $derived(matchingTransactions.length > 0);
+  const selectedCount = $derived(selectedTransactionIds.size + 1);
+  const totalSelectedAmount = $derived(getTotalAmount());
+
+  // Reset when modal opens
+  $effect(() => {
+    if (isOpen) {
+      selectedTransactionIds = new Set(matchingTransactions.map((t) => t.id));
+      applyToFuture = true;
+    }
+  });
+
   function handleConfirm() {
-    const hasSelectedMatches = selectedTransactionIds.size > 0;
-    if (hasSelectedMatches) {
+    if (selectedTransactionIds.size > 0) {
       onConfirm('pattern', applyToFuture, Array.from(selectedTransactionIds));
     } else {
       onConfirm('single', applyToFuture);
     }
   }
 
-  function formatAmount(amount: number): string {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(Math.abs(amount));
-  }
-
   function formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'short',
-    });
+    return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   }
 
-  function getPatternName(transaction: Transaction): string {
-    return transaction.merchant || transaction.description || 'Esta transacción';
+  function getPatternName(tx: Transaction): string {
+    return tx.merchant || tx.description || 'Esta transacción';
   }
 
   function getTotalAmount(): string {
-    const selectedTransactions = matchingTransactions.filter((t) =>
-      selectedTransactionIds.has(t.id)
-    );
-    const total = selectedTransactions.reduce(
+    const selected = matchingTransactions.filter((t) => selectedTransactionIds.has(t.id));
+    const total = selected.reduce(
       (sum, t) => sum + Math.abs(t.amount),
       Math.abs(transaction?.amount || 0)
     );
-    return formatAmount(total);
+    return formatCurrency(total);
   }
 
   function toggleTransaction(transactionId: string) {
@@ -89,9 +85,6 @@
       selectedTransactionIds = new Set(matchingTransactions.map((t) => t.id));
     }
   }
-
-  $: selectedCount = selectedTransactionIds.size + 1; // +1 for the current transaction
-  $: totalSelectedAmount = getTotalAmount();
 </script>
 
 <div use:modalKeyboard={{ onConfirm: handleConfirm, onCancel, isOpen }}></div>
@@ -120,7 +113,7 @@
             </div>
           </div>
         </div>
-        <button class="close-btn" on:click={onCancel} aria-label="Cerrar">
+        <button class="close-btn" onclick={onCancel} aria-label="Cerrar">
           <X size={20} />
         </button>
       </div>
@@ -141,7 +134,7 @@
               class:expense={transaction.amount < 0}
               class:income={transaction.amount > 0}
             >
-              {formatAmount(transaction.amount)}
+              {formatCurrency(transaction.amount)}
             </span>
             <div class="check-badge">
               <Check size={14} />
@@ -157,7 +150,7 @@
                 Transacciones anteriores similares
                 <span class="match-count">{matchingTransactions.length}</span>
               </div>
-              <button type="button" class="toggle-all-btn" on:click={toggleAll}>
+              <button type="button" class="toggle-all-btn" onclick={toggleAll}>
                 {selectedTransactionIds.size === matchingTransactions.length
                   ? 'Deseleccionar'
                   : 'Seleccionar todas'}
@@ -172,7 +165,7 @@
                   <input
                     type="checkbox"
                     checked={selectedTransactionIds.has(match.id)}
-                    on:change={() => toggleTransaction(match.id)}
+                    onchange={() => toggleTransaction(match.id)}
                   />
                   <div class="transaction-info">
                     <span class="transaction-description"
@@ -191,7 +184,7 @@
                     class:expense={match.amount < 0}
                     class:income={match.amount > 0}
                   >
-                    {formatAmount(match.amount)}
+                    {formatCurrency(match.amount)}
                   </span>
                 </label>
               {/each}
@@ -230,8 +223,8 @@
 
       <!-- Action buttons -->
       <div class="modal-actions">
-        <button class="btn-secondary" on:click={onCancel}>Cancelar</button>
-        <button class="btn-primary" on:click={handleConfirm}>
+        <button class="btn-secondary" onclick={onCancel}>Cancelar</button>
+        <button class="btn-primary" onclick={handleConfirm}>
           {#if selectedTransactionIds.size > 0}
             Aplicar a {selectedCount} transacciones
           {:else}

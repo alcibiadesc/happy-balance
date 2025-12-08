@@ -1,10 +1,11 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import { LayoutDashboard, Settings, Receipt, Tag, TrendingUp, Upload } from 'lucide-svelte';
 
   interface Props {
     href: string;
-    icon: string; // Icon name as string
-    children: any; // For slot content
+    icon: string;
+    children: Snippet;
     isActive?: boolean;
     isImportant?: boolean;
     collapsed?: boolean;
