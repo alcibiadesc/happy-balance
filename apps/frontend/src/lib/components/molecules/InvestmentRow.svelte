@@ -188,6 +188,7 @@
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.15s ease;
+    position: relative;
   }
 
   .investment-row:hover {
@@ -394,19 +395,124 @@
     .investment-row {
       flex-wrap: wrap;
       padding: 0.75rem;
+      padding-bottom: 3rem;
+    }
+
+    .drag-handle {
+      display: none;
+    }
+
+    .row-icon {
+      width: 32px;
+      height: 32px;
+      font-size: 1rem;
+    }
+
+    .row-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .row-name {
+      font-size: 0.8125rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .row-value {
-      width: 100%;
-      text-align: left;
-      margin-top: 0.5rem;
-      padding-left: calc(36px + 0.75rem + 14px + 0.75rem);
+      min-width: auto;
+      text-align: right;
+    }
+
+    .value {
+      font-size: 0.875rem;
+    }
+
+    .profit-pills {
+      gap: 0.25rem;
+    }
+
+    .pill {
+      font-size: 0.625rem;
+      padding: 0.0625rem 0.25rem;
     }
 
     .row-actions {
       position: absolute;
-      right: 0.75rem;
-      top: 0.75rem;
+      right: 0.5rem;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      justify-content: flex-end;
+      background: var(--surface-elevated);
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+    }
+
+    .investment-row.editing {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding-bottom: 0.75rem;
+    }
+
+    .investment-row.editing .form-input.name {
+      width: 100%;
+    }
+
+    .investment-row.editing .form-input.value {
+      width: 100%;
+    }
+
+    .investment-row.editing .row-actions {
+      position: static;
+      border-top: none;
+      padding-top: 0;
+      justify-content: flex-end;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .investment-row {
+      padding: 0.625rem;
+      padding-bottom: 2.75rem;
+      gap: 0.5rem;
+    }
+
+    .row-icon {
+      width: 28px;
+      height: 28px;
+      font-size: 0.875rem;
+      border-radius: 6px;
+    }
+
+    .row-name {
+      font-size: 0.75rem;
+    }
+
+    .row-symbol {
+      font-size: 0.625rem;
+    }
+
+    .value {
+      font-size: 0.8125rem;
+    }
+
+    .pill {
+      font-size: 0.5625rem;
+    }
+
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    .row-actions {
+      gap: 0.125rem;
     }
   }
 </style>

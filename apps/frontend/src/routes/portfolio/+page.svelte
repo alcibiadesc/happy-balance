@@ -319,4 +319,69 @@
     align-items: center;
     gap: 0.5rem;
   }
+
+  @media (max-width: 640px) {
+    .investments-section {
+      padding: 1rem;
+      border-radius: 10px;
+    }
+
+    .section-header {
+      margin-bottom: 0.75rem;
+    }
+
+    .section-header h2 {
+      font-size: 0.9375rem;
+    }
+
+    .add-btn {
+      padding: 0.375rem 0.625rem;
+      font-size: 0.75rem;
+    }
+
+    .investments-grid {
+      gap: 0.375rem;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .investments-section {
+      padding: 0.75rem;
+      border-radius: 8px;
+    }
+
+    .section-header h2 {
+      font-size: 0.875rem;
+      gap: 0.375rem;
+    }
+
+    .section-header h2 :global(svg) {
+      width: 14px;
+      height: 14px;
+    }
+
+    .add-btn {
+      padding: 0.375rem 0.5rem;
+      font-size: 0.6875rem;
+      border-radius: 5px;
+    }
+
+    .add-btn :global(svg) {
+      width: 12px;
+      height: 12px;
+    }
+
+    .empty-state {
+      padding: 1.5rem;
+    }
+
+    .empty-state :global(svg) {
+      width: 36px;
+      height: 36px;
+    }
+
+    .empty-state p {
+      font-size: 0.8125rem;
+    }
+  }
 </style>

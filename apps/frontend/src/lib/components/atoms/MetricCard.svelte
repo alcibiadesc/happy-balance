@@ -173,9 +173,119 @@
   }
 
   /* Responsive */
-  @media (max-width: 480px) {
+  @media (max-width: 768px) {
+    .metric-card {
+      padding: 1rem;
+    }
+
+    .metric-header {
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .metric-icon {
+      width: 32px;
+      height: 32px;
+    }
+
+    .metric-icon :global(svg) {
+      width: 16px;
+      height: 16px;
+    }
+
+    .metric-label {
+      font-size: 0.75rem;
+    }
+
     .metric-value {
       font-size: 1.25rem;
+    }
+
+    .metric-trend,
+    .metric-subtext {
+      font-size: 0.75rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .metric-card {
+      padding: 0.75rem;
+      border-radius: 10px;
+    }
+
+    .metric-card:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .metric-header {
+      gap: 0.375rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+
+    .metric-icon :global(svg) {
+      width: 14px;
+      height: 14px;
+    }
+
+    .metric-label {
+      font-size: 0.6875rem;
+    }
+
+    .metric-value {
+      font-size: 1.125rem;
+    }
+
+    .metric-trend,
+    .metric-subtext {
+      font-size: 0.6875rem;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .metric-card {
+      padding: 0.625rem;
+      border-radius: 8px;
+    }
+
+    .metric-header {
+      gap: 0.25rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .metric-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 5px;
+    }
+
+    .metric-icon :global(svg) {
+      width: 12px;
+      height: 12px;
+    }
+
+    .metric-label {
+      font-size: 0.625rem;
+      letter-spacing: 0.025em;
+    }
+
+    .metric-value {
+      font-size: 1rem;
+    }
+
+    .metric-trend,
+    .metric-subtext {
+      font-size: 0.625rem;
+    }
+
+    .metric-skeleton {
+      height: 1rem;
     }
   }
 </style>

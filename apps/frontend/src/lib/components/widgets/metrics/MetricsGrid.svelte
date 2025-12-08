@@ -317,16 +317,67 @@
   @media (max-width: 768px) {
     .metrics-grid {
       grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .metrics-grid.edit-mode {
+      gap: 1rem;
     }
   }
 
   @media (max-width: 480px) {
     .metrics-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
     }
 
     .metric-wrapper.large {
-      grid-column: span 1;
+      grid-column: span 2;
+    }
+
+    .metric-controls {
+      top: -4px;
+      right: -4px;
+    }
+
+    .drag-handle,
+    .hide-btn,
+    .size-btn {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .metrics-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.375rem;
+    }
+
+    .metrics-grid.edit-mode {
+      gap: 0.5rem;
+    }
+
+    .metric-wrapper {
+      border-radius: 10px;
+    }
+
+    .metric-wrapper.large {
+      grid-column: span 2;
+    }
+
+    .metric-controls {
+      top: -2px;
+      right: -2px;
+      gap: 1px;
+    }
+
+    .drag-handle,
+    .hide-btn,
+    .size-btn {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
     }
   }
 </style>

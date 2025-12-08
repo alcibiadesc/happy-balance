@@ -316,13 +316,66 @@
 
   /* Responsive */
   @media (max-width: 640px) {
+    .period-nav {
+      gap: 0.25rem;
+    }
+
+    .nav-arrow {
+      width: 28px;
+      height: 28px;
+    }
+
     .current-period {
-      min-width: 140px;
-      font-size: 0.875rem;
+      min-width: 120px;
+      font-size: 0.8125rem;
+      padding: 0.375rem 0.75rem;
     }
 
     .dropdown {
       min-width: 200px;
+    }
+
+    .tab {
+      font-size: 0.75rem;
+      padding: 0.375rem;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .period-nav {
+      gap: 0.125rem;
+    }
+
+    .nav-arrow {
+      width: 26px;
+      height: 26px;
+    }
+
+    .nav-arrow :global(svg) {
+      width: 14px;
+      height: 14px;
+    }
+
+    .current-period {
+      min-width: 100px;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+
+    .dropdown {
+      min-width: 180px;
+      left: 0;
+      transform: none;
+    }
+
+    .tab {
+      font-size: 0.6875rem;
+      padding: 0.25rem;
+    }
+
+    .option {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.5rem;
     }
   }
 </style>

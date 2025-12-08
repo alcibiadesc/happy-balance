@@ -136,7 +136,7 @@
 
   .goal-progress {
     height: 100%;
-    background: linear-gradient(90deg, var(--acapulco), var(--primary));
+    background: var(--acapulco);
     border-radius: 3px;
     transition: width 0.3s ease;
   }
@@ -264,14 +264,92 @@
   @media (max-width: 640px) {
     .balance-header {
       flex-direction: column;
+      gap: 1rem;
+    }
+
+    .balance-content {
+      min-width: auto;
     }
 
     .amount {
       font-size: 2rem;
     }
 
+    .currency {
+      font-size: 1rem;
+    }
+
+    .goal-info {
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .goal-edit {
+      align-self: flex-start;
+    }
+
     .revenue-card {
       width: 100%;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .balance-header {
+      gap: 0.75rem;
+    }
+
+    .greeting {
+      font-size: 0.75rem;
+    }
+
+    .balance-amount {
+      margin-bottom: 0.75rem;
+    }
+
+    .amount {
+      font-size: 1.75rem;
+    }
+
+    .currency {
+      font-size: 0.875rem;
+    }
+
+    .goal-section {
+      margin-top: 0.5rem;
+    }
+
+    .goal-info {
+      font-size: 0.6875rem;
+    }
+
+    .goal-input-wrapper {
+      flex-direction: column;
+    }
+
+    .goal-input {
+      font-size: 0.8125rem;
+    }
+
+    .goal-save {
+      width: 100%;
+      padding: 0.625rem;
+    }
+
+    .revenue-card {
+      padding: 0.875rem 1rem;
+    }
+
+    .revenue-label {
+      font-size: 0.6875rem;
+    }
+
+    .revenue-value {
+      font-size: 1.125rem;
+    }
+
+    .revenue-percentage {
+      font-size: 0.75rem;
     }
   }
 </style>

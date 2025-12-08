@@ -259,5 +259,22 @@
     .header-actions {
       gap: 0.25rem;
     }
+
+    .edit-btn {
+      width: 32px;
+      height: 32px;
+    }
+
+    .edit-btn :global(svg) {
+      width: 14px;
+      height: 14px;
+    }
+
+    .edit-hint {
+      font-size: 0.625rem;
+      padding: 0.25rem;
+      margin-bottom: 0.75rem;
+      border-radius: 6px;
+    }
   }
 </style>
