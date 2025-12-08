@@ -403,7 +403,9 @@
     "backup_created": "Copia de seguridad creada",
     "backup_deleted": "Copia eliminada",
     "backup_delete_confirm": "¿Eliminar esta copia?",
-    "backup_policy_saved": "Política de copias guardada"
+    "backup_policy_saved": "Política de copias guardada",
+    "update_password": "Actualizar Contraseña",
+    "preferences": "Preferencias"
   },
   "errors": {
     "generic": "Ocurrió un error",

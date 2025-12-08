@@ -403,7 +403,9 @@
     "backup_created": "Backup created successfully",
     "backup_deleted": "Backup deleted",
     "backup_delete_confirm": "Delete this backup?",
-    "backup_policy_saved": "Backup policy saved"
+    "backup_policy_saved": "Backup policy saved",
+    "update_password": "Update Password",
+    "preferences": "Preferences"
   },
   "errors": {
     "generic": "An error occurred",
