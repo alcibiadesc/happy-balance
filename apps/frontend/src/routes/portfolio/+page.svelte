@@ -19,6 +19,10 @@
 
   const store = createInvestmentsStore();
 
+  // Derived reactive state for modals (fixes Svelte 5 getter reactivity)
+  const showAddHistoryModal = $derived(store.showAddHistoryModal);
+  const showDeleteModal = $derived(store.showDeleteModal);
+
   // View state
   let viewMode = $state<'grid' | 'details'>('grid');
   let showIconPicker = $state(false);
@@ -241,14 +245,14 @@
 />
 
 <AddHistoryModal
-  isOpen={store.showAddHistoryModal}
+  isOpen={showAddHistoryModal}
   bind:formData={store.addHistoryFormData}
   onSave={store.saveHistoryEntry}
   onCancel={store.cancelAddHistory}
 />
 
 <ConfirmModal
-  isOpen={store.showDeleteModal}
+  isOpen={showDeleteModal}
   title="Eliminar inversión"
   message={`¿Eliminar "${store.investmentToDelete?.name}"?`}
   confirmText="Eliminar"
