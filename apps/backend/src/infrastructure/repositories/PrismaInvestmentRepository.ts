@@ -2,15 +2,15 @@ import {
   PrismaClient,
   Investment as PrismaInvestment,
   InvestmentHistory as PrismaInvestmentHistory,
-} from "@prisma/client";
-import { Result } from "@domain/shared/Result";
+} from '@prisma/client';
+import { Result } from '@domain/shared/Result';
 import {
   IInvestmentRepository,
   InvestmentFilters,
   InvestmentHistoryFilters,
   PortfolioSummary,
   InvestmentWithMetrics,
-} from "@domain/repositories/IInvestmentRepository";
+} from '@domain/repositories/IInvestmentRepository';
 import {
   Investment,
   InvestmentId,
@@ -18,11 +18,11 @@ import {
   InvestmentHistory,
   InvestmentHistoryId,
   InvestmentHistorySnapshot,
-} from "@domain/entities/Investment";
+} from '@domain/entities/Investment';
 import {
   InvestmentHistoryType,
   InvestmentHistoryTypeHelper,
-} from "@domain/entities/InvestmentHistoryType";
+} from '@domain/entities/InvestmentHistoryType';
 
 type PrismaInvestmentWithHistory = PrismaInvestment & {
   history?: PrismaInvestmentHistory[];
@@ -103,9 +103,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
     };
   }
 
-  private prismaHistoryToDomain(
-    prismaHistory: PrismaInvestmentHistory
-  ): Result<InvestmentHistory> {
+  private prismaHistoryToDomain(prismaHistory: PrismaInvestmentHistory): Result<InvestmentHistory> {
     const historyIdResult = InvestmentHistoryId.create(prismaHistory.id);
     if (historyIdResult.isFailure()) {
       return Result.fail(historyIdResult.getError());
@@ -153,7 +151,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to save investment: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to save investment: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -176,7 +174,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(domainResult.getValue());
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch investment: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to fetch investment: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -187,7 +185,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
         where: { id: id.value, userId: this.userId },
         include: {
           history: {
-            orderBy: { date: "desc" },
+            orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
           },
         },
       });
@@ -204,7 +202,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(domainResult.getValue());
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch investment with history: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to fetch investment with history: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -215,10 +213,10 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
         where: { userId: this.userId },
         include: {
           history: {
-            orderBy: { date: "desc" },
+            orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
           },
         },
-        orderBy: [{ highlight: "desc" }, { sortOrder: "asc" }, { name: "asc" }],
+        orderBy: [{ highlight: 'desc' }, { sortOrder: 'asc' }, { name: 'asc' }],
       });
 
       const domainInvestments: Investment[] = [];
@@ -233,7 +231,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(domainInvestments);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch investments: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to fetch investments: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -256,8 +254,8 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
 
       if (filters?.searchTerm) {
         where.OR = [
-          { name: { contains: filters.searchTerm, mode: "insensitive" } },
-          { symbol: { contains: filters.searchTerm, mode: "insensitive" } },
+          { name: { contains: filters.searchTerm, mode: 'insensitive' } },
+          { symbol: { contains: filters.searchTerm, mode: 'insensitive' } },
         ];
       }
 
@@ -265,10 +263,10 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
         where,
         include: {
           history: {
-            orderBy: { date: "desc" },
+            orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
           },
         },
-        orderBy: [{ highlight: "desc" }, { sortOrder: "asc" }, { name: "asc" }],
+        orderBy: [{ highlight: 'desc' }, { sortOrder: 'asc' }, { name: 'asc' }],
       });
 
       const domainInvestments: Investment[] = [];
@@ -283,7 +281,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(domainInvestments);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch investments with filters: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to fetch investments with filters: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -310,7 +308,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to update investment: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to update investment: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -324,7 +322,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to delete investment: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to delete investment: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -337,7 +335,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to permanently delete investment: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to permanently delete investment: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -350,7 +348,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(count > 0);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to check investment existence: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to check investment existence: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -363,7 +361,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(count > 0);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to check investment name existence: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to check investment name existence: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -388,14 +386,12 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(count);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to count investments: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to count investments: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
-  async updateSortOrder(
-    sortOrders: { id: string; sortOrder: number }[]
-  ): Promise<Result<void>> {
+  async updateSortOrder(sortOrders: { id: string; sortOrder: number }[]): Promise<Result<void>> {
     try {
       await this.prisma.$transaction(
         sortOrders.map((item) =>
@@ -408,7 +404,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to update sort order: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to update sort order: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -423,14 +419,12 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to add history entry: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to add history entry: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
-  async findHistoryById(
-    id: InvestmentHistoryId
-  ): Promise<Result<InvestmentHistory | null>> {
+  async findHistoryById(id: InvestmentHistoryId): Promise<Result<InvestmentHistory | null>> {
     try {
       const history = await this.prisma.investmentHistory.findUnique({
         where: { id: id.value },
@@ -448,7 +442,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(domainResult.getValue());
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch history entry: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to fetch history entry: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -459,7 +453,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
     try {
       const historyEntries = await this.prisma.investmentHistory.findMany({
         where: { investmentId: investmentId.value },
-        orderBy: { date: "desc" },
+        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       });
 
       const domainEntries: InvestmentHistory[] = [];
@@ -474,7 +468,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(domainEntries);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch history entries: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to fetch history entries: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -509,7 +503,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
 
       const historyEntries = await this.prisma.investmentHistory.findMany({
         where,
-        orderBy: { date: "desc" },
+        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       });
 
       const domainEntries: InvestmentHistory[] = [];
@@ -524,7 +518,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(domainEntries);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch history with filters: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to fetch history with filters: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -549,7 +543,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(domainResult.getValue());
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to fetch history by transaction: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to fetch history by transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -564,7 +558,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to update history entry: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to update history entry: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -577,7 +571,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to delete history entry: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to delete history entry: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -625,8 +619,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       const netContributions = totalContributions - totalWithdrawals;
       // Profit is only calculated from investments that have contributions
       const totalProfit = investmentValueWithContributions - netContributions;
-      const profitPercentage =
-        netContributions > 0 ? (totalProfit / netContributions) * 100 : 0;
+      const profitPercentage = netContributions > 0 ? (totalProfit / netContributions) * 100 : 0;
 
       return Result.ok({
         totalValue,
@@ -636,11 +629,11 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
         totalProfit,
         profitPercentage,
         investmentCount: investments.length,
-        currency: "EUR", // Default currency, could be configurable
+        currency: 'EUR', // Default currency, could be configurable
       });
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get portfolio summary: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to get portfolio summary: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -651,13 +644,13 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
         where: { userId: this.userId, isActive: true },
         include: {
           history: {
-            orderBy: { date: "desc" },
+            orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
           },
           category: {
             select: { name: true },
           },
         },
-        orderBy: [{ highlight: "desc" }, { sortOrder: "asc" }, { name: "asc" }],
+        orderBy: [{ highlight: 'desc' }, { sortOrder: 'asc' }, { name: 'asc' }],
       });
 
       const results: InvestmentWithMetrics[] = [];
@@ -677,21 +670,20 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
           ...domain.toSnapshot(),
           categoryName: (inv as any).category?.name || null,
           contributionsCount: contributions.length,
-          lastContributionDate:
-            contributions.length > 0 ? contributions[0].date : null,
+          lastContributionDate: contributions.length > 0 ? contributions[0].date : null,
         });
       }
 
       return Result.ok(results);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get investments with metrics: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to get investments with metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async getHistoryTimeline(
-    period: "day" | "week" | "month" | "year",
+    period: 'day' | 'week' | 'month' | 'year',
     dateFrom?: Date,
     dateTo?: Date
   ): Promise<
@@ -717,7 +709,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
 
       const historyEntries = await this.prisma.investmentHistory.findMany({
         where,
-        orderBy: { date: "asc" },
+        orderBy: { date: 'asc' },
       });
 
       // Group by period
@@ -753,26 +745,27 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(result);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to get history timeline: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to get history timeline: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
-  private getDateKey(date: Date, period: "day" | "week" | "month" | "year"): string {
+  private getDateKey(date: Date, period: 'day' | 'week' | 'month' | 'year'): string {
     const d = new Date(date);
     switch (period) {
-      case "day":
-        return d.toISOString().split("T")[0];
-      case "week":
+      case 'day':
+        return d.toISOString().split('T')[0];
+      case 'week': {
         const weekStart = new Date(d);
         weekStart.setDate(d.getDate() - d.getDay());
-        return weekStart.toISOString().split("T")[0];
-      case "month":
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      case "year":
+        return weekStart.toISOString().split('T')[0];
+      }
+      case 'month':
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      case 'year':
         return String(d.getFullYear());
       default:
-        return d.toISOString().split("T")[0];
+        return d.toISOString().split('T')[0];
     }
   }
 
@@ -837,7 +830,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(imported);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to import investments: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to import investments: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -859,7 +852,7 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to clear investments: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to clear investments: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

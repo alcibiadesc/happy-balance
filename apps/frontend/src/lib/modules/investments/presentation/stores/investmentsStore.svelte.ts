@@ -579,10 +579,9 @@ export function createInvestmentsStore() {
       await investmentsApi.addHistoryEntry(addHistoryInvestmentId, data);
       await loadAll();
 
-      // Refresh selected investment if viewing details
-      if (selectedInvestment?.id === addHistoryInvestmentId) {
-        await loadInvestmentDetails(addHistoryInvestmentId);
-      }
+      // Always refresh if we're in details view for this investment
+      // Need to reload to get updated history
+      await loadInvestmentDetails(addHistoryInvestmentId);
 
       showAddHistoryModalState = false;
       addHistoryInvestmentId = null;
