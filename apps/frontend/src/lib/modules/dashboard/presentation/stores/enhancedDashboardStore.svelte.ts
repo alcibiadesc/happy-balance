@@ -223,9 +223,10 @@ export function createEnhancedDashboardStore(apiBase: string) {
 
   // Format currency helper
   function formatCurrency(amount: number): string {
+    const currency = currentCurrency || 'EUR';
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: currentCurrency,
+      currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

@@ -1,23 +1,12 @@
 import { writable, derived } from 'svelte/store';
 import type { Transaction } from '$lib/types/transaction';
-import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
+import { getApiUrl, getAuthHeaders } from '$lib/utils/api-helpers';
+import {
+  mapApiToTransaction,
+  prepareTransactionUpdatePayload,
+} from '$lib/utils/transaction-mapper';
 
-import { getApiUrl } from '$lib/utils/api-url';
 const API_BASE = getApiUrl();
-
-// Helper function to create authenticated headers
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  const token = authStore.getAccessToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  return headers;
-}
 
 export interface PaginatedQuery {
   page: number;
@@ -198,16 +187,7 @@ function createPaginatedTransactionStore() {
       }));
 
       try {
-        const payload: any = {
-          description: updates.description,
-          hidden: updates.hidden,
-          categoryId: updates.categoryId,
-        };
-
-        if (updates.amount !== undefined) {
-          payload.amount = Math.abs(updates.amount);
-          payload.type = updates.amount < 0 ? 'EXPENSE' : 'INCOME';
-        }
+        const payload = prepareTransactionUpdatePayload(updates);
 
         const response = await fetch(`${API_BASE}/transactions/${id}`, {
           method: 'PUT',
@@ -262,31 +242,6 @@ function createPaginatedTransactionStore() {
         throw error;
       }
     },
-  };
-}
-
-// Helper function to map API transaction to frontend format
-function mapApiToTransaction(apiTransaction: any): Transaction {
-  return {
-    id: apiTransaction.id,
-    date: apiTransaction.date,
-    time: new Date(apiTransaction.createdAt).toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }),
-    merchant: apiTransaction.merchant,
-    description: apiTransaction.description || '',
-    amount: apiTransaction.type === 'EXPENSE' ? -apiTransaction.amount : apiTransaction.amount,
-    categoryId: apiTransaction.categoryId,
-    category: undefined,
-    status: 'completed' as const,
-    tags: [],
-    patternHash: undefined,
-    hash: apiTransaction.hash,
-    createdAt: new Date(apiTransaction.createdAt),
-    updatedAt: new Date(apiTransaction.updatedAt || apiTransaction.createdAt),
-    hidden: apiTransaction.hidden || false,
   };
 }
 

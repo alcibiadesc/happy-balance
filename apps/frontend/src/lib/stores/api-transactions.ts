@@ -1,23 +1,13 @@
 import { writable, derived } from 'svelte/store';
 import type { Transaction, Category } from '$lib/types/transaction';
-import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
-import { getApiUrl } from '$lib/utils/api-url';
+import { getApiUrl, getAuthHeaders, getAuthHeadersForUpload } from '$lib/utils/api-helpers';
+import {
+  mapApiToTransaction,
+  mapApiToCategory,
+  prepareTransactionUpdatePayload,
+} from '$lib/utils/transaction-mapper';
 
 const API_BASE = getApiUrl();
-
-// Helper function to create authenticated headers
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  const token = authStore.getAccessToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  return headers;
-}
 
 // Transaction Store using Backend APIs
 function createApiTransactionStore() {
@@ -290,13 +280,9 @@ function createApiTransactionStore() {
           String(options.autoCategorizationEnabled ?? true)
         );
 
-        const authHeaders = getAuthHeaders();
-        // Remove Content-Type for FormData - browser will set it automatically with boundary
-        delete authHeaders['Content-Type'];
-
         const response = await fetch(`${API_BASE}/import/csv`, {
           method: 'POST',
-          headers: authHeaders,
+          headers: getAuthHeadersForUpload(),
           body: formData,
         });
 
@@ -532,47 +518,6 @@ function createApiTransactionStore() {
         throw error;
       }
     },
-  };
-}
-
-// Helper function to map API category to frontend format
-function mapApiToCategory(apiCategory: any): Category {
-  return {
-    id: apiCategory.id,
-    name: apiCategory.name,
-    type: apiCategory.type,
-    color: apiCategory.color || '#3B82F6',
-    icon: apiCategory.icon || '💰',
-    annualBudget: apiCategory.annualBudget || 0, // Now properly mapping from API
-  };
-}
-
-// Helper function to map API transaction to frontend format
-function mapApiToTransaction(apiTransaction: any): Transaction {
-  return {
-    id: apiTransaction.id,
-    date: apiTransaction.date,
-    time: new Date(apiTransaction.createdAt).toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }),
-    merchant: apiTransaction.merchant,
-    description: apiTransaction.description || '',
-    amount: apiTransaction.type === 'EXPENSE' ? -apiTransaction.amount : apiTransaction.amount,
-    categoryId: apiTransaction.categoryId,
-    category: undefined, // Will be populated separately if needed
-    status: 'completed' as const,
-    tags: [],
-    patternHash: undefined,
-    hash: apiTransaction.hash,
-    createdAt: new Date(apiTransaction.createdAt),
-    updatedAt: new Date(apiTransaction.updatedAt || apiTransaction.createdAt),
-    hidden: apiTransaction.hidden || false,
-    observations: apiTransaction.observations || undefined,
-    splitPercentage: apiTransaction.splitPercentage,
-    linkedTransactionId: apiTransaction.linkedTransactionId,
-    isReimbursement: apiTransaction.isReimbursement || false,
   };
 }
 

@@ -60,7 +60,9 @@ function createUserPreferencesStore() {
           headers: getAuthHeaders(),
         });
         if (response.ok) {
-          const preferences = await response.json();
+          const result = await response.json();
+          // API returns { success: true, data: {...} }, extract data
+          const preferences = result.data || result;
           set(preferences);
 
           // Sync with localStorage to maintain fallback
@@ -100,7 +102,9 @@ function createUserPreferencesStore() {
         });
 
         if (response.ok) {
-          const updatedPreferences = await response.json();
+          const result = await response.json();
+          // API returns { success: true, data: {...} }, extract data
+          const updatedPreferences = result.data || result;
           set(updatedPreferences);
 
           // Keep localStorage in sync

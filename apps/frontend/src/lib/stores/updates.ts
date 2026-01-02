@@ -40,7 +40,7 @@ export async function checkForUpdates(): Promise<UpdateInfo> {
 
   try {
     const API_BASE = getApiUrl();
-    const response = await fetch(`${API_BASE}/api/system/check-updates`);
+    const response = await fetch(`${API_BASE}/system/check-updates`);
 
     if (!response.ok) {
       throw new Error('Failed to check for updates');

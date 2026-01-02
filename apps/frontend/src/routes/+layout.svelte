@@ -9,7 +9,7 @@
   import { setLanguage } from '$lib/stores/i18n';
   import { setCurrency } from '$lib/stores/currency';
   import { setTheme, applyTheme } from '$lib/stores/theme';
-  import { transactions } from '$lib/stores/transactions';
+  import { apiTransactions } from '$lib/stores/api-transactions';
   import { sidebarCollapsed } from '$lib/stores/sidebar';
   import { userPreferences } from '$lib/stores/user-preferences';
   import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
@@ -48,7 +48,7 @@
       typeof window !== 'undefined' &&
       !window.__transactions_loaded__
     ) {
-      transactions.load();
+      apiTransactions.load();
       window.__transactions_loaded__ = true;
     }
 

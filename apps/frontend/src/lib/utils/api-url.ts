@@ -10,8 +10,8 @@ export function getApiUrl(): string {
   const isServer = typeof window === 'undefined';
 
   if (isServer) {
-    // Server-side: use internal Docker network URL
-    return process.env.INTERNAL_API_URL || 'http://backend:14040/api';
+    // Server-side: use internal Docker network URL or localhost for local dev
+    return process.env.INTERNAL_API_URL || 'http://localhost:14040/api';
   }
 
   // Client-side: use relative path - will be proxied by SvelteKit hooks.server.ts

@@ -1,23 +1,33 @@
-import { Request, Response } from "express";
-import { z } from "zod";
-import { CategoryId } from "@domain/entities/Category";
-import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
-import { IInvestmentRepository } from "@domain/repositories/IInvestmentRepository";
+import { Request, Response } from 'express';
+import { z } from 'zod';
+import { CategoryId, Category } from '@domain/entities/Category';
+import { ICategoryRepository } from '@domain/repositories/ICategoryRepository';
+import { IInvestmentRepository } from '@domain/repositories/IInvestmentRepository';
+import { CategoryType, CategoryTypeHelper } from '@domain/entities/CategoryType';
+import { CategoryInvestmentSyncService } from '@domain/services/CategoryInvestmentSyncService';
 import {
-  CategoryType,
-  CategoryTypeHelper,
-} from "@domain/entities/CategoryType";
-import { CategoryInvestmentSyncService } from "@domain/services/CategoryInvestmentSyncService";
+  BadRequestError,
+  NotFoundError,
+  ConflictError,
+  InternalError,
+  validateBody,
+  validateQuery,
+  handleResult,
+  handleFindResult,
+  successResponse,
+  createdResponse,
+} from '@infrastructure/errors';
 
+// Validation schemas
 const CreateCategorySchema = z.object({
   name: z.string().min(1).max(100),
   type: z.enum([
-    "income",
-    "essential",
-    "discretionary",
-    "investment",
-    "debt_payment",
-    "no_compute",
+    'income',
+    'essential',
+    'discretionary',
+    'investment',
+    'debt_payment',
+    'no_compute',
   ]),
   color: z
     .string()
@@ -40,14 +50,7 @@ const UpdateCategorySchema = z.object({
 
 const CategoryFiltersSchema = z.object({
   type: z
-    .enum([
-      "income",
-      "essential",
-      "discretionary",
-      "investment",
-      "debt_payment",
-      "no_compute",
-    ])
+    .enum(['income', 'essential', 'discretionary', 'investment', 'debt_payment', 'no_compute'])
     .optional(),
   isActive: z.boolean().optional(),
   searchTerm: z.string().optional(),
@@ -58,445 +61,188 @@ export class CategoryController {
 
   constructor(
     private readonly categoryRepository: ICategoryRepository,
-    _investmentRepository?: IInvestmentRepository,
-    _userId?: string
+    investmentRepository?: IInvestmentRepository,
+    userId?: string
   ) {
-    if (_investmentRepository && _userId) {
+    if (investmentRepository && userId) {
       this.syncService = new CategoryInvestmentSyncService(
-        _investmentRepository,
+        investmentRepository,
         categoryRepository,
-        _userId
+        userId
       );
     }
   }
 
+  /**
+   * Get all categories with optional filters
+   */
   async getCategories(req: Request, res: Response): Promise<void> {
-    try {
-      const parsedFilters = CategoryFiltersSchema.parse(req.query);
+    const parsedFilters = validateQuery(CategoryFiltersSchema, req);
 
-      // Convert string type to CategoryType enum
-      const filters: any = {
-        ...parsedFilters,
-        type: parsedFilters.type
-          ? CategoryTypeHelper.fromString(parsedFilters.type)
-          : undefined,
-        // Default to active categories only unless explicitly set
-        isActive:
-          parsedFilters.isActive !== undefined ? parsedFilters.isActive : true,
-      };
+    const categoryType = parsedFilters.type
+      ? CategoryTypeHelper.fromString(parsedFilters.type)
+      : undefined;
+    const filters = {
+      ...parsedFilters,
+      type: categoryType || undefined,
+      isActive: parsedFilters.isActive !== undefined ? parsedFilters.isActive : true,
+    };
 
-      const result = await this.categoryRepository.findWithFilters(filters);
+    const result = await this.categoryRepository.findWithFilters(filters);
+    const categories = handleResult(result, 'Failed to fetch categories');
+    const categorySnapshots = categories.map((cat) => cat.toSnapshot());
 
-      if (result.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: result.getError(),
-        });
-        return;
-      }
-
-      const categories = result.getValue();
-      const categorySnapshots = categories.map((cat) => cat.toSnapshot());
-
-      res.json({
-        success: true,
-        data: categorySnapshots,
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          error: "Invalid query parameters",
-          details: error.errors,
-        });
-        return;
-      }
-
-      console.error("Error fetching categories:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to fetch categories",
-      });
-    }
+    successResponse(res, categorySnapshots);
   }
 
+  /**
+   * Get a single category by ID
+   */
   async getCategory(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
+    const { id } = req.params;
 
-      const categoryIdResult = CategoryId.create(id);
-      if (categoryIdResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: "Invalid category ID",
-        });
-        return;
-      }
+    const categoryId = handleResult(CategoryId.create(id), 'Invalid category ID');
+    const result = await this.categoryRepository.findById(categoryId);
+    const category = handleFindResult(result, 'Category');
 
-      const result = await this.categoryRepository.findById(
-        categoryIdResult.getValue(),
-      );
-
-      if (result.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: result.getError(),
-        });
-        return;
-      }
-
-      const category = result.getValue();
-      if (!category) {
-        res.status(404).json({
-          success: false,
-          error: "Category not found",
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        data: category.toSnapshot(),
-      });
-    } catch (error) {
-      console.error("Error fetching category:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to fetch category",
-      });
-    }
+    successResponse(res, category.toSnapshot());
   }
 
+  /**
+   * Create a new category
+   */
   async createCategory(req: Request, res: Response): Promise<void> {
-    try {
-      const validatedData = CreateCategorySchema.parse(req.body);
+    const validatedData = validateBody(CreateCategorySchema, req);
 
-      // Convert string type to CategoryType enum
-      const categoryType = CategoryTypeHelper.fromString(validatedData.type);
-      if (!categoryType) {
-        res.status(400).json({
-          success: false,
-          error: "Invalid category type",
-        });
-        return;
-      }
-
-      // Check if category with same name and type already exists
-      const existsResult = await this.categoryRepository.existsByName(
-        validatedData.name,
-        categoryType,
-      );
-
-      if (existsResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: existsResult.getError(),
-        });
-        return;
-      }
-
-      if (existsResult.getValue()) {
-        res.status(409).json({
-          success: false,
-          error: "Category with this name and type already exists",
-        });
-        return;
-      }
-
-      // Generate UUID for the category
-      const categoryId = crypto.randomUUID();
-      const categoryIdResult = CategoryId.create(categoryId);
-
-      if (categoryIdResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: "Failed to generate category ID",
-        });
-        return;
-      }
-
-      // Create category from snapshot
-      const categoryResult = await import("@domain/entities/Category").then(
-        (module) =>
-          module.Category.fromSnapshot({
-            id: categoryId,
-            name: validatedData.name,
-            type: categoryType,
-            color: validatedData.color || "#3B82F6",
-            icon: validatedData.icon || "💰",
-            isActive: true,
-            annualBudget: validatedData.annualBudget || 0,
-            createdAt: new Date().toISOString(),
-          }),
-      );
-
-      if (categoryResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: categoryResult.getError(),
-        });
-        return;
-      }
-
-      const category = categoryResult.getValue();
-      const saveResult = await this.categoryRepository.save(category);
-
-      if (saveResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: saveResult.getError(),
-        });
-        return;
-      }
-
-      // Auto-create Investment if category type is INVESTMENT
-      if (this.syncService && categoryType === CategoryType.INVESTMENT) {
-        const syncResult = await this.syncService.onCategoryCreated(category);
-        if (syncResult.isFailure()) {
-          console.warn("Failed to sync investment from category:", syncResult.getError());
-        }
-      }
-
-      res.status(201).json({
-        success: true,
-        data: category.toSnapshot(),
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          error: "Invalid request data",
-          details: error.errors,
-        });
-        return;
-      }
-
-      console.error("Error creating category:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to create category",
-      });
+    // Convert string type to CategoryType enum
+    const categoryType = CategoryTypeHelper.fromString(validatedData.type);
+    if (!categoryType) {
+      throw new BadRequestError('Invalid category type');
     }
+
+    // Check if category with same name and type already exists
+    const existsResult = await this.categoryRepository.existsByName(
+      validatedData.name,
+      categoryType
+    );
+    const exists = handleResult(existsResult, 'Failed to check category existence');
+
+    if (exists) {
+      throw new ConflictError('Category with this name and type already exists');
+    }
+
+    // Generate UUID for the category
+    const categoryId = crypto.randomUUID();
+    handleResult(CategoryId.create(categoryId), 'Failed to generate category ID');
+
+    // Create category from snapshot
+    const categoryResult = Category.fromSnapshot({
+      id: categoryId,
+      name: validatedData.name,
+      type: categoryType,
+      color: validatedData.color || '#3B82F6',
+      icon: validatedData.icon || '💰',
+      isActive: true,
+      annualBudget: validatedData.annualBudget || 0,
+      createdAt: new Date().toISOString(),
+    });
+
+    const category = handleResult(categoryResult, 'Failed to create category');
+    const saveResult = await this.categoryRepository.save(category);
+    handleResult(saveResult, 'Failed to save category');
+
+    // Auto-create Investment if category type is INVESTMENT
+    if (this.syncService && categoryType === CategoryType.INVESTMENT) {
+      const syncResult = await this.syncService.onCategoryCreated(category);
+      if (syncResult.isFailure()) {
+        console.warn('Failed to sync investment from category:', syncResult.getError());
+      }
+    }
+
+    createdResponse(res, category.toSnapshot());
   }
 
+  /**
+   * Update an existing category
+   */
   async updateCategory(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const validatedData = UpdateCategorySchema.parse(req.body);
+    const { id } = req.params;
+    const validatedData = validateBody(UpdateCategorySchema, req);
 
-      const categoryIdResult = CategoryId.create(id);
-      if (categoryIdResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: "Invalid category ID",
-        });
-        return;
-      }
+    const categoryId = handleResult(CategoryId.create(id), 'Invalid category ID');
 
-      // Get existing category
-      const existingResult = await this.categoryRepository.findById(
-        categoryIdResult.getValue(),
-      );
+    // Get existing category
+    const existingResult = await this.categoryRepository.findById(categoryId);
+    const existingCategory = handleFindResult(existingResult, 'Category');
 
-      if (existingResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: existingResult.getError(),
-        });
-        return;
-      }
+    // Update category fields
+    const updatedSnapshot = {
+      ...existingCategory.toSnapshot(),
+      ...validatedData,
+    };
 
-      const existingCategory = existingResult.getValue();
-      if (!existingCategory) {
-        res.status(404).json({
-          success: false,
-          error: "Category not found",
-        });
-        return;
-      }
+    const categoryResult = Category.fromSnapshot(updatedSnapshot);
+    const updatedCategory = handleResult(categoryResult, 'Failed to update category');
 
-      // Update category fields
-      const updatedSnapshot = {
-        ...existingCategory.toSnapshot(),
-        ...validatedData,
-      };
+    const updateResult = await this.categoryRepository.update(updatedCategory);
+    handleResult(updateResult, 'Failed to save category update');
 
-      const categoryResult = await import("@domain/entities/Category").then(
-        (module) => module.Category.fromSnapshot(updatedSnapshot),
-      );
-
-      if (categoryResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: categoryResult.getError(),
-        });
-        return;
-      }
-
-      const updatedCategory = categoryResult.getValue();
-      const updateResult =
-        await this.categoryRepository.update(updatedCategory);
-
-      if (updateResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: updateResult.getError(),
-        });
-        return;
-      }
-
-      // Sync updates to linked investments
-      if (this.syncService) {
-        await this.syncService.onCategoryUpdated(updatedCategory);
-      }
-
-      res.json({
-        success: true,
-        data: updatedCategory.toSnapshot(),
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          error: "Invalid request data",
-          details: error.errors,
-        });
-        return;
-      }
-
-      console.error("Error updating category:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to update category",
-      });
+    // Sync updates to linked investments
+    if (this.syncService) {
+      await this.syncService.onCategoryUpdated(updatedCategory);
     }
+
+    successResponse(res, updatedCategory.toSnapshot());
   }
 
+  /**
+   * Delete a category (soft delete)
+   */
   async deleteCategory(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
+    const { id } = req.params;
 
-      const categoryIdResult = CategoryId.create(id);
-      if (categoryIdResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: "Invalid category ID",
-        });
-        return;
-      }
+    const categoryId = handleResult(CategoryId.create(id), 'Invalid category ID');
 
-      // Check if category exists
-      const existsResult = await this.categoryRepository.exists(
-        categoryIdResult.getValue(),
-      );
+    // Check if category exists
+    const existsResult = await this.categoryRepository.exists(categoryId);
+    const exists = handleResult(existsResult, 'Failed to check category existence');
 
-      if (existsResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: existsResult.getError(),
-        });
-        return;
-      }
-
-      if (!existsResult.getValue()) {
-        res.status(404).json({
-          success: false,
-          error: "Category not found",
-        });
-        return;
-      }
-
-      // Deactivate linked investments first
-      if (this.syncService) {
-        await this.syncService.onCategoryDeleted(id);
-      }
-
-      // Soft delete (set isActive to false)
-      const deleteResult = await this.categoryRepository.delete(
-        categoryIdResult.getValue(),
-      );
-
-      if (deleteResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: deleteResult.getError(),
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        message: "Category deleted successfully",
-      });
-    } catch (error) {
-      console.error("Error deleting category:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to delete category",
-      });
+    if (!exists) {
+      throw new NotFoundError('Category');
     }
+
+    // Deactivate linked investments first
+    if (this.syncService) {
+      await this.syncService.onCategoryDeleted(id);
+    }
+
+    // Soft delete (set isActive to false)
+    const deleteResult = await this.categoryRepository.delete(categoryId);
+    handleResult(deleteResult, 'Failed to delete category');
+
+    successResponse(res, { message: 'Category deleted successfully' });
   }
 
+  /**
+   * Get usage statistics for a category
+   */
   async getCategoryUsageStats(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
+    const { id } = req.params;
 
-      const categoryIdResult = CategoryId.create(id);
-      if (categoryIdResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: "Invalid category ID",
-        });
-        return;
-      }
+    const categoryId = handleResult(CategoryId.create(id), 'Invalid category ID');
+    const statsResult = await this.categoryRepository.getUsageStatistics(categoryId);
+    const stats = handleResult(statsResult, 'Failed to fetch category usage statistics');
 
-      const statsResult = await this.categoryRepository.getUsageStatistics(
-        categoryIdResult.getValue(),
-      );
-
-      if (statsResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: statsResult.getError(),
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        data: statsResult.getValue(),
-      });
-    } catch (error) {
-      console.error("Error fetching category usage stats:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to fetch category usage statistics",
-      });
-    }
+    successResponse(res, stats);
   }
 
-  async clearAllCategories(req: Request, res: Response): Promise<void> {
-    try {
-      const clearResult = await this.categoryRepository.clear();
+  /**
+   * Clear all categories
+   */
+  async clearAllCategories(_req: Request, res: Response): Promise<void> {
+    const clearResult = await this.categoryRepository.clear();
+    handleResult(clearResult, 'Failed to clear categories');
 
-      if (clearResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: clearResult.getError(),
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        message: "All categories have been deleted",
-      });
-    } catch (error) {
-      console.error("Error clearing categories:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to clear categories",
-      });
-    }
+    successResponse(res, { message: 'All categories have been deleted' });
   }
 }

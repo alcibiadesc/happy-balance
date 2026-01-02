@@ -16,7 +16,20 @@ import {
 } from '@domain/entities/InvestmentHistoryType';
 import { GetPortfolioSummaryUseCase } from '@application/use-cases/GetPortfolioSummaryUseCase';
 import { CategoryInvestmentSyncService } from '@domain/services/CategoryInvestmentSyncService';
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+  ConflictError,
+  validateBody,
+  validateQuery,
+  handleResult,
+  handleFindResult,
+  successResponse,
+  createdResponse,
+} from '@infrastructure/errors';
 
+// Validation Schemas
 const CreateInvestmentSchema = z.object({
   name: z.string().min(1).max(100),
   symbol: z.string().max(20).optional(),
@@ -70,12 +83,17 @@ const AddHistoryEntrySchema = z.object({
   notes: z.string().max(200).optional(),
 });
 
-const UpdateSortOrderSchema = z.array(
-  z.object({
-    id: z.string(),
-    sortOrder: z.number().int(),
-  })
-);
+const UpdateHistorySchema = z.object({
+  amount: z.number().positive().optional(),
+  type: z.enum(['CONTRIBUTION', 'WITHDRAWAL', 'VALUE_UPDATE']).optional(),
+  date: z
+    .string()
+    .transform((val) => new Date(val))
+    .optional(),
+  notes: z.string().max(200).optional(),
+});
+
+const UpdateSortOrderSchema = z.array(z.object({ id: z.string(), sortOrder: z.number().int() }));
 
 export class InvestmentController {
   private getPortfolioSummaryUseCase: GetPortfolioSummaryUseCase;
@@ -88,7 +106,6 @@ export class InvestmentController {
     private readonly userId?: string
   ) {
     this.getPortfolioSummaryUseCase = new GetPortfolioSummaryUseCase(investmentRepository);
-
     if (categoryRepository && userId) {
       this.syncService = new CategoryInvestmentSyncService(
         investmentRepository,
@@ -99,1017 +116,371 @@ export class InvestmentController {
   }
 
   async getInvestments(req: Request, res: Response): Promise<void> {
-    try {
-      const parsedFilters = InvestmentFiltersSchema.parse(req.query);
+    const parsed = InvestmentFiltersSchema.parse(req.query);
+    const filters = { ...parsed, isActive: parsed.isActive ?? true };
 
-      const filters: any = {
-        ...parsedFilters,
-        // Default to active investments only unless explicitly set
-        isActive: parsedFilters.isActive !== undefined ? parsedFilters.isActive : true,
-      };
+    const result = await this.investmentRepository.findWithFilters(filters);
+    const investments = handleResult(result, 'Failed to fetch investments');
 
-      const result = await this.investmentRepository.findWithFilters(filters);
-
-      if (result.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: result.getError(),
-        });
-        return;
-      }
-
-      const investments = result.getValue();
-      const snapshots = investments.map((inv) => inv.toSnapshot());
-
-      res.json({
-        success: true,
-        data: snapshots,
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid query parameters',
-          details: error.errors,
-        });
-        return;
-      }
-
-      console.error('Error fetching investments:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to fetch investments',
-      });
-    }
+    successResponse(
+      res,
+      investments.map((inv) => inv.toSnapshot())
+    );
   }
 
   async getInvestment(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
+    const investmentId = handleResult(InvestmentId.create(req.params.id), 'Invalid investment ID');
+    const result = await this.investmentRepository.findByIdWithHistory(investmentId);
+    const investment = handleFindResult(result, 'Investment');
 
-      const investmentIdResult = InvestmentId.create(id);
-      if (investmentIdResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid investment ID',
-        });
-        return;
-      }
-
-      const result = await this.investmentRepository.findByIdWithHistory(
-        investmentIdResult.getValue()
-      );
-
-      if (result.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: result.getError(),
-        });
-        return;
-      }
-
-      const investment = result.getValue();
-      if (!investment) {
-        res.status(404).json({
-          success: false,
-          error: 'Investment not found',
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        data: investment.toSnapshot(),
-      });
-    } catch (error) {
-      console.error('Error fetching investment:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to fetch investment',
-      });
-    }
+    successResponse(res, investment.toSnapshot());
   }
 
   async createInvestment(req: Request, res: Response): Promise<void> {
-    try {
-      const validatedData = CreateInvestmentSchema.parse(req.body);
-      const userId = req.user?.userId;
+    const data = validateBody(CreateInvestmentSchema, req);
+    const userId = req.user?.userId;
 
-      if (!userId) {
-        res.status(401).json({
-          success: false,
-          error: 'User not authenticated',
-        });
-        return;
-      }
+    if (!userId) throw new UnauthorizedError('User not authenticated');
 
-      // Check if investment with same name already exists
-      const existsResult = await this.investmentRepository.existsByName(validatedData.name);
-
-      if (existsResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: existsResult.getError(),
-        });
-        return;
-      }
-
-      if (existsResult.getValue()) {
-        res.status(409).json({
-          success: false,
-          error: 'Investment with this name already exists',
-        });
-        return;
-      }
-
-      // Create investment
-      const investmentResult = Investment.create(
-        validatedData.name,
-        validatedData.currentValue,
-        validatedData.currency,
-        userId,
-        {
-          symbol: validatedData.symbol,
-          categoryId: validatedData.categoryId,
-          highlight: validatedData.highlight,
-          color: validatedData.color,
-          icon: validatedData.icon,
-          notes: validatedData.notes,
-          sortOrder: validatedData.sortOrder,
-        }
-      );
-
-      if (investmentResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: investmentResult.getError(),
-        });
-        return;
-      }
-
-      const investment = investmentResult.getValue();
-      const saveResult = await this.investmentRepository.save(investment);
-
-      if (saveResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: saveResult.getError(),
-        });
-        return;
-      }
-
-      // If there's an initial value, add it as initial contribution
-      if (validatedData.currentValue > 0) {
-        const historyResult = InvestmentHistory.create(
-          investment.id,
-          validatedData.currentValue,
-          InvestmentHistoryType.CONTRIBUTION,
-          new Date(),
-          'Initial contribution'
-        );
-
-        if (historyResult.isSuccess()) {
-          await this.investmentRepository.addHistoryEntry(historyResult.getValue());
-        }
-      }
-
-      // Auto-create Category if investment doesn't have one
-      if (this.syncService && !validatedData.categoryId) {
-        const syncResult = await this.syncService.onInvestmentCreated(investment);
-        if (syncResult.isFailure()) {
-          console.warn('Failed to sync category from investment:', syncResult.getError());
-        }
-      }
-
-      // Get updated investment with potential categoryId
-      const finalInvestmentResult = await this.investmentRepository.findById(investment.id);
-      const finalInvestment = finalInvestmentResult.isSuccess()
-        ? finalInvestmentResult.getValue()
-        : investment;
-
-      res.status(201).json({
-        success: true,
-        data: finalInvestment?.toSnapshot() || investment.toSnapshot(),
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid request data',
-          details: error.errors,
-        });
-        return;
-      }
-
-      console.error('Error creating investment:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to create investment',
-      });
+    const existsResult = await this.investmentRepository.existsByName(data.name);
+    if (handleResult(existsResult, 'Failed to check investment existence')) {
+      throw new ConflictError('Investment with this name already exists');
     }
+
+    const investment = handleResult(
+      Investment.create(data.name, data.currentValue ?? 0, data.currency ?? 'EUR', userId, {
+        symbol: data.symbol,
+        categoryId: data.categoryId,
+        highlight: data.highlight ?? false,
+        color: data.color,
+        icon: data.icon,
+        notes: data.notes,
+        sortOrder: data.sortOrder,
+      }),
+      'Failed to create investment'
+    );
+
+    handleResult(await this.investmentRepository.save(investment), 'Failed to save investment');
+
+    // Add initial contribution if value > 0
+    if ((data.currentValue ?? 0) > 0) {
+      const historyResult = InvestmentHistory.create(
+        investment.id,
+        data.currentValue ?? 0,
+        InvestmentHistoryType.CONTRIBUTION,
+        new Date(),
+        'Initial contribution'
+      );
+      if (historyResult.isSuccess())
+        await this.investmentRepository.addHistoryEntry(historyResult.getValue());
+    }
+
+    // Auto-create Category if needed
+    if (this.syncService && !data.categoryId) {
+      const syncResult = await this.syncService.onInvestmentCreated(investment);
+      if (syncResult.isFailure()) console.warn('Failed to sync category:', syncResult.getError());
+    }
+
+    const finalResult = await this.investmentRepository.findById(investment.id);
+    const finalInvestment = finalResult.isSuccess() ? finalResult.getValue() : investment;
+
+    createdResponse(res, finalInvestment?.toSnapshot() || investment.toSnapshot());
   }
 
   async updateInvestment(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const validatedData = UpdateInvestmentSchema.parse(req.body);
+    const investmentId = handleResult(InvestmentId.create(req.params.id), 'Invalid investment ID');
+    const data = validateBody(UpdateInvestmentSchema, req);
 
-      const investmentIdResult = InvestmentId.create(id);
-      if (investmentIdResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid investment ID',
-        });
-        return;
-      }
+    const existingResult = await this.investmentRepository.findByIdWithHistory(investmentId);
+    const investment = handleFindResult(existingResult, 'Investment');
 
-      // Get existing investment
-      const existingResult = await this.investmentRepository.findByIdWithHistory(
-        investmentIdResult.getValue()
+    const oldValue = investment.currentValue;
+    const valueChanged = data.currentValue !== undefined && data.currentValue !== oldValue;
+
+    // Apply updates
+    if (data.name !== undefined) investment.changeName(data.name);
+    if (data.symbol !== undefined) investment.changeSymbol(data.symbol);
+    if (data.currentValue !== undefined) investment.updateCurrentValue(data.currentValue);
+    if (data.color !== undefined) investment.changeColor(data.color);
+    if (data.icon !== undefined) investment.changeIcon(data.icon);
+    if (data.categoryId !== undefined) investment.linkToCategory(data.categoryId);
+    if (data.highlight !== undefined) investment.setHighlight(data.highlight);
+    if (data.notes !== undefined) investment.updateNotes(data.notes);
+    if (data.sortOrder !== undefined) investment.changeSortOrder(data.sortOrder);
+    if (data.isActive === false) investment.deactivate();
+    else if (data.isActive === true) investment.activate();
+
+    handleResult(await this.investmentRepository.update(investment), 'Failed to update investment');
+
+    // Record value change in history
+    if (valueChanged && data.currentValue !== undefined) {
+      const historyResult = InvestmentHistory.create(
+        investment.id,
+        data.currentValue,
+        InvestmentHistoryType.VALUE_UPDATE,
+        new Date(),
+        `Value updated from ${oldValue.toFixed(2)} to ${data.currentValue.toFixed(2)}`
       );
-
-      if (existingResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: existingResult.getError(),
-        });
-        return;
-      }
-
-      const existingInvestment = existingResult.getValue();
-      if (!existingInvestment) {
-        res.status(404).json({
-          success: false,
-          error: 'Investment not found',
-        });
-        return;
-      }
-
-      // Track if value is being updated for history record
-      const oldValue = existingInvestment.currentValue;
-      const valueChanged =
-        validatedData.currentValue !== undefined && validatedData.currentValue !== oldValue;
-
-      // Update fields
-      if (validatedData.name !== undefined) {
-        existingInvestment.changeName(validatedData.name);
-      }
-      if (validatedData.symbol !== undefined) {
-        existingInvestment.changeSymbol(validatedData.symbol);
-      }
-      if (validatedData.currentValue !== undefined) {
-        existingInvestment.updateCurrentValue(validatedData.currentValue);
-      }
-      if (validatedData.color !== undefined) {
-        existingInvestment.changeColor(validatedData.color);
-      }
-      if (validatedData.icon !== undefined) {
-        existingInvestment.changeIcon(validatedData.icon);
-      }
-      if (validatedData.categoryId !== undefined) {
-        existingInvestment.linkToCategory(validatedData.categoryId);
-      }
-      if (validatedData.highlight !== undefined) {
-        existingInvestment.setHighlight(validatedData.highlight);
-      }
-      if (validatedData.notes !== undefined) {
-        existingInvestment.updateNotes(validatedData.notes);
-      }
-      if (validatedData.sortOrder !== undefined) {
-        existingInvestment.changeSortOrder(validatedData.sortOrder);
-      }
-      if (validatedData.isActive === false) {
-        existingInvestment.deactivate();
-      } else if (validatedData.isActive === true) {
-        existingInvestment.activate();
-      }
-
-      const updateResult = await this.investmentRepository.update(existingInvestment);
-
-      if (updateResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: updateResult.getError(),
-        });
-        return;
-      }
-
-      // Record value change in history if value was manually updated
-      if (valueChanged && validatedData.currentValue !== undefined) {
-        const historyResult = InvestmentHistory.create(
-          existingInvestment.id,
-          validatedData.currentValue,
-          InvestmentHistoryType.VALUE_UPDATE,
-          new Date(),
-          `Value updated from ${oldValue.toFixed(2)} to ${validatedData.currentValue.toFixed(2)}`
-        );
-
-        if (historyResult.isSuccess()) {
-          await this.investmentRepository.addHistoryEntry(historyResult.getValue());
-        }
-      }
-
-      // Sync updates to linked category
-      if (this.syncService) {
-        await this.syncService.onInvestmentUpdated(existingInvestment);
-      }
-
-      res.json({
-        success: true,
-        data: existingInvestment.toSnapshot(),
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid request data',
-          details: error.errors,
-        });
-        return;
-      }
-
-      console.error('Error updating investment:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to update investment',
-      });
+      if (historyResult.isSuccess())
+        await this.investmentRepository.addHistoryEntry(historyResult.getValue());
     }
+
+    if (this.syncService) await this.syncService.onInvestmentUpdated(investment);
+
+    successResponse(res, investment.toSnapshot());
   }
 
   async deleteInvestment(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
+    const investmentId = handleResult(InvestmentId.create(req.params.id), 'Invalid investment ID');
 
-      const investmentIdResult = InvestmentId.create(id);
-      if (investmentIdResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid investment ID',
-        });
-        return;
-      }
+    const investmentResult = await this.investmentRepository.findById(investmentId);
+    const investment = handleFindResult(investmentResult, 'Investment');
 
-      // Get investment before deleting for sync
-      const investmentResult = await this.investmentRepository.findById(
-        investmentIdResult.getValue()
-      );
+    handleResult(
+      await this.investmentRepository.delete(investmentId),
+      'Failed to delete investment'
+    );
 
-      if (investmentResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: investmentResult.getError(),
-        });
-        return;
-      }
+    if (this.syncService) await this.syncService.onInvestmentDeleted(investment);
 
-      const investment = investmentResult.getValue();
-      if (!investment) {
-        res.status(404).json({
-          success: false,
-          error: 'Investment not found',
-        });
-        return;
-      }
-
-      // Soft delete
-      const deleteResult = await this.investmentRepository.delete(investmentIdResult.getValue());
-
-      if (deleteResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: deleteResult.getError(),
-        });
-        return;
-      }
-
-      // Sync deletion to linked category
-      if (this.syncService) {
-        await this.syncService.onInvestmentDeleted(investment);
-      }
-
-      res.json({
-        success: true,
-        message: 'Investment deleted successfully',
-      });
-    } catch (error) {
-      console.error('Error deleting investment:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to delete investment',
-      });
-    }
+    successResponse(res, { message: 'Investment deleted successfully' });
   }
 
-  async deleteAll(req: Request, res: Response): Promise<void> {
-    try {
-      const clearResult = await this.investmentRepository.clear();
-
-      if (clearResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: clearResult.getError(),
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        message: 'All investments deleted successfully',
-      });
-    } catch (error) {
-      console.error('Error deleting all investments:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to delete all investments',
-      });
-    }
+  async deleteAll(_req: Request, res: Response): Promise<void> {
+    handleResult(await this.investmentRepository.clear(), 'Failed to delete all investments');
+    successResponse(res, { message: 'All investments deleted successfully' });
   }
 
-  async getPortfolioSummary(req: Request, res: Response): Promise<void> {
-    try {
-      const result = await this.getPortfolioSummaryUseCase.execute();
-
-      if (result.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: result.getError(),
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        data: result.getValue(),
-      });
-    } catch (error) {
-      console.error('Error fetching portfolio summary:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to fetch portfolio summary',
-      });
-    }
+  async getPortfolioSummary(_req: Request, res: Response): Promise<void> {
+    const result = await this.getPortfolioSummaryUseCase.execute();
+    successResponse(res, handleResult(result, 'Failed to fetch portfolio summary'));
   }
 
   async addHistoryEntry(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const validatedData = AddHistoryEntrySchema.parse(req.body);
+    const investmentId = handleResult(InvestmentId.create(req.params.id), 'Invalid investment ID');
+    const data = AddHistoryEntrySchema.parse(req.body);
 
-      const investmentIdResult = InvestmentId.create(id);
-      if (investmentIdResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid investment ID',
-        });
-        return;
-      }
+    const investmentResult = await this.investmentRepository.findByIdWithHistory(investmentId);
+    const investment = handleFindResult(investmentResult, 'Investment');
 
-      // Check if investment exists
-      const investmentResult = await this.investmentRepository.findByIdWithHistory(
-        investmentIdResult.getValue()
-      );
+    const historyType = InvestmentHistoryTypeHelper.fromString(data.type);
+    if (!historyType) throw new BadRequestError('Invalid history type');
 
-      if (investmentResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: investmentResult.getError(),
-        });
-        return;
-      }
+    const historyEntry = handleResult(
+      InvestmentHistory.create(investment.id, data.amount, historyType, data.date, data.notes),
+      'Failed to create history entry'
+    );
 
-      const investment = investmentResult.getValue();
-      if (!investment) {
-        res.status(404).json({
-          success: false,
-          error: 'Investment not found',
-        });
-        return;
-      }
+    await this.investmentRepository.addHistoryEntry(historyEntry);
 
-      // Create history entry
-      const historyType = InvestmentHistoryTypeHelper.fromString(validatedData.type);
-      if (!historyType) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid history type',
-        });
-        return;
-      }
-
-      const historyResult = InvestmentHistory.create(
-        investment.id,
-        validatedData.amount,
-        historyType,
-        validatedData.date,
-        validatedData.notes
-      );
-
-      if (historyResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: historyResult.getError(),
-        });
-        return;
-      }
-
-      const historyEntry = historyResult.getValue();
-      await this.investmentRepository.addHistoryEntry(historyEntry);
-
-      // Update investment current value based on type
-      if (historyType === InvestmentHistoryType.CONTRIBUTION) {
-        investment.updateCurrentValue(investment.currentValue + validatedData.amount);
-      } else if (historyType === InvestmentHistoryType.WITHDRAWAL) {
-        investment.updateCurrentValue(Math.max(0, investment.currentValue - validatedData.amount));
-      } else if (historyType === InvestmentHistoryType.VALUE_UPDATE) {
-        investment.updateCurrentValue(validatedData.amount);
-      }
-
-      await this.investmentRepository.update(investment);
-
-      // Return updated investment
-      const updatedResult = await this.investmentRepository.findByIdWithHistory(investment.id);
-
-      res.status(201).json({
-        success: true,
-        data: updatedResult.getValue()?.toSnapshot(),
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid request data',
-          details: error.errors,
-        });
-        return;
-      }
-
-      console.error('Error adding history entry:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to add history entry',
-      });
+    // Update investment value
+    if (historyType === InvestmentHistoryType.CONTRIBUTION) {
+      investment.updateCurrentValue(investment.currentValue + data.amount);
+    } else if (historyType === InvestmentHistoryType.WITHDRAWAL) {
+      investment.updateCurrentValue(Math.max(0, investment.currentValue - data.amount));
+    } else if (historyType === InvestmentHistoryType.VALUE_UPDATE) {
+      investment.updateCurrentValue(data.amount);
     }
+
+    await this.investmentRepository.update(investment);
+
+    const updatedResult = await this.investmentRepository.findByIdWithHistory(investment.id);
+    createdResponse(res, updatedResult.getValue()?.toSnapshot());
   }
 
   async deleteHistoryEntry(req: Request, res: Response): Promise<void> {
-    try {
-      const { id, historyId } = req.params;
+    const investmentId = handleResult(InvestmentId.create(req.params.id), 'Invalid investment ID');
+    const historyId = handleResult(
+      InvestmentHistoryId.create(req.params.historyId),
+      'Invalid history entry ID'
+    );
 
-      const investmentIdResult = InvestmentId.create(id);
-      if (investmentIdResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid investment ID',
-        });
-        return;
+    const historyResult = await this.investmentRepository.findHistoryById(historyId);
+    const historyEntry = handleFindResult(historyResult, 'History entry');
+
+    handleResult(
+      await this.investmentRepository.deleteHistoryEntry(historyId),
+      'Failed to delete history entry'
+    );
+
+    // Update investment value (reverse the operation)
+    const investmentResult = await this.investmentRepository.findByIdWithHistory(investmentId);
+    if (investmentResult.isSuccess() && investmentResult.getValue()) {
+      const investment = investmentResult.getValue()!;
+      if (historyEntry.type === InvestmentHistoryType.CONTRIBUTION) {
+        investment.updateCurrentValue(Math.max(0, investment.currentValue - historyEntry.amount));
+      } else if (historyEntry.type === InvestmentHistoryType.WITHDRAWAL) {
+        investment.updateCurrentValue(investment.currentValue + historyEntry.amount);
       }
-
-      const historyIdResult = InvestmentHistoryId.create(historyId);
-      if (historyIdResult.isFailure()) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid history entry ID',
-        });
-        return;
-      }
-
-      // Get history entry to know the amount
-      const historyResult = await this.investmentRepository.findHistoryById(
-        historyIdResult.getValue()
-      );
-
-      if (historyResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: historyResult.getError(),
-        });
-        return;
-      }
-
-      const historyEntry = historyResult.getValue();
-      if (!historyEntry) {
-        res.status(404).json({
-          success: false,
-          error: 'History entry not found',
-        });
-        return;
-      }
-
-      // Delete the entry
-      const deleteResult = await this.investmentRepository.deleteHistoryEntry(
-        historyIdResult.getValue()
-      );
-
-      if (deleteResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: deleteResult.getError(),
-        });
-        return;
-      }
-
-      // Update investment value (reverse the operation)
-      const investmentResult = await this.investmentRepository.findByIdWithHistory(
-        investmentIdResult.getValue()
-      );
-
-      if (investmentResult.isSuccess() && investmentResult.getValue()) {
-        const investment = investmentResult.getValue()!;
-
-        if (historyEntry.type === InvestmentHistoryType.CONTRIBUTION) {
-          investment.updateCurrentValue(Math.max(0, investment.currentValue - historyEntry.amount));
-        } else if (historyEntry.type === InvestmentHistoryType.WITHDRAWAL) {
-          investment.updateCurrentValue(investment.currentValue + historyEntry.amount);
-        }
-
-        await this.investmentRepository.update(investment);
-      }
-
-      // If history entry was linked to a transaction, remove the category from that transaction
-      if (historyEntry.transactionId && this.transactionRepository) {
-        try {
-          const txIdResult = TransactionId.create(historyEntry.transactionId);
-          if (txIdResult.isSuccess()) {
-            const transactionResult = await this.transactionRepository.findById(
-              txIdResult.getValue()
-            );
-            if (transactionResult.isSuccess() && transactionResult.getValue()) {
-              const transaction = transactionResult.getValue()!;
-              // Remove the category from the transaction
-              transaction.setCategoryId(null);
-              await this.transactionRepository.update(transaction);
-            }
-          }
-        } catch (e) {
-          console.warn(
-            `Failed to remove category from linked transaction ${historyEntry.transactionId}:`,
-            e
-          );
-          // Continue anyway, the history entry is already deleted
-        }
-      }
-
-      res.json({
-        success: true,
-        message: 'History entry deleted successfully',
-      });
-    } catch (error) {
-      console.error('Error deleting history entry:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to delete history entry',
-      });
+      await this.investmentRepository.update(investment);
     }
+
+    // Remove category from linked transaction if exists
+    if (historyEntry.transactionId && this.transactionRepository) {
+      try {
+        const txIdResult = TransactionId.create(historyEntry.transactionId);
+        if (txIdResult.isSuccess()) {
+          const txResult = await this.transactionRepository.findById(txIdResult.getValue());
+          if (txResult.isSuccess() && txResult.getValue()) {
+            txResult.getValue()!.setCategoryId(null);
+            await this.transactionRepository.update(txResult.getValue()!);
+          }
+        }
+      } catch (e) {
+        console.warn(`Failed to unlink transaction ${historyEntry.transactionId}:`, e);
+      }
+    }
+
+    successResponse(res, { message: 'History entry deleted successfully' });
+  }
+
+  async updateHistoryEntry(req: Request, res: Response): Promise<void> {
+    const investmentId = handleResult(InvestmentId.create(req.params.id), 'Invalid investment ID');
+    const historyId = handleResult(
+      InvestmentHistoryId.create(req.params.historyId),
+      'Invalid history ID'
+    );
+    const data = UpdateHistorySchema.parse(req.body);
+
+    const historyResult = await this.investmentRepository.findHistoryById(historyId);
+    const history = handleFindResult(historyResult, 'History entry');
+
+    if (data.amount !== undefined) history.updateAmount(data.amount);
+    if (data.date !== undefined) history.updateDate(data.date);
+    if (data.notes !== undefined) history.updateNotes(data.notes);
+    if (data.type !== undefined) {
+      const newType = InvestmentHistoryTypeHelper.fromString(data.type);
+      if (newType) history.updateType(newType);
+    }
+
+    await this.investmentRepository.updateHistoryEntry(history);
+
+    // Recalculate investment value
+    const investmentResult = await this.investmentRepository.findByIdWithHistory(investmentId);
+    if (investmentResult.isSuccess() && investmentResult.getValue()) {
+      const investment = investmentResult.getValue()!;
+      let value = 0;
+      for (const h of investment.history || []) {
+        if (h.type === InvestmentHistoryType.CONTRIBUTION) value += h.amount;
+        else if (h.type === InvestmentHistoryType.WITHDRAWAL) value -= h.amount;
+        else if (h.type === InvestmentHistoryType.VALUE_UPDATE) value = h.amount;
+      }
+      investment.updateCurrentValue(Math.max(0, value));
+      await this.investmentRepository.update(investment);
+    }
+
+    successResponse(res, history.toSnapshot());
   }
 
   async getHistoryTimeline(req: Request, res: Response): Promise<void> {
-    try {
-      const period = (req.query.period as 'day' | 'week' | 'month' | 'year') || 'month';
-      const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined;
-      const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined;
+    const period = (req.query.period as 'day' | 'week' | 'month' | 'year') || 'month';
+    const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined;
+    const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined;
 
-      const result = await this.investmentRepository.getHistoryTimeline(period, dateFrom, dateTo);
-
-      if (result.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: result.getError(),
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        data: result.getValue(),
-      });
-    } catch (error) {
-      console.error('Error fetching history timeline:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to fetch history timeline',
-      });
-    }
+    const result = await this.investmentRepository.getHistoryTimeline(period, dateFrom, dateTo);
+    successResponse(res, handleResult(result, 'Failed to fetch history timeline'));
   }
 
   async updateSortOrder(req: Request, res: Response): Promise<void> {
-    try {
-      const validatedData = UpdateSortOrderSchema.parse(req.body);
-
-      const sortOrders = validatedData.map((item) => ({
-        id: item.id,
-        sortOrder: item.sortOrder,
-      }));
-
-      const result = await this.investmentRepository.updateSortOrder(sortOrders);
-
-      if (result.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: result.getError(),
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        message: 'Sort order updated successfully',
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid request data',
-          details: error.errors,
-        });
-        return;
-      }
-
-      console.error('Error updating sort order:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to update sort order',
-      });
-    }
+    const data = validateBody(UpdateSortOrderSchema, req);
+    handleResult(
+      await this.investmentRepository.updateSortOrder(data),
+      'Failed to update sort order'
+    );
+    successResponse(res, { message: 'Sort order updated successfully' });
   }
 
-  async getInvestmentsWithMetrics(req: Request, res: Response): Promise<void> {
-    try {
-      const result = await this.investmentRepository.getInvestmentsWithMetrics();
-
-      if (result.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: result.getError(),
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        data: result.getValue(),
-      });
-    } catch (error) {
-      console.error('Error fetching investments with metrics:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to fetch investments with metrics',
-      });
-    }
+  async getInvestmentsWithMetrics(_req: Request, res: Response): Promise<void> {
+    const result = await this.investmentRepository.getInvestmentsWithMetrics();
+    successResponse(res, handleResult(result, 'Failed to fetch investments with metrics'));
   }
 
-  /**
-   * Sync all existing investments with categories
-   * Creates category for investments without categoryId
-   */
-  async syncWithCategories(req: Request, res: Response): Promise<void> {
-    try {
-      if (!this.syncService) {
-        res.status(400).json({
-          success: false,
-          error: 'Sync service not available',
-        });
-        return;
-      }
+  async syncWithCategories(_req: Request, res: Response): Promise<void> {
+    if (!this.syncService) throw new BadRequestError('Sync service not available');
 
-      // Use the optimized sync method
-      const syncResult = await this.syncService.syncAllInvestmentsToCategories();
+    const syncResult = await this.syncService.syncAllInvestmentsToCategories();
+    const { created, linked, reactivated } = handleResult(syncResult, 'Failed to sync');
 
-      if (syncResult.isFailure()) {
-        res.status(500).json({
-          success: false,
-          error: syncResult.getError(),
-        });
-        return;
-      }
-
-      const { created, linked, reactivated } = syncResult.getValue();
-
-      res.json({
-        success: true,
-        data: {
-          created,
-          linked,
-          reactivated,
-          total: created + linked,
-        },
-        message: `Created ${created} new categories, linked ${linked} existing ones, reactivated ${reactivated}.`,
-      });
-    } catch (error) {
-      console.error('Error syncing investments with categories:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to sync investments with categories',
-      });
-    }
+    successResponse(res, {
+      created,
+      linked,
+      reactivated,
+      total: created + linked,
+      message: `Created ${created} new categories, linked ${linked} existing ones, reactivated ${reactivated}.`,
+    });
   }
 
-  /**
-   * Import from Gofire backup format
-   */
   async importFromGofire(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        res.status(401).json({ success: false, error: 'User not authenticated' });
-        return;
-      }
+    const userId = req.user?.userId;
+    if (!userId) throw new UnauthorizedError('User not authenticated');
 
-      const { data } = req.body;
-      if (!Array.isArray(data)) {
-        res.status(400).json({ success: false, error: 'Invalid Gofire format' });
-        return;
-      }
+    const { data } = req.body;
+    if (!Array.isArray(data)) throw new BadRequestError('Invalid Gofire format');
 
-      let imported = 0;
-      let historyCount = 0;
+    let imported = 0,
+      historyCount = 0;
 
-      for (const item of data) {
-        // Create investment
-        const investmentResult = Investment.create(item.title, item.number || 0, 'EUR', userId, {
-          highlight: item.hightlight || false,
-          color: '#3B82F6',
-          icon: '📈',
-        });
+    for (const item of data) {
+      const investmentResult = Investment.create(item.title, item.number || 0, 'EUR', userId, {
+        highlight: item.hightlight || false,
+        color: '#3B82F6',
+        icon: '📈',
+      });
 
-        if (investmentResult.isFailure()) {
-          console.warn(`Failed to create investment ${item.title}:`, investmentResult.getError());
-          continue;
-        }
+      if (investmentResult.isFailure()) continue;
 
-        const investment = investmentResult.getValue();
-        const saveResult = await this.investmentRepository.save(investment);
+      const investment = investmentResult.getValue();
+      const saveResult = await this.investmentRepository.save(investment);
+      if (saveResult.isFailure()) continue;
 
-        if (saveResult.isFailure()) {
-          console.warn(`Failed to save investment ${item.title}:`, saveResult.getError());
-          continue;
-        }
+      imported++;
 
-        imported++;
-
-        // Import history (savings)
-        if (Array.isArray(item.saving)) {
-          for (const saving of item.saving) {
-            const historyType =
-              saving.amount < 0
-                ? InvestmentHistoryType.WITHDRAWAL
-                : InvestmentHistoryType.CONTRIBUTION;
-
-            const historyResult = InvestmentHistory.create(
-              investment.id,
-              Math.abs(saving.amount),
-              historyType,
-              new Date(saving.today),
-              `Imported from Gofire`
-            );
-
-            if (historyResult.isSuccess()) {
-              await this.investmentRepository.addHistoryEntry(historyResult.getValue());
-              historyCount++;
-            }
+      if (Array.isArray(item.saving)) {
+        for (const saving of item.saving) {
+          const historyType =
+            saving.amount < 0
+              ? InvestmentHistoryType.WITHDRAWAL
+              : InvestmentHistoryType.CONTRIBUTION;
+          const historyResult = InvestmentHistory.create(
+            investment.id,
+            Math.abs(saving.amount),
+            historyType,
+            new Date(saving.today),
+            'Imported from Gofire'
+          );
+          if (historyResult.isSuccess()) {
+            await this.investmentRepository.addHistoryEntry(historyResult.getValue());
+            historyCount++;
           }
         }
-
-        // Auto-create category if sync service available
-        if (this.syncService) {
-          await this.syncService.onInvestmentCreated(investment);
-        }
       }
 
-      res.json({
-        success: true,
-        data: { imported, historyCount },
-        message: `Imported ${imported} investments with ${historyCount} history entries`,
-      });
-    } catch (error) {
-      console.error('Error importing from Gofire:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to import from Gofire',
-      });
+      if (this.syncService) await this.syncService.onInvestmentCreated(investment);
     }
+
+    successResponse(res, {
+      imported,
+      historyCount,
+      message: `Imported ${imported} investments with ${historyCount} history entries`,
+    });
   }
 
-  /**
-   * Export portfolio data
-   */
-  async exportPortfolio(req: Request, res: Response): Promise<void> {
-    try {
-      const investmentsResult = await this.investmentRepository.findAll();
-      if (investmentsResult.isFailure()) {
-        res.status(500).json({ success: false, error: investmentsResult.getError() });
-        return;
+  async exportPortfolio(_req: Request, res: Response): Promise<void> {
+    const investmentsResult = await this.investmentRepository.findAll();
+    const investments = handleResult(investmentsResult, 'Failed to fetch investments');
+
+    const exportData = [];
+    for (const inv of investments) {
+      const withHistoryResult = await this.investmentRepository.findByIdWithHistory(inv.id);
+      if (withHistoryResult.isSuccess() && withHistoryResult.getValue()) {
+        exportData.push(withHistoryResult.getValue()!.toSnapshot());
       }
-
-      const investments = investmentsResult.getValue();
-      const exportData = [];
-
-      for (const inv of investments) {
-        const withHistoryResult = await this.investmentRepository.findByIdWithHistory(inv.id);
-        if (withHistoryResult.isSuccess() && withHistoryResult.getValue()) {
-          const fullInv = withHistoryResult.getValue()!;
-          exportData.push(fullInv.toSnapshot());
-        }
-      }
-
-      res.json({
-        success: true,
-        data: {
-          investments: exportData,
-          exportDate: new Date().toISOString(),
-          version: '1.0.0',
-        },
-      });
-    } catch (error) {
-      console.error('Error exporting portfolio:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to export portfolio',
-      });
     }
-  }
 
-  /**
-   * Update history entry
-   */
-  async updateHistoryEntry(req: Request, res: Response): Promise<void> {
-    try {
-      const { id, historyId } = req.params;
-      const { amount, date, notes, type } = req.body;
-
-      const historyIdResult = InvestmentHistoryId.create(historyId);
-      if (historyIdResult.isFailure()) {
-        res.status(400).json({ success: false, error: 'Invalid history ID' });
-        return;
-      }
-
-      const historyResult = await this.investmentRepository.findHistoryById(
-        historyIdResult.getValue()
-      );
-      if (historyResult.isFailure()) {
-        res.status(500).json({ success: false, error: historyResult.getError() });
-        return;
-      }
-
-      const history = historyResult.getValue();
-      if (!history) {
-        res.status(404).json({ success: false, error: 'History entry not found' });
-        return;
-      }
-
-      // Update fields
-      if (amount !== undefined) {
-        history.updateAmount(amount);
-      }
-      if (date !== undefined) {
-        history.updateDate(new Date(date));
-      }
-      if (notes !== undefined) {
-        history.updateNotes(notes);
-      }
-      if (type !== undefined) {
-        const newType = InvestmentHistoryTypeHelper.fromString(type);
-        if (newType) {
-          history.updateType(newType);
-        }
-      }
-
-      await this.investmentRepository.updateHistoryEntry(history);
-
-      // Recalculate investment value
-      const investmentIdResult = InvestmentId.create(id);
-      if (investmentIdResult.isSuccess()) {
-        const investmentResult = await this.investmentRepository.findByIdWithHistory(
-          investmentIdResult.getValue()
-        );
-        if (investmentResult.isSuccess() && investmentResult.getValue()) {
-          const investment = investmentResult.getValue()!;
-          // Recalculate from history
-          const historyEntries = investment.history || [];
-          let value = 0;
-          for (const h of historyEntries) {
-            if (h.type === InvestmentHistoryType.CONTRIBUTION) {
-              value += h.amount;
-            } else if (h.type === InvestmentHistoryType.WITHDRAWAL) {
-              value -= h.amount;
-            } else if (h.type === InvestmentHistoryType.VALUE_UPDATE) {
-              value = h.amount;
-            }
-          }
-          investment.updateCurrentValue(Math.max(0, value));
-          await this.investmentRepository.update(investment);
-        }
-      }
-
-      res.json({
-        success: true,
-        data: history.toSnapshot(),
-      });
-    } catch (error) {
-      console.error('Error updating history entry:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to update history entry',
-      });
-    }
+    successResponse(res, {
+      investments: exportData,
+      exportDate: new Date().toISOString(),
+      version: '1.0.0',
+    });
   }
 }

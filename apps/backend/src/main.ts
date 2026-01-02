@@ -141,8 +141,8 @@ class App {
       });
     });
 
-    // Version endpoint
-    this.app.get('/version', (req, res) => {
+    // Version endpoint (available at both /version and /api/version)
+    const versionHandler = (req: any, res: any) => {
       try {
         const versionFile = path.join(process.cwd(), '.version.json');
 
@@ -169,7 +169,9 @@ class App {
           version: 'unknown',
         });
       }
-    });
+    };
+    this.app.get('/version', versionHandler);
+    this.app.get('/api/version', versionHandler);
 
     // Check for updates endpoint
     this.app.get('/api/system/check-updates', async (req, res) => {

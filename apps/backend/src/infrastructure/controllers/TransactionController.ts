@@ -7,12 +7,10 @@ import { Merchant } from '@domain/value-objects/Merchant';
 import { TransactionType } from '@domain/entities/TransactionType';
 import { Transaction } from '@domain/entities/Transaction';
 import { CategoryType } from '@domain/entities/CategoryType';
-import { CreateTransactionCommand } from '@application/commands/CreateTransactionCommand';
 import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
 import { ICategoryRepository } from '@domain/repositories/ICategoryRepository';
 import { GetDashboardDataUseCase } from '@application/use-cases/GetDashboardDataUseCase';
 import { DashboardQuery } from '@application/queries/DashboardQuery';
-import { TransactionListQuery } from '@application/queries/TransactionListQuery';
 import { SmartCategorizeTransactionUseCase } from '@application/use-cases/SmartCategorizeTransactionUseCase';
 import { FindSimilarTransactionsUseCase } from '@application/use-cases/FindSimilarTransactionsUseCase';
 import { GetDashboardMetricsUseCase } from '@application/use-cases/GetDashboardMetricsUseCase';
@@ -22,7 +20,19 @@ import { UnlinkSplitTransactionsUseCase } from '@application/use-cases/UnlinkSpl
 import { SyncInvestmentFromTransactionUseCase } from '@application/use-cases/SyncInvestmentFromTransactionUseCase';
 import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/UnsyncInvestmentFromTransactionUseCase';
 import { AutoCategorizeTransactionsUseCase } from '@application/use-cases/AutoCategorizeTransactionsUseCase';
+import {
+  BadRequestError,
+  NotFoundError,
+  InternalError,
+  validateBody,
+  validateQuery,
+  handleResult,
+  handleFindResult,
+  successResponse,
+  createdResponse,
+} from '@infrastructure/errors';
 
+// Validation Schemas
 const CreateTransactionSchema = z.object({
   amount: z.number().positive(),
   currency: z.string().min(3).max(3),
@@ -160,21 +170,17 @@ export class TransactionController {
     }
 
     try {
-      // Get category to check its type
       const categoryResult = await this.categoryRepository.findById({ value: categoryId } as any);
       if (categoryResult.isFailure() || !categoryResult.getValue()) {
         return;
       }
 
       const category = categoryResult.getValue()!;
-
-      // Only sync if category is of type INVESTMENT
       if (category.type !== CategoryType.INVESTMENT) {
         return;
       }
 
       const snapshot = transaction.toSnapshot();
-
       await this.syncInvestmentUseCase.execute({
         transactionId: snapshot.id,
         amount: snapshot.amount,
@@ -191,926 +197,420 @@ export class TransactionController {
       );
     } catch (error) {
       console.error('Failed to sync investment from transaction:', error);
-      // Don't throw - this is a non-critical operation
     }
   }
 
-  async createTransaction(req: Request, res: Response) {
-    try {
-      const validationResult = CreateTransactionSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors,
-        });
+  /**
+   * Build domain filters from validated query params
+   */
+  private buildDomainFilters(filters: any): any {
+    const domainFilters: any = {};
+
+    if (filters.startDate) {
+      const dateResult = TransactionDate.fromString(filters.startDate);
+      if (dateResult.isSuccess()) {
+        domainFilters.startDate = dateResult.getValue();
       }
+    }
 
-      const data = validationResult.data;
-
-      // Create value objects
-      const moneyResult = Money.create(data.amount, data.currency);
-      if (moneyResult.isFailure()) {
-        return res.status(400).json({ error: moneyResult.getError() });
+    if (filters.endDate) {
+      const dateResult = TransactionDate.fromString(filters.endDate);
+      if (dateResult.isSuccess()) {
+        domainFilters.endDate = dateResult.getValue();
       }
+    }
 
-      const dateResult = TransactionDate.fromString(data.date);
-      if (dateResult.isFailure()) {
-        return res.status(400).json({ error: dateResult.getError() });
-      }
+    if (filters.type) domainFilters.type = filters.type;
+    if (filters.categoryId) domainFilters.categoryId = filters.categoryId;
+    if (filters.merchantName) domainFilters.merchantName = filters.merchantName;
+    if (filters.minAmount !== undefined) domainFilters.minAmount = filters.minAmount;
+    if (filters.maxAmount !== undefined) domainFilters.maxAmount = filters.maxAmount;
+    if (filters.currency) domainFilters.currency = filters.currency;
+    if (filters.includeHidden !== undefined) domainFilters.includeHidden = filters.includeHidden;
 
-      const merchantResult = Merchant.create(data.merchant);
-      if (merchantResult.isFailure()) {
-        return res.status(400).json({ error: merchantResult.getError() });
-      }
+    return domainFilters;
+  }
 
-      // Create transaction
-      const transactionResult = Transaction.create(
-        moneyResult.getValue(),
-        dateResult.getValue(),
-        merchantResult.getValue(),
+  /**
+   * Format transaction response with hidden field
+   */
+  private formatTransactionResponse(transaction: Transaction): any {
+    return {
+      ...transaction.toSnapshot(),
+      hidden: (transaction as any).hidden || false,
+      splitPercentage: (transaction as any).splitPercentage,
+      linkedTransactionId: (transaction as any).linkedTransactionId,
+      isReimbursement: (transaction as any).isReimbursement || false,
+    };
+  }
+
+  async createTransaction(req: Request, res: Response): Promise<void> {
+    const data = validateBody(CreateTransactionSchema, req);
+
+    const money = handleResult(Money.create(data.amount, data.currency), 'Invalid amount');
+    const date = handleResult(TransactionDate.fromString(data.date), 'Invalid date');
+    const merchant = handleResult(Merchant.create(data.merchant), 'Invalid merchant');
+
+    const transaction = handleResult(
+      Transaction.create(
+        money,
+        date,
+        merchant,
         data.type as TransactionType,
         data.description || ''
-      );
+      ),
+      'Failed to create transaction'
+    );
 
-      if (transactionResult.isFailure()) {
-        return res.status(400).json({ error: transactionResult.getError() });
-      }
-
-      const transaction = transactionResult.getValue();
-
-      // Set categoryId if provided
-      if (data.categoryId) {
-        transaction.setCategoryId(data.categoryId);
-      }
-
-      // Save transaction
-      const saveResult = await this.transactionRepository.save(transaction);
-      if (saveResult.isFailure()) {
-        return res.status(500).json({ error: saveResult.getError() });
-      }
-
-      // Sync investment if transaction has investment category
-      if (data.categoryId) {
-        await this.syncInvestmentIfNeeded(transaction, data.categoryId);
-      }
-
-      // Include hidden field in the response (new transactions are not hidden)
-      const responseData = {
-        ...transaction.toSnapshot(),
-        hidden: false,
-      };
-
-      res.status(201).json({
-        success: true,
-        data: responseData,
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+    if (data.categoryId) {
+      transaction.setCategoryId(data.categoryId);
     }
+
+    const saveResult = await this.transactionRepository.save(transaction);
+    handleResult(saveResult, 'Failed to save transaction');
+
+    if (data.categoryId) {
+      await this.syncInvestmentIfNeeded(transaction, data.categoryId);
+    }
+
+    createdResponse(res, { ...transaction.toSnapshot(), hidden: false });
   }
 
-  async getTransactions(req: Request, res: Response) {
-    try {
-      const validationResult = TransactionFiltersSchema.safeParse(req.query);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors,
-        });
-      }
+  async getTransactions(req: Request, res: Response): Promise<void> {
+    const filters = validateQuery(TransactionFiltersSchema, req);
+    const pageNum = filters.page ?? 1;
+    const limitNum = filters.limit ?? 50000;
+    const { page, limit, ...transactionFilters } = filters;
 
-      const filters = validationResult.data;
-      const { page, limit, ...transactionFilters } = filters;
+    const domainFilters = this.buildDomainFilters(transactionFilters);
+    const pagination = { offset: (pageNum - 1) * limitNum, limit: limitNum };
 
-      // Build filters object
-      const domainFilters: any = {};
+    const result = await this.transactionRepository.findWithFilters(domainFilters, pagination);
+    const { transactions, totalCount } = handleResult(result, 'Failed to fetch transactions');
 
-      if (transactionFilters.startDate) {
-        const dateResult = TransactionDate.fromString(transactionFilters.startDate);
-        if (dateResult.isSuccess()) {
-          domainFilters.startDate = dateResult.getValue();
-        }
-      }
-
-      if (transactionFilters.endDate) {
-        const dateResult = TransactionDate.fromString(transactionFilters.endDate);
-        if (dateResult.isSuccess()) {
-          domainFilters.endDate = dateResult.getValue();
-        }
-      }
-
-      if (transactionFilters.type) {
-        domainFilters.type = transactionFilters.type;
-      }
-
-      if (transactionFilters.categoryId) {
-        domainFilters.categoryId = transactionFilters.categoryId;
-      }
-
-      if (transactionFilters.merchantName) {
-        domainFilters.merchantName = transactionFilters.merchantName;
-      }
-
-      if (transactionFilters.minAmount !== undefined) {
-        domainFilters.minAmount = transactionFilters.minAmount;
-      }
-
-      if (transactionFilters.maxAmount !== undefined) {
-        domainFilters.maxAmount = transactionFilters.maxAmount;
-      }
-
-      if (transactionFilters.currency) {
-        domainFilters.currency = transactionFilters.currency;
-      }
-
-      // By default, exclude hidden transactions unless explicitly requested
-      domainFilters.includeHidden = filters.includeHidden;
-
-      const pagination = {
-        offset: (page - 1) * limit,
-        limit,
-      };
-
-      const result = await this.transactionRepository.findWithFilters(domainFilters, pagination);
-      if (result.isFailure()) {
-        return res.status(500).json({ error: result.getError() });
-      }
-
-      const { transactions, totalCount } = result.getValue();
-
-      res.json({
-        success: true,
-        data: {
-          transactions: transactions.map((t) => ({
-            ...t.toSnapshot(),
-            hidden: (t as any).hidden || false,
-          })),
-          pagination: {
-            page,
-            limit,
-            totalCount,
-            totalPages: Math.ceil(totalCount / limit),
-          },
-        },
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+    successResponse(res, {
+      transactions: transactions.map((t) => this.formatTransactionResponse(t)),
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limitNum),
+      },
+    });
   }
 
-  async getPaginatedTransactions(req: Request, res: Response) {
-    try {
-      const validationResult = PaginatedTransactionSchema.safeParse(req.query);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors,
-        });
-      }
+  async getPaginatedTransactions(req: Request, res: Response): Promise<void> {
+    const params = validateQuery(PaginatedTransactionSchema, req);
+    const pageNum = params.page ?? 1;
+    const limitNum = params.limit ?? 50;
+    const { page, limit, sortBy, sortOrder, searchTerm, ...filters } = params;
 
-      const params = validationResult.data;
-      const { page, limit, sortBy, sortOrder, searchTerm, ...filters } = params;
+    const domainFilters = this.buildDomainFilters(filters);
 
-      // Build domain filters
-      const domainFilters: any = {};
+    // Handle search term
+    if (searchTerm) {
+      const numericValue = parseFloat(searchTerm);
+      const isNumeric =
+        !isNaN(numericValue) &&
+        isFinite(numericValue) &&
+        searchTerm.trim() === numericValue.toString();
 
-      if (filters.startDate) {
-        const dateResult = TransactionDate.fromString(filters.startDate);
-        if (dateResult.isSuccess()) {
-          domainFilters.startDate = dateResult.getValue();
-        }
-      }
-
-      if (filters.endDate) {
-        const dateResult = TransactionDate.fromString(filters.endDate);
-        if (dateResult.isSuccess()) {
-          domainFilters.endDate = dateResult.getValue();
-        }
-      }
-
-      if (filters.type) {
-        domainFilters.type = filters.type;
-      }
-
-      if (filters.categoryId) {
-        domainFilters.categoryId = filters.categoryId;
-      }
-
-      // Handle explicit amount filters first
-      if (filters.minAmount !== undefined) {
-        domainFilters.minAmount = filters.minAmount;
-      }
-      if (filters.maxAmount !== undefined) {
-        domainFilters.maxAmount = filters.maxAmount;
-      }
-
-      if (searchTerm) {
-        // Check if search term is numeric for amount-based search
-        const numericValue = parseFloat(searchTerm);
-        const isNumeric =
-          !isNaN(numericValue) &&
-          isFinite(numericValue) &&
-          searchTerm.trim() === numericValue.toString();
-
-        if (isNumeric && filters.minAmount === undefined && filters.maxAmount === undefined) {
-          // For numeric search, add amount filters with tolerance (only if no explicit amount filters)
-          const tolerance = 0.01;
-          domainFilters.minAmount = Math.max(0, numericValue - tolerance);
-          domainFilters.maxAmount = numericValue + tolerance;
-        } else {
-          // For text search, search by merchant name
-          domainFilters.merchantName = searchTerm;
-        }
-      }
-
-      if (filters.currency) {
-        domainFilters.currency = filters.currency;
-      }
-
-      domainFilters.includeHidden = filters.includeHidden;
-
-      // Calculate pagination
-      const pagination = {
-        offset: (page - 1) * limit,
-        limit,
-      };
-
-      const result = await this.transactionRepository.findWithFilters(domainFilters, pagination);
-
-      if (result.isFailure()) {
-        return res.status(500).json({
-          success: false,
-          error: result.getError(),
-        });
-      }
-
-      const { transactions, totalCount } = result.getValue();
-
-      // Enhanced pagination response
-      const totalPages = Math.ceil(totalCount / limit);
-      const hasNext = page < totalPages;
-      const hasPrev = page > 1;
-
-      res.json({
-        success: true,
-        data: {
-          transactions: transactions.map((t) => ({
-            ...t.toSnapshot(),
-            hidden: (t as any).hidden || false,
-          })),
-          pagination: {
-            page,
-            limit,
-            total: totalCount,
-            totalPages,
-            hasNext,
-            hasPrev,
-          },
-          meta: {
-            sortBy,
-            sortOrder,
-            searchTerm,
-            filters: {
-              type: filters.type,
-              categoryId: filters.categoryId,
-              startDate: filters.startDate,
-              endDate: filters.endDate,
-              currency: filters.currency,
-              minAmount: filters.minAmount,
-              maxAmount: filters.maxAmount,
-              includeHidden: filters.includeHidden,
-            },
-          },
-        },
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
-
-  async getTransaction(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-
-      const transactionIdResult = TransactionId.create(id);
-      if (transactionIdResult.isFailure()) {
-        return res.status(400).json({ error: transactionIdResult.getError() });
-      }
-
-      const result = await this.transactionRepository.findById(transactionIdResult.getValue());
-      if (result.isFailure()) {
-        return res.status(500).json({ error: result.getError() });
-      }
-
-      const transaction = result.getValue();
-      if (!transaction) {
-        return res.status(404).json({ error: 'Transaction not found' });
-      }
-
-      // Include hidden field in the response
-      const responseData = {
-        ...transaction.toSnapshot(),
-        hidden: (transaction as any).hidden || false,
-      };
-
-      res.json({
-        success: true,
-        data: responseData,
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
-
-  async updateTransaction(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-
-      const transactionIdResult = TransactionId.create(id);
-      if (transactionIdResult.isFailure()) {
-        return res.status(400).json({ error: transactionIdResult.getError() });
-      }
-
-      const validationResult = UpdateTransactionSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors,
-        });
-      }
-
-      // Find existing transaction
-      const existingResult = await this.transactionRepository.findById(
-        transactionIdResult.getValue()
-      );
-      if (existingResult.isFailure()) {
-        return res.status(500).json({ error: existingResult.getError() });
-      }
-
-      const existingTransaction = existingResult.getValue();
-      if (!existingTransaction) {
-        return res.status(404).json({ error: 'Transaction not found' });
-      }
-
-      const data = validationResult.data;
-
-      // Update description if provided
-      if (data.description !== undefined) {
-        const updateResult = existingTransaction.updateDescription(data.description);
-        if (updateResult.isFailure()) {
-          return res.status(400).json({ error: updateResult.getError() });
-        }
-      }
-
-      // Update observations if provided
-      if (data.observations !== undefined) {
-        const updateResult = existingTransaction.updateObservations(data.observations);
-        if (updateResult.isFailure()) {
-          return res.status(400).json({ error: updateResult.getError() });
-        }
-      }
-
-      // Update hidden status if provided
-      if (data.hidden !== undefined) {
-        // For now, we'll handle this directly in the repository
-        // as it's not a domain concern
-        (existingTransaction as any).hidden = data.hidden;
-      }
-
-      // Update categoryId if provided
-      if (data.categoryId !== undefined) {
-        console.log(
-          '🔧 Controller: Updating categoryId from',
-          existingTransaction.categoryId?.value,
-          'to',
-          data.categoryId
-        );
-        existingTransaction.setCategoryId(data.categoryId);
+      if (isNumeric && filters.minAmount === undefined && filters.maxAmount === undefined) {
+        const tolerance = 0.01;
+        domainFilters.minAmount = Math.max(0, numericValue - tolerance);
+        domainFilters.maxAmount = numericValue + tolerance;
       } else {
-        console.log('🔧 Controller: categoryId not provided in update data');
+        domainFilters.merchantName = searchTerm;
       }
-
-      // Update splitPercentage if provided
-      if (data.splitPercentage !== undefined) {
-        (existingTransaction as any).splitPercentage = data.splitPercentage;
-      }
-
-      const saveResult = await this.transactionRepository.update(existingTransaction);
-      if (saveResult.isFailure()) {
-        return res.status(500).json({ error: saveResult.getError() });
-      }
-
-      // Sync investment if category was changed to an investment category
-      if (data.categoryId !== undefined && data.categoryId !== null) {
-        await this.syncInvestmentIfNeeded(existingTransaction, data.categoryId);
-      }
-
-      // Include hidden field and splitPercentage in the response
-      const responseData = {
-        ...existingTransaction.toSnapshot(),
-        hidden: (existingTransaction as any).hidden || false,
-        splitPercentage: (existingTransaction as any).splitPercentage,
-        linkedTransactionId: (existingTransaction as any).linkedTransactionId,
-        isReimbursement: (existingTransaction as any).isReimbursement || false,
-      };
-
-      res.json({
-        success: true,
-        data: responseData,
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
+
+    const pagination = { offset: (pageNum - 1) * limitNum, limit: limitNum };
+    const result = await this.transactionRepository.findWithFilters(domainFilters, pagination);
+    const { transactions, totalCount } = handleResult(result, 'Failed to fetch transactions');
+
+    const totalPages = Math.ceil(totalCount / limitNum);
+
+    successResponse(res, {
+      transactions: transactions.map((t) => this.formatTransactionResponse(t)),
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: totalCount,
+        totalPages,
+        hasNext: pageNum < totalPages,
+        hasPrev: pageNum > 1,
+      },
+      meta: { sortBy, sortOrder, searchTerm, filters },
+    });
   }
 
-  async deleteTransaction(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
+  async getTransaction(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const transactionId = handleResult(TransactionId.create(id), 'Invalid transaction ID');
 
-      const transactionIdResult = TransactionId.create(id);
-      if (transactionIdResult.isFailure()) {
-        return res.status(400).json({ error: transactionIdResult.getError() });
-      }
+    const result = await this.transactionRepository.findById(transactionId);
+    const transaction = handleFindResult(result, 'Transaction');
 
-      // First unsync any linked investment history entries
-      if (this.unsyncInvestmentUseCase) {
-        const unsyncResult = await this.unsyncInvestmentUseCase.execute(id);
-        if (unsyncResult.isFailure()) {
-          console.warn(
-            `Failed to unsync investment for transaction ${id}:`,
-            unsyncResult.getError()
-          );
-          // Continue with deletion even if unsync fails
-        }
-      }
-
-      const result = await this.transactionRepository.delete(transactionIdResult.getValue());
-      if (result.isFailure()) {
-        return res.status(500).json({ error: result.getError() });
-      }
-
-      res.json({
-        success: true,
-        message: 'Transaction deleted successfully',
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+    successResponse(res, this.formatTransactionResponse(transaction));
   }
 
-  async getDashboard(req: Request, res: Response) {
-    try {
-      // Parse with defaults
-      const queryData = {
-        period: req.query.period || 'month',
-        currency: req.query.currency || 'EUR',
-        includeInvestments: req.query.includeInvestments === 'false' ? false : true,
-        startDate: req.query.startDate as string | undefined,
-        endDate: req.query.endDate as string | undefined,
-        periodOffset: req.query.periodOffset ? parseInt(req.query.periodOffset as string, 10) : 0,
-      };
+  async updateTransaction(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const transactionId = handleResult(TransactionId.create(id), 'Invalid transaction ID');
+    const data = validateBody(UpdateTransactionSchema, req);
 
-      const validationResult = DashboardQuerySchema.safeParse(queryData);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors,
-        });
-      }
+    const existingResult = await this.transactionRepository.findById(transactionId);
+    const transaction = handleFindResult(existingResult, 'Transaction');
 
-      const { period, startDate, endDate, currency, includeInvestments, periodOffset } =
-        validationResult.data;
-
-      const query = new DashboardQuery(
-        currency,
-        period,
-        startDate,
-        endDate,
-        includeInvestments,
-        periodOffset
-      );
-
-      console.log('Executing getDashboardDataUseCase with query:', query);
-      const result = await this.getDashboardDataUseCase.execute(query);
-      console.log('getDashboardDataUseCase result:', result);
-
-      if (result.isFailure()) {
-        console.error('Dashboard data failed:', result.getError());
-        return res.status(500).json({ error: result.getError() });
-      }
-
-      const data = result.getValue();
-      console.log('Dashboard data success:', JSON.stringify(data, null, 2));
-
-      res.json({
-        success: true,
-        data: data,
-      });
-    } catch (error) {
-      console.error('Dashboard controller error:', error);
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+    if (data.description !== undefined) {
+      handleResult(transaction.updateDescription(data.description), 'Invalid description');
     }
+
+    if (data.observations !== undefined) {
+      handleResult(transaction.updateObservations(data.observations), 'Invalid observations');
+    }
+
+    if (data.hidden !== undefined) {
+      (transaction as any).hidden = data.hidden;
+    }
+
+    if (data.categoryId !== undefined) {
+      transaction.setCategoryId(data.categoryId);
+    }
+
+    if (data.splitPercentage !== undefined) {
+      (transaction as any).splitPercentage = data.splitPercentage;
+    }
+
+    const saveResult = await this.transactionRepository.update(transaction);
+    handleResult(saveResult, 'Failed to update transaction');
+
+    if (data.categoryId !== undefined && data.categoryId !== null) {
+      await this.syncInvestmentIfNeeded(transaction, data.categoryId);
+    }
+
+    successResponse(res, this.formatTransactionResponse(transaction));
   }
 
-  async getStatistics(req: Request, res: Response) {
-    try {
-      const { startDate, endDate, currency = 'EUR' } = req.query;
+  async deleteTransaction(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const transactionId = handleResult(TransactionId.create(id), 'Invalid transaction ID');
 
-      if (!startDate || !endDate) {
-        return res.status(400).json({ error: 'startDate and endDate are required' });
+    if (this.unsyncInvestmentUseCase) {
+      const unsyncResult = await this.unsyncInvestmentUseCase.execute(id);
+      if (unsyncResult.isFailure()) {
+        console.warn(`Failed to unsync investment for transaction ${id}:`, unsyncResult.getError());
       }
-
-      const startDateResult = TransactionDate.fromString(startDate as string);
-      if (startDateResult.isFailure()) {
-        return res.status(400).json({ error: startDateResult.getError() });
-      }
-
-      const endDateResult = TransactionDate.fromString(endDate as string);
-      if (endDateResult.isFailure()) {
-        return res.status(400).json({ error: endDateResult.getError() });
-      }
-
-      const result = await this.transactionRepository.getStatistics(
-        startDateResult.getValue(),
-        endDateResult.getValue(),
-        currency as string
-      );
-
-      if (result.isFailure()) {
-        return res.status(500).json({ error: result.getError() });
-      }
-
-      res.json({
-        success: true,
-        data: result.getValue(),
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
+
+    const result = await this.transactionRepository.delete(transactionId);
+    handleResult(result, 'Failed to delete transaction');
+
+    successResponse(res, { message: 'Transaction deleted successfully' });
   }
 
-  async deleteAll(req: Request, res: Response) {
-    try {
-      // Clear all transactions from the repository
-      const result = await this.transactionRepository.clear();
+  async getDashboard(req: Request, res: Response): Promise<void> {
+    const queryData = {
+      period: req.query.period || 'month',
+      currency: req.query.currency || 'EUR',
+      includeInvestments: req.query.includeInvestments === 'false' ? false : true,
+      startDate: req.query.startDate as string | undefined,
+      endDate: req.query.endDate as string | undefined,
+      periodOffset: req.query.periodOffset ? parseInt(req.query.periodOffset as string, 10) : 0,
+    };
 
-      if (result.isFailure()) {
-        return res.status(500).json({
-          error: 'Failed to delete all transactions',
-          message: result.getError(),
-        });
-      }
+    const params = validateQuery(DashboardQuerySchema, { query: queryData } as any);
+    const query = new DashboardQuery(
+      params.currency,
+      params.period,
+      params.startDate,
+      params.endDate,
+      params.includeInvestments,
+      params.periodOffset
+    );
 
-      res.json({
-        success: true,
-        message: 'All transactions deleted successfully',
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Failed to delete all transactions',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+    const result = await this.getDashboardDataUseCase.execute(query);
+    const data = handleResult(result, 'Failed to get dashboard data');
+
+    successResponse(res, data);
   }
 
-  async smartCategorizeTransaction(req: Request, res: Response) {
-    try {
-      if (!this.smartCategorizeUseCase) {
-        return res.status(501).json({
-          error: 'Smart categorization is not configured',
-        });
-      }
+  async getStatistics(req: Request, res: Response): Promise<void> {
+    const { startDate, endDate, currency = 'EUR' } = req.query;
 
-      const { id } = req.params;
-      const validationResult = SmartCategorizeSchema.safeParse(req.body);
-
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors,
-        });
-      }
-
-      const data = validationResult.data;
-      const result = await this.smartCategorizeUseCase.execute({
-        transactionId: id,
-        categoryId: data.categoryId,
-        applyToAll: data.applyToAll,
-        applyToFuture: data.applyToFuture,
-        createPattern: data.createPattern,
-        selectedTransactionIds: data.selectedTransactionIds,
-      });
-
-      if (!result.success) {
-        return res.status(400).json({
-          error: result.message || 'Failed to categorize transaction',
-        });
-      }
-
-      res.json({
-        success: true,
-        categorizedCount: result.categorizedCount,
-        patternCreated: result.patternCreated,
-        affectedTransactionIds: result.affectedTransactionIds,
-        message: result.message,
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+    if (!startDate || !endDate) {
+      throw new BadRequestError('startDate and endDate are required');
     }
+
+    const start = handleResult(
+      TransactionDate.fromString(startDate as string),
+      'Invalid start date'
+    );
+    const end = handleResult(TransactionDate.fromString(endDate as string), 'Invalid end date');
+
+    const result = await this.transactionRepository.getStatistics(start, end, currency as string);
+    const stats = handleResult(result, 'Failed to get statistics');
+
+    successResponse(res, stats);
   }
 
-  async findSimilarTransactions(req: Request, res: Response) {
-    try {
-      if (!this.findSimilarTransactionsUseCase) {
-        return res.status(501).json({
-          error: 'Find similar transactions feature is not configured',
-        });
-      }
+  async deleteAll(_req: Request, res: Response): Promise<void> {
+    const result = await this.transactionRepository.clear();
+    handleResult(result, 'Failed to delete all transactions');
 
-      const { id } = req.params;
-      const { maxResults = 50, includeHidden = false } = req.query;
+    successResponse(res, { message: 'All transactions deleted successfully' });
+  }
 
-      // Get the source transaction first
-      const transactionIdResult = TransactionId.create(id);
-      if (transactionIdResult.isFailure()) {
-        return res.status(400).json({ error: transactionIdResult.getError() });
-      }
+  async smartCategorizeTransaction(req: Request, res: Response): Promise<void> {
+    if (!this.smartCategorizeUseCase) {
+      throw new BadRequestError('Smart categorization is not configured');
+    }
 
-      const transactionResult = await this.transactionRepository.findById(
-        transactionIdResult.getValue()
-      );
+    const { id } = req.params;
+    const data = validateBody(SmartCategorizeSchema, req);
 
-      if (transactionResult.isFailure()) {
-        return res.status(500).json({ error: transactionResult.getError() });
-      }
+    const result = await this.smartCategorizeUseCase.execute({
+      transactionId: id,
+      categoryId: data.categoryId,
+      applyToAll: data.applyToAll ?? false,
+      applyToFuture: data.applyToFuture ?? true,
+      createPattern: data.createPattern ?? true,
+      selectedTransactionIds: data.selectedTransactionIds,
+    });
 
-      const transaction = transactionResult.getValue();
-      if (!transaction) {
-        return res.status(404).json({ error: 'Transaction not found' });
-      }
+    if (!result.success) {
+      throw new BadRequestError(result.message || 'Failed to categorize transaction');
+    }
 
-      const snapshot = transaction.toSnapshot();
+    successResponse(res, {
+      categorizedCount: result.categorizedCount,
+      patternCreated: result.patternCreated,
+      affectedTransactionIds: result.affectedTransactionIds,
+      message: result.message,
+    });
+  }
 
-      // Find similar transactions
-      const similarResult = await this.findSimilarTransactionsUseCase.execute({
-        transactionId: id,
-        merchantName: snapshot.merchant,
-        description: snapshot.description,
-        maxResults: Number(maxResults),
-        includeHidden: Boolean(includeHidden),
-        transactionType: snapshot.type, // Pass transaction type to filter similar transactions
-      });
+  async findSimilarTransactions(req: Request, res: Response): Promise<void> {
+    if (!this.findSimilarTransactionsUseCase) {
+      throw new BadRequestError('Find similar transactions feature is not configured');
+    }
 
-      if (similarResult.isFailure()) {
-        return res.status(500).json({ error: similarResult.getError() });
-      }
+    const { id } = req.params;
+    const { maxResults = 50, includeHidden = false } = req.query;
 
-      const similarTransactions = similarResult.getValue();
+    const transactionId = handleResult(TransactionId.create(id), 'Invalid transaction ID');
+    const txResult = await this.transactionRepository.findById(transactionId);
+    const transaction = handleFindResult(txResult, 'Transaction');
 
-      // Transform to API response format
-      const responseData = similarTransactions.map((item) => ({
-        transaction: {
-          ...item.transaction.toSnapshot(),
-          hidden: (item.transaction as any).hidden || false,
-        },
+    const snapshot = transaction.toSnapshot();
+    const similarResult = await this.findSimilarTransactionsUseCase.execute({
+      transactionId: id,
+      merchantName: snapshot.merchant,
+      description: snapshot.description,
+      maxResults: Number(maxResults),
+      includeHidden: Boolean(includeHidden),
+      transactionType: snapshot.type,
+    });
+
+    const similarTransactions = handleResult(similarResult, 'Failed to find similar transactions');
+
+    successResponse(res, {
+      sourceTransaction: this.formatTransactionResponse(transaction),
+      similarTransactions: similarTransactions.map((item) => ({
+        transaction: this.formatTransactionResponse(item.transaction),
         similarity: item.similarity,
-      }));
-
-      res.json({
-        success: true,
-        data: {
-          sourceTransaction: {
-            ...snapshot,
-            hidden: (transaction as any).hidden || false,
-          },
-          similarTransactions: responseData,
-          totalFound: responseData.length,
-        },
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+      })),
+      totalFound: similarTransactions.length,
+    });
   }
 
-  async getMetrics(req: Request, res: Response) {
-    try {
-      if (!this.getDashboardMetricsUseCase) {
-        return res.status(501).json({
-          error: 'Dashboard metrics feature is not configured',
-        });
-      }
-
-      const validationResult = MetricsQuerySchema.safeParse(req.query);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors,
-        });
-      }
-
-      const query = validationResult.data;
-
-      const result = await this.getDashboardMetricsUseCase.execute({
-        currency: query.currency || 'EUR',
-        period: query.period || 'month',
-        startDate: query.startDate,
-        endDate: query.endDate,
-        includeInvestments: query.includeInvestments ?? true,
-        periodOffset: query.periodOffset ?? 0,
-      });
-
-      if (result.isFailure()) {
-        return res.status(500).json({ error: result.getError() });
-      }
-
-      const metrics = result.getValue();
-
-      res.json({
-        success: true,
-        data: metrics,
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+  async getMetrics(req: Request, res: Response): Promise<void> {
+    if (!this.getDashboardMetricsUseCase) {
+      throw new BadRequestError('Dashboard metrics feature is not configured');
     }
+
+    const query = validateQuery(MetricsQuerySchema, req);
+    const result = await this.getDashboardMetricsUseCase.execute({
+      currency: query.currency || 'EUR',
+      period: query.period || 'month',
+      startDate: query.startDate,
+      endDate: query.endDate,
+      includeInvestments: query.includeInvestments ?? true,
+      periodOffset: query.periodOffset ?? 0,
+    });
+
+    const metrics = handleResult(result, 'Failed to get metrics');
+    successResponse(res, metrics);
   }
 
-  async findPotentialReimbursements(req: Request, res: Response) {
-    try {
-      if (!this.findPotentialReimbursementsUseCase) {
-        return res.status(501).json({ error: 'Feature not implemented' });
-      }
+  async findPotentialReimbursements(req: Request, res: Response): Promise<void> {
+    if (!this.findPotentialReimbursementsUseCase) {
+      throw new BadRequestError('Feature not implemented');
+    }
 
-      const { id } = req.params;
-      const validationResult = FindReimbursementsSchema.safeParse(req.query);
+    const { id } = req.params;
+    const query = validateQuery(FindReimbursementsSchema, req);
 
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors,
-        });
-      }
+    const result = await this.findPotentialReimbursementsUseCase.execute({
+      transactionId: id,
+      toleranceDays: query.toleranceDays,
+      amountTolerancePercent: query.amountTolerancePercent,
+    });
 
-      const query = validationResult.data;
+    const reimbursements = handleResult(result, 'Failed to find reimbursements');
 
-      const result = await this.findPotentialReimbursementsUseCase.execute({
-        transactionId: id,
-        toleranceDays: query.toleranceDays,
-        amountTolerancePercent: query.amountTolerancePercent,
-      });
-
-      if (result.isFailure()) {
-        return res.status(400).json({ error: result.getError() });
-      }
-
-      const potentialReimbursements = result.getValue();
-
-      // Convert to plain objects for JSON response
-      const reimbursements = potentialReimbursements.map((r) => ({
+    successResponse(
+      res,
+      reimbursements.map((r) => ({
         transaction: r.transaction.toSnapshot(),
         matchScore: r.matchScore,
         matchReasons: r.matchReasons,
-      }));
-
-      res.json({
-        success: true,
-        data: reimbursements,
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+      }))
+    );
   }
 
-  async linkSplitTransactions(req: Request, res: Response) {
-    try {
-      if (!this.linkSplitTransactionsUseCase) {
-        return res.status(501).json({ error: 'Feature not implemented' });
-      }
-
-      const { id } = req.params; // Source transaction ID (can be expense or income)
-      const validationResult = LinkSplitTransactionsSchema.safeParse(req.body);
-
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: 'Validation error',
-          details: validationResult.error.errors,
-        });
-      }
-
-      const data = validationResult.data;
-
-      const result = await this.linkSplitTransactionsUseCase.execute({
-        sourceTransactionId: id,
-        targetTransactionId: data.targetTransactionId,
-        splitPercentage: data.splitPercentage,
-      });
-
-      if (result.isFailure()) {
-        return res.status(400).json({ error: result.getError() });
-      }
-
-      res.json({
-        success: true,
-        message: 'Transactions linked successfully',
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+  async linkSplitTransactions(req: Request, res: Response): Promise<void> {
+    if (!this.linkSplitTransactionsUseCase) {
+      throw new BadRequestError('Feature not implemented');
     }
+
+    const { id } = req.params;
+    const data = validateBody(LinkSplitTransactionsSchema, req);
+
+    const result = await this.linkSplitTransactionsUseCase.execute({
+      sourceTransactionId: id,
+      targetTransactionId: data.targetTransactionId,
+      splitPercentage: data.splitPercentage,
+    });
+
+    handleResult(result, 'Failed to link transactions');
+    successResponse(res, { message: 'Transactions linked successfully' });
   }
 
-  async unlinkSplitTransactions(req: Request, res: Response) {
-    try {
-      if (!this.unlinkSplitTransactionsUseCase) {
-        return res.status(501).json({ error: 'Feature not implemented' });
-      }
-
-      const { id } = req.params;
-
-      const result = await this.unlinkSplitTransactionsUseCase.execute({
-        transactionId: id,
-      });
-
-      if (result.isFailure()) {
-        return res.status(400).json({ error: result.getError() });
-      }
-
-      res.json({
-        success: true,
-        message: 'Transactions unlinked successfully',
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+  async unlinkSplitTransactions(req: Request, res: Response): Promise<void> {
+    if (!this.unlinkSplitTransactionsUseCase) {
+      throw new BadRequestError('Feature not implemented');
     }
+
+    const { id } = req.params;
+    const result = await this.unlinkSplitTransactionsUseCase.execute({ transactionId: id });
+    handleResult(result, 'Failed to unlink transactions');
+
+    successResponse(res, { message: 'Transactions unlinked successfully' });
   }
 
-  async autoCategorizeTransactions(req: Request, res: Response) {
-    try {
-      if (!this.autoCategorizeUseCase) {
-        return res.status(501).json({
-          error: 'Auto-categorization is not configured',
-        });
-      }
-
-      const result = await this.autoCategorizeUseCase.execute({
-        userId: this.userId,
-      });
-
-      res.json({
-        success: result.success,
-        data: {
-          categorizedCount: result.categorizedCount,
-          patternsApplied: result.patternsApplied,
-          normalizedMatches: result.normalizedMatches,
-          message: result.message,
-        },
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+  async autoCategorizeTransactions(_req: Request, res: Response): Promise<void> {
+    if (!this.autoCategorizeUseCase) {
+      throw new BadRequestError('Auto-categorization is not configured');
     }
+
+    const result = await this.autoCategorizeUseCase.execute({ userId: this.userId });
+
+    successResponse(res, {
+      categorizedCount: result.categorizedCount,
+      patternsApplied: result.patternsApplied,
+      normalizedMatches: result.normalizedMatches,
+      message: result.message,
+    });
   }
 }
