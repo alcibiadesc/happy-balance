@@ -271,7 +271,8 @@ export class InvestmentController {
       'Failed to create history entry'
     );
 
-    await this.investmentRepository.addHistoryEntry(historyEntry);
+    const addResult = await this.investmentRepository.addHistoryEntry(historyEntry);
+    handleResult(addResult, 'Failed to save history entry');
 
     // Update investment value
     if (historyType === InvestmentHistoryType.CONTRIBUTION) {
@@ -282,10 +283,12 @@ export class InvestmentController {
       investment.updateCurrentValue(data.amount);
     }
 
-    await this.investmentRepository.update(investment);
+    const updateResult = await this.investmentRepository.update(investment);
+    handleResult(updateResult, 'Failed to update investment value');
 
     const updatedResult = await this.investmentRepository.findByIdWithHistory(investment.id);
-    createdResponse(res, updatedResult.getValue()?.toSnapshot());
+    const updated = handleFindResult(updatedResult, 'Investment');
+    createdResponse(res, updated.toSnapshot());
   }
 
   async deleteHistoryEntry(req: Request, res: Response): Promise<void> {
