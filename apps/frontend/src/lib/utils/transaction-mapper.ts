@@ -15,6 +15,7 @@ export function mapApiToTransaction(apiTransaction: any): Transaction {
     merchant: apiTransaction.merchant,
     description: apiTransaction.description || '',
     amount: apiTransaction.type === 'EXPENSE' ? -apiTransaction.amount : apiTransaction.amount,
+    type: apiTransaction.type, // Preserve original transaction type
     categoryId: apiTransaction.categoryId,
     category: undefined,
     status: 'completed' as const,

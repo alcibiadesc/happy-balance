@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
-  import { Plus, Wallet } from 'lucide-svelte';
+  import { Plus, Wallet, RefreshCw } from 'lucide-svelte';
 
   // Components
   import PageContainer from '$lib/components/atoms/PageContainer.svelte';
@@ -156,9 +156,20 @@
       <section class="investments-section">
         <div class="section-header">
           <h2><Wallet size={18} /> Inversiones</h2>
-          <button class="add-btn" onclick={() => store.startNewInvestment()}>
-            <Plus size={16} /> Añadir
-          </button>
+          <div class="header-actions">
+            <button
+              class="sync-btn"
+              onclick={() => store.syncWithCategories()}
+              disabled={store.isSyncing}
+              title="Sincronizar con transacciones de inversión"
+            >
+              <RefreshCw size={14} class={store.isSyncing ? 'spinning' : ''} />
+              {store.isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+            </button>
+            <button class="add-btn" onclick={() => store.startNewInvestment()}>
+              <Plus size={16} /> Añadir
+            </button>
+          </div>
         </div>
 
         {#if store.showNewForm}
@@ -290,6 +301,51 @@
     margin: 0;
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sync-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .sync-btn:hover:not(:disabled) {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    border-color: var(--primary);
+  }
+
+  .sync-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .sync-btn :global(.spinning) {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   .add-btn {
     display: flex;
     align-items: center;
@@ -338,6 +394,15 @@
       font-size: 0.9375rem;
     }
 
+    .header-actions {
+      gap: 0.375rem;
+    }
+
+    .sync-btn {
+      padding: 0.375rem 0.5rem;
+      font-size: 0.6875rem;
+    }
+
     .add-btn {
       padding: 0.375rem 0.625rem;
       font-size: 0.75rem;
@@ -362,6 +427,17 @@
     .section-header h2 :global(svg) {
       width: 14px;
       height: 14px;
+    }
+
+    .sync-btn {
+      padding: 0.25rem 0.375rem;
+      font-size: 0.625rem;
+      border-radius: 4px;
+    }
+
+    .sync-btn :global(svg) {
+      width: 10px;
+      height: 10px;
     }
 
     .add-btn {

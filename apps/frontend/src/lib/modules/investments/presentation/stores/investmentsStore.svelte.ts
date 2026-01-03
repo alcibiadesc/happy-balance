@@ -141,6 +141,10 @@ export function createInvestmentsStore() {
     '🎨',
   ];
 
+  // Sync state
+  let isSyncing = $state(false);
+  let syncResult = $state<{ total: number; synced: number; skipped: number } | null>(null);
+
   // Computed
   const highlightedInvestments = $derived(investments.filter((inv) => inv.highlight));
 
@@ -440,6 +444,22 @@ export function createInvestmentsStore() {
 
   function cancelHistoryEntryEdit() {
     editingHistoryEntry = null;
+  }
+
+  // Sync with categories
+  async function syncWithCategories() {
+    isSyncing = true;
+    syncResult = null;
+    try {
+      syncResult = await investmentsApi.syncWithCategories();
+      await loadAll();
+      return syncResult;
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Failed to sync with categories';
+      throw e;
+    } finally {
+      isSyncing = false;
+    }
   }
 
   // Reorder investments (drag-and-drop)
@@ -789,6 +809,13 @@ export function createInvestmentsStore() {
     cancelAddHistory: _cancelAddHistoryReactive,
     deleteHistoryEntry,
     reorderInvestments,
+    syncWithCategories,
+    get isSyncing() {
+      return isSyncing;
+    },
+    get syncResult() {
+      return syncResult;
+    },
     startInlineEdit,
     saveInlineEdit,
     cancelInlineEdit,

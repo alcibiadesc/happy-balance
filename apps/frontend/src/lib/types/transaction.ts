@@ -5,6 +5,7 @@ export interface Transaction {
   merchant: string;
   description: string;
   amount: number;
+  type?: 'INCOME' | 'EXPENSE' | 'INVESTMENT'; // Transaction type from backend
   categoryId?: string | null;
   category?: Category;
   status: 'completed' | 'pending' | 'hidden';

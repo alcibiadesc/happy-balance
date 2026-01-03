@@ -168,8 +168,12 @@ export class SmartCategorizationService {
     // Extract pattern with intelligent normalization
     const pattern = await this.extractPatternWithAliases(transaction, options.userId);
 
-    // If apply to all or create pattern is requested
-    if (options.applyToAll || options.createPattern) {
+    // Check if we need to apply to additional transactions
+    const hasSelectedIds =
+      options.selectedTransactionIds && options.selectedTransactionIds.length > 0;
+
+    // If apply to all, create pattern, or selected transactions are requested
+    if (options.applyToAll || options.createPattern || hasSelectedIds) {
       // Use canonical merchant for pattern creation (better matching)
       const patternText =
         pattern.canonicalMerchant || pattern.normalizedMerchant || pattern.merchant;
@@ -200,10 +204,9 @@ export class SmartCategorizationService {
       }
 
       // Apply to selected transactions or all matching
-      const hasSelectedIds =
-        options.selectedTransactionIds && options.selectedTransactionIds.length > 0;
-
-      if ((options.applyToAll || hasSelectedIds) && patternText) {
+      // For selected IDs, we don't need a pattern - just apply directly
+      // For applyToAll, we need a pattern to find matching transactions
+      if (hasSelectedIds || (options.applyToAll && patternText)) {
         const transactionsToUpdate: Transaction[] = [];
 
         if (hasSelectedIds) {
@@ -565,6 +568,12 @@ export class SmartCategorizationService {
     transaction: Transaction,
     category: Category
   ): boolean {
+    // NO_COMPUTE categories can be applied to any transaction type
+    // as they represent internal transfers that don't affect financial metrics
+    if (category.type === CategoryType.NO_COMPUTE) {
+      return true;
+    }
+
     switch (transaction.type) {
       case TransactionType.INCOME:
         // INCOME transactions can ONLY have INCOME categories

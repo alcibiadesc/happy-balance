@@ -36,10 +36,22 @@ export const findMatchingTransactions = async (
       return [];
     }
 
-    // Extract transactions from response and filter out already categorized ones
+    // Determine source transaction type
+    const sourceType = transaction.type || (transaction.amount < 0 ? 'EXPENSE' : 'INCOME');
+
+    // Extract transactions from response and filter:
+    // 1. Only uncategorized transactions
+    // 2. Only transactions of the same type (expense with expense, income with income)
     const similarTransactions: Transaction[] = result.data.similarTransactions
       .map((item: any) => item.transaction)
-      .filter((t: Transaction) => !t.categoryId);
+      .filter((t: Transaction) => {
+        // Filter out already categorized transactions
+        if (t.categoryId) return false;
+
+        // Filter by same transaction type
+        const tType = t.type || (t.amount < 0 ? 'EXPENSE' : 'INCOME');
+        return tType === sourceType;
+      });
 
     return similarTransactions;
   } catch (error) {
