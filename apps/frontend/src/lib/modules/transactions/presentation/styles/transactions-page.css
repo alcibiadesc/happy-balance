@@ -39,6 +39,32 @@
   align-items: center;
 }
 
+/* Medium screens - between tablet and desktop */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .toolbar-content {
+    grid-template-columns: minmax(200px, 280px) 1fr auto;
+    gap: 1rem;
+  }
+
+  .toolbar-actions {
+    flex-wrap: nowrap;
+  }
+
+  .toolbar-btn span:not(.sr-only) {
+    display: none;
+  }
+
+  .toolbar-btn {
+    padding: 0;
+    width: 2.5rem;
+    justify-content: center;
+  }
+
+  .toolbar-btn.icon-only {
+    width: 2.5rem;
+  }
+}
+
 @media (min-width: 1024px) {
   .toolbar-content {
     grid-template-columns: minmax(240px, auto) 1fr minmax(200px, auto);
