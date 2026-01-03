@@ -64,29 +64,27 @@ export const calculatePeriodStats = (
   const incomeTransactions = computedTransactions.filter(isIncome);
   const expenseTransactions = computedTransactions.filter(isExpense);
 
+  // Helper to get effective amount considering split percentage
+  const getEffectiveAmount = (t: Transaction): number => {
+    const amount = Math.abs(t.amount);
+    const splitPercent = t.splitPercentage ?? 100;
+    return (amount * splitPercent) / 100;
+  };
+
   // Calculate totals with split/reimbursement handling
   const income = incomeTransactions.reduce((sum, t) => {
     // If transaction is marked as reimbursement, it doesn't count as real income
-    if ((t as any).isReimbursement) {
+    if (t.isReimbursement) {
       return sum;
     }
     return sum + t.amount;
   }, 0);
 
-  const _totalExpenses = expenseTransactions.reduce((sum, t) => {
-    const amount = Math.abs(t.amount);
-    // Apply split percentage if exists
-    const splitPercent = (t as any).splitPercentage ?? 100;
-    return sum + (amount * splitPercent) / 100;
-  }, 0);
+  const _totalExpenses = expenseTransactions.reduce((sum, t) => sum + getEffectiveAmount(t), 0);
 
-  // Helper to apply split percentage
+  // Helper to apply split percentage to transactions
   const applySplitPercentage = (transactions: Transaction[]): number =>
-    transactions.reduce((sum, t) => {
-      const amount = Math.abs(t.amount);
-      const splitPercent = (t as any).splitPercentage ?? 100;
-      return sum + (amount * splitPercent) / 100;
-    }, 0);
+    transactions.reduce((sum, t) => sum + getEffectiveAmount(t), 0);
 
   // Calculate expense categories with split handling
   const essentialExpenses = applySplitPercentage(

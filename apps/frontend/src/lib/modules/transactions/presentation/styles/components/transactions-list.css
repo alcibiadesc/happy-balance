@@ -1,0 +1,84 @@
+/* Transactions List & FAB Styles */
+
+/* Container */
+.page-container {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--surface);
+  padding-bottom: 5rem;
+}
+
+/* Header */
+.transactions-header {
+  background: var(--surface-elevated);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Transactions List */
+.transactions-list {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 0 0 0;
+}
+
+/* FAB Button */
+.fab {
+  position: fixed;
+  bottom: var(--space-xl);
+  right: var(--space-xl);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  transition: all 0.2s ease;
+  font-weight: 300;
+  z-index: 60;
+  padding: 0;
+}
+
+.fab:hover {
+  border-color: var(--acapulco);
+  color: var(--acapulco);
+  transform: scale(1.05);
+}
+
+.fab svg {
+  display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .transactions-list {
+    padding: 1rem;
+  }
+
+  .fab {
+    width: 3.5rem;
+    height: 3.5rem;
+    bottom: 1rem;
+    right: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .transactions-list {
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .transactions-list {
+    padding: 0.5rem;
+  }
+}

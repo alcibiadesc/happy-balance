@@ -1,0 +1,19 @@
+/* Transactions Module Variables */
+
+/* Breakpoints */
+:root {
+  --breakpoint-xs: 360px;
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1200px;
+}
+
+/* Component sizes */
+:root {
+  --toolbar-btn-height: 2.5rem;
+  --toolbar-btn-height-mobile: 2.25rem;
+  --toolbar-btn-height-xs: 2rem;
+  --toolbar-gap: 1rem;
+  --toolbar-gap-mobile: 0.75rem;
+}

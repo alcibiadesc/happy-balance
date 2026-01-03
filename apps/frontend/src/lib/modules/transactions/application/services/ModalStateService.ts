@@ -1,5 +1,35 @@
 import type { Transaction, Category } from '$lib/types/transaction';
 
+// Focused modal state types for better separation of concerns
+
+/** Category selection modal state */
+export interface CategoryModalState {
+  isOpen: boolean;
+  transaction: Transaction | null;
+}
+
+/** Smart categorization modal state */
+export interface SmartCategorizationState {
+  isOpen: boolean;
+  transaction: Transaction | null;
+  category: Category | null;
+  matchingTransactions: Transaction[];
+}
+
+/** Delete confirmation modal state */
+export interface DeleteModalState {
+  showBulkDelete: boolean;
+  showSingleDelete: boolean;
+  transactionId: string | null;
+}
+
+/** Split transaction modal state */
+export interface SplitModalState {
+  isOpen: boolean;
+  transaction: Transaction | null;
+}
+
+/** Combined modal state for backwards compatibility */
 export interface ModalState {
   showFilters: boolean;
   showCategoryModal: boolean;
@@ -9,12 +39,6 @@ export interface ModalState {
   smartCategorizationTransaction: Transaction | null;
   smartCategorizationCategory: Category | null;
   smartMatchingTransactions: Transaction[];
-  smartSuggestions: Array<{
-    categoryId: string;
-    confidence: number;
-    reason: string;
-    potentialMatches: number;
-  }>;
   showDeleteSelectedModal: boolean;
   showDeleteSingleModal: boolean;
   transactionToDelete: string | null;
@@ -31,7 +55,6 @@ export const createInitialModalState = (): ModalState => ({
   smartCategorizationTransaction: null,
   smartCategorizationCategory: null,
   smartMatchingTransactions: [],
-  smartSuggestions: [],
   showDeleteSelectedModal: false,
   showDeleteSingleModal: false,
   transactionToDelete: null,
@@ -86,7 +109,6 @@ export const modalActions = {
     smartCategorizationTransaction: null,
     smartCategorizationCategory: null,
     smartMatchingTransactions: [],
-    smartSuggestions: [],
   }),
 
   openDeleteSelectedModal: (state: ModalState): ModalState => ({
