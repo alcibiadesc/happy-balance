@@ -581,10 +581,12 @@ export class SmartCategorizationService {
 
       case TransactionType.EXPENSE:
         // EXPENSE transactions can have expense-related categories
+        // Note: INVESTMENT is allowed because buying investments is technically an expense
         return (
           category.type === CategoryType.ESSENTIAL ||
           category.type === CategoryType.DISCRETIONARY ||
-          category.type === CategoryType.DEBT_PAYMENT
+          category.type === CategoryType.DEBT_PAYMENT ||
+          category.type === CategoryType.INVESTMENT
         );
 
       case TransactionType.INVESTMENT:
