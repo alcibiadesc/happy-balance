@@ -8,7 +8,11 @@
   import BackupSection from '$lib/components/organisms/BackupSection.svelte';
   import SidebarConfigSection from '$lib/components/organisms/SidebarConfigSection.svelte';
   import GofireImport from '$lib/components/molecules/GofireImport.svelte';
-  import { createSettingsStore } from '$lib/modules/settings/presentation/stores/settingsStore.svelte.ts';
+  import {
+    createSettingsStore,
+    exportTypeLabels,
+    type ExportType,
+  } from '$lib/modules/settings/presentation/stores/settingsStore.svelte.ts';
   import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
   import { t } from '$lib/stores/i18n';
   import { currencies } from '$lib/stores/currency';
@@ -35,6 +39,10 @@
   let securityExpanded = $state(false);
   let sidebarExpanded = $state(false);
   let backupExpanded = $state(false);
+
+  // Export type selection
+  let selectedExportType = $state<ExportType>('all');
+  const exportTypes = Object.keys(exportTypeLabels) as ExportType[];
 
   // Version
   let versionInfo = $state<{ version: string; commit?: string } | null>(null);
@@ -139,10 +147,17 @@
       </h2>
 
       <div class="data-actions">
-        <button class="action-btn" onclick={store.exportData}>
-          <Download size={16} />
-          Export
-        </button>
+        <div class="export-group">
+          <select class="export-select" bind:value={selectedExportType}>
+            {#each exportTypes as type (type)}
+              <option value={type}>{exportTypeLabels[type]}</option>
+            {/each}
+          </select>
+          <button class="action-btn" onclick={() => store.exportData(selectedExportType)}>
+            <Download size={16} />
+            Export
+          </button>
+        </div>
         <label class="action-btn">
           <Upload size={16} />
           Import
@@ -353,6 +368,31 @@
     margin-bottom: 1.25rem;
   }
 
+  .export-group {
+    display: flex;
+    gap: 0;
+  }
+
+  .export-select {
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-muted);
+    border: 1px solid var(--border-color);
+    border-right: none;
+    border-radius: 6px 0 0 6px;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 100px;
+  }
+
+  .export-select:hover {
+    border-color: var(--primary);
+  }
+
+  .export-group .action-btn {
+    border-radius: 0 6px 6px 0;
+  }
+
   .action-btn {
     display: flex;
     align-items: center;
@@ -460,6 +500,14 @@
   @media (max-width: 640px) {
     .data-actions {
       flex-direction: column;
+    }
+
+    .export-group {
+      width: 100%;
+    }
+
+    .export-select {
+      flex: 1;
     }
 
     .action-btn {

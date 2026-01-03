@@ -1,6 +1,6 @@
 import type { Transaction, Category } from '$lib/types/transaction';
 import { exportTransactionsToCSV, downloadCSV, generateFilename } from '$lib/utils/csv-export';
-import type { FilterState } from './FilterStateService';
+import type { FilterState } from './FilterService';
 
 export interface DateRange {
   start: string;

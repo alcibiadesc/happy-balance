@@ -107,6 +107,15 @@ export interface ImportData {
 
 export type ImportMode = 'merge' | 'replace';
 
+export type ExportType = 'all' | 'transactions' | 'investments' | 'categories';
+
+export const exportTypeLabels: Record<ExportType, string> = {
+  all: 'Todo',
+  transactions: 'Transacciones',
+  investments: 'Portfolio',
+  categories: 'Categorías',
+};
+
 // ============================================================================
 // Store Factory
 // ============================================================================
@@ -215,12 +224,20 @@ export function createSettingsStore(apiBase: string) {
   // Export Operations
   // ============================================================================
 
-  async function exportData(): Promise<void> {
+  const exportEndpoints: Record<ExportType, string> = {
+    all: '/export/all',
+    transactions: '/export/transactions',
+    investments: '/export/investments',
+    categories: '/export/categories',
+  };
+
+  async function exportData(type: ExportType = 'all'): Promise<void> {
     importing = true;
     importError = '';
 
     try {
-      const response = await authFetch(`${apiBase}/export/all`);
+      const endpoint = exportEndpoints[type];
+      const response = await authFetch(`${apiBase}${endpoint}`);
 
       if (!response.ok) {
         throw new Error('Failed to export data from server');
@@ -232,23 +249,27 @@ export function createSettingsStore(apiBase: string) {
         throw new Error(result.error || 'Export failed');
       }
 
-      const completeExport: CompleteExportData = {
-        ...result.data,
-        frontendSettings: getFrontendSettings() || {
-          dashboardConfig: null,
-          sidebarConfig: null,
-          userPreferences: null,
-        },
-      };
+      // For 'all' export, include frontend settings
+      const exportContent =
+        type === 'all'
+          ? {
+              ...result.data,
+              frontendSettings: getFrontendSettings() || {
+                dashboardConfig: null,
+                sidebarConfig: null,
+                userPreferences: null,
+              },
+            }
+          : result.data;
 
       // Download as JSON file
-      const blob = new Blob([JSON.stringify(completeExport, null, 2)], {
+      const blob = new Blob([JSON.stringify(exportContent, null, 2)], {
         type: 'application/json',
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `happy-balance-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `happy-balance-${type}-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

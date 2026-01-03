@@ -1,10 +1,10 @@
-import { Request, Response } from "express";
-import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
-import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
-import { IInvestmentRepository } from "@domain/repositories/IInvestmentRepository";
-import { Transaction } from "@domain/entities/Transaction";
-import { Category } from "@domain/entities/Category";
-import { Investment, InvestmentHistory } from "@domain/entities/Investment";
+import { Request, Response } from 'express';
+import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
+import { ICategoryRepository } from '@domain/repositories/ICategoryRepository';
+import { IInvestmentRepository } from '@domain/repositories/IInvestmentRepository';
+import { Transaction } from '@domain/entities/Transaction';
+import { Category } from '@domain/entities/Category';
+import { Investment, InvestmentHistory } from '@domain/entities/Investment';
 
 export interface ExportData {
   exportDate: string;
@@ -36,7 +36,7 @@ export class ExportController {
     private readonly transactionRepository: ITransactionRepository,
     private readonly categoryRepository: ICategoryRepository,
     private readonly investmentRepository: IInvestmentRepository,
-    private readonly userId: string,
+    private readonly userId: string
   ) {}
 
   /**
@@ -47,7 +47,7 @@ export class ExportController {
       // Get all transactions
       const transactionsResult = await this.transactionRepository.findWithFilters(
         { includeHidden: true },
-        { offset: 0, limit: 100000 },
+        { offset: 0, limit: 100000 }
       );
 
       if (transactionsResult.isFailure()) {
@@ -103,26 +103,28 @@ export class ExportController {
       }
 
       // Calculate date range
-      const transactionDates = transactions.map(t => new Date(t.toSnapshot().date).getTime());
-      const dateFrom = transactionDates.length > 0
-        ? new Date(Math.min(...transactionDates)).toISOString().split('T')[0]
-        : null;
-      const dateTo = transactionDates.length > 0
-        ? new Date(Math.max(...transactionDates)).toISOString().split('T')[0]
-        : null;
+      const transactionDates = transactions.map((t) => new Date(t.toSnapshot().date).getTime());
+      const dateFrom =
+        transactionDates.length > 0
+          ? new Date(Math.min(...transactionDates)).toISOString().split('T')[0]
+          : null;
+      const dateTo =
+        transactionDates.length > 0
+          ? new Date(Math.max(...transactionDates)).toISOString().split('T')[0]
+          : null;
 
       // Build export data
       const exportData: ExportData = {
         exportDate: new Date().toISOString(),
-        version: "1.0.0",
+        version: '1.0.0',
         user: {
           id: this.userId,
           exportedAt: new Date().toISOString(),
         },
         data: {
-          transactions: transactions.map(t => t.toSnapshot()),
-          categories: categories.map(c => c.toSnapshot()),
-          investments: investmentSnapshots.map(inv => ({
+          transactions: transactions.map((t) => t.toSnapshot()),
+          categories: categories.map((c) => c.toSnapshot()),
+          investments: investmentSnapshots.map((inv) => ({
             ...inv,
             history: undefined, // History is stored in separate array to avoid duplication
           })),
@@ -150,10 +152,10 @@ export class ExportController {
         data: exportData,
       });
     } catch (error) {
-      console.error("Error exporting data:", error);
+      console.error('Error exporting data:', error);
       res.status(500).json({
         success: false,
-        error: "Failed to export data",
+        error: 'Failed to export data',
       });
     }
   }
@@ -165,7 +167,7 @@ export class ExportController {
     try {
       const transactionsResult = await this.transactionRepository.findWithFilters(
         { includeHidden: true },
-        { offset: 0, limit: 100000 },
+        { offset: 0, limit: 100000 }
       );
 
       if (transactionsResult.isFailure()) {
@@ -182,14 +184,14 @@ export class ExportController {
         success: true,
         data: {
           exportDate: new Date().toISOString(),
-          transactions: transactions.map(t => t.toSnapshot()),
+          transactions: transactions.map((t) => t.toSnapshot()),
           count: transactions.length,
         },
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: "Failed to export transactions",
+        error: 'Failed to export transactions',
       });
     }
   }
@@ -227,7 +229,40 @@ export class ExportController {
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: "Failed to export investments",
+        error: 'Failed to export investments',
+      });
+    }
+  }
+
+  /**
+   * Export only categories
+   */
+  async exportCategories(req: Request, res: Response): Promise<void> {
+    try {
+      const categoriesResult = await this.categoryRepository.findAll();
+
+      if (categoriesResult.isFailure()) {
+        res.status(500).json({
+          success: false,
+          error: categoriesResult.getError(),
+        });
+        return;
+      }
+
+      const categories = categoriesResult.getValue();
+
+      res.json({
+        success: true,
+        data: {
+          exportDate: new Date().toISOString(),
+          categories: categories.map((c) => c.toSnapshot()),
+          count: categories.length,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to export categories',
       });
     }
   }
@@ -242,7 +277,7 @@ export class ExportController {
       if (!importData.data) {
         res.status(400).json({
           success: false,
-          error: "Invalid import data format",
+          error: 'Invalid import data format',
         });
         return;
       }
@@ -276,11 +311,11 @@ export class ExportController {
               }
               results.categories.imported++;
             } else {
-              console.warn("Failed to import category:", categoryResult.getError());
+              console.warn('Failed to import category:', categoryResult.getError());
               results.categories.failed++;
             }
           } catch (error) {
-            console.warn("Error importing category:", error);
+            console.warn('Error importing category:', error);
             results.categories.failed++;
           }
         }
@@ -308,11 +343,11 @@ export class ExportController {
               }
               results.transactions.imported++;
             } else {
-              console.warn("Failed to import transaction:", transactionResult.getError());
+              console.warn('Failed to import transaction:', transactionResult.getError());
               results.transactions.failed++;
             }
           } catch (error) {
-            console.warn("Error importing transaction:", error);
+            console.warn('Error importing transaction:', error);
             results.transactions.failed++;
           }
         }
@@ -330,7 +365,12 @@ export class ExportController {
               history: invSnapshot.history || [], // Ensure history is an array
             };
 
-            console.log("Importing investment:", investmentData.name, "isActive:", investmentData.isActive);
+            console.log(
+              'Importing investment:',
+              investmentData.name,
+              'isActive:',
+              investmentData.isActive
+            );
 
             const investmentResult = Investment.fromSnapshot(investmentData);
 
@@ -342,19 +382,23 @@ export class ExportController {
               if (existingResult.isSuccess() && existingResult.getValue()) {
                 // Update existing
                 await this.investmentRepository.update(investment);
-                console.log("Updated existing investment:", investment.name);
+                console.log('Updated existing investment:', investment.name);
               } else {
                 // Save new
                 await this.investmentRepository.save(investment);
-                console.log("Saved new investment:", investment.name);
+                console.log('Saved new investment:', investment.name);
               }
               results.investments.imported++;
             } else {
-              console.warn("Failed to import investment:", invSnapshot.name, investmentResult.getError());
+              console.warn(
+                'Failed to import investment:',
+                invSnapshot.name,
+                investmentResult.getError()
+              );
               results.investments.failed++;
             }
           } catch (error) {
-            console.warn("Error importing investment:", invSnapshot.name, error);
+            console.warn('Error importing investment:', invSnapshot.name, error);
             results.investments.failed++;
           }
         }
@@ -380,11 +424,11 @@ export class ExportController {
               }
               results.investmentHistory.imported++;
             } else {
-              console.warn("Failed to import history entry:", historyResult.getError());
+              console.warn('Failed to import history entry:', historyResult.getError());
               results.investmentHistory.failed++;
             }
           } catch (error) {
-            console.warn("Error importing history entry:", error);
+            console.warn('Error importing history entry:', error);
             results.investmentHistory.failed++;
           }
         }
@@ -396,10 +440,10 @@ export class ExportController {
         message: `Import complete: ${results.categories.imported} categories, ${results.transactions.imported} transactions, ${results.investments.imported} investments, ${results.investmentHistory.imported} history entries`,
       });
     } catch (error) {
-      console.error("Error importing data:", error);
+      console.error('Error importing data:', error);
       res.status(500).json({
         success: false,
-        error: "Failed to import data",
+        error: 'Failed to import data',
       });
     }
   }

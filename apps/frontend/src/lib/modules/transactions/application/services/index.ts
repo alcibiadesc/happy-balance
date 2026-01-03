@@ -1,9 +1,8 @@
 // Transaction Module Services - Public API
 
 // Filter services
-export { filterTransactions, filterActions } from './FilterService';
-export type { FilterState } from './FilterStateService';
-export { createInitialFilterState, getActiveFiltersCount } from './FilterStateService';
+export { filterTransactions, filterActions, createInitialFilterState } from './FilterService';
+export type { FilterState } from './FilterService';
 
 // Modal state management
 export type {
