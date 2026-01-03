@@ -237,7 +237,7 @@ export function createSettingsStore(apiBase: string) {
 
     try {
       const endpoint = exportEndpoints[type];
-      const response = await authFetch(`${apiBase}${endpoint}`);
+      const response = await authFetch(endpoint);
 
       if (!response.ok) {
         throw new Error('Failed to export data from server');
@@ -341,7 +341,7 @@ export function createSettingsStore(apiBase: string) {
     const isNewFormat = !!data.data;
 
     if (isNewFormat) {
-      const response = await authFetch(`${apiBase}/export/import-all`, {
+      const response = await authFetch('/export/import-all', {
         method: 'POST',
         body: JSON.stringify(data),
       });
@@ -406,8 +406,8 @@ export function createSettingsStore(apiBase: string) {
 
   async function deleteAllDataSilent(): Promise<void> {
     try {
-      await authFetch(`${apiBase}/transactions`, { method: 'DELETE' });
-      await authFetch(`${apiBase}/investments`, { method: 'DELETE' });
+      await authFetch('/transactions', { method: 'DELETE' });
+      await authFetch('/investments', { method: 'DELETE' });
 
       ['transactions', 'transaction-hashes', 'categories'].forEach((key) => {
         localStorage.removeItem(key);
@@ -419,12 +419,12 @@ export function createSettingsStore(apiBase: string) {
 
   async function confirmDeleteAll(): Promise<void> {
     try {
-      const transactionsResponse = await authFetch(`${apiBase}/transactions`, { method: 'DELETE' });
+      const transactionsResponse = await authFetch('/transactions', { method: 'DELETE' });
       if (!transactionsResponse.ok) {
         console.warn('Failed to delete transactions from database');
       }
 
-      const investmentsResponse = await authFetch(`${apiBase}/investments`, { method: 'DELETE' });
+      const investmentsResponse = await authFetch('/investments', { method: 'DELETE' });
       if (!investmentsResponse.ok) {
         console.warn('Failed to delete investments from database');
       }
@@ -453,7 +453,7 @@ export function createSettingsStore(apiBase: string) {
 
   async function confirmReset(): Promise<void> {
     try {
-      const seedResponse = await authFetch(`${apiBase}/seed`, { method: 'POST' });
+      const seedResponse = await authFetch('/seed', { method: 'POST' });
 
       if (!seedResponse.ok) {
         const errorData = await seedResponse.json().catch(() => ({ error: 'Unknown error' }));
