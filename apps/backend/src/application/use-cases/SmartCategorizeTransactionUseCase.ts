@@ -62,6 +62,13 @@ export class SmartCategorizeTransactionUseCase {
         };
       }
 
+      console.log(
+        '[SmartCategorize] Transaction type:',
+        transaction.type,
+        'Category type:',
+        category.type
+      );
+
       // Prepare categorization options
       const options: CategorizationOptions = {
         applyToAll: request.applyToAll,

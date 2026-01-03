@@ -479,6 +479,7 @@ export class TransactionController {
     });
 
     if (!result.success) {
+      console.error('[SmartCategorize] Failed:', result.message);
       throw new BadRequestError(result.message || 'Failed to categorize transaction');
     }
 
