@@ -1,5 +1,5 @@
-import { Result } from "../shared/Result";
-import { InvestmentHistoryType } from "./InvestmentHistoryType";
+import { Result } from '../shared/Result';
+import { InvestmentHistoryType } from './InvestmentHistoryType';
 
 /**
  * Investment ID value object
@@ -9,7 +9,7 @@ export class InvestmentId {
 
   static create(value: string): Result<InvestmentId> {
     if (!value || value.trim().length === 0) {
-      return Result.failWithMessage("Investment ID cannot be empty");
+      return Result.failWithMessage('Investment ID cannot be empty');
     }
     return Result.ok(new InvestmentId(value.trim()));
   }
@@ -40,7 +40,7 @@ export class InvestmentHistoryId {
 
   static create(value: string): Result<InvestmentHistoryId> {
     if (!value || value.trim().length === 0) {
-      return Result.failWithMessage("Investment History ID cannot be empty");
+      return Result.failWithMessage('Investment History ID cannot be empty');
     }
     return Result.ok(new InvestmentHistoryId(value.trim()));
   }
@@ -75,7 +75,7 @@ export class InvestmentHistory {
     private _date: Date,
     private _notes: string | null,
     private _transactionId: string | null,
-    private readonly _createdAt: Date,
+    private readonly _createdAt: Date
   ) {}
 
   static create(
@@ -85,10 +85,10 @@ export class InvestmentHistory {
     date: Date,
     notes?: string,
     transactionId?: string,
-    id?: InvestmentHistoryId,
+    id?: InvestmentHistoryId
   ): Result<InvestmentHistory> {
     if (amount <= 0 && type !== InvestmentHistoryType.VALUE_UPDATE) {
-      return Result.failWithMessage("Amount must be positive for contributions and withdrawals");
+      return Result.failWithMessage('Amount must be positive for contributions and withdrawals');
     }
 
     const historyId = id || InvestmentHistoryId.generate();
@@ -102,8 +102,8 @@ export class InvestmentHistory {
         date,
         notes || null,
         transactionId || null,
-        new Date(),
-      ),
+        new Date()
+      )
     );
   }
 
@@ -143,7 +143,7 @@ export class InvestmentHistory {
   // Business methods
   updateAmount(newAmount: number): Result<void> {
     if (newAmount <= 0 && this._type !== InvestmentHistoryType.VALUE_UPDATE) {
-      return Result.failWithMessage("Amount must be positive");
+      return Result.failWithMessage('Amount must be positive');
     }
     this._amount = newAmount;
     return Result.ok(undefined);
@@ -202,8 +202,8 @@ export class InvestmentHistory {
         new Date(snapshot.date),
         snapshot.notes,
         snapshot.transactionId,
-        new Date(snapshot.createdAt),
-      ),
+        new Date(snapshot.createdAt)
+      )
     );
   }
 }
@@ -227,7 +227,7 @@ export class Investment {
     private _sortOrder: number,
     private readonly _userId: string,
     private readonly _createdAt: Date,
-    private _history: InvestmentHistory[],
+    private _history: InvestmentHistory[]
   ) {}
 
   static create(
@@ -244,32 +244,32 @@ export class Investment {
       icon?: string;
       notes?: string;
       sortOrder?: number;
-    },
+    }
   ): Result<Investment> {
     // Validate name
     if (!name || name.trim().length === 0) {
-      return Result.failWithMessage("Investment name cannot be empty");
+      return Result.failWithMessage('Investment name cannot be empty');
     }
 
     if (name.length > 100) {
-      return Result.failWithMessage("Investment name cannot exceed 100 characters");
+      return Result.failWithMessage('Investment name cannot exceed 100 characters');
     }
 
     // Validate current value
     if (currentValue < 0) {
-      return Result.failWithMessage("Current value cannot be negative");
+      return Result.failWithMessage('Current value cannot be negative');
     }
 
     // Validate currency
     if (!currency || currency.length !== 3) {
-      return Result.failWithMessage("Currency must be a valid 3-letter code");
+      return Result.failWithMessage('Currency must be a valid 3-letter code');
     }
 
     // Validate color if provided
-    const color = options?.color || "#10B981";
+    const color = options?.color || '#10B981';
     const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
     if (!colorRegex.test(color)) {
-      return Result.failWithMessage("Color must be a valid hex color code");
+      return Result.failWithMessage('Color must be a valid hex color code');
     }
 
     const investmentId = options?.id || InvestmentId.generate();
@@ -284,14 +284,14 @@ export class Investment {
         options?.categoryId || null,
         options?.highlight || false,
         color.toLowerCase(),
-        options?.icon || "📈",
+        options?.icon || '📈',
         options?.notes || null,
         true,
         options?.sortOrder || 0,
         userId,
         new Date(),
-        [],
-      ),
+        []
+      )
     );
   }
 
@@ -385,10 +385,10 @@ export class Investment {
   // Business methods
   changeName(newName: string): Result<void> {
     if (!newName || newName.trim().length === 0) {
-      return Result.failWithMessage("Investment name cannot be empty");
+      return Result.failWithMessage('Investment name cannot be empty');
     }
     if (newName.length > 100) {
-      return Result.failWithMessage("Investment name cannot exceed 100 characters");
+      return Result.failWithMessage('Investment name cannot exceed 100 characters');
     }
     this._name = newName.trim();
     return Result.ok(undefined);
@@ -400,16 +400,27 @@ export class Investment {
 
   updateCurrentValue(newValue: number): Result<void> {
     if (newValue < 0) {
-      return Result.failWithMessage("Current value cannot be negative");
+      return Result.failWithMessage('Current value cannot be negative');
     }
     this._currentValue = newValue;
+    return Result.ok(undefined);
+  }
+
+  rename(newName: string): Result<void> {
+    if (!newName || newName.trim().length === 0) {
+      return Result.failWithMessage('Investment name cannot be empty');
+    }
+    if (newName.trim().length > 100) {
+      return Result.failWithMessage('Investment name cannot exceed 100 characters');
+    }
+    this._name = newName.trim();
     return Result.ok(undefined);
   }
 
   changeColor(newColor: string): Result<void> {
     const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
     if (!colorRegex.test(newColor)) {
-      return Result.failWithMessage("Color must be a valid hex color code");
+      return Result.failWithMessage('Color must be a valid hex color code');
     }
     this._color = newColor.toLowerCase();
     return Result.ok(undefined);
@@ -417,7 +428,7 @@ export class Investment {
 
   changeIcon(newIcon: string): Result<void> {
     if (!newIcon || newIcon.trim().length === 0) {
-      return Result.failWithMessage("Investment icon cannot be empty");
+      return Result.failWithMessage('Investment icon cannot be empty');
     }
     this._icon = newIcon.trim();
     return Result.ok(undefined);
@@ -464,14 +475,19 @@ export class Investment {
     this._history = history;
   }
 
-  addContribution(amount: number, date: Date, notes?: string, transactionId?: string): Result<InvestmentHistory> {
+  addContribution(
+    amount: number,
+    date: Date,
+    notes?: string,
+    transactionId?: string
+  ): Result<InvestmentHistory> {
     const entryResult = InvestmentHistory.create(
       this._id,
       amount,
       InvestmentHistoryType.CONTRIBUTION,
       date,
       notes,
-      transactionId,
+      transactionId
     );
 
     if (entryResult.isFailure()) {
@@ -483,14 +499,19 @@ export class Investment {
     return Result.ok(entry);
   }
 
-  addWithdrawal(amount: number, date: Date, notes?: string, transactionId?: string): Result<InvestmentHistory> {
+  addWithdrawal(
+    amount: number,
+    date: Date,
+    notes?: string,
+    transactionId?: string
+  ): Result<InvestmentHistory> {
     const entryResult = InvestmentHistory.create(
       this._id,
       amount,
       InvestmentHistoryType.WITHDRAWAL,
       date,
       notes,
-      transactionId,
+      transactionId
     );
 
     if (entryResult.isFailure()) {
@@ -513,7 +534,7 @@ export class Investment {
       newValue,
       InvestmentHistoryType.VALUE_UPDATE,
       date,
-      notes,
+      notes
     );
 
     if (entryResult.isFailure()) {
@@ -594,7 +615,7 @@ export class Investment {
       snapshot.sortOrder,
       snapshot.userId,
       new Date(snapshot.createdAt),
-      history,
+      history
     );
 
     return Result.ok(investment);

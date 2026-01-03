@@ -23,6 +23,26 @@
   const showAddHistoryModal = $derived(store.showAddHistoryModal);
   const showDeleteModal = $derived(store.showDeleteModal);
 
+  // Sync notification
+  let syncNotification = $state<string | null>(null);
+
+  async function handleSync() {
+    try {
+      const result = await store.syncWithCategories();
+      if (result) {
+        syncNotification = result.message;
+        setTimeout(() => {
+          syncNotification = null;
+        }, 5000);
+      }
+    } catch (e) {
+      syncNotification = 'Error al sincronizar';
+      setTimeout(() => {
+        syncNotification = null;
+      }, 3000);
+    }
+  }
+
   // View state
   let viewMode = $state<'grid' | 'details'>('grid');
   let showIconPicker = $state(false);
@@ -159,9 +179,9 @@
           <div class="header-actions">
             <button
               class="sync-btn"
-              onclick={() => store.syncWithCategories()}
+              onclick={handleSync}
               disabled={store.isSyncing}
-              title="Sincronizar con transacciones de inversión"
+              title="Sincronizar inversiones ↔ categorías"
             >
               <RefreshCw size={14} class={store.isSyncing ? 'spinning' : ''} />
               {store.isSyncing ? 'Sincronizando...' : 'Sincronizar'}
@@ -171,6 +191,14 @@
             </button>
           </div>
         </div>
+
+        {#if syncNotification}
+          <div class="sync-notification" role="status">
+            <RefreshCw size={14} />
+            <span>{syncNotification}</span>
+            <button class="dismiss-btn" onclick={() => (syncNotification = null)}>×</button>
+          </div>
+        {/if}
 
         {#if store.showNewForm}
           <NewInvestmentForm
@@ -343,6 +371,54 @@
     }
     to {
       transform: rotate(360deg);
+    }
+  }
+
+  .sync-notification {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--acapulco-alpha-15, rgba(122, 186, 165, 0.15));
+    border: 1px solid var(--acapulco);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.8125rem;
+    color: var(--acapulco);
+    animation: slideIn 0.3s ease;
+  }
+
+  .sync-notification :global(svg) {
+    flex-shrink: 0;
+  }
+
+  .sync-notification span {
+    flex: 1;
+  }
+
+  .dismiss-btn {
+    background: none;
+    border: none;
+    color: var(--acapulco);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.7;
+  }
+
+  .dismiss-btn:hover {
+    opacity: 1;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 

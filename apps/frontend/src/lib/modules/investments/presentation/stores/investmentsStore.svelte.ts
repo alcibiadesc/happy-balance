@@ -143,7 +143,21 @@ export function createInvestmentsStore() {
 
   // Sync state
   let isSyncing = $state(false);
-  let syncResult = $state<{ total: number; synced: number; skipped: number } | null>(null);
+  let syncResult = $state<FullSyncResult | null>(null);
+
+  interface FullSyncResult {
+    categoriesCreated: number;
+    categoriesLinked: number;
+    categoriesReactivated: number;
+    investmentsCreated: number;
+    investmentsLinked: number;
+    investmentsReactivated: number;
+    namesUpdated: number;
+    colorsUpdated: number;
+    iconsUpdated: number;
+    total: number;
+    message: string;
+  }
 
   // Computed
   const highlightedInvestments = $derived(investments.filter((inv) => inv.highlight));

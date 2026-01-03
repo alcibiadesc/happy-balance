@@ -401,16 +401,57 @@ export class InvestmentController {
   async syncWithCategories(_req: Request, res: Response): Promise<void> {
     if (!this.syncService) throw new BadRequestError('Sync service not available');
 
-    const syncResult = await this.syncService.syncAllInvestmentsToCategories();
-    const { created, linked, reactivated } = handleResult(syncResult, 'Failed to sync');
+    const syncResult = await this.syncService.fullSync();
+    const result = handleResult(syncResult, 'Failed to sync');
+
+    const totalChanges =
+      result.categoriesCreated +
+      result.categoriesLinked +
+      result.investmentsCreated +
+      result.investmentsLinked +
+      result.namesUpdated;
 
     successResponse(res, {
-      created,
-      linked,
-      reactivated,
-      total: created + linked,
-      message: `Created ${created} new categories, linked ${linked} existing ones, reactivated ${reactivated}.`,
+      ...result,
+      total: totalChanges,
+      message: this.buildSyncMessage(result),
     });
+  }
+
+  private buildSyncMessage(result: {
+    categoriesCreated: number;
+    categoriesLinked: number;
+    categoriesReactivated: number;
+    investmentsCreated: number;
+    investmentsLinked: number;
+    investmentsReactivated: number;
+    namesUpdated: number;
+    colorsUpdated: number;
+    iconsUpdated: number;
+  }): string {
+    const parts: string[] = [];
+
+    if (result.categoriesCreated > 0) {
+      parts.push(`${result.categoriesCreated} categorías creadas`);
+    }
+    if (result.investmentsCreated > 0) {
+      parts.push(`${result.investmentsCreated} inversiones creadas`);
+    }
+    if (result.categoriesLinked + result.investmentsLinked > 0) {
+      parts.push(`${result.categoriesLinked + result.investmentsLinked} vinculaciones`);
+    }
+    if (result.namesUpdated > 0) {
+      parts.push(`${result.namesUpdated} nombres actualizados`);
+    }
+    if (result.colorsUpdated + result.iconsUpdated > 0) {
+      parts.push(`${result.colorsUpdated + result.iconsUpdated} estilos sincronizados`);
+    }
+
+    if (parts.length === 0) {
+      return 'Todo sincronizado, sin cambios necesarios.';
+    }
+
+    return parts.join(', ') + '.';
   }
 
   async importFromGofire(req: Request, res: Response): Promise<void> {

@@ -421,4 +421,299 @@ export class CategoryInvestmentSyncService {
       );
     }
   }
+
+  /**
+   * Sync all investment-type categories to investments - create investments from orphan categories
+   */
+  async syncAllCategoriesToInvestments(): Promise<
+    Result<{
+      investmentsCreated: number;
+      investmentsLinked: number;
+      investmentsReactivated: number;
+    }>
+  > {
+    try {
+      let investmentsCreated = 0;
+      let investmentsLinked = 0;
+      let investmentsReactivated = 0;
+
+      // Get all active investment-type categories
+      const categoriesResult = await this.categoryRepository.findWithFilters({
+        type: CategoryType.INVESTMENT,
+        isActive: true,
+      });
+
+      if (categoriesResult.isFailure()) {
+        return Result.fail(categoriesResult.getError());
+      }
+
+      const categories = categoriesResult.getValue();
+
+      for (const category of categories) {
+        const catSnapshot = category.toSnapshot();
+
+        // Check if any investment is already linked to this category
+        const linkedInvestmentsResult = await this.investmentRepository.findByCategoryId(
+          catSnapshot.id
+        );
+
+        if (linkedInvestmentsResult.isSuccess() && linkedInvestmentsResult.getValue().length > 0) {
+          // Already has linked investments, skip
+          continue;
+        }
+
+        // No linked investment - try to find by name or create new
+        const investmentsResult = await this.investmentRepository.findWithFilters({
+          searchTerm: catSnapshot.name,
+        });
+
+        if (investmentsResult.isFailure()) {
+          console.warn(
+            `Failed to find investment for category ${catSnapshot.name}:`,
+            investmentsResult.getError()
+          );
+          continue;
+        }
+
+        const matchingInvestments = investmentsResult
+          .getValue()
+          .filter((inv) => inv.name.toLowerCase() === catSnapshot.name.toLowerCase());
+
+        if (matchingInvestments.length > 0) {
+          // Found matching investment by name
+          const investment = matchingInvestments[0];
+          const invSnapshot = investment.toSnapshot();
+
+          if (!invSnapshot.isActive) {
+            // Reactivate the investment
+            investment.activate();
+            investmentsReactivated++;
+          }
+
+          // Link if not already linked elsewhere
+          if (!invSnapshot.categoryId) {
+            investment.linkToCategory(catSnapshot.id);
+            // Sync color/icon from category
+            investment.changeColor(catSnapshot.color);
+            investment.changeIcon(catSnapshot.icon);
+            await this.investmentRepository.update(investment);
+            investmentsLinked++;
+          }
+        } else {
+          // No matching investment - create new one
+          const investmentResult = Investment.create(
+            catSnapshot.name,
+            0, // Initial value is 0
+            'EUR',
+            this.userId,
+            {
+              categoryId: catSnapshot.id,
+              color: catSnapshot.color,
+              icon: catSnapshot.icon,
+            }
+          );
+
+          if (investmentResult.isSuccess()) {
+            const investment = investmentResult.getValue();
+            const saveResult = await this.investmentRepository.save(investment);
+
+            if (saveResult.isSuccess()) {
+              investmentsCreated++;
+            }
+          }
+        }
+      }
+
+      return Result.ok({ investmentsCreated, investmentsLinked, investmentsReactivated });
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to sync categories to investments: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Sync metadata (name, color, icon) between linked investments and categories
+   * Category is source of truth for name, investment syncs to match
+   */
+  async syncLinkedMetadata(): Promise<
+    Result<{ namesUpdated: number; colorsUpdated: number; iconsUpdated: number }>
+  > {
+    try {
+      let namesUpdated = 0;
+      let colorsUpdated = 0;
+      let iconsUpdated = 0;
+
+      // Get all active investments with categoryId
+      const investmentsResult = await this.investmentRepository.findWithFilters({ isActive: true });
+      if (investmentsResult.isFailure()) {
+        return Result.fail(investmentsResult.getError());
+      }
+
+      const investments = investmentsResult.getValue();
+
+      for (const investment of investments) {
+        const invSnapshot = investment.toSnapshot();
+
+        if (!invSnapshot.categoryId) {
+          continue;
+        }
+
+        // Get linked category
+        const categoryIdResult = CategoryId.create(invSnapshot.categoryId);
+        if (categoryIdResult.isFailure()) {
+          continue;
+        }
+
+        const categoryResult = await this.categoryRepository.findById(categoryIdResult.getValue());
+        if (categoryResult.isFailure() || !categoryResult.getValue()) {
+          continue;
+        }
+
+        const category = categoryResult.getValue()!;
+        const catSnapshot = category.toSnapshot();
+
+        let investmentNeedsUpdate = false;
+        let categoryNeedsUpdate = false;
+
+        // Sync name: category → investment (category is source of truth for display name)
+        if (invSnapshot.name !== catSnapshot.name) {
+          investment.rename(catSnapshot.name);
+          investmentNeedsUpdate = true;
+          namesUpdated++;
+        }
+
+        // Sync color: bidirectional, prefer the one that's not default
+        const defaultColor = '#3B82F6';
+        if (invSnapshot.color !== catSnapshot.color) {
+          if (catSnapshot.color !== defaultColor) {
+            // Category has custom color, apply to investment
+            investment.changeColor(catSnapshot.color);
+            investmentNeedsUpdate = true;
+          } else if (invSnapshot.color !== defaultColor) {
+            // Investment has custom color, apply to category
+            categoryNeedsUpdate = true;
+          }
+          colorsUpdated++;
+        }
+
+        // Sync icon: bidirectional, prefer the one that's not default
+        const defaultIcon = '💰';
+        if (invSnapshot.icon !== catSnapshot.icon) {
+          if (catSnapshot.icon !== defaultIcon) {
+            // Category has custom icon, apply to investment
+            investment.changeIcon(catSnapshot.icon);
+            investmentNeedsUpdate = true;
+          } else if (invSnapshot.icon !== defaultIcon) {
+            // Investment has custom icon, apply to category
+            categoryNeedsUpdate = true;
+          }
+          iconsUpdated++;
+        }
+
+        // Save updates
+        if (investmentNeedsUpdate) {
+          await this.investmentRepository.update(investment);
+        }
+
+        if (categoryNeedsUpdate) {
+          const updatedCategoryResult = Category.fromSnapshot({
+            ...catSnapshot,
+            color: invSnapshot.color !== defaultColor ? invSnapshot.color : catSnapshot.color,
+            icon: invSnapshot.icon !== defaultIcon ? invSnapshot.icon : catSnapshot.icon,
+          });
+
+          if (updatedCategoryResult.isSuccess()) {
+            await this.categoryRepository.update(updatedCategoryResult.getValue());
+          }
+        }
+      }
+
+      return Result.ok({ namesUpdated, colorsUpdated, iconsUpdated });
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to sync linked metadata: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Full bidirectional sync between investments and categories
+   * 1. Link unlinked investments to categories (create if needed)
+   * 2. Link unlinked categories to investments (create if needed)
+   * 3. Sync metadata (name, color, icon) for all linked pairs
+   */
+  async fullSync(): Promise<Result<FullSyncResult>> {
+    try {
+      console.log('[CategoryInvestmentSync] Starting full bidirectional sync...');
+
+      // Phase 1: Investments → Categories
+      const invToCatResult = await this.syncAllInvestmentsToCategories();
+      if (invToCatResult.isFailure()) {
+        return Result.fail(invToCatResult.getError());
+      }
+      const invToCat = invToCatResult.getValue();
+      console.log(
+        `[CategoryInvestmentSync] Phase 1 complete: ${invToCat.created} categories created, ${invToCat.linked} linked`
+      );
+
+      // Phase 2: Categories → Investments
+      const catToInvResult = await this.syncAllCategoriesToInvestments();
+      if (catToInvResult.isFailure()) {
+        return Result.fail(catToInvResult.getError());
+      }
+      const catToInv = catToInvResult.getValue();
+      console.log(
+        `[CategoryInvestmentSync] Phase 2 complete: ${catToInv.investmentsCreated} investments created, ${catToInv.investmentsLinked} linked`
+      );
+
+      // Phase 3: Sync metadata for linked pairs
+      const metadataResult = await this.syncLinkedMetadata();
+      if (metadataResult.isFailure()) {
+        return Result.fail(metadataResult.getError());
+      }
+      const metadata = metadataResult.getValue();
+      console.log(
+        `[CategoryInvestmentSync] Phase 3 complete: ${metadata.namesUpdated} names, ${metadata.colorsUpdated} colors, ${metadata.iconsUpdated} icons updated`
+      );
+
+      const result: FullSyncResult = {
+        categoriesCreated: invToCat.created,
+        categoriesLinked: invToCat.linked,
+        categoriesReactivated: invToCat.reactivated,
+        investmentsCreated: catToInv.investmentsCreated,
+        investmentsLinked: catToInv.investmentsLinked,
+        investmentsReactivated: catToInv.investmentsReactivated,
+        namesUpdated: metadata.namesUpdated,
+        colorsUpdated: metadata.colorsUpdated,
+        iconsUpdated: metadata.iconsUpdated,
+      };
+
+      console.log('[CategoryInvestmentSync] Full sync complete:', result);
+
+      return Result.ok(result);
+    } catch (error) {
+      return Result.failWithMessage(
+        `Failed to perform full sync: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+}
+
+/**
+ * Result of a full bidirectional sync operation
+ */
+export interface FullSyncResult {
+  // Investments → Categories
+  categoriesCreated: number;
+  categoriesLinked: number;
+  categoriesReactivated: number;
+  // Categories → Investments
+  investmentsCreated: number;
+  investmentsLinked: number;
+  investmentsReactivated: number;
+  // Metadata sync
+  namesUpdated: number;
+  colorsUpdated: number;
+  iconsUpdated: number;
 }
