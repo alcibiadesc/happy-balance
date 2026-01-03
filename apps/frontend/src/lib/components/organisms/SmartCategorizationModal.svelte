@@ -35,6 +35,16 @@
   const selectedCount = $derived(selectedTransactionIds.size + 1);
   const totalSelectedAmount = $derived(getTotalAmount());
 
+  // Determine transaction type for display
+  const transactionType = $derived.by(() => {
+    if (!transaction) return 'EXPENSE';
+    if (transaction.type) return transaction.type;
+    return transaction.amount > 0 ? 'INCOME' : 'EXPENSE';
+  });
+  const isIncome = $derived(transactionType === 'INCOME');
+  const isInvestment = $derived(transactionType === 'INVESTMENT');
+  const typeLabel = $derived(isIncome ? 'Ingreso' : isInvestment ? 'Inversión' : 'Gasto');
+
   $effect(() => {
     if (isOpen) {
       selectedTransactionIds = new Set(matchingTransactions.map((t) => t.id));
@@ -95,7 +105,12 @@
             Categorización inteligente
           </h2>
           <div class="category-preview">
-            <span class="merchant-name">{getPatternName(transaction)}</span>
+            <div class="merchant-row">
+              <span class="merchant-name">{getPatternName(transaction)}</span>
+              <span class="type-badge" class:income={isIncome} class:investment={isInvestment}>
+                {typeLabel}
+              </span>
+            </div>
             <div class="category-assignment">
               <span class="arrow">→</span>
               <div
@@ -129,7 +144,7 @@
           <div class="matches-section">
             <div class="section-header">
               <div class="section-label">
-                Transacciones anteriores similares
+                {isIncome ? 'Ingresos' : isInvestment ? 'Inversiones' : 'Gastos'} similares anteriores
                 <span class="match-count">{matchingTransactions.length}</span>
               </div>
               <button type="button" class="toggle-all-btn" onclick={toggleAll}>
@@ -267,10 +282,44 @@
     gap: 6px;
   }
 
+  .merchant-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
   .merchant-name {
     font-size: 13px;
     color: var(--text-secondary);
     font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .type-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    background: rgba(245, 121, 108, 0.15);
+    color: var(--froly);
+    flex-shrink: 0;
+  }
+
+  .type-badge.income {
+    background: rgba(122, 186, 165, 0.15);
+    color: var(--acapulco);
+  }
+
+  .type-badge.investment {
+    background: rgba(122, 186, 165, 0.15);
+    color: var(--primary);
   }
 
   .category-assignment {

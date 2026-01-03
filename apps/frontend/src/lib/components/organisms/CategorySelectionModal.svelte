@@ -35,8 +35,16 @@
     income: 'Ingresos',
   };
 
-  // Derived values
-  const isIncomeTransaction = $derived(transaction ? transaction.amount > 0 : false);
+  // Derived values - determine transaction type from explicit type field or amount sign
+  const transactionType = $derived.by(() => {
+    if (!transaction) return 'EXPENSE';
+    // Use explicit type if available, otherwise infer from amount
+    if (transaction.type) return transaction.type;
+    return transaction.amount > 0 ? 'INCOME' : 'EXPENSE';
+  });
+
+  const isIncomeTransaction = $derived(transactionType === 'INCOME');
+  const isInvestmentTransaction = $derived(transactionType === 'INVESTMENT');
 
   const filteredCategories = $derived(
     categories.filter(
@@ -46,12 +54,21 @@
   );
 
   const groupedCategories = $derived.by(() => {
+    // Income transactions: only show income and no_compute categories
     if (isIncomeTransaction) {
       return {
-        income: filteredCategories.filter((cat) => cat.type === 'income' || cat.type === 'INCOME'),
+        income: filteredCategories.filter((cat) => cat.type === 'income'),
         no_compute: filteredCategories.filter((cat) => cat.type === 'no_compute'),
       };
     }
+    // Investment transactions: only show investment and no_compute categories
+    if (isInvestmentTransaction) {
+      return {
+        investment: filteredCategories.filter((cat) => cat.type === 'investment'),
+        no_compute: filteredCategories.filter((cat) => cat.type === 'no_compute'),
+      };
+    }
+    // Expense transactions: show expense-related categories
     return {
       essential: filteredCategories.filter((cat) => cat.type === 'essential'),
       discretionary: filteredCategories.filter((cat) => cat.type === 'discretionary'),
@@ -112,7 +129,16 @@
             <p class="modal-subtitle">Selecciona una categoría para organizar esta transacción</p>
           </div>
           <div class="transaction-preview">
-            <div class="merchant-name">{transaction.merchant}</div>
+            <div class="merchant-row">
+              <div class="merchant-name">{transaction.merchant}</div>
+              <span
+                class="type-badge"
+                class:income={isIncomeTransaction}
+                class:investment={isInvestmentTransaction}
+              >
+                {isIncomeTransaction ? 'Ingreso' : isInvestmentTransaction ? 'Inversión' : 'Gasto'}
+              </span>
+            </div>
             <div class="transaction-details">
               <span class="amount" class:income={transaction.amount > 0}>
                 {formatCurrency(transaction.amount)}
@@ -259,11 +285,45 @@
     padding: 0.75rem;
   }
 
+  .merchant-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
   .merchant-name {
     font-size: 0.9375rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 0.25rem;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .type-badge {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    background: var(--froly-alpha-15, rgba(245, 121, 108, 0.15));
+    color: var(--froly);
+    flex-shrink: 0;
+  }
+
+  .type-badge.income {
+    background: var(--acapulco-alpha-15, rgba(122, 186, 165, 0.15));
+    color: var(--acapulco);
+  }
+
+  .type-badge.investment {
+    background: var(--primary-alpha-15, rgba(122, 186, 165, 0.15));
+    color: var(--primary);
   }
 
   .transaction-details {
