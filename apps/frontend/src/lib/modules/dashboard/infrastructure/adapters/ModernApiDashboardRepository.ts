@@ -103,8 +103,10 @@ export class ModernApiDashboardRepository implements DashboardRepository {
         return [];
       }
 
-      const result: ApiResponse<AvailablePeriod[]> = await response.json();
-      return result.data || [];
+      const result: ApiResponse<any> = await response.json();
+      // Backend wraps as { success, data: { count, data: [...] } }
+      const payload = result.data;
+      return Array.isArray(payload) ? payload : payload?.data || [];
     } catch (_error) {
       console.error('[Dashboard] Error fetching periods:', _error);
       return [];
@@ -191,7 +193,9 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       }
 
       const result = await response.json();
-      return result.data || [];
+      // Backend wraps as { success, data: { months, count, data: [...] } }
+      const payload = result.data;
+      return Array.isArray(payload) ? payload : payload?.data || [];
     } catch (_error) {
       console.error('[Dashboard] Error fetching history:', _error);
       return [];

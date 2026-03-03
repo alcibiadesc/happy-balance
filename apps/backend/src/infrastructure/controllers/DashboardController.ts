@@ -288,24 +288,21 @@ export class DashboardController {
 
     successResponse(res, {
       period: { current: { year, month }, previous: { year: prevYear, month: prevMonth } },
-      data: {
-        current: {
-          income: Math.round(comparison.current.income * 100) / 100,
-          expenses: Math.round(comparison.current.expenses * 100) / 100,
-          balance:
-            Math.round((comparison.current.income - comparison.current.expenses) * 100) / 100,
-        },
-        previous: {
-          income: Math.round(comparison.previous.income * 100) / 100,
-          expenses: Math.round(comparison.previous.expenses * 100) / 100,
-          balance:
-            Math.round((comparison.previous.income - comparison.previous.expenses) * 100) / 100,
-        },
-        changes: {
-          income: Math.round(comparison.changes.income * 10) / 10,
-          expenses: Math.round(comparison.changes.expenses * 10) / 10,
-          transactionCount: Math.round(comparison.changes.transactionCount * 10) / 10,
-        },
+      current: {
+        income: Math.round(comparison.current.income * 100) / 100,
+        expenses: Math.round(comparison.current.expenses * 100) / 100,
+        balance: Math.round((comparison.current.income - comparison.current.expenses) * 100) / 100,
+      },
+      previous: {
+        income: Math.round(comparison.previous.income * 100) / 100,
+        expenses: Math.round(comparison.previous.expenses * 100) / 100,
+        balance:
+          Math.round((comparison.previous.income - comparison.previous.expenses) * 100) / 100,
+      },
+      changes: {
+        income: Math.round(comparison.changes.income * 10) / 10,
+        expenses: Math.round(comparison.changes.expenses * 10) / 10,
+        transactionCount: Math.round(comparison.changes.transactionCount * 10) / 10,
       },
     });
   }
@@ -314,7 +311,7 @@ export class DashboardController {
     const { months } = validateQuery(TrendsSchema, req);
     const trends = await this.dashboardRepository.getTrendsAndPredictions(months);
 
-    successResponse(res, { period: { months }, data: trends });
+    successResponse(res, { period: { months }, ...trends });
   }
 
   async getCategoryBreakdown(req: Request, res: Response): Promise<void> {
@@ -333,22 +330,20 @@ export class DashboardController {
 
     successResponse(res, {
       period: { year, month },
-      data: {
-        total: Math.round(total * 100) / 100,
-        categories: categories.map((cat) => ({
-          id: cat.categoryId,
-          name: cat.categoryName,
-          amount: Math.round(cat.amount * 100) / 100,
-          percentage: total > 0 ? Math.round((cat.amount / total) * 1000) / 10 : 0,
-          transactionCount: cat.count,
-          type: cat.type,
-        })),
-        topCategories: topCategories.map((cat) => ({
-          name: cat.categoryName,
-          amount: Math.round(cat.amount * 100) / 100,
-          percentage: total > 0 ? Math.round((cat.amount / total) * 1000) / 10 : 0,
-        })),
-      },
+      total: Math.round(total * 100) / 100,
+      categories: categories.map((cat) => ({
+        id: cat.categoryId,
+        name: cat.categoryName,
+        amount: Math.round(cat.amount * 100) / 100,
+        percentage: total > 0 ? Math.round((cat.amount / total) * 1000) / 10 : 0,
+        transactionCount: cat.count,
+        type: cat.type,
+      })),
+      topCategories: topCategories.map((cat) => ({
+        name: cat.categoryName,
+        amount: Math.round(cat.amount * 100) / 100,
+        percentage: total > 0 ? Math.round((cat.amount / total) * 1000) / 10 : 0,
+      })),
     });
   }
 
@@ -395,52 +390,48 @@ export class DashboardController {
         endDate: this.formatDate(endDate),
         label: startDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
       },
-      data: {
-        ...this.formatDashboardResponse(metricsData),
-        categories: enrichedCategories,
-        categoryBreakdown: enrichedCategories,
-        expenseDistribution,
-        comparison: {
-          current: {
-            income: Math.round(comparisonData.current.income * 100) / 100,
-            expenses: Math.round(comparisonData.current.expenses * 100) / 100,
-            balance:
-              Math.round((comparisonData.current.income - comparisonData.current.expenses) * 100) /
-              100,
-          },
-          previous: {
-            income: Math.round(comparisonData.previous.income * 100) / 100,
-            expenses: Math.round(comparisonData.previous.expenses * 100) / 100,
-            balance:
-              Math.round(
-                (comparisonData.previous.income - comparisonData.previous.expenses) * 100
-              ) / 100,
-          },
-          changes: {
-            income: Math.round(comparisonData.changes.income * 10) / 10,
-            expenses: Math.round(comparisonData.changes.expenses * 10) / 10,
-            balance: Math.round(comparisonData.changes.transactionCount * 10) / 10,
-          },
+      ...this.formatDashboardResponse(metricsData),
+      categories: enrichedCategories,
+      categoryBreakdown: enrichedCategories,
+      expenseDistribution,
+      comparison: {
+        current: {
+          income: Math.round(comparisonData.current.income * 100) / 100,
+          expenses: Math.round(comparisonData.current.expenses * 100) / 100,
+          balance:
+            Math.round((comparisonData.current.income - comparisonData.current.expenses) * 100) /
+            100,
         },
-        savings: {
-          totalSavings: Math.round(savingsMetrics.totalSavings * 100) / 100,
-          savingsRate: savingsMetrics.savingsRate,
-          expenseRatio: savingsMetrics.expenseRatio,
-          dailyAverageExpense: Math.round(savingsMetrics.dailyAverageExpense * 100) / 100,
-          projectedMonthlySavings: Math.round(savingsMetrics.projectedMonthlySavings * 100) / 100,
-          projectedYearlySavings:
-            Math.round(savingsMetrics.projectedMonthlySavings * 12 * 100) / 100,
+        previous: {
+          income: Math.round(comparisonData.previous.income * 100) / 100,
+          expenses: Math.round(comparisonData.previous.expenses * 100) / 100,
+          balance:
+            Math.round((comparisonData.previous.income - comparisonData.previous.expenses) * 100) /
+            100,
         },
-        monthlyTrend: monthlyHistory.map((h) => ({
-          year: h.year,
-          month: h.month,
-          label: new Date(h.year, h.month - 1).toLocaleDateString('es-ES', { month: 'short' }),
-          income: Math.round(h.income * 100) / 100,
-          expenses: Math.round(h.expenses * 100) / 100,
-          investments: Math.round(h.investments * 100) / 100,
-          balance: Math.round((h.income - h.expenses - h.investments) * 100) / 100,
-        })),
+        changes: {
+          income: Math.round(comparisonData.changes.income * 10) / 10,
+          expenses: Math.round(comparisonData.changes.expenses * 10) / 10,
+          balance: Math.round(comparisonData.changes.transactionCount * 10) / 10,
+        },
       },
+      savings: {
+        totalSavings: Math.round(savingsMetrics.totalSavings * 100) / 100,
+        savingsRate: savingsMetrics.savingsRate,
+        expenseRatio: savingsMetrics.expenseRatio,
+        dailyAverageExpense: Math.round(savingsMetrics.dailyAverageExpense * 100) / 100,
+        projectedMonthlySavings: Math.round(savingsMetrics.projectedMonthlySavings * 100) / 100,
+        projectedYearlySavings: Math.round(savingsMetrics.projectedMonthlySavings * 12 * 100) / 100,
+      },
+      monthlyTrend: monthlyHistory.map((h) => ({
+        year: h.year,
+        month: h.month,
+        label: new Date(h.year, h.month - 1).toLocaleDateString('es-ES', { month: 'short' }),
+        income: Math.round(h.income * 100) / 100,
+        expenses: Math.round(h.expenses * 100) / 100,
+        investments: Math.round(h.investments * 100) / 100,
+        balance: Math.round((h.income - h.expenses - h.investments) * 100) / 100,
+      })),
     });
   }
 
@@ -454,14 +445,12 @@ export class DashboardController {
 
     successResponse(res, {
       period: { year, month },
-      data: {
-        totalSavings: Math.round(savings.totalSavings * 100) / 100,
-        savingsRate: savings.savingsRate,
-        expenseRatio: savings.expenseRatio,
-        dailyAverageExpense: Math.round(savings.dailyAverageExpense * 100) / 100,
-        projectedMonthlySavings: Math.round(savings.projectedMonthlySavings * 100) / 100,
-        projectedYearlySavings: Math.round(savings.projectedMonthlySavings * 12 * 100) / 100,
-      },
+      totalSavings: Math.round(savings.totalSavings * 100) / 100,
+      savingsRate: savings.savingsRate,
+      expenseRatio: savings.expenseRatio,
+      dailyAverageExpense: Math.round(savings.dailyAverageExpense * 100) / 100,
+      projectedMonthlySavings: Math.round(savings.projectedMonthlySavings * 100) / 100,
+      projectedYearlySavings: Math.round(savings.projectedMonthlySavings * 12 * 100) / 100,
     });
   }
 

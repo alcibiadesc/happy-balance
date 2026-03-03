@@ -483,6 +483,27 @@ export class TransactionController {
       throw new BadRequestError(result.message || 'Failed to categorize transaction');
     }
 
+    // Sync investment for all affected transactions categorized with investment category
+    if (
+      result.affectedTransactionIds?.length > 0 &&
+      this.syncInvestmentUseCase &&
+      this.categoryRepository
+    ) {
+      for (const affectedId of result.affectedTransactionIds) {
+        try {
+          const txId = TransactionId.create(affectedId);
+          if (txId.isSuccess()) {
+            const txResult = await this.transactionRepository.findById(txId.getValue());
+            if (txResult.isSuccess() && txResult.getValue()) {
+              await this.syncInvestmentIfNeeded(txResult.getValue()!, data.categoryId);
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to sync investment for transaction ${affectedId}:`, error);
+        }
+      }
+    }
+
     successResponse(res, {
       categorizedCount: result.categorizedCount,
       patternCreated: result.patternCreated,
