@@ -1,9 +1,15 @@
 import type { Transaction, Category } from '$lib/types/transaction';
+import type { TransactionDTO, CategoryDTO } from '@happy-balance/shared-types';
 
 /**
- * Map API transaction response to frontend Transaction type
+ * Map API transaction DTO (wire format) to frontend Transaction ViewModel.
+ *
+ * Key transformation: Backend sends positive amounts with type field.
+ * Frontend uses signed amounts (negative for EXPENSE) for display.
+ *
+ * Traceability: TransactionDTO (@happy-balance/shared-types) → Transaction ($lib/types)
  */
-export function mapApiToTransaction(apiTransaction: any): Transaction {
+export function mapApiToTransaction(apiTransaction: TransactionDTO): Transaction {
   return {
     id: apiTransaction.id,
     date: apiTransaction.date,
@@ -33,9 +39,11 @@ export function mapApiToTransaction(apiTransaction: any): Transaction {
 }
 
 /**
- * Map API category response to frontend Category type
+ * Map API category DTO (wire format) to frontend Category ViewModel.
+ *
+ * Traceability: CategoryDTO (@happy-balance/shared-types) → Category ($lib/types)
  */
-export function mapApiToCategory(apiCategory: any): Category {
+export function mapApiToCategory(apiCategory: CategoryDTO): Category {
   return {
     id: apiCategory.id,
     name: apiCategory.name,

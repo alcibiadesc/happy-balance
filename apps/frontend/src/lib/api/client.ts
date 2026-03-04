@@ -1,16 +1,14 @@
 /**
- * Centralized HTTP client for API requests
- * Provides consistent error handling, authentication, and request/response processing
+ * Centralized HTTP client for API requests.
+ * Provides consistent error handling, authentication, and request/response processing.
+ *
+ * Uses ApiResponse from @happy-balance/shared-types for the response envelope.
  */
 import { browser } from '$app/environment';
+import type { ApiResponse } from '@happy-balance/shared-types';
 
-// Types
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-  message?: string;
-}
+// Re-export for consumers that import from here
+export type { ApiResponse } from '@happy-balance/shared-types';
 
 export interface ApiError {
   status: number;

@@ -1,25 +1,40 @@
+import type { TransactionType, CategoryType } from '@happy-balance/shared-types';
+
+// Re-export shared types for convenience
+export type { TransactionType, CategoryType } from '@happy-balance/shared-types';
+
+/**
+ * Frontend ViewModel for transactions.
+ * Unlike TransactionDTO (wire format), this has:
+ * - Signed amounts (negative for expenses)
+ * - Parsed Date objects
+ * - Extracted time string
+ * - Status field for UI state
+ *
+ * Conversion: TransactionDTO → mapApiToTransaction() → Transaction
+ */
 export interface Transaction {
   id: string;
   date: string;
   time: string;
   merchant: string;
   description: string;
+  /** Signed amount: negative for EXPENSE, positive for INCOME/INVESTMENT */
   amount: number;
-  type?: 'INCOME' | 'EXPENSE' | 'INVESTMENT'; // Transaction type from backend
+  type?: TransactionType;
   categoryId?: string | null;
   category?: Category;
   status: 'completed' | 'pending' | 'hidden';
   tags: string[];
-  patternHash?: string; // Hash for pattern matching
-  hash?: string; // Hash for duplicate detection
+  patternHash?: string;
+  hash?: string;
   createdAt: Date;
   updatedAt: Date;
   hidden?: boolean;
   observations?: string;
-  // Split transaction fields
-  splitPercentage?: number; // % you pay (0-100, undefined = 100%)
-  linkedTransactionId?: string; // ID of linked reimbursement/expense
-  isReimbursement?: boolean; // This is a reimbursement (not real income)
+  splitPercentage?: number;
+  linkedTransactionId?: string;
+  isReimbursement?: boolean;
 }
 
 export interface PotentialReimbursement {
@@ -28,15 +43,19 @@ export interface PotentialReimbursement {
   matchReasons: string[];
 }
 
+/**
+ * Frontend Category ViewModel.
+ * Uses CategoryType from shared types for the type field.
+ */
 export interface Category {
   id: string;
   name: string;
-  type: 'income' | 'essential' | 'discretionary' | 'investment' | 'debt_payment' | 'no_compute';
+  type: CategoryType;
   color: string;
   icon: string;
-  parentId?: string; // For subcategories
+  parentId?: string;
   description?: string;
-  annualBudget?: number; // Annual budget for this category
+  annualBudget?: number;
 }
 
 export interface CategoryRule {
