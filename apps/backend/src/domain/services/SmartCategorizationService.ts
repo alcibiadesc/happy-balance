@@ -523,43 +523,6 @@ export class SmartCategorizationService {
   }
 
   /**
-   * Find all transactions that match the same pattern as the given transaction
-   * IMPORTANT: Only returns transactions of the SAME TYPE to prevent cross-type categorization
-   */
-  private async findMatchingTransactions(
-    transaction: Transaction,
-    pattern: PatternExtraction
-  ): Promise<Transaction[]> {
-    const matchingTransactions: Transaction[] = [];
-    const sourceType = transaction.type;
-
-    if (pattern.merchant) {
-      const merchantMatches = await this.transactionRepository.findByMerchant(pattern.merchant);
-      // CRITICAL: Filter by transaction type to prevent mixing INCOME/EXPENSE/INVESTMENT
-      const sameTypeMatches = merchantMatches.filter((tx) => tx.type === sourceType);
-      matchingTransactions.push(...sameTypeMatches);
-    }
-
-    if (pattern.descriptionPattern && pattern.suggestedPatternType !== PatternType.MERCHANT) {
-      const descriptionMatches = await this.transactionRepository.findByPattern(
-        pattern.descriptionPattern
-      );
-
-      // Add only unique transactions of the same type
-      for (const tx of descriptionMatches) {
-        if (
-          tx.type === sourceType &&
-          !matchingTransactions.some((existing) => existing.equals(tx))
-        ) {
-          matchingTransactions.push(tx);
-        }
-      }
-    }
-
-    return matchingTransactions;
-  }
-
-  /**
    * Check if a transaction type is compatible with a category type
    * Prevents applying wrong category types to transactions
    * (e.g., INCOME categories should NEVER be applied to EXPENSE transactions)
@@ -596,26 +559,6 @@ export class SmartCategorizationService {
       default:
         return false;
     }
-  }
-
-  /**
-   * Clean and normalize merchant name for pattern extraction
-   */
-  private cleanMerchantName(merchant: string): string {
-    // Remove common suffixes and clean up
-    const cleaned = merchant
-      .toLowerCase()
-      .replace(/\s+(inc|llc|ltd|corp|co|company)\.?$/i, '')
-      .replace(/[^a-z0-9\s]/g, '')
-      .trim();
-
-    // Extract the main merchant name (first meaningful part)
-    const parts = cleaned.split(/\s+/);
-    if (parts.length > 0 && parts[0].length >= 3) {
-      return parts[0];
-    }
-
-    return cleaned;
   }
 
   /**

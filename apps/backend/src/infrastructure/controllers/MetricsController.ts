@@ -1,13 +1,19 @@
-import { Request, Response } from "express";
-import { z } from "zod";
-import { GetDashboardMetricsUseCase } from "../../application/use-cases/GetDashboardMetricsUseCase";
-import { DashboardQuery } from "../../application/queries/DashboardQuery";
+import { Request, Response } from 'express';
+import { z } from 'zod';
+import { GetDashboardMetricsUseCase } from '../../application/use-cases/GetDashboardMetricsUseCase';
+import { DashboardQuery } from '../../application/queries/DashboardQuery';
 
 const PeriodStatsSchema = z.object({
-  period: z.enum(["week", "month", "quarter", "year"]).default("month"),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  currency: z.string().min(3).max(3).default("EUR"),
+  period: z.enum(['week', 'month', 'quarter', 'year']).default('month'),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  currency: z.string().min(3).max(3).default('EUR'),
   periodOffset: z.coerce.number().default(0), // Allow negative offsets for previous periods
 });
 
@@ -20,28 +26,27 @@ export class MetricsController {
     const date = new Date(dateString);
 
     switch (period) {
-      case "week":
-        return `Week of ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-      case "month":
-        return date.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
+      case 'week':
+        return `Week of ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      case 'month':
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
         });
-      case "quarter":
+      case 'quarter': {
         const quarter = Math.floor(date.getMonth() / 3) + 1;
         return `Q${quarter} ${date.getFullYear()}`;
-      case "year":
+      }
+      case 'year':
         return date.getFullYear().toString();
       default:
-        return date.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
         });
     }
   }
-  constructor(
-    private readonly getDashboardMetricsUseCase: GetDashboardMetricsUseCase
-  ) {}
+  constructor(private readonly getDashboardMetricsUseCase: GetDashboardMetricsUseCase) {}
 
   /**
    * Get period statistics (balance, income, expenses) without full transaction list
@@ -52,7 +57,7 @@ export class MetricsController {
       const validationResult = PeriodStatsSchema.safeParse(req.query);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
@@ -71,24 +76,27 @@ export class MetricsController {
       const result = await this.getDashboardMetricsUseCase.execute(query);
       if (result.isFailure()) {
         return res.status(500).json({
-          error: "Failed to get period stats",
-          message: result.getError()
+          error: 'Failed to get period stats',
+          message: result.getError(),
         });
       }
 
       const data = result.getValue();
 
       // Calculate savings rate
-      const savingsRate = data.periodBalance.income > 0
-        ? (data.periodBalance.balance / data.periodBalance.income) * 100
-        : 0;
+      const savingsRate =
+        data.periodBalance.income > 0
+          ? (data.periodBalance.balance / data.periodBalance.income) * 100
+          : 0;
 
       // Calculate essential and discretionary percentages
       const totalExpenses = data.periodBalance.expenses;
-      const essentialPercentage = totalExpenses > 0 ? (data.expenseDistribution.essential / totalExpenses) * 100 : 0;
-      const discretionaryPercentage = totalExpenses > 0 ? (data.expenseDistribution.discretionary / totalExpenses) * 100 : 0;
-      const debtPaymentPercentage = totalExpenses > 0 ? (data.periodBalance.debtPayments / totalExpenses) * 100 : 0;
-      const uncategorizedPercentage = totalExpenses > 0 ? (data.expenseDistribution.uncategorized / totalExpenses) * 100 : 0;
+      const essentialPercentage =
+        totalExpenses > 0 ? (data.expenseDistribution.essential / totalExpenses) * 100 : 0;
+      const discretionaryPercentage =
+        totalExpenses > 0 ? (data.expenseDistribution.discretionary / totalExpenses) * 100 : 0;
+      const uncategorizedPercentage =
+        totalExpenses > 0 ? (data.expenseDistribution.uncategorized / totalExpenses) * 100 : 0;
 
       // Return only the summary data for fast loading
       res.json({
@@ -143,10 +151,10 @@ export class MetricsController {
         },
       });
     } catch (error) {
-      console.error("Error in getPeriodStats:", error);
+      console.error('Error in getPeriodStats:', error);
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -160,7 +168,7 @@ export class MetricsController {
       const validationResult = PeriodStatsSchema.safeParse(req.query);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
@@ -179,37 +187,41 @@ export class MetricsController {
       const result = await this.getDashboardMetricsUseCase.execute(query);
       if (result.isFailure()) {
         return res.status(500).json({
-          error: "Failed to get dashboard data",
-          message: result.getError()
+          error: 'Failed to get dashboard data',
+          message: result.getError(),
         });
       }
 
       const data = result.getValue();
 
       // Calculate savings rate
-      const savingsRate = data.periodBalance.income > 0
-        ? (data.periodBalance.balance / data.periodBalance.income) * 100
-        : 0;
+      const savingsRate =
+        data.periodBalance.income > 0
+          ? (data.periodBalance.balance / data.periodBalance.income) * 100
+          : 0;
 
       // Calculate spending rate
-      const spendingRate = data.periodBalance.income > 0
-        ? (data.periodBalance.expenses / data.periodBalance.income) * 100
-        : 0;
+      const spendingRate =
+        data.periodBalance.income > 0
+          ? (data.periodBalance.expenses / data.periodBalance.income) * 100
+          : 0;
 
       // Calculate essential and discretionary percentages
       const totalExpenses = data.periodBalance.expenses;
-      const essentialPercentage = totalExpenses > 0 ? (data.expenseDistribution.essential / totalExpenses) * 100 : 0;
-      const discretionaryPercentage = totalExpenses > 0 ? (data.expenseDistribution.discretionary / totalExpenses) * 100 : 0;
-      const debtPaymentPercentage = totalExpenses > 0 ? (data.periodBalance.debtPayments / totalExpenses) * 100 : 0;
-      const uncategorizedPercentage = totalExpenses > 0 ? (data.expenseDistribution.uncategorized / totalExpenses) * 100 : 0;
+      const essentialPercentage =
+        totalExpenses > 0 ? (data.expenseDistribution.essential / totalExpenses) * 100 : 0;
+      const discretionaryPercentage =
+        totalExpenses > 0 ? (data.expenseDistribution.discretionary / totalExpenses) * 100 : 0;
+      const debtPaymentPercentage =
+        totalExpenses > 0 ? (data.periodBalance.debtPayments / totalExpenses) * 100 : 0;
 
       // Transform trends data for charts
-      const monthlyTrend = data.monthlyTrend.map(trend => ({
+      const monthlyTrend = data.monthlyTrend.map((trend) => ({
         month: trend.month,
         income: trend.income,
         expenses: trend.expenses,
         balance: trend.balance,
-        investments: trend.investments || 0
+        investments: trend.investments || 0,
       }));
 
       // Calculate trends (percentage change from previous period)
@@ -225,15 +237,18 @@ export class MetricsController {
           incomeTrend = ((currentMonth.income - previousMonth.income) / previousMonth.income) * 100;
         }
         if (previousMonth.expenses > 0) {
-          expenseTrend = ((currentMonth.expenses - previousMonth.expenses) / previousMonth.expenses) * 100;
+          expenseTrend =
+            ((currentMonth.expenses - previousMonth.expenses) / previousMonth.expenses) * 100;
         }
         if (previousMonth.investments > 0) {
-          investmentTrend = ((currentMonth.investments - previousMonth.investments) / previousMonth.investments) * 100;
+          investmentTrend =
+            ((currentMonth.investments - previousMonth.investments) / previousMonth.investments) *
+            100;
         }
       }
 
       // Transform monthly bar data for expense distribution charts with proper monthly ratios
-      const monthlyBarData = data.monthlyTrend.map((trend, index) => {
+      const monthlyBarData = data.monthlyTrend.map((trend, _index) => {
         // Use actual monthly expenses for distribution calculation
         const monthExpenses = trend.expenses || 0;
         const totalPeriodExpenses = data.periodBalance.expenses || 1;
@@ -247,7 +262,7 @@ export class MetricsController {
           essentialExpenses: data.expenseDistribution.essential * monthRatio,
           discretionaryExpenses: data.expenseDistribution.discretionary * monthRatio,
           debtPayments: trend.debtPayments || 0,
-          investments: trend.investments || 0
+          investments: trend.investments || 0,
         };
       });
 
@@ -258,7 +273,7 @@ export class MetricsController {
           trends: {
             income: incomeTrend,
             expenses: expenseTrend,
-            investments: investmentTrend
+            investments: investmentTrend,
           },
           summary: {
             totalIncome: {
@@ -290,7 +305,7 @@ export class MetricsController {
                 _date: new Date(data.periodInfo.endDate).toISOString(),
               },
               label: this.formatPeriodLabel(data.periodInfo.startDate, data.periodInfo.periodType),
-            }
+            },
           },
           monthlyTrend: monthlyTrend,
           spendingRate: spendingRate,
@@ -311,21 +326,21 @@ export class MetricsController {
             discretionaryPercentage: discretionaryPercentage,
             debtPaymentPercentage: debtPaymentPercentage,
           },
-          categoryBreakdown: data.categoryBreakdown.map(category => ({
+          categoryBreakdown: data.categoryBreakdown.map((category) => ({
             categoryId: category.categoryId,
             categoryName: category.categoryName,
             amount: category.amount,
             percentage: category.percentage,
             transactionCount: category.transactionCount,
           })),
-          monthlyBarData: monthlyBarData
+          monthlyBarData: monthlyBarData,
         },
       });
     } catch (error) {
-      console.error("Error in getDashboardData:", error);
+      console.error('Error in getDashboardData:', error);
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -338,7 +353,7 @@ export class MetricsController {
       const validationResult = PeriodStatsSchema.safeParse(req.query);
       if (!validationResult.success) {
         return res.status(400).json({
-          error: "Validation error",
+          error: 'Validation error',
           details: validationResult.error.errors,
         });
       }
@@ -357,15 +372,15 @@ export class MetricsController {
       const result = await this.getDashboardMetricsUseCase.execute(query);
       if (result.isFailure()) {
         return res.status(500).json({
-          error: "Failed to get trends",
-          message: result.getError()
+          error: 'Failed to get trends',
+          message: result.getError(),
         });
       }
 
       const data = result.getValue();
 
       // Return only trends data for charts
-      const trends = data.monthlyTrend.map(trend => ({
+      const trends = data.monthlyTrend.map((trend) => ({
         period: trend.month,
         income: {
           amount: trend.income,
@@ -393,7 +408,7 @@ export class MetricsController {
         success: true,
         data: {
           trends,
-          categoryBreakdown: data.categoryBreakdown.map(category => ({
+          categoryBreakdown: data.categoryBreakdown.map((category) => ({
             categoryId: category.categoryId,
             categoryName: category.categoryName,
             amount: {
@@ -406,10 +421,10 @@ export class MetricsController {
         },
       });
     } catch (error) {
-      console.error("Error in getTrends:", error);
+      console.error('Error in getTrends:', error);
       res.status(500).json({
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }

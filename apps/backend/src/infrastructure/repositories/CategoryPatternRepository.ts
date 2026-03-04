@@ -1,16 +1,14 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 import {
   CategoryPattern,
   CategoryPatternSnapshot,
   PatternType,
-} from "../../domain/entities/CategoryPattern";
-import { ICategoryPatternRepository } from "../../domain/services/SmartCategorizationService";
-import { Result } from "../../domain/shared/Result";
-
+} from '../../domain/entities/CategoryPattern';
+import { ICategoryPatternRepository } from '../../domain/services/SmartCategorizationService';
 export class CategoryPatternRepository implements ICategoryPatternRepository {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly userId?: string
+    _userId?: string
   ) {}
 
   async findByCategory(categoryId: string): Promise<CategoryPattern[]> {
@@ -20,14 +18,12 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
           categoryId,
           isActive: true,
         },
-        orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
       });
 
-      return patterns
-        .map((p) => this.toDomain(p))
-        .filter((p) => p !== null) as CategoryPattern[];
+      return patterns.map((p) => this.toDomain(p)).filter((p) => p !== null) as CategoryPattern[];
     } catch (error) {
-      console.error("Error finding patterns by category:", error);
+      console.error('Error finding patterns by category:', error);
       return [];
     }
   }
@@ -38,14 +34,12 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         where: {
           isActive: true,
         },
-        orderBy: [{ priority: "desc" }, { matchCount: "desc" }],
+        orderBy: [{ priority: 'desc' }, { matchCount: 'desc' }],
       });
 
-      return patterns
-        .map((p) => this.toDomain(p))
-        .filter((p) => p !== null) as CategoryPattern[];
+      return patterns.map((p) => this.toDomain(p)).filter((p) => p !== null) as CategoryPattern[];
     } catch (error) {
-      console.error("Error finding active patterns:", error);
+      console.error('Error finding active patterns:', error);
       return [];
     }
   }
@@ -76,7 +70,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         },
       });
     } catch (error) {
-      console.error("Error saving category pattern:", error);
+      console.error('Error saving category pattern:', error);
       throw error;
     }
   }
@@ -93,7 +87,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
 
       return this.toDomain(pattern);
     } catch (error) {
-      console.error("Error finding pattern by id:", error);
+      console.error('Error finding pattern by id:', error);
       return null;
     }
   }
@@ -104,7 +98,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         where: { id },
       });
     } catch (error) {
-      console.error("Error deleting category pattern:", error);
+      console.error('Error deleting category pattern:', error);
       throw error;
     }
   }
@@ -128,10 +122,10 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         return result.getValue();
       }
 
-      console.error("Failed to convert pattern to domain:", result.getError());
+      console.error('Failed to convert pattern to domain:', result.getError());
       return null;
     } catch (error) {
-      console.error("Error converting pattern to domain:", error);
+      console.error('Error converting pattern to domain:', error);
       return null;
     }
   }

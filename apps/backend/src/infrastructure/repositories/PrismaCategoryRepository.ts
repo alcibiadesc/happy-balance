@@ -361,7 +361,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     }
   }
 
-  async getDefaults(type: CategoryType): Promise<Result<Category[]>> {
+  async getDefaults(_type: CategoryType): Promise<Result<Category[]>> {
     // For now, return empty array. Could be enhanced to return preset categories
     return Result.ok([]);
   }

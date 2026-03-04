@@ -7,6 +7,7 @@ import { PrismaDashboardRepository } from '../repositories/PrismaDashboardReposi
 
 // Extend Express Request type to include repositories and user
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       repositories?: {
@@ -29,7 +30,7 @@ declare global {
  * from the authenticated user
  */
 export function createRepositoriesMiddleware(prisma: PrismaClient) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     // Get userId from authenticated user or use 'default' for unauthenticated routes
     const userId = req.user?.userId || 'default';
 

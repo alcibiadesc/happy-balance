@@ -300,7 +300,7 @@ export class GetDashboardMetricsUseCase {
     };
   }
 
-  private calculateCategoryBreakdown(transactions: any[], categories: any[], currency: string) {
+  private calculateCategoryBreakdown(transactions: any[], categories: any[], _currency: string) {
     const categoryTotals = new Map<
       string,
       { amount: number; count: number; name: string; type: CategoryType }
@@ -510,34 +510,6 @@ export class GetDashboardMetricsUseCase {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  }
-
-  private formatPeriodLabel(dateString: string, period: string): string {
-    // Parse date string safely to avoid timezone issues
-    // dateString is in format YYYY-MM-DD
-    const [year, month, day] = dateString.split('-').map(Number);
-    const date = new Date(year, month - 1, day); // month is 0-indexed in Date constructor
-
-    switch (period) {
-      case 'week':
-        return `Week of ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-      case 'month':
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-        });
-      case 'quarter': {
-        const quarter = Math.floor(date.getMonth() / 3) + 1;
-        return `Q${quarter} ${date.getFullYear()}`;
-      }
-      case 'year':
-        return date.getFullYear().toString();
-      default:
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-        });
-    }
   }
 
   private filterComputedTransactions(transactions: any[], categories: any[]) {

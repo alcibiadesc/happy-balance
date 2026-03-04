@@ -161,7 +161,7 @@ export class ImportController {
     successResponse(res, importResult);
   }
 
-  async importFromExcel(_req: Request, res: Response): Promise<void> {
+  async importFromExcel(_req: Request, _res: Response): Promise<void> {
     throw new BadRequestError('Excel import not yet implemented. Please use CSV import for now.');
   }
 

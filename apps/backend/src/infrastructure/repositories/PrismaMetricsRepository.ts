@@ -10,7 +10,7 @@ import { SignedMoney } from '../../domain/value-objects/SignedMoney';
 export class PrismaMetricsRepository implements MetricsRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async getCurrentMetrics(period: MetricsPeriod, currency: Currency): Promise<MetricSnapshot> {
+  async getCurrentMetrics(period: MetricsPeriod, _currency: Currency): Promise<MetricSnapshot> {
     const transactions = await this.prisma.transaction.findMany({
       where: {
         date: {
@@ -27,7 +27,10 @@ export class PrismaMetricsRepository implements MetricsRepository {
     return this.calculateMetricsFromTransactions(transactions, period, MetricsType.current());
   }
 
-  async getHistoricalMetrics(periods: MetricsPeriod[], currency: Currency): Promise<MetricSnapshot[]> {
+  async getHistoricalMetrics(
+    periods: MetricsPeriod[],
+    _currency: Currency
+  ): Promise<MetricSnapshot[]> {
     const snapshots: MetricSnapshot[] = [];
 
     for (const period of periods) {
@@ -156,7 +159,8 @@ export class PrismaMetricsRepository implements MetricsRepository {
     });
 
     const balance = totalIncome - totalExpenses - totalInvestments - totalDebtPayments;
-    const spendingRate = totalIncome > 0 ? ((totalExpenses + totalDebtPayments) / totalIncome) * 100 : 0;
+    const spendingRate =
+      totalIncome > 0 ? ((totalExpenses + totalDebtPayments) / totalIncome) * 100 : 0;
     const savingsRate = totalIncome > 0 ? Math.max(0, (balance / totalIncome) * 100) : 0;
 
     const totalIncomeResult = Money.create(totalIncome, 'EUR');
@@ -165,9 +169,13 @@ export class PrismaMetricsRepository implements MetricsRepository {
     const totalDebtPaymentsResult = Money.create(totalDebtPayments, 'EUR');
     const balanceResult = SignedMoney.create(balance, 'EUR');
 
-    if (totalIncomeResult.isFailure() || totalExpensesResult.isFailure() ||
-        totalInvestmentsResult.isFailure() || totalDebtPaymentsResult.isFailure() ||
-        balanceResult.isFailure()) {
+    if (
+      totalIncomeResult.isFailure() ||
+      totalExpensesResult.isFailure() ||
+      totalInvestmentsResult.isFailure() ||
+      totalDebtPaymentsResult.isFailure() ||
+      balanceResult.isFailure()
+    ) {
       throw new Error('Failed to create Money objects');
     }
 
@@ -187,16 +195,12 @@ export class PrismaMetricsRepository implements MetricsRepository {
   private isInvestmentCategory(category: any): boolean {
     if (!category) return false;
     const investmentKeywords = ['investment', 'savings', 'stock', 'retirement', 'pension'];
-    return investmentKeywords.some(keyword =>
-      category.name.toLowerCase().includes(keyword)
-    );
+    return investmentKeywords.some((keyword) => category.name.toLowerCase().includes(keyword));
   }
 
   private isDebtPaymentCategory(category: any): boolean {
     if (!category) return false;
     const debtKeywords = ['loan', 'debt', 'credit', 'mortgage', 'payment'];
-    return debtKeywords.some(keyword =>
-      category.name.toLowerCase().includes(keyword)
-    );
+    return debtKeywords.some((keyword) => category.name.toLowerCase().includes(keyword));
   }
 }

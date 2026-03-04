@@ -1,5 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-import { TransactionType } from '@domain/entities/TransactionType';
+import { PrismaClient } from '@prisma/client';
 
 interface MonthlyMetrics {
   year: number;

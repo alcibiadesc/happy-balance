@@ -42,7 +42,7 @@ export class ExportController {
   /**
    * Export all user data as JSON
    */
-  async exportAll(req: Request, res: Response): Promise<void> {
+  async exportAll(_req: Request, res: Response): Promise<void> {
     try {
       // Get all transactions
       const transactionsResult = await this.transactionRepository.findWithFilters(
@@ -163,7 +163,7 @@ export class ExportController {
   /**
    * Export only transactions
    */
-  async exportTransactions(req: Request, res: Response): Promise<void> {
+  async exportTransactions(_req: Request, res: Response): Promise<void> {
     try {
       const transactionsResult = await this.transactionRepository.findWithFilters(
         { includeHidden: true },
@@ -199,7 +199,7 @@ export class ExportController {
   /**
    * Export only investments with history
    */
-  async exportInvestments(req: Request, res: Response): Promise<void> {
+  async exportInvestments(_req: Request, res: Response): Promise<void> {
     try {
       const investmentsResult = await this.investmentRepository.getInvestmentsWithMetrics();
 
@@ -237,7 +237,7 @@ export class ExportController {
   /**
    * Export only categories
    */
-  async exportCategories(req: Request, res: Response): Promise<void> {
+  async exportCategories(_req: Request, res: Response): Promise<void> {
     try {
       const categoriesResult = await this.categoryRepository.findAll();
 

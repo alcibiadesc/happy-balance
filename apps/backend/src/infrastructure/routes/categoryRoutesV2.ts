@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { ControllerFactory } from '../factories/ControllerFactory';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '@infrastructure/errors';

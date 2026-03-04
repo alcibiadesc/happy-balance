@@ -22,8 +22,6 @@ import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/U
 import { AutoCategorizeTransactionsUseCase } from '@application/use-cases/AutoCategorizeTransactionsUseCase';
 import {
   BadRequestError,
-  NotFoundError,
-  InternalError,
   validateBody,
   validateQuery,
   handleResult,

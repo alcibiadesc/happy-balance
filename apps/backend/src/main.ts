@@ -133,7 +133,7 @@ class App {
 
   private initializeRoutes() {
     // Health check
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (_req, res) => {
       res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
@@ -142,7 +142,7 @@ class App {
     });
 
     // Version endpoint (available at both /version and /api/version)
-    const versionHandler = (req: any, res: any) => {
+    const versionHandler = (_req: any, res: any) => {
       try {
         const versionFile = path.join(process.cwd(), '.version.json');
 
@@ -174,7 +174,7 @@ class App {
     this.app.get('/api/version', versionHandler);
 
     // Check for updates endpoint
-    this.app.get('/api/system/check-updates', async (req, res) => {
+    this.app.get('/api/system/check-updates', async (_req, res) => {
       try {
         // Get current version
         const versionFile = path.join(process.cwd(), '.version.json');
@@ -236,7 +236,7 @@ class App {
     });
 
     // Trigger update endpoint (requires proper permissions)
-    this.app.post('/api/system/update', async (req, res) => {
+    this.app.post('/api/system/update', async (_req, res) => {
       try {
         // Find the update script
         const scriptPath = path.join(process.cwd(), '../../../scripts/update-docker.sh');
@@ -254,7 +254,7 @@ class App {
             });
           }
 
-          res.json({
+          return res.json({
             success: true,
             message:
               'Update initiated successfully. The application will restart with the latest version.',

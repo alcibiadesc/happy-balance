@@ -9,7 +9,6 @@ import {
   BadRequestError,
   NotFoundError,
   ConflictError,
-  InternalError,
   validateBody,
   validateQuery,
   handleResult,

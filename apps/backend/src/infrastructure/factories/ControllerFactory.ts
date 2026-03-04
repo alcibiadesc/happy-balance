@@ -1,4 +1,3 @@
-import { Request } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { TransactionController } from '../controllers/TransactionController';
 import { CategoryController } from '../controllers/CategoryController';
@@ -182,8 +181,6 @@ export class ControllerFactory {
     const categoryRepository = new PrismaCategoryRepository(this.prisma, userId);
     const transactionRepository = new PrismaTransactionRepository(this.prisma, userId);
 
-    // Create GetDashboardMetricsUseCase for the controller
-    const financialCalculationService = new FinancialCalculationService();
     const getDashboardMetricsUseCase = new GetDashboardMetricsUseCase(
       transactionRepository,
       categoryRepository
@@ -248,7 +245,7 @@ export class ControllerFactory {
   /**
    * Creates a UserPreferencesController with user-specific context
    */
-  createUserPreferencesController(userId: string): UserPreferencesController {
+  createUserPreferencesController(_userId: string): UserPreferencesController {
     const userPreferencesRepository = new PrismaUserPreferencesRepository(this.prisma);
     return new UserPreferencesController(userPreferencesRepository);
   }

@@ -17,7 +17,7 @@ export class MerchantAliasController {
    * GET /merchant-aliases
    * List all merchant aliases for the user
    */
-  async list(req: Request, res: Response): Promise<void> {
+  async list(_req: Request, res: Response): Promise<void> {
     try {
       const aliases = await this.aliasRepository.findAllForUser(this.userId);
 

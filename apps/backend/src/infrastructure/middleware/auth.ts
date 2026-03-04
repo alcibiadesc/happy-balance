@@ -15,7 +15,11 @@ const authService = new AuthenticationService();
 /**
  * Middleware to verify JWT token and attach user info to request
  */
-export const authenticate: RequestHandler = (req: Request, res: Response, next: NextFunction): void => {
+export const authenticate: RequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
   const authReq = req as AuthRequest;
   try {
     const authHeader = req.headers.authorization;
@@ -23,7 +27,7 @@ export const authenticate: RequestHandler = (req: Request, res: Response, next: 
     if (!authHeader) {
       res.status(401).json({
         success: false,
-        error: 'No authorization header provided'
+        error: 'No authorization header provided',
       });
       return;
     }
@@ -33,7 +37,7 @@ export const authenticate: RequestHandler = (req: Request, res: Response, next: 
     if (bearer !== 'Bearer' || !token) {
       res.status(401).json({
         success: false,
-        error: 'Invalid authorization format'
+        error: 'Invalid authorization format',
       });
       return;
     }
@@ -43,7 +47,7 @@ export const authenticate: RequestHandler = (req: Request, res: Response, next: 
     if (result.isFailure()) {
       res.status(401).json({
         success: false,
-        error: result.getError()
+        error: result.getError(),
       });
       return;
     }
@@ -52,7 +56,7 @@ export const authenticate: RequestHandler = (req: Request, res: Response, next: 
     authReq.user = {
       userId: payload.userId,
       username: payload.username,
-      role: payload.role
+      role: payload.role,
     };
 
     next();
@@ -60,7 +64,7 @@ export const authenticate: RequestHandler = (req: Request, res: Response, next: 
     console.error('Authentication error:', error);
     res.status(500).json({
       success: false,
-      error: 'Authentication failed'
+      error: 'Authentication failed',
     });
   }
 };
@@ -68,12 +72,16 @@ export const authenticate: RequestHandler = (req: Request, res: Response, next: 
 /**
  * Middleware to require admin role
  */
-export const requireAdmin: RequestHandler = (req: Request, res: Response, next: NextFunction): void => {
+export const requireAdmin: RequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
   const authReq = req as AuthRequest;
   if (!authReq.user) {
     res.status(401).json({
       success: false,
-      error: 'Authentication required'
+      error: 'Authentication required',
     });
     return;
   }
@@ -81,7 +89,7 @@ export const requireAdmin: RequestHandler = (req: Request, res: Response, next: 
   if (authReq.user.role !== 'admin') {
     res.status(403).json({
       success: false,
-      error: 'Admin privileges required'
+      error: 'Admin privileges required',
     });
     return;
   }
@@ -92,12 +100,16 @@ export const requireAdmin: RequestHandler = (req: Request, res: Response, next: 
 /**
  * Middleware to require user or admin role (can edit)
  */
-export const requireEditor: RequestHandler = (req: Request, res: Response, next: NextFunction): void => {
+export const requireEditor: RequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
   const authReq = req as AuthRequest;
   if (!authReq.user) {
     res.status(401).json({
       success: false,
-      error: 'Authentication required'
+      error: 'Authentication required',
     });
     return;
   }
@@ -105,7 +117,7 @@ export const requireEditor: RequestHandler = (req: Request, res: Response, next:
   if (authReq.user.role !== 'admin' && authReq.user.role !== 'user') {
     res.status(403).json({
       success: false,
-      error: 'Edit privileges required'
+      error: 'Edit privileges required',
     });
     return;
   }
@@ -116,7 +128,11 @@ export const requireEditor: RequestHandler = (req: Request, res: Response, next:
 /**
  * Optional authentication - doesn't fail if no token, but attaches user if valid
  */
-export const optionalAuth: RequestHandler = (req: Request, res: Response, next: NextFunction): void => {
+export const optionalAuth: RequestHandler = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void => {
   const authReq = req as AuthRequest;
   try {
     const authHeader = req.headers.authorization;
@@ -140,7 +156,7 @@ export const optionalAuth: RequestHandler = (req: Request, res: Response, next: 
       authReq.user = {
         userId: payload.userId,
         username: payload.username,
-        role: payload.role
+        role: payload.role,
       };
     }
 

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { AuthenticationService } from '@domain/services/AuthenticationService';
@@ -10,17 +10,17 @@ import { UserPreferencesRepository } from '@domain/repositories/UserPreferencesR
 const CreateUserSchema = z.object({
   username: z.string().min(3).max(50),
   role: z.enum(['admin', 'user', 'viewer']).default('user'),
-  tempPassword: z.string().min(4).max(100).optional()
+  tempPassword: z.string().min(4).max(100).optional(),
 });
 
 const UpdateUserSchema = z.object({
   role: z.enum(['admin', 'user', 'viewer']).optional(),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
 });
 
 const ResetPasswordSchema = z.object({
   userId: z.string(),
-  tempPassword: z.string().min(4).max(100).optional()
+  tempPassword: z.string().min(4).max(100).optional(),
 });
 
 export class UserManagementController {
@@ -33,28 +33,28 @@ export class UserManagementController {
     this.authService = new AuthenticationService();
   }
 
-  async listUsers(req: AuthRequest, res: Response) {
+  async listUsers(_req: AuthRequest, res: Response) {
     try {
       const usersResult = await this.userRepository.findAll();
 
       if (usersResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to fetch users'
+          error: 'Failed to fetch users',
         });
       }
 
-      const users = usersResult.getValue().map(user => user.toDTO());
+      const users = usersResult.getValue().map((user) => user.toDTO());
 
       res.json({
         success: true,
-        data: users
+        data: users,
       });
     } catch (error) {
       console.error('List users error:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -66,7 +66,7 @@ export class UserManagementController {
         return res.status(400).json({
           success: false,
           error: 'Invalid request data',
-          details: validationResult.error.errors
+          details: validationResult.error.errors,
         });
       }
 
@@ -77,14 +77,14 @@ export class UserManagementController {
       if (existingUserResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to check username availability'
+          error: 'Failed to check username availability',
         });
       }
 
       if (existingUserResult.getValue()) {
         return res.status(409).json({
           success: false,
-          error: 'Username already exists'
+          error: 'Username already exists',
         });
       }
 
@@ -96,7 +96,7 @@ export class UserManagementController {
       if (hashResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to process password'
+          error: 'Failed to process password',
         });
       }
 
@@ -108,14 +108,14 @@ export class UserManagementController {
         role: role as UserRole,
         isActive: true,
         mustChangePassword: true,
-        createdBy: req.user?.userId
+        createdBy: req.user?.userId,
       });
 
       const createResult = await this.userRepository.create(newUser);
       if (createResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to create user'
+          error: 'Failed to create user',
         });
       }
 
@@ -127,7 +127,7 @@ export class UserManagementController {
           userId: createdUser.id,
           currency: 'EUR',
           language: 'en',
-          theme: 'light'
+          theme: 'light',
         });
 
         if (preferencesResult.isFailure()) {
@@ -135,7 +135,7 @@ export class UserManagementController {
           await this.userRepository.delete(createdUser.id);
           return res.status(500).json({
             success: false,
-            error: 'Failed to create user preferences'
+            error: 'Failed to create user preferences',
           });
         }
       }
@@ -144,14 +144,14 @@ export class UserManagementController {
         success: true,
         data: {
           user: createdUser.toDTO(),
-          tempPassword: password // Return temp password to admin
-        }
+          tempPassword: password, // Return temp password to admin
+        },
       });
     } catch (error) {
       console.error('Create user error:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -165,7 +165,7 @@ export class UserManagementController {
         return res.status(400).json({
           success: false,
           error: 'Invalid request data',
-          details: validationResult.error.errors
+          details: validationResult.error.errors,
         });
       }
 
@@ -176,7 +176,7 @@ export class UserManagementController {
       if (userResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to fetch user'
+          error: 'Failed to fetch user',
         });
       }
 
@@ -184,7 +184,7 @@ export class UserManagementController {
       if (!user) {
         return res.status(404).json({
           success: false,
-          error: 'User not found'
+          error: 'User not found',
         });
       }
 
@@ -192,7 +192,7 @@ export class UserManagementController {
       if (userId === req.user?.userId && updates.role && updates.role !== 'admin') {
         return res.status(400).json({
           success: false,
-          error: 'Cannot remove your own admin privileges'
+          error: 'Cannot remove your own admin privileges',
         });
       }
 
@@ -201,26 +201,26 @@ export class UserManagementController {
         ...user.toDTO(),
         password: user.password, // Keep existing password
         role: updates.role || user.role,
-        isActive: updates.isActive !== undefined ? updates.isActive : user.isActive
+        isActive: updates.isActive !== undefined ? updates.isActive : user.isActive,
       });
 
       const updateResult = await this.userRepository.update(updatedUser);
       if (updateResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to update user'
+          error: 'Failed to update user',
         });
       }
 
       res.json({
         success: true,
-        data: updateResult.getValue().toDTO()
+        data: updateResult.getValue().toDTO(),
       });
     } catch (error) {
       console.error('Update user error:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -233,7 +233,7 @@ export class UserManagementController {
       if (userId === req.user?.userId) {
         return res.status(400).json({
           success: false,
-          error: 'Cannot delete your own account'
+          error: 'Cannot delete your own account',
         });
       }
 
@@ -242,14 +242,14 @@ export class UserManagementController {
       if (userResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to fetch user'
+          error: 'Failed to fetch user',
         });
       }
 
       if (!userResult.getValue()) {
         return res.status(404).json({
           success: false,
-          error: 'User not found'
+          error: 'User not found',
         });
       }
 
@@ -258,19 +258,19 @@ export class UserManagementController {
       if (deleteResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to delete user'
+          error: 'Failed to delete user',
         });
       }
 
       res.json({
         success: true,
-        message: 'User deleted successfully'
+        message: 'User deleted successfully',
       });
     } catch (error) {
       console.error('Delete user error:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -282,7 +282,7 @@ export class UserManagementController {
         return res.status(400).json({
           success: false,
           error: 'Invalid request data',
-          details: validationResult.error.errors
+          details: validationResult.error.errors,
         });
       }
 
@@ -293,7 +293,7 @@ export class UserManagementController {
       if (userResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to fetch user'
+          error: 'Failed to fetch user',
         });
       }
 
@@ -301,7 +301,7 @@ export class UserManagementController {
       if (!user) {
         return res.status(404).json({
           success: false,
-          error: 'User not found'
+          error: 'User not found',
         });
       }
 
@@ -313,7 +313,7 @@ export class UserManagementController {
       if (hashResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to process password'
+          error: 'Failed to process password',
         });
       }
 
@@ -322,14 +322,14 @@ export class UserManagementController {
         ...user.toDTO(),
         password: hashResult.getValue(),
         mustChangePassword: true,
-        passwordResetAt: new Date()
+        passwordResetAt: new Date(),
       });
 
       const updateResult = await this.userRepository.update(updatedUser);
       if (updateResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to reset password'
+          error: 'Failed to reset password',
         });
       }
 
@@ -337,14 +337,14 @@ export class UserManagementController {
         success: true,
         data: {
           message: 'Password reset successfully',
-          tempPassword: newPassword
-        }
+          tempPassword: newPassword,
+        },
       });
     } catch (error) {
       console.error('Reset password error:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }

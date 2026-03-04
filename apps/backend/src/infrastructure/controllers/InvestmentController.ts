@@ -18,11 +18,9 @@ import { GetPortfolioSummaryUseCase } from '@application/use-cases/GetPortfolioS
 import { CategoryInvestmentSyncService } from '@domain/services/CategoryInvestmentSyncService';
 import {
   BadRequestError,
-  NotFoundError,
   UnauthorizedError,
   ConflictError,
   validateBody,
-  validateQuery,
   handleResult,
   handleFindResult,
   successResponse,
@@ -101,9 +99,9 @@ export class InvestmentController {
 
   constructor(
     private readonly investmentRepository: IInvestmentRepository,
-    private readonly categoryRepository?: ICategoryRepository,
+    categoryRepository?: ICategoryRepository,
     private readonly transactionRepository?: ITransactionRepository,
-    private readonly userId?: string
+    userId?: string
   ) {
     this.getPortfolioSummaryUseCase = new GetPortfolioSummaryUseCase(investmentRepository);
     if (categoryRepository && userId) {

@@ -4,8 +4,6 @@ import { Transaction, TransactionSnapshot } from '@domain/entities/Transaction';
 import { TransactionId } from '@domain/value-objects/TransactionId';
 import { TransactionDate } from '@domain/value-objects/TransactionDate';
 import { TransactionType } from '@domain/entities/TransactionType';
-import { Money } from '@domain/value-objects/Money';
-import { Merchant } from '@domain/value-objects/Merchant';
 import {
   ITransactionRepository,
   TransactionFilters,
@@ -402,7 +400,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   async getStatistics(
     startDate: TransactionDate,
     endDate: TransactionDate,
-    currency: string
+    _currency: string
   ): Promise<
     Result<{
       totalIncome: number;
