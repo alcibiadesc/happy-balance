@@ -138,13 +138,25 @@ export const investmentsApi = {
     await handleResponse<void>(response);
   },
 
-  async syncWithCategories(): Promise<{ total: number; synced: number; skipped: number }> {
+  async syncWithCategories(): Promise<{
+    categoriesCreated: number;
+    categoriesLinked: number;
+    categoriesReactivated: number;
+    investmentsCreated: number;
+    investmentsLinked: number;
+    investmentsReactivated: number;
+    namesUpdated: number;
+    colorsUpdated: number;
+    iconsUpdated: number;
+    total: number;
+    message: string;
+  }> {
     const response = await fetch(`${API_BASE}/sync-categories`, {
       method: 'POST',
       headers: getAuthHeaders(true),
       credentials: 'include',
     });
-    return handleResponse<{ total: number; synced: number; skipped: number }>(response);
+    return handleResponse(response);
   },
 
   async updateHistoryEntry(
