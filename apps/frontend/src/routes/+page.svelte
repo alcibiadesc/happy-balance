@@ -4,6 +4,7 @@
   import { t } from '$lib/stores/i18n';
   import { currentCurrency } from '$lib/stores/currency';
   import { dashboardConfig } from '$lib/stores/dashboardConfig';
+  import type { PeriodType } from '$lib/modules/dashboard/domain/value-objects/Period';
 
   // Layout Components
   import PageContainer from '$lib/components/atoms/PageContainer.svelte';
@@ -70,7 +71,7 @@
   }
 
   async function handlePeriodTypeChange(type: string) {
-    await store.changePeriod(type as any);
+    await store.changePeriod(type as PeriodType);
   }
 
   async function handleCustomDateRange(event: CustomEvent) {

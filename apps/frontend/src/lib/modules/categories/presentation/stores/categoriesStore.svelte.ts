@@ -290,7 +290,7 @@ export function createCategoriesStore() {
     isSelectionMode = !isSelectionMode;
     if (!isSelectionMode) {
       selectedCategories.clear();
-      selectedCategories = selectedCategories; // Trigger reactivity
+      selectedCategories = new Set(selectedCategories); // Trigger reactivity
     }
   }
 
@@ -301,7 +301,7 @@ export function createCategoriesStore() {
     } else {
       selectedCategories.add(id);
     }
-    selectedCategories = selectedCategories; // Trigger reactivity
+    selectedCategories = new Set(selectedCategories); // Trigger reactivity
   }
 
   function isCategorySelected(categoryId: string): boolean {
@@ -355,7 +355,7 @@ export function createCategoriesStore() {
       showDeleteModal = false;
       categoriesToDelete = [];
       selectedCategories.clear();
-      selectedCategories = selectedCategories; // Trigger reactivity
+      selectedCategories = new Set(selectedCategories); // Trigger reactivity
       recategorizeTarget = 'remove';
       transactionsWithCategory = 0;
       isSelectionMode = false;
@@ -549,7 +549,7 @@ export function createCategoriesStore() {
     get tooltipPosition() {
       return tooltipPosition;
     },
-    set tooltipPosition(value: any) {
+    set tooltipPosition(value: { top: number; left: number; position: string }) {
       tooltipPosition = value;
     },
 

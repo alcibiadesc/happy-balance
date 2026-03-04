@@ -23,6 +23,7 @@ import {
   selectionActions,
   type SelectionState,
 } from '../../application/services/SelectionService';
+import type { Transaction, Category } from '$lib/types/transaction';
 
 class TransactionsPageStore {
   private modals = $state<ModalState>(createInitialModalState());
@@ -57,7 +58,7 @@ class TransactionsPageStore {
   }
 
   // Modal actions
-  openCategoryModal = (transaction: any) => {
+  openCategoryModal = (transaction: Transaction) => {
     this.modals = modalActions.openCategoryModal(this.modals, transaction);
   };
 
@@ -77,7 +78,11 @@ class TransactionsPageStore {
     this.modals = modalActions.toggleFilters(this.modals);
   };
 
-  openSmartCategorization = (transaction: any, category: any, matchingTransactions: any[]) => {
+  openSmartCategorization = (
+    transaction: Transaction,
+    category: Category,
+    matchingTransactions: Transaction[]
+  ) => {
     this.modals = modalActions.openSmartCategorization(
       this.modals,
       transaction,
@@ -106,7 +111,7 @@ class TransactionsPageStore {
     this.modals = modalActions.closeDeleteSingleModal(this.modals);
   };
 
-  openSplitModal = (transaction: any) => {
+  openSplitModal = (transaction: Transaction) => {
     this.modals = modalActions.openSplitModal(this.modals, transaction);
   };
 
@@ -164,7 +169,7 @@ class TransactionsPageStore {
   };
 
   // Observations actions
-  startEditingObservations = (transaction: any) => {
+  startEditingObservations = (transaction: Transaction) => {
     this.observations = observationsActions.startEditing(this.observations, transaction);
   };
 

@@ -83,21 +83,22 @@ function createApiTransactionStore() {
         if (!originalTransaction) return transactions;
 
         // Apply ONLY the provided updates, keeping all other fields intact
-        const updatedTransaction = { ...originalTransaction };
+        const updatedTransaction: Transaction = { ...originalTransaction };
 
         // Only update fields that are explicitly provided (not undefined)
-        Object.keys(updates).forEach((key) => {
-          if (updates[key as keyof Transaction] !== undefined) {
-            (updatedTransaction as any)[key] = updates[key as keyof Transaction];
+        for (const key of Object.keys(updates) as Array<keyof Transaction>) {
+          if (updates[key] !== undefined) {
+            // Safe: key is typed as keyof Transaction
+            Object.assign(updatedTransaction, { [key]: updates[key] });
           }
-        });
+        }
 
         return transactions.map((t) => (t.id === id ? updatedTransaction : t));
       });
 
       try {
         // Prepare update payload for backend
-        const payload: any = {};
+        const payload: Record<string, unknown> = {};
 
         // Only include fields that are being updated (not undefined)
         if (updates.description !== undefined) payload.description = updates.description;
@@ -333,7 +334,15 @@ function createApiTransactionStore() {
     },
 
     // Import selected transactions only
-    async importSelectedTransactions(selectedTransactions: any[]) {
+    async importSelectedTransactions(
+      selectedTransactions: Array<{
+        hash?: string;
+        date: string;
+        partner?: string;
+        amount: number;
+        description?: string;
+      }>
+    ) {
       try {
         const requestBody = {
           transactions: selectedTransactions.map((tx) => ({

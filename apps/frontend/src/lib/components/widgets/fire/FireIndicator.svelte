@@ -3,8 +3,7 @@
   import { t } from '$lib/stores/i18n';
   import { widgetSettings } from '$lib/stores/widget-settings';
   import { onMount } from 'svelte';
-
-  type PeriodType = 'overview' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+  import type { PeriodType } from '$lib/modules/dashboard/domain/value-objects/Period';
 
   interface Props {
     periodIncome: number;

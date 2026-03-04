@@ -1,8 +1,7 @@
 <script lang="ts">
   import { TrendingUp, TrendingDown, Target, Wallet } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
-
-  type PeriodType = 'overview' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+  import type { PeriodType } from '$lib/modules/dashboard/domain/value-objects/Period';
 
   interface Props {
     income: number;
