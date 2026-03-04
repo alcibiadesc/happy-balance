@@ -1,10 +1,8 @@
-import { Router, Request, Response } from "express";
-import { ControllerFactory } from "../factories/ControllerFactory";
-import { authenticate } from "../middleware/auth";
+import { Router, Request, Response } from 'express';
+import { ControllerFactory } from '../factories/ControllerFactory';
+import { authenticate } from '../middleware/auth';
 
-export const createWidgetSettingsRoutesV2 = (
-  controllerFactory: ControllerFactory
-): Router => {
+export const createWidgetSettingsRoutes = (controllerFactory: ControllerFactory): Router => {
   const router = Router();
 
   // All widget settings routes require authentication
@@ -22,9 +20,9 @@ export const createWidgetSettingsRoutesV2 = (
    *       200:
    *         description: Widget settings retrieved successfully
    */
-  router.get("/", async (req: Request, res: Response) => {
+  router.get('/', async (req: Request, res: Response) => {
     if (!req.user?.userId) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
     const controller = controllerFactory.createWidgetSettingsController();
@@ -49,9 +47,9 @@ export const createWidgetSettingsRoutesV2 = (
    *       200:
    *         description: Widget settings retrieved successfully
    */
-  router.get("/:widgetId", async (req: Request, res: Response) => {
+  router.get('/:widgetId', async (req: Request, res: Response) => {
     if (!req.user?.userId) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
     const controller = controllerFactory.createWidgetSettingsController();
@@ -82,9 +80,9 @@ export const createWidgetSettingsRoutesV2 = (
    *       200:
    *         description: Widget settings updated successfully
    */
-  router.put("/:widgetId", async (req: Request, res: Response) => {
+  router.put('/:widgetId', async (req: Request, res: Response) => {
     if (!req.user?.userId) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
     const controller = controllerFactory.createWidgetSettingsController();
@@ -109,9 +107,9 @@ export const createWidgetSettingsRoutesV2 = (
    *       200:
    *         description: Widget settings deleted successfully
    */
-  router.delete("/:widgetId", async (req: Request, res: Response) => {
+  router.delete('/:widgetId', async (req: Request, res: Response) => {
     if (!req.user?.userId) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
     const controller = controllerFactory.createWidgetSettingsController();

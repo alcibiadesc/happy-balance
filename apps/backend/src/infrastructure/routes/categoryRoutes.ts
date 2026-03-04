@@ -3,7 +3,7 @@ import { ControllerFactory } from '../factories/ControllerFactory';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '@infrastructure/errors';
 
-export const createCategoryRoutesV2 = (controllerFactory: ControllerFactory): Router => {
+export const createCategoryRoutes = (controllerFactory: ControllerFactory): Router => {
   const router = Router();
 
   // All category routes require authentication

@@ -3,7 +3,7 @@ import { ControllerFactory } from '../factories/ControllerFactory';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '@infrastructure/errors';
 
-export const createTransactionRoutesV2 = (controllerFactory: ControllerFactory): Router => {
+export const createTransactionRoutes = (controllerFactory: ControllerFactory): Router => {
   const router = Router();
 
   router.use(authenticate);

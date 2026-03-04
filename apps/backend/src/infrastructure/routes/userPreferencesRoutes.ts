@@ -1,10 +1,8 @@
-import { Router, Request, Response } from "express";
-import { ControllerFactory } from "../factories/ControllerFactory";
-import { authenticate } from "../middleware/auth";
+import { Router, Request, Response } from 'express';
+import { ControllerFactory } from '../factories/ControllerFactory';
+import { authenticate } from '../middleware/auth';
 
-export const createUserPreferencesRoutesV2 = (
-  controllerFactory: ControllerFactory,
-): Router => {
+export const createUserPreferencesRoutes = (controllerFactory: ControllerFactory): Router => {
   const router = Router();
 
   // All user preferences routes require authentication
@@ -22,9 +20,9 @@ export const createUserPreferencesRoutesV2 = (
    *       200:
    *         description: User preferences retrieved successfully
    */
-  router.get("/", async (req: Request, res: Response) => {
+  router.get('/', async (req: Request, res: Response) => {
     if (!req.user?.userId) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
     const userId = req.user.userId;
@@ -50,9 +48,9 @@ export const createUserPreferencesRoutesV2 = (
    *       200:
    *         description: User preferences retrieved successfully
    */
-  router.get("/:userId", async (req: Request, res: Response) => {
+  router.get('/:userId', async (req: Request, res: Response) => {
     if (!req.user?.userId) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
     // Use the path param for the target user, but validate auth
@@ -88,9 +86,9 @@ export const createUserPreferencesRoutesV2 = (
    *       201:
    *         description: User preferences created successfully
    */
-  router.post("/", async (req: Request, res: Response) => {
+  router.post('/', async (req: Request, res: Response) => {
     if (!req.user?.userId) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
     const userId = req.user.userId;
@@ -129,9 +127,9 @@ export const createUserPreferencesRoutesV2 = (
    *       200:
    *         description: User preferences updated successfully
    */
-  router.put("/:userId", async (req: Request, res: Response) => {
+  router.put('/:userId', async (req: Request, res: Response) => {
     if (!req.user?.userId) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
     const controller = controllerFactory.createUserPreferencesController(req.user.userId);
@@ -156,9 +154,9 @@ export const createUserPreferencesRoutesV2 = (
    *       200:
    *         description: User preferences deleted successfully
    */
-  router.delete("/:userId", async (req: Request, res: Response) => {
+  router.delete('/:userId', async (req: Request, res: Response) => {
     if (!req.user?.userId) {
-      res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
     const controller = controllerFactory.createUserPreferencesController(req.user.userId);

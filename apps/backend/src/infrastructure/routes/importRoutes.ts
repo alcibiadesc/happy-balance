@@ -9,7 +9,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
-export const createImportRoutesV2 = (controllerFactory: ControllerFactory): Router => {
+export const createImportRoutes = (controllerFactory: ControllerFactory): Router => {
   const router = Router();
 
   router.use(authenticate);

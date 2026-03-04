@@ -4,18 +4,18 @@ import { ControllerFactory } from '@infrastructure/factories/ControllerFactory';
 import { AuthController } from '@infrastructure/controllers/AuthController';
 import { MagicLinkController } from '@infrastructure/controllers/MagicLinkController';
 import { UserManagementController } from '@infrastructure/controllers/UserManagementController';
-import { createTransactionRoutesV2 } from '@infrastructure/routes/transactionRoutesV2';
-import { createCategoryRoutesV2 } from '@infrastructure/routes/categoryRoutesV2';
-import { createDashboardRoutesV2 } from '@infrastructure/routes/dashboardRoutesV2';
-import { createImportRoutesV2 } from '@infrastructure/routes/importRoutesV2';
-import { createMetricsRoutesV2 } from '@infrastructure/routes/metricsRoutesV2';
-import { createUserPreferencesRoutesV2 } from '@infrastructure/routes/userPreferencesRoutesV2';
-import { createSeedRoutesV2 } from '@infrastructure/routes/seedRoutesV2';
-import { createInvestmentRoutesV2 } from '@infrastructure/routes/investmentRoutesV2';
-import { createExportRoutes } from '@infrastructure/routes/exportRoutesV2';
-import { createWidgetSettingsRoutesV2 } from '@infrastructure/routes/widgetSettingsRoutesV2';
+import { createTransactionRoutes } from '@infrastructure/routes/transactionRoutes';
+import { createCategoryRoutes } from '@infrastructure/routes/categoryRoutes';
+import { createDashboardRoutes } from '@infrastructure/routes/dashboardRoutes';
+import { createImportRoutes } from '@infrastructure/routes/importRoutes';
+import { createMetricsRoutes } from '@infrastructure/routes/metricsRoutes';
+import { createUserPreferencesRoutes } from '@infrastructure/routes/userPreferencesRoutes';
+import { createSeedRoutes } from '@infrastructure/routes/seedRoutes';
+import { createInvestmentRoutes } from '@infrastructure/routes/investmentRoutes';
+import { createExportRoutes } from '@infrastructure/routes/exportRoutes';
+import { createWidgetSettingsRoutes } from '@infrastructure/routes/widgetSettingsRoutes';
 import { createBackupRoutes } from '@infrastructure/routes/backupRoutes';
-import { createMerchantAliasRoutesV2 } from '@infrastructure/routes/merchantAliasRoutesV2';
+import { createMerchantAliasRoutes } from '@infrastructure/routes/merchantAliasRoutes';
 import { createAuthRoutes } from '@infrastructure/routes/authRoutes';
 import { createUserManagementRoutes } from '@infrastructure/routes/userManagementRoutes';
 import { createSystemRoutes } from '@infrastructure/routes/systemRoutes';
@@ -36,7 +36,26 @@ interface RouteDependencies {
 }
 
 /**
- * Register all application routes on the Express app
+ * Register all application routes on the Express app.
+ *
+ * Route map:
+ *   GET/POST       /api/auth/*            - Authentication (login, refresh, magic-link)
+ *   GET/POST/PATCH /api/admin/users/*     - User management (admin only)
+ *   GET/POST/PUT/DELETE /api/transactions/* - Transaction CRUD + smart categorize
+ *   GET/POST/PUT/DELETE /api/categories/*  - Category CRUD
+ *   GET            /api/dashboard/*       - Dashboard metrics
+ *   GET            /api/metrics/*         - Period stats, trends
+ *   POST           /api/import/*          - CSV/Excel import
+ *   GET            /api/export/*          - CSV/JSON export
+ *   GET/PUT        /api/preferences       - User preferences
+ *   GET/POST/PUT/DELETE /api/investments/* - Investment portfolio
+ *   GET/POST/PUT/DELETE /api/widgets/*     - Widget settings
+ *   GET/POST       /api/backups/*         - Database backups
+ *   GET/POST/PUT/DELETE /api/merchant-aliases/* - Merchant alias rules
+ *   POST           /api/seed/*            - Development seed data
+ *   GET            /health                - Health check
+ *   GET            /version               - Version info
+ *   GET            /api/system/*          - System updates
  */
 export function registerRoutes(app: express.Application, deps: RouteDependencies): void {
   const { controllerFactory, authController, userManagementController, magicLinkController } = deps;
@@ -65,19 +84,19 @@ export function registerRoutes(app: express.Application, deps: RouteDependencies
   // User management routes (admin only)
   app.use('/api/admin/users', createUserManagementRoutes(userManagementController));
 
-  // API routes (auth required for most)
-  app.use('/api/transactions', createTransactionRoutesV2(controllerFactory));
-  app.use('/api/categories', createCategoryRoutesV2(controllerFactory));
-  app.use('/api/dashboard', createDashboardRoutesV2(controllerFactory));
-  app.use('/api/import', createImportRoutesV2(controllerFactory));
-  app.use('/api/metrics', createMetricsRoutesV2(controllerFactory));
-  app.use('/api/preferences', createUserPreferencesRoutesV2(controllerFactory));
-  app.use('/api/seed', createSeedRoutesV2(controllerFactory));
-  app.use('/api/widgets', createWidgetSettingsRoutesV2(controllerFactory));
-  app.use('/api/investments', createInvestmentRoutesV2(controllerFactory));
+  // Core API routes
+  app.use('/api/transactions', createTransactionRoutes(controllerFactory));
+  app.use('/api/categories', createCategoryRoutes(controllerFactory));
+  app.use('/api/dashboard', createDashboardRoutes(controllerFactory));
+  app.use('/api/import', createImportRoutes(controllerFactory));
+  app.use('/api/metrics', createMetricsRoutes(controllerFactory));
+  app.use('/api/preferences', createUserPreferencesRoutes(controllerFactory));
+  app.use('/api/seed', createSeedRoutes(controllerFactory));
+  app.use('/api/widgets', createWidgetSettingsRoutes(controllerFactory));
+  app.use('/api/investments', createInvestmentRoutes(controllerFactory));
   app.use('/api/export', createExportRoutes(controllerFactory));
   app.use('/api/backups', createBackupRoutes());
-  app.use('/api/merchant-aliases', createMerchantAliasRoutesV2(controllerFactory));
+  app.use('/api/merchant-aliases', createMerchantAliasRoutes(controllerFactory));
 
   // 404 handler
   app.use('*', (req, res) => {

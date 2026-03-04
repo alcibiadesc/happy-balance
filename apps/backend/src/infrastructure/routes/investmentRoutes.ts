@@ -3,7 +3,7 @@ import { ControllerFactory } from '../factories/ControllerFactory';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '@infrastructure/errors';
 
-export const createInvestmentRoutesV2 = (controllerFactory: ControllerFactory): Router => {
+export const createInvestmentRoutes = (controllerFactory: ControllerFactory): Router => {
   const router = Router();
 
   // All investment routes require authentication

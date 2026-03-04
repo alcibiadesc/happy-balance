@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { ControllerFactory } from '../factories/ControllerFactory';
 import { authenticate } from '../middleware/auth';
 
-export const createMerchantAliasRoutesV2 = (controllerFactory: ControllerFactory): Router => {
+export const createMerchantAliasRoutes = (controllerFactory: ControllerFactory): Router => {
   const router = Router();
 
   // All merchant alias routes require authentication

@@ -1,10 +1,8 @@
-import { Router, Request, Response } from "express";
-import { ControllerFactory } from "../factories/ControllerFactory";
-import { authenticate } from "../middleware/auth";
+import { Router, Request, Response } from 'express';
+import { ControllerFactory } from '../factories/ControllerFactory';
+import { authenticate } from '../middleware/auth';
 
-export const createSeedRoutesV2 = (
-  controllerFactory: ControllerFactory,
-): Router => {
+export const createSeedRoutes = (controllerFactory: ControllerFactory): Router => {
   const router = Router();
 
   // All seed routes require authentication
@@ -24,7 +22,7 @@ export const createSeedRoutesV2 = (
    *       403:
    *         description: Forbidden - Admin access required
    */
-  router.post("/", async (req: Request, res: Response) => {
+  router.post('/', async (req: Request, res: Response) => {
     const userId = req.user?.userId || 'default';
     const controller = controllerFactory.createSeedController(userId);
     await controller.resetToDefaults(req, res);
