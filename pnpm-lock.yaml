@@ -41,6 +41,9 @@ importers:
 
   apps/backend:
     dependencies:
+      '@happy-balance/shared-types':
+        specifier: workspace:^
+        version: link:../../packages/shared-types
       '@prisma/client':
         specifier: ^6.16.1
         version: 6.16.2(prisma@6.16.2(typescript@5.9.2))(typescript@5.9.2)
@@ -150,6 +153,9 @@ importers:
 
   apps/frontend:
     dependencies:
+      '@happy-balance/shared-types':
+        specifier: workspace:^
+        version: link:../../packages/shared-types
       chart.js:
         specifier: ^4.5.0
         version: 4.5.0
@@ -241,6 +247,12 @@ importers:
       vitest:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@20.19.17)(jsdom@25.0.1)
+
+  packages/shared-types:
+    devDependencies:
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.2
 
 packages:
 

@@ -20,6 +20,7 @@
     "seed:admin": "tsx src/scripts/seed-admin.ts"
   },
   "dependencies": {
+    "@happy-balance/shared-types": "workspace:^",
     "@prisma/client": "^6.16.1",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",

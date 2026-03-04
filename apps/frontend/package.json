@@ -14,6 +14,7 @@
     "typecheck": "svelte-kit sync && tsc --noEmit"
   },
   "dependencies": {
+    "@happy-balance/shared-types": "workspace:^",
     "chart.js": "^4.5.0",
     "lucide-svelte": "^0.542.0"
   },
