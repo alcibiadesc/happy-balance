@@ -21,11 +21,11 @@
 
   // Check authentication status for protected routes
   $effect(() => {
-    const publicRoutes = ['/login', '/health'];
+    const publicRoutes = ['/login', '/landing', '/health'];
     const isPublicRoute = publicRoutes.some((route) => $page.url.pathname.startsWith(route));
 
     if (!isPublicRoute && !authStore.isAuthenticated && !authStore.isLoading) {
-      goto('/login');
+      goto('/landing');
     }
   });
 
