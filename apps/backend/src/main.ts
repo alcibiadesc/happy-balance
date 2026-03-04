@@ -3,10 +3,7 @@ import { prisma } from '@infrastructure/database/prisma';
 import { PrismaUserRepository } from '@infrastructure/repositories/PrismaUserRepository';
 import { PrismaUserPreferencesRepository } from '@infrastructure/repositories/PrismaUserPreferencesRepository';
 import { AuthController } from '@infrastructure/controllers/AuthController';
-import { MagicLinkController } from '@infrastructure/controllers/MagicLinkController';
 import { UserManagementController } from '@infrastructure/controllers/UserManagementController';
-import { SupabaseService } from '@infrastructure/services/SupabaseService';
-import { ResendService } from '@infrastructure/services/ResendService';
 import { ControllerFactory } from '@infrastructure/factories/ControllerFactory';
 import { setupMiddleware } from '@infrastructure/middleware/setup';
 import { registerRoutes } from '@infrastructure/routes/index';
@@ -31,17 +28,11 @@ function createApp(): express.Application {
     userPreferencesRepository
   );
 
-  // Magic link services
-  const supabaseService = new SupabaseService();
-  const resendService = new ResendService();
-  const magicLinkController = new MagicLinkController(supabaseService, resendService);
-
   // Routes
   registerRoutes(app, {
     controllerFactory,
     authController,
     userManagementController,
-    magicLinkController,
   });
 
   return app;

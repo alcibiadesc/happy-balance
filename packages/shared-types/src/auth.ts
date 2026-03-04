@@ -35,14 +35,6 @@ export interface RefreshTokenResponse {
   refreshToken: string;
 }
 
-export interface MagicLinkRequest {
-  email: string;
-}
-
-export interface MagicLinkResponse {
-  message: string;
-}
-
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;

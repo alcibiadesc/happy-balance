@@ -14,8 +14,6 @@ export const API_ROUTES = {
     refresh: '/api/auth/refresh',
     me: '/api/auth/me',
     changePassword: '/api/auth/change-password',
-    magicLink: '/api/auth/magic-link',
-    verifyMagicLink: '/api/auth/verify-magic-link',
   },
   transactions: {
     base: '/api/transactions',

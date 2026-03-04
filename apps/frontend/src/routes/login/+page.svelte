@@ -1,16 +1,12 @@
 <script lang="ts">
   import LoginForm from '$lib/components/organisms/LoginForm.svelte';
-  import MagicLinkForm from '$lib/components/organisms/MagicLinkForm.svelte';
   import PasswordChangeForm from '$lib/components/organisms/PasswordChangeForm.svelte';
   import { authStore } from '$lib/modules/auth/presentation/stores/authStore.svelte';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { fade, fly } from 'svelte/transition';
 
-  type AuthMode = 'magic-link' | 'credentials';
-
   let mounted = $state(false);
-  let authMode = $state<AuthMode>('magic-link');
 
   // Redirect if already authenticated
   onMount(() => {
@@ -52,9 +48,6 @@
         {#if authStore.requiresPasswordChange}
           <h1 class="login-title">Security Required</h1>
           <p class="login-subtitle">Complete your account setup</p>
-        {:else if authMode === 'magic-link'}
-          <h1 class="login-title">Accede con tu email</h1>
-          <p class="login-subtitle">Te enviaremos un enlace de acceso</p>
         {:else}
           <h1 class="login-title">Welcome back</h1>
           <p class="login-subtitle">Sign in to your account</p>
@@ -67,20 +60,8 @@
             userId={authStore.requiresPasswordChange.userId}
             username={authStore.requiresPasswordChange.username}
           />
-        {:else if authMode === 'magic-link'}
-          <MagicLinkForm />
-          <div class="auth-mode-switch">
-            <button type="button" class="mode-link" onclick={() => (authMode = 'credentials')}>
-              Acceder con usuario y contrasena
-            </button>
-          </div>
         {:else}
           <LoginForm />
-          <div class="auth-mode-switch">
-            <button type="button" class="mode-link" onclick={() => (authMode = 'magic-link')}>
-              Acceder con enlace magico
-            </button>
-          </div>
         {/if}
       </div>
 
@@ -173,28 +154,6 @@
     font-size: 1rem;
     font-weight: 400;
     opacity: 0.8;
-  }
-
-  .auth-mode-switch {
-    text-align: center;
-    margin-top: 1.25rem;
-  }
-
-  .mode-link {
-    background: none;
-    border: none;
-    color: var(--primary);
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    padding: 0.25rem 0;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    transition: opacity 0.15s ease;
-  }
-
-  .mode-link:hover {
-    opacity: 0.7;
   }
 
   .login-footer {

@@ -2,7 +2,6 @@ import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import { ControllerFactory } from '@infrastructure/factories/ControllerFactory';
 import { AuthController } from '@infrastructure/controllers/AuthController';
-import { MagicLinkController } from '@infrastructure/controllers/MagicLinkController';
 import { UserManagementController } from '@infrastructure/controllers/UserManagementController';
 import { createTransactionRoutes } from '@infrastructure/routes/transactionRoutes';
 import { createCategoryRoutes } from '@infrastructure/routes/categoryRoutes';
@@ -32,14 +31,13 @@ interface RouteDependencies {
   controllerFactory: ControllerFactory;
   authController: AuthController;
   userManagementController: UserManagementController;
-  magicLinkController?: MagicLinkController;
 }
 
 /**
  * Register all application routes on the Express app.
  *
  * Route map:
- *   GET/POST       /api/auth/*            - Authentication (login, refresh, magic-link)
+ *   GET/POST       /api/auth/*            - Authentication (login, refresh)
  *   GET/POST/PATCH /api/admin/users/*     - User management (admin only)
  *   GET/POST/PUT/DELETE /api/transactions/* - Transaction CRUD + smart categorize
  *   GET/POST/PUT/DELETE /api/categories/*  - Category CRUD
@@ -58,7 +56,7 @@ interface RouteDependencies {
  *   GET            /api/system/*          - System updates
  */
 export function registerRoutes(app: express.Application, deps: RouteDependencies): void {
-  const { controllerFactory, authController, userManagementController, magicLinkController } = deps;
+  const { controllerFactory, authController, userManagementController } = deps;
 
   // System routes (health, version, updates)
   app.use('/', createSystemRoutes());
@@ -79,7 +77,7 @@ export function registerRoutes(app: express.Application, deps: RouteDependencies
   app.use('/api/import', uploadLimiter);
 
   // Auth routes (no auth required)
-  app.use('/api/auth', createAuthRoutes(authController, magicLinkController));
+  app.use('/api/auth', createAuthRoutes(authController));
 
   // User management routes (admin only)
   app.use('/api/admin/users', createUserManagementRoutes(userManagementController));

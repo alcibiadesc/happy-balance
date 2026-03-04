@@ -54,8 +54,6 @@ export type {
   LoginResponse,
   RefreshTokenRequest,
   RefreshTokenResponse,
-  MagicLinkRequest,
-  MagicLinkResponse,
   ChangePasswordRequest,
 } from './auth';
 
