@@ -69,6 +69,55 @@ function checkAndInstallDependencies() {
   return needsInstall;
 }
 
+// Check if Docker daemon is running
+function isDockerRunning() {
+  try {
+    execSync("docker info", { stdio: "pipe" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Start Docker (OrbStack or Docker Desktop)
+async function ensureDockerRunning() {
+  if (isDockerRunning()) return;
+
+  log("🐳 Starting Docker...", "yellow");
+
+  // Try OrbStack first, then Docker Desktop
+  const apps = ["OrbStack", "Docker"];
+  let started = false;
+
+  for (const app of apps) {
+    try {
+      execSync(`open -a ${app}`, { stdio: "pipe" });
+      log(`   Launching ${app}...`, "cyan");
+      started = true;
+      break;
+    } catch {
+      // App not found, try next
+    }
+  }
+
+  if (!started) {
+    log("❌ No Docker runtime found. Install OrbStack or Docker Desktop.", "red");
+    process.exit(1);
+  }
+
+  // Wait for Docker daemon to be ready (up to 30s)
+  for (let i = 0; i < 15; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    if (isDockerRunning()) {
+      log("✅ Docker is ready", "green");
+      return;
+    }
+  }
+
+  log("❌ Docker did not start in time", "red");
+  process.exit(1);
+}
+
 // Check if database container is running
 async function isDatabaseRunning() {
   try {
@@ -83,6 +132,8 @@ async function isDatabaseRunning() {
 
 // Start database container if not running
 async function ensureDatabaseRunning() {
+  await ensureDockerRunning();
+
   const isRunning = await isDatabaseRunning();
   if (!isRunning) {
     log("🗄️  Starting PostgreSQL database...", "yellow");
