@@ -1,10 +1,10 @@
-import { Result } from "../shared/Result";
-import { CategoryId } from "./Category";
+import { Result } from '../shared/Result';
+import { CategoryId } from './Category';
 
 export enum PatternType {
-  MERCHANT = "merchant",
-  DESCRIPTION = "description",
-  COMBINED = "combined",
+  MERCHANT = 'merchant',
+  DESCRIPTION = 'description',
+  COMBINED = 'combined',
 }
 
 export class CategoryPatternId {
@@ -12,13 +12,13 @@ export class CategoryPatternId {
 
   static create(value: string): Result<CategoryPatternId> {
     if (!value || value.trim().length === 0) {
-      return Result.failWithMessage("CategoryPattern ID cannot be empty");
+      return Result.failWithMessage('CategoryPattern ID cannot be empty');
     }
     return Result.ok(new CategoryPatternId(value.trim()));
   }
 
   static generate(): CategoryPatternId {
-    const id = `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = `pat-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     return CategoryPatternId.create(id).getValue();
   }
 
@@ -42,7 +42,7 @@ export class CategoryPattern {
     private _isActive: boolean = true,
     private _applyToFuture: boolean = true,
     private _priority: number = 0,
-    private readonly _createdAt: Date = new Date(),
+    private readonly _createdAt: Date = new Date()
   ) {}
 
   static create(
@@ -51,14 +51,14 @@ export class CategoryPattern {
     patternType: PatternType,
     applyToFuture: boolean = true,
     priority: number = 0,
-    id?: CategoryPatternId,
+    id?: CategoryPatternId
   ): Result<CategoryPattern> {
     if (!pattern || pattern.trim().length === 0) {
-      return Result.failWithMessage("Pattern cannot be empty");
+      return Result.failWithMessage('Pattern cannot be empty');
     }
 
     if (pattern.length > 200) {
-      return Result.failWithMessage("Pattern cannot exceed 200 characters");
+      return Result.failWithMessage('Pattern cannot exceed 200 characters');
     }
 
     const normalizedPattern = pattern.trim().toLowerCase();
@@ -72,8 +72,8 @@ export class CategoryPattern {
         patternType,
         true,
         applyToFuture,
-        priority,
-      ),
+        priority
+      )
     );
   }
 
@@ -129,7 +129,7 @@ export class CategoryPattern {
 
   updatePriority(newPriority: number): Result<void> {
     if (newPriority < 0) {
-      return Result.failWithMessage("Priority cannot be negative");
+      return Result.failWithMessage('Priority cannot be negative');
     }
     this._priority = newPriority;
     return Result.ok(undefined);
@@ -137,7 +137,7 @@ export class CategoryPattern {
 
   matches(merchant: string, description?: string): boolean {
     const normalizedMerchant = merchant.toLowerCase();
-    const normalizedDescription = (description || "").toLowerCase();
+    const normalizedDescription = (description || '').toLowerCase();
 
     switch (this._patternType) {
       case PatternType.MERCHANT:
@@ -171,9 +171,7 @@ export class CategoryPattern {
     };
   }
 
-  static fromSnapshot(
-    snapshot: CategoryPatternSnapshot,
-  ): Result<CategoryPattern> {
+  static fromSnapshot(snapshot: CategoryPatternSnapshot): Result<CategoryPattern> {
     const idResult = CategoryPatternId.create(snapshot.id);
     if (idResult.isFailure()) {
       return Result.fail(idResult.getError());
@@ -192,7 +190,7 @@ export class CategoryPattern {
       snapshot.isActive,
       snapshot.applyToFuture,
       snapshot.priority,
-      new Date(snapshot.createdAt),
+      new Date(snapshot.createdAt)
     );
 
     pattern._matchCount = snapshot.matchCount;

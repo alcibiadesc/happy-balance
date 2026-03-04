@@ -321,7 +321,7 @@ export class GetDashboardDataUseCase {
         });
       case 'quarter': {
         const quarter = Math.ceil((date.getMonth() + 1) / 3);
-        return `Q${quarter} ${date.getFullYear().toString().substr(2)}`;
+        return `Q${quarter} ${date.getFullYear().toString().substring(2)}`;
       }
       case 'year':
         return date.getFullYear().toString();

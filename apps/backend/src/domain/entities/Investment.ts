@@ -15,7 +15,7 @@ export class InvestmentId {
   }
 
   static generate(): InvestmentId {
-    const id = `inv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = `inv-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     return InvestmentId.create(id).getValue();
   }
 
@@ -46,7 +46,7 @@ export class InvestmentHistoryId {
   }
 
   static generate(): InvestmentHistoryId {
-    const id = `invh-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = `invh-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     return InvestmentHistoryId.create(id).getValue();
   }
 
