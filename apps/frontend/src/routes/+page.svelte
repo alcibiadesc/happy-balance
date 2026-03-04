@@ -17,7 +17,7 @@
   import DashboardSections from '$lib/components/organisms/DashboardSections.svelte';
 
   // Domain Store
-  import { createEnhancedDashboardStore } from '$lib/modules/dashboard/presentation/stores/enhancedDashboardStore.svelte.ts';
+  import { createEnhancedDashboardStore } from '$lib/modules/dashboard/presentation/stores/enhancedDashboardStore.svelte';
   import { getApiUrl } from '$lib/utils/api-url';
   import { investmentsApi } from '$lib/modules/investments/infrastructure/api/investmentsApi';
   import type { PortfolioSummary } from '$lib/modules/investments/domain/entities/Investment';
@@ -51,10 +51,10 @@
       name: cat.getName(),
       amount: cat.getAmount().getValue(),
       percentage: cat.getPercentage(),
-      color: cat.getColor(),
+      color: cat.getColor() ?? '#6366f1',
       icon: cat.getIcon(),
-      monthlyBudget: cat.getMonthlyBudget(),
-      budgetUsage: cat.getBudgetUsage(),
+      monthlyBudget: cat.getMonthlyBudget() ?? undefined,
+      budgetUsage: cat.getBudgetUsage() ?? undefined,
     })),
     categoryBreakdown: store.categoryBreakdown,
     expenseDistribution: store.expenseDistribution,
@@ -74,8 +74,8 @@
     await store.changePeriod(type as PeriodType);
   }
 
-  async function handleCustomDateRange(event: CustomEvent) {
-    const { startDate, endDate } = event.detail;
+  async function handleCustomDateRange(dates: { startDate: string; endDate: string }) {
+    const { startDate, endDate } = dates;
     await store.setCustomDateRange(startDate, endDate);
   }
 
@@ -147,7 +147,7 @@
   bind:isOpen={showDateRangePicker}
   startDate={store.customStartDate}
   endDate={store.customEndDate}
-  on:apply={handleCustomDateRange}
+  onapply={handleCustomDateRange}
 />
 
 <style>
@@ -157,12 +157,6 @@
 
   .dashboard.edit-mode {
     padding-bottom: 5rem;
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
   }
 
   .edit-btn {
@@ -211,21 +205,6 @@
       padding-bottom: 6rem;
     }
 
-    .dashboard-header {
-      flex-direction: column;
-      gap: 1rem;
-      align-items: stretch;
-    }
-
-    .dashboard-header h1 {
-      font-size: 1.25rem;
-      text-align: center;
-    }
-
-    .header-actions {
-      justify-content: center;
-    }
-
     .edit-hint {
       font-size: 0.75rem;
       padding: 0.5rem;
@@ -235,10 +214,6 @@
   @media (max-width: 480px) {
     .dashboard {
       padding: 0.75rem;
-    }
-
-    .dashboard-header h1 {
-      font-size: 1.125rem;
     }
 
     .edit-hint {
