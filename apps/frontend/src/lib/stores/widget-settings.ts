@@ -68,7 +68,7 @@ export const widgetSettings = {
 
         return settings as T;
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Failed to load widget settings for ${widgetId}, using localStorage fallback`);
     }
 
@@ -119,7 +119,7 @@ export const widgetSettings = {
           headers: getAuthHeaders(),
           body: JSON.stringify({ settings }),
         });
-      } catch (error) {
+      } catch (_error) {
         console.warn(`Failed to save widget settings for ${widgetId}`);
       }
       saveTimers.delete(widgetId);
@@ -147,7 +147,7 @@ export const widgetSettings = {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Failed to delete widget settings for ${widgetId}`);
     }
   },
@@ -173,7 +173,7 @@ export const widgetSettings = {
           return c;
         });
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to load all widget settings');
     }
   },

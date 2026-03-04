@@ -1,12 +1,12 @@
-import { Result } from "../shared/Result";
-import { TransactionId } from "../value-objects/TransactionId";
-import { Money } from "../value-objects/Money";
-import { TransactionDate } from "../value-objects/TransactionDate";
-import { Merchant } from "../value-objects/Merchant";
-import { Category, CategoryId } from "./Category";
-import { TransactionType } from "./TransactionType";
-import { CategoryType } from "./CategoryType";
-import { HashGenerationService } from "../services/HashGenerationService";
+import { Result } from '../shared/Result';
+import { TransactionId } from '../value-objects/TransactionId';
+import { Money } from '../value-objects/Money';
+import { TransactionDate } from '../value-objects/TransactionDate';
+import { Merchant } from '../value-objects/Merchant';
+import { Category, CategoryId } from './Category';
+import { TransactionType } from './TransactionType';
+import { CategoryType } from './CategoryType';
+import { HashGenerationService } from '../services/HashGenerationService';
 
 /**
  * Transaction entity - Rich domain model
@@ -34,7 +34,7 @@ export class Transaction {
     observations?: string,
     splitPercentage?: number,
     linkedTransactionId?: TransactionId,
-    isReimbursement?: boolean,
+    isReimbursement?: boolean
   ) {
     this._description = description;
     this._observations = observations;
@@ -51,32 +51,26 @@ export class Transaction {
     merchant: Merchant,
     type: TransactionType,
     description: string,
-    id?: TransactionId,
+    id?: TransactionId
   ): Result<Transaction> {
     // Business rule: Income transactions should have non-negative amounts
     if (type === TransactionType.INCOME && amount.amount < 0) {
-      return Result.failWithMessage(
-        "Income transactions cannot have negative amounts",
-      );
+      return Result.failWithMessage('Income transactions cannot have negative amounts');
     }
 
     // Business rule: Expense transactions should have non-negative amounts
     if (type === TransactionType.EXPENSE && amount.amount < 0) {
-      return Result.failWithMessage(
-        "Expense transactions cannot have negative amounts",
-      );
+      return Result.failWithMessage('Expense transactions cannot have negative amounts');
     }
 
     // Business rule: Investment transactions should have non-negative amounts
     if (type === TransactionType.INVESTMENT && amount.amount < 0) {
-      return Result.failWithMessage(
-        "Investment transactions cannot have negative amounts",
-      );
+      return Result.failWithMessage('Investment transactions cannot have negative amounts');
     }
 
     // Validate description
     if (description && description.length > 200) {
-      return Result.failWithMessage("Description cannot exceed 200 characters");
+      return Result.failWithMessage('Description cannot exceed 200 characters');
     }
 
     const transactionId = id || TransactionId.generate();
@@ -88,10 +82,10 @@ export class Transaction {
         date,
         merchant,
         type,
-        description || "",
+        description || '',
         new Date(),
-        undefined, // Let constructor generate hash for new transactions
-      ),
+        undefined // Let constructor generate hash for new transactions
+      )
     );
   }
 
@@ -186,7 +180,7 @@ export class Transaction {
     }
 
     if (percentage < 0 || percentage > 100) {
-      return Result.failWithMessage("Split percentage must be between 0 and 100");
+      return Result.failWithMessage('Split percentage must be between 0 and 100');
     }
 
     this._splitPercentage = percentage;
@@ -226,13 +220,13 @@ export class Transaction {
     // Business rule: Category type must be compatible with transaction type
     if (!this.isCategoryTypeCompatible(category.type, this._type)) {
       return Result.failWithMessage(
-        `Category type ${category.type} is not compatible with transaction type ${this._type}`,
+        `Category type ${category.type} is not compatible with transaction type ${this._type}`
       );
     }
 
     // Business rule: Cannot categorize inactive categories
     if (!category.isActive) {
-      return Result.failWithMessage("Cannot categorize with inactive category");
+      return Result.failWithMessage('Cannot categorize with inactive category');
     }
 
     this._categoryId = category.id;
@@ -244,33 +238,26 @@ export class Transaction {
   }
 
   setCategoryId(categoryId: string | undefined | null): void {
-    console.log('🔧 Transaction.setCategoryId called with:', categoryId, typeof categoryId);
-    console.log('🔧 Before update - current categoryId:', this._categoryId?.value);
-
-    if (categoryId && categoryId !== "") {
+    if (categoryId && categoryId !== '') {
       this._categoryId = { value: categoryId } as CategoryId;
-      console.log('🔧 Set categoryId to:', this._categoryId.value);
     } else {
       // Clear the category when null, undefined, or empty string
       this._categoryId = undefined;
-      console.log('🔧 Cleared categoryId (set to undefined)');
     }
-
-    console.log('🔧 After update - new categoryId:', this._categoryId?.value);
   }
 
   updateDescription(newDescription: string): Result<void> {
     if (newDescription && newDescription.length > 200) {
-      return Result.failWithMessage("Description cannot exceed 200 characters");
+      return Result.failWithMessage('Description cannot exceed 200 characters');
     }
 
-    this._description = newDescription || "";
+    this._description = newDescription || '';
     return Result.ok(undefined);
   }
 
   updateObservations(newObservations: string): Result<void> {
     if (newObservations && newObservations.length > 500) {
-      return Result.failWithMessage("Observations cannot exceed 500 characters");
+      return Result.failWithMessage('Observations cannot exceed 500 characters');
     }
 
     this._observations = newObservations || undefined;
@@ -307,9 +294,7 @@ export class Transaction {
     }
 
     // Within tolerance time window
-    const timeDiffMs = Math.abs(
-      this._date.value.getTime() - other._date.value.getTime(),
-    );
+    const timeDiffMs = Math.abs(this._date.value.getTime() - other._date.value.getTime());
     const toleranceMs = toleranceHours * 60 * 60 * 1000;
 
     return timeDiffMs <= toleranceMs;
@@ -377,7 +362,7 @@ export class Transaction {
    */
   private isCategoryTypeCompatible(
     categoryType: CategoryType,
-    transactionType: TransactionType,
+    transactionType: TransactionType
   ): boolean {
     // NO_COMPUTE categories can be applied to any transaction type
     // as they represent internal transfers that don't affect financial metrics
@@ -465,7 +450,7 @@ export class Transaction {
       snapshot.observations,
       snapshot.splitPercentage,
       linkedTransactionId,
-      snapshot.isReimbursement,
+      snapshot.isReimbursement
     );
 
     // Set optional fields

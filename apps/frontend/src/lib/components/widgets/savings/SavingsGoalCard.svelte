@@ -17,7 +17,7 @@
   const {
     income,
     expenses,
-    investments,
+    investments: _investments,
     savingsRate,
     periodType = 'month',
     loading = false,

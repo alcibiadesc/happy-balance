@@ -75,13 +75,6 @@ export function createEnhancedDashboardStore(apiBase: string) {
     try {
       const data = await loadDashboardDataUseCase.execute(currentPeriod, currentCurrency);
 
-      console.log('[Dashboard Store] Initial data from API:', {
-        hasData: !!data,
-        metrics: data?.metrics ? 'yes' : 'no',
-        monthlyTrendCount: data?.monthlyTrend?.length ?? 0,
-        monthlyBarDataCount: data?.monthlyBarData?.length ?? 0,
-      });
-
       if (data) {
         categoryBreakdown = data.categoryBreakdown || [];
 
@@ -110,14 +103,6 @@ export function createEnhancedDashboardStore(apiBase: string) {
           // For any other period type (quarter, year, custom), ALWAYS show last 12 months
           historicalData = await repository.getHistory(12);
         }
-
-        console.log('[Dashboard Store] History data:', {
-          count: historicalData?.length ?? 0,
-          isArray: Array.isArray(historicalData),
-          firstItem: historicalData?.[0]
-            ? JSON.stringify(historicalData[0]).substring(0, 200)
-            : 'none',
-        });
 
         // Build chart data from historical data, falling back to API trend data
         let chartTrend = data.monthlyTrend || [];
@@ -150,12 +135,6 @@ export function createEnhancedDashboardStore(apiBase: string) {
             };
           });
         }
-
-        console.log('[Dashboard Store] Final chart data:', {
-          trendCount: chartTrend.length,
-          barCount: chartBar.length,
-          firstTrend: chartTrend[0],
-        });
 
         // Reassign entire object to guarantee Svelte 5 reactivity
         dashboardData = {

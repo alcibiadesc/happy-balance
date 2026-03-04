@@ -1,6 +1,6 @@
 <script lang="ts">
   import { TrendingUp, TrendingDown, Target } from 'lucide-svelte';
-  import { currentCurrency, formatCurrency } from '$lib/stores/currency';
+  import { currentCurrency } from '$lib/stores/currency';
   import { portfolioGoal, userPreferences } from '$lib/stores/user-preferences';
 
   interface Props {

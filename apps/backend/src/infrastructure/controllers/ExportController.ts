@@ -365,13 +365,6 @@ export class ExportController {
               history: invSnapshot.history || [], // Ensure history is an array
             };
 
-            console.log(
-              'Importing investment:',
-              investmentData.name,
-              'isActive:',
-              investmentData.isActive
-            );
-
             const investmentResult = Investment.fromSnapshot(investmentData);
 
             if (investmentResult.isSuccess()) {
@@ -382,11 +375,9 @@ export class ExportController {
               if (existingResult.isSuccess() && existingResult.getValue()) {
                 // Update existing
                 await this.investmentRepository.update(investment);
-                console.log('Updated existing investment:', investment.name);
               } else {
                 // Save new
                 await this.investmentRepository.save(investment);
-                console.log('Saved new investment:', investment.name);
               }
               results.investments.imported++;
             } else {

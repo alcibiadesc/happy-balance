@@ -1,15 +1,15 @@
-import { Result } from "../../domain/shared/Result";
-import { Money } from "../../domain/value-objects/Money";
-import { TransactionDate } from "../../domain/value-objects/TransactionDate";
-import { ITransactionRepository } from "../../domain/repositories/ITransactionRepository";
-import { ICategoryRepository } from "../../domain/repositories/ICategoryRepository";
+import { Result } from '../../domain/shared/Result';
+import { Money } from '../../domain/value-objects/Money';
+import { TransactionDate } from '../../domain/value-objects/TransactionDate';
+import { ITransactionRepository } from '../../domain/repositories/ITransactionRepository';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 import {
   FinancialCalculationService,
   FinancialSummary,
   CategoryBreakdown,
   TrendData,
-} from "../../domain/services/FinancialCalculationService";
-import { DashboardQuery } from "../queries/DashboardQuery";
+} from '../../domain/services/FinancialCalculationService';
+import { DashboardQuery } from '../queries/DashboardQuery';
 
 export interface DashboardData {
   summary: FinancialSummary;
@@ -34,7 +34,7 @@ export class GetDashboardDataUseCase {
   constructor(
     private readonly transactionRepository: ITransactionRepository,
     private readonly categoryRepository: ICategoryRepository,
-    private readonly financialCalculationService: FinancialCalculationService,
+    private readonly financialCalculationService: FinancialCalculationService
   ) {}
 
   /**
@@ -44,16 +44,12 @@ export class GetDashboardDataUseCase {
     // Validate query
     const validation = query.isValid();
     if (!validation.valid) {
-      return Result.failWithMessage(
-        `Invalid query: ${validation.errors.join(", ")}`,
-      );
+      return Result.failWithMessage(`Invalid query: ${validation.errors.join(', ')}`);
     }
 
     try {
       // Get date range
       const { startDate, endDate } = query.getDateRange();
-      console.log("Dashboard dates:", { startDate, endDate, now: new Date() });
-
       const startTransactionDate = TransactionDate.create(startDate);
       const endTransactionDate = TransactionDate.create(endDate);
 
@@ -73,11 +69,10 @@ export class GetDashboardDataUseCase {
       };
 
       // Get transactions for the period
-      const transactionsResult =
-        await this.transactionRepository.findByDateRange(
-          period.startDate,
-          period.endDate,
-        );
+      const transactionsResult = await this.transactionRepository.findByDateRange(
+        period.startDate,
+        period.endDate
+      );
 
       if (transactionsResult.isFailure()) {
         return Result.fail(transactionsResult.getError());
@@ -92,19 +87,15 @@ export class GetDashboardDataUseCase {
       }
 
       const categories = categoriesResult.getValue();
-      const categoryMap = new Map(
-        categories.map((cat) => [cat.id.value, cat.name]),
-      );
-      const categoryObjectMap = new Map(
-        categories.map((cat) => [cat.id.value, cat]),
-      );
+      const categoryMap = new Map(categories.map((cat) => [cat.id.value, cat.name]));
+      const categoryObjectMap = new Map(categories.map((cat) => [cat.id.value, cat]));
 
       // Calculate financial summary
       const summaryResult = this.financialCalculationService.calculateSummary(
         transactions,
         period,
         query.currency,
-        categoryObjectMap,
+        categoryObjectMap
       );
 
       if (summaryResult.isFailure()) {
@@ -114,13 +105,12 @@ export class GetDashboardDataUseCase {
       const summary = summaryResult.getValue();
 
       // Calculate category breakdown
-      const breakdownResult =
-        this.financialCalculationService.calculateCategoryBreakdown(
-          transactions,
-          categoryMap,
-          period,
-          query.currency,
-        );
+      const breakdownResult = this.financialCalculationService.calculateCategoryBreakdown(
+        transactions,
+        categoryMap,
+        period,
+        query.currency
+      );
 
       if (breakdownResult.isFailure()) {
         return Result.fail(breakdownResult.getError());
@@ -129,11 +119,10 @@ export class GetDashboardDataUseCase {
       const categoryBreakdown = breakdownResult.getValue();
 
       // Calculate spending rate
-      const spendingRateResult =
-        this.financialCalculationService.calculateSpendingRate(
-          summary.totalIncome,
-          summary.totalExpenses,
-        );
+      const spendingRateResult = this.financialCalculationService.calculateSpendingRate(
+        summary.totalIncome,
+        summary.totalExpenses
+      );
 
       if (spendingRateResult.isFailure()) {
         return Result.fail(spendingRateResult.getError());
@@ -143,14 +132,13 @@ export class GetDashboardDataUseCase {
 
       // Calculate expense distribution (essential vs discretionary)
       const essentialCategories = this.getEssentialCategoryIds(categories);
-      const distributionResult =
-        this.financialCalculationService.calculateExpenseDistribution(
-          transactions,
-          essentialCategories,
-          period,
-          query.currency,
-          categoryObjectMap,
-        );
+      const distributionResult = this.financialCalculationService.calculateExpenseDistribution(
+        transactions,
+        essentialCategories,
+        period,
+        query.currency,
+        categoryObjectMap
+      );
 
       if (distributionResult.isFailure()) {
         return Result.fail(distributionResult.getError());
@@ -164,7 +152,7 @@ export class GetDashboardDataUseCase {
         transactions,
         trendPeriods,
         query.currency,
-        categoryObjectMap,
+        categoryObjectMap
       );
 
       if (trendsResult.isFailure()) {
@@ -182,7 +170,7 @@ export class GetDashboardDataUseCase {
       });
     } catch (error) {
       return Result.failWithMessage(
-        `Unexpected error retrieving dashboard data: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Unexpected error retrieving dashboard data: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -192,18 +180,18 @@ export class GetDashboardDataUseCase {
    */
   private getEssentialCategoryIds(categories: any[]): Set<string> {
     const essentialKeywords = [
-      "utilities",
-      "rent",
-      "mortgage",
-      "insurance",
-      "groceries",
-      "food",
-      "health",
-      "medical",
-      "transport",
-      "gas",
-      "electricity",
-      "water",
+      'utilities',
+      'rent',
+      'mortgage',
+      'insurance',
+      'groceries',
+      'food',
+      'health',
+      'medical',
+      'transport',
+      'gas',
+      'electricity',
+      'water',
     ];
 
     const essentialIds = new Set<string>();
@@ -231,13 +219,13 @@ export class GetDashboardDataUseCase {
       const periodStart = new Date(baseEndDate);
 
       switch (periodType) {
-        case "week":
+        case 'week':
           // Calculate the end of the period (i weeks ago from base)
           periodEnd.setDate(baseEndDate.getDate() - i * 7);
           // Start is 7 days before the end
           periodStart.setDate(periodEnd.getDate() - 6);
           break;
-        case "month":
+        case 'month':
           // Go back i months from the base date
           periodEnd.setMonth(baseEndDate.getMonth() - i);
           // Adjust to last day of month
@@ -245,7 +233,7 @@ export class GetDashboardDataUseCase {
           // Start is the first day of that month
           periodStart.setMonth(periodEnd.getMonth(), 1);
           break;
-        case "quarter":
+        case 'quarter': {
           // Go back i quarters (3 months each) from base
           const quarterOffset = i * 3;
           periodEnd.setMonth(baseEndDate.getMonth() - quarterOffset);
@@ -255,24 +243,25 @@ export class GetDashboardDataUseCase {
           // Start is 3 months before
           periodStart.setMonth(periodEnd.getMonth() - 2, 1);
           break;
-        case "year":
+        }
+        case 'year':
           // Go back i years from base
           periodEnd.setFullYear(baseEndDate.getFullYear() - i);
           periodEnd.setMonth(11, 31); // December 31st
           periodStart.setFullYear(periodEnd.getFullYear());
           periodStart.setMonth(0, 1); // January 1st
           break;
-        default:
+        default: {
           // Custom period - divide into 6 equal parts
           const totalDays = Math.floor(
-            (baseEndDate.getTime() -
-              new Date(currentPeriod.startDate.value).getTime()) /
-              (1000 * 60 * 60 * 24),
+            (baseEndDate.getTime() - new Date(currentPeriod.startDate.value).getTime()) /
+              (1000 * 60 * 60 * 24)
           );
           const periodDays = Math.floor(totalDays / 6);
           periodEnd.setDate(baseEndDate.getDate() - i * periodDays);
           periodStart.setDate(periodEnd.getDate() - periodDays + 1);
           break;
+        }
       }
 
       const startResult = TransactionDate.create(periodStart);
@@ -297,20 +286,21 @@ export class GetDashboardDataUseCase {
     const now = new Date();
 
     switch (period) {
-      case "week":
+      case 'week':
         return `Week of ${now.toLocaleDateString()}`;
-      case "month":
-        return now.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
+      case 'month':
+        return now.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
         });
-      case "quarter":
+      case 'quarter': {
         const quarter = Math.ceil((now.getMonth() + 1) / 3);
         return `Q${quarter} ${now.getFullYear()}`;
-      case "year":
+      }
+      case 'year':
         return now.getFullYear().toString();
       default:
-        return "Current Period";
+        return 'Current Period';
     }
   }
 
@@ -319,20 +309,21 @@ export class GetDashboardDataUseCase {
    */
   private formatPeriodLabel(date: Date, periodType: string): string {
     switch (periodType) {
-      case "week":
-        return date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
+      case 'week':
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
         });
-      case "month":
-        return date.toLocaleDateString("en-US", {
-          month: "short",
-          year: "2-digit",
+      case 'month':
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          year: '2-digit',
         });
-      case "quarter":
+      case 'quarter': {
         const quarter = Math.ceil((date.getMonth() + 1) / 3);
         return `Q${quarter} ${date.getFullYear().toString().substr(2)}`;
-      case "year":
+      }
+      case 'year':
         return date.getFullYear().toString();
       default:
         return date.toLocaleDateString();

@@ -645,17 +645,12 @@ export class CategoryInvestmentSyncService {
    */
   async fullSync(): Promise<Result<FullSyncResult>> {
     try {
-      console.log('[CategoryInvestmentSync] Starting full bidirectional sync...');
-
       // Phase 1: Investments → Categories
       const invToCatResult = await this.syncAllInvestmentsToCategories();
       if (invToCatResult.isFailure()) {
         return Result.fail(invToCatResult.getError());
       }
       const invToCat = invToCatResult.getValue();
-      console.log(
-        `[CategoryInvestmentSync] Phase 1 complete: ${invToCat.created} categories created, ${invToCat.linked} linked`
-      );
 
       // Phase 2: Categories → Investments
       const catToInvResult = await this.syncAllCategoriesToInvestments();
@@ -663,9 +658,6 @@ export class CategoryInvestmentSyncService {
         return Result.fail(catToInvResult.getError());
       }
       const catToInv = catToInvResult.getValue();
-      console.log(
-        `[CategoryInvestmentSync] Phase 2 complete: ${catToInv.investmentsCreated} investments created, ${catToInv.investmentsLinked} linked`
-      );
 
       // Phase 3: Sync metadata for linked pairs
       const metadataResult = await this.syncLinkedMetadata();
@@ -673,9 +665,6 @@ export class CategoryInvestmentSyncService {
         return Result.fail(metadataResult.getError());
       }
       const metadata = metadataResult.getValue();
-      console.log(
-        `[CategoryInvestmentSync] Phase 3 complete: ${metadata.namesUpdated} names, ${metadata.colorsUpdated} colors, ${metadata.iconsUpdated} icons updated`
-      );
 
       const result: FullSyncResult = {
         categoriesCreated: invToCat.created,
@@ -688,8 +677,6 @@ export class CategoryInvestmentSyncService {
         colorsUpdated: metadata.colorsUpdated,
         iconsUpdated: metadata.iconsUpdated,
       };
-
-      console.log('[CategoryInvestmentSync] Full sync complete:', result);
 
       return Result.ok(result);
     } catch (error) {

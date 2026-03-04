@@ -14,7 +14,11 @@
     onToggleAll: () => void;
   }
 
-  let { transactions = $bindable(), onToggleTransaction, onToggleAll }: Props = $props();
+  let {
+    transactions = $bindable(),
+    onToggleTransaction,
+    onToggleAll: _onToggleAll,
+  }: Props = $props();
 
   // Local state
   let showAllTransactions = $state(false);

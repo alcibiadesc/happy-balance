@@ -35,7 +35,7 @@
           syncNotification = null;
         }, 5000);
       }
-    } catch (e) {
+    } catch (_e) {
       syncNotification = 'Error al sincronizar';
       setTimeout(() => {
         syncNotification = null;

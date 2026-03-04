@@ -1,14 +1,14 @@
-import { Result } from "@domain/shared/Result";
-import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
-import { ICategoryRepository } from "@domain/repositories/ICategoryRepository";
-import { TransactionDate } from "@domain/value-objects/TransactionDate";
-import { TransactionType } from "@domain/entities/TransactionType";
-import { CategoryType } from "@domain/entities/CategoryType";
-import { DashboardMetrics, Metrics } from "@domain/entities/Metrics";
+import { Result } from '@domain/shared/Result';
+import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
+import { ICategoryRepository } from '@domain/repositories/ICategoryRepository';
+import { TransactionDate } from '@domain/value-objects/TransactionDate';
+import { TransactionType } from '@domain/entities/TransactionType';
+import { CategoryType } from '@domain/entities/CategoryType';
+import { DashboardMetrics, Metrics } from '@domain/entities/Metrics';
 
 export interface DashboardMetricsQuery {
   currency: string;
-  period: "week" | "month" | "quarter" | "year" | "custom";
+  period: 'week' | 'month' | 'quarter' | 'year' | 'custom';
   startDate?: string;
   endDate?: string;
   periodOffset?: number;
@@ -18,12 +18,10 @@ export interface DashboardMetricsQuery {
 export class GetDashboardMetricsUseCase {
   constructor(
     private readonly transactionRepository: ITransactionRepository,
-    private readonly categoryRepository: ICategoryRepository,
+    private readonly categoryRepository: ICategoryRepository
   ) {}
 
-  async execute(
-    query: DashboardMetricsQuery,
-  ): Promise<Result<DashboardMetrics>> {
+  async execute(query: DashboardMetricsQuery): Promise<Result<DashboardMetrics>> {
     try {
       // Calculate date range
       const dateRange = this.calculateDateRange(query);
@@ -40,12 +38,11 @@ export class GetDashboardMetricsUseCase {
         return Result.failWithMessage(endDateResult.getError().message);
       }
 
-      const transactionsResult =
-        await this.transactionRepository.findWithFilters({
-          startDate: startDateResult.getValue(),
-          endDate: endDateResult.getValue(),
-          includeHidden: false
-        });
+      const transactionsResult = await this.transactionRepository.findWithFilters({
+        startDate: startDateResult.getValue(),
+        endDate: endDateResult.getValue(),
+        includeHidden: false,
+      });
 
       if (transactionsResult.isFailure()) {
         return Result.failWithMessage(transactionsResult.getError().message);
@@ -68,17 +65,17 @@ export class GetDashboardMetricsUseCase {
       const periodBalance = this.calculatePeriodBalance(
         computedTransactions,
         query.currency,
-        categories,
+        categories
       );
       const expenseDistribution = this.calculateExpenseDistribution(
         computedTransactions,
         categories,
-        query.currency,
+        query.currency
       );
       const categoryBreakdown = this.calculateCategoryBreakdown(
         computedTransactions,
         categories,
-        query.currency,
+        query.currency
       );
       const monthlyTrend = await this.calculateMonthlyTrend(query, dateRange);
       const transactionMetrics = this.calculateTransactionMetrics(computedTransactions);
@@ -96,7 +93,7 @@ export class GetDashboardMetricsUseCase {
         categoryBreakdown,
         monthlyTrend,
         transactionMetrics,
-        periodInfo,
+        periodInfo
       );
 
       if (metricsResult.isFailure()) {
@@ -106,7 +103,7 @@ export class GetDashboardMetricsUseCase {
       return Result.ok(metricsResult.getValue().toSnapshot());
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to calculate dashboard metrics: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to calculate dashboard metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -115,7 +112,7 @@ export class GetDashboardMetricsUseCase {
     startDate: string;
     endDate: string;
   } {
-    if (query.period === "custom" && query.startDate && query.endDate) {
+    if (query.period === 'custom' && query.startDate && query.endDate) {
       return {
         startDate: query.startDate,
         endDate: query.endDate,
@@ -128,7 +125,7 @@ export class GetDashboardMetricsUseCase {
     let endDate: Date;
 
     switch (query.period) {
-      case "week":
+      case 'week': {
         const currentWeekStart = new Date(now);
         currentWeekStart.setDate(now.getDate() - now.getDay());
         currentWeekStart.setHours(0, 0, 0, 0);
@@ -140,22 +137,24 @@ export class GetDashboardMetricsUseCase {
         endDate.setDate(startDate.getDate() + 6);
         endDate.setHours(23, 59, 59, 999);
         break;
+      }
 
-      case "month":
+      case 'month':
         startDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);
         endDate = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
 
-      case "quarter":
+      case 'quarter': {
         const currentQuarter = Math.floor(now.getMonth() / 3);
         const quarterStartMonth = currentQuarter * 3 + offset * 3;
         startDate = new Date(now.getFullYear(), quarterStartMonth, 1);
         endDate = new Date(now.getFullYear(), quarterStartMonth + 3, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
+      }
 
-      case "year":
+      case 'year':
         startDate = new Date(now.getFullYear() + offset, 0, 1);
         endDate = new Date(now.getFullYear() + offset, 11, 31);
         endDate.setHours(23, 59, 59, 999);
@@ -234,11 +233,7 @@ export class GetDashboardMetricsUseCase {
     };
   }
 
-  private calculateExpenseDistribution(
-    transactions: any[],
-    categories: any[],
-    currency: string,
-  ) {
+  private calculateExpenseDistribution(transactions: any[], categories: any[], currency: string) {
     let essential = 0;
     let discretionary = 0;
     let uncategorized = 0;
@@ -252,28 +247,26 @@ export class GetDashboardMetricsUseCase {
 
     // Get essential category IDs (you might want to mark categories as essential in your schema)
     const essentialCategoryNames = [
-      "groceries",
-      "utilities",
-      "rent",
-      "mortgage",
-      "insurance",
-      "healthcare",
-      "transportation",
-      "gas",
-      "electricity",
-      "water",
-      "internet",
-      "phone",
+      'groceries',
+      'utilities',
+      'rent',
+      'mortgage',
+      'insurance',
+      'healthcare',
+      'transportation',
+      'gas',
+      'electricity',
+      'water',
+      'internet',
+      'phone',
     ];
 
     const essentialCategoryIds = new Set(
       categories
         .filter((cat) =>
-          essentialCategoryNames.some((name) =>
-            cat.name.toLowerCase().includes(name.toLowerCase()),
-          ),
+          essentialCategoryNames.some((name) => cat.name.toLowerCase().includes(name.toLowerCase()))
         )
-        .map((cat) => cat.id),
+        .map((cat) => cat.id)
     );
 
     for (const transaction of transactions) {
@@ -307,11 +300,7 @@ export class GetDashboardMetricsUseCase {
     };
   }
 
-  private calculateCategoryBreakdown(
-    transactions: any[],
-    categories: any[],
-    currency: string,
-  ) {
+  private calculateCategoryBreakdown(transactions: any[], categories: any[], currency: string) {
     const categoryTotals = new Map<
       string,
       { amount: number; count: number; name: string; type: CategoryType }
@@ -333,10 +322,10 @@ export class GetDashboardMetricsUseCase {
     }
 
     // Add uncategorized
-    categoryTotals.set("uncategorized", {
+    categoryTotals.set('uncategorized', {
       amount: 0,
       count: 0,
-      name: "Uncategorized",
+      name: 'Uncategorized',
       type: CategoryType.DISCRETIONARY, // Default type for uncategorized
     });
 
@@ -347,13 +336,13 @@ export class GetDashboardMetricsUseCase {
       const effectiveAmount = transaction.getEffectiveSplitAmount();
       const amount = Math.abs(effectiveAmount.amount);
       const snapshot = transaction.toSnapshot();
-      const categoryId = snapshot.categoryId || "uncategorized";
+      const categoryId = snapshot.categoryId || 'uncategorized';
 
       // Get or create category entry
       let categoryData = categoryTotals.get(categoryId);
 
       // If category not found (e.g., deleted category), skip
-      if (!categoryData && categoryId !== "uncategorized") {
+      if (!categoryData && categoryId !== 'uncategorized') {
         const category = categoryMap.get(categoryId);
         if (!category) continue;
 
@@ -373,16 +362,15 @@ export class GetDashboardMetricsUseCase {
         const transactionType = snapshot.type;
         const categoryType = categoryData.type;
 
-        const isIncomeMatch = transactionType === TransactionType.INCOME && categoryType === CategoryType.INCOME;
-        const isExpenseMatch = transactionType === TransactionType.EXPENSE && (
-          categoryType === CategoryType.ESSENTIAL ||
-          categoryType === CategoryType.DISCRETIONARY ||
-          categoryType === CategoryType.DEBT_PAYMENT
-        );
-        const isInvestmentMatch = (
+        const isIncomeMatch =
+          transactionType === TransactionType.INCOME && categoryType === CategoryType.INCOME;
+        const isExpenseMatch =
           transactionType === TransactionType.EXPENSE &&
-          categoryType === CategoryType.INVESTMENT
-        );
+          (categoryType === CategoryType.ESSENTIAL ||
+            categoryType === CategoryType.DISCRETIONARY ||
+            categoryType === CategoryType.DEBT_PAYMENT);
+        const isInvestmentMatch =
+          transactionType === TransactionType.EXPENSE && categoryType === CategoryType.INVESTMENT;
 
         if (isIncomeMatch || isExpenseMatch || isInvestmentMatch) {
           // Add effective amount (handles splits and reimbursements)
@@ -407,7 +395,7 @@ export class GetDashboardMetricsUseCase {
       .map(([categoryId, data]) => {
         const totalForType = totalsByType.get(data.type) || 1;
         return {
-          categoryId: categoryId === "uncategorized" ? null : categoryId,
+          categoryId: categoryId === 'uncategorized' ? null : categoryId,
           categoryName: data.name,
           amount: data.amount,
           percentage: (data.amount / totalForType) * 100,
@@ -418,36 +406,33 @@ export class GetDashboardMetricsUseCase {
       })
       .sort((a, b) => b.amount - a.amount);
 
-    console.log('[GetDashboardMetricsUseCase] Calculated breakdown:', JSON.stringify(breakdown, null, 2));
-    console.log('[GetDashboardMetricsUseCase] Breakdown count:', breakdown.length);
-
     return breakdown;
   }
 
   private isEssentialCategory(categoryName: string): boolean {
     const essentialKeywords = [
-      "groceries",
-      "utilities",
-      "rent",
-      "mortgage",
-      "insurance",
-      "healthcare",
-      "transportation",
-      "gas",
-      "electricity",
-      "water",
-      "internet",
-      "phone",
+      'groceries',
+      'utilities',
+      'rent',
+      'mortgage',
+      'insurance',
+      'healthcare',
+      'transportation',
+      'gas',
+      'electricity',
+      'water',
+      'internet',
+      'phone',
     ];
 
     return essentialKeywords.some((keyword) =>
-      categoryName.toLowerCase().includes(keyword.toLowerCase()),
+      categoryName.toLowerCase().includes(keyword.toLowerCase())
     );
   }
 
   private async calculateMonthlyTrend(
     query: DashboardMetricsQuery,
-    currentRange: { startDate: string; endDate: string },
+    currentRange: { startDate: string; endDate: string }
   ) {
     // Calculate trend for the last 6 months or periods
     const trends = [];
@@ -460,24 +445,27 @@ export class GetDashboardMetricsUseCase {
       // Calculate each month going back from the current period
       // i=0 should be 5 months ago, i=5 should be current month
       const monthsBack = periodsToShow - 1 - i;
-      const trendDate = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() - monthsBack, 1);
+      const trendDate = new Date(
+        currentStartDate.getFullYear(),
+        currentStartDate.getMonth() - monthsBack,
+        1
+      );
       const trendEndDate = new Date(trendDate.getFullYear(), trendDate.getMonth() + 1, 0);
 
       const trendRange = {
         startDate: this.formatDate(trendDate),
-        endDate: this.formatDate(trendEndDate)
+        endDate: this.formatDate(trendEndDate),
       };
 
       const startDateResult = TransactionDate.fromString(trendRange.startDate);
       const endDateResult = TransactionDate.fromString(trendRange.endDate);
 
       if (startDateResult.isSuccess() && endDateResult.isSuccess()) {
-        const transactionsResult =
-          await this.transactionRepository.findWithFilters({
-            startDate: startDateResult.getValue(),
-            endDate: endDateResult.getValue(),
-            includeHidden: false,
-          });
+        const transactionsResult = await this.transactionRepository.findWithFilters({
+          startDate: startDateResult.getValue(),
+          endDate: endDateResult.getValue(),
+          includeHidden: false,
+        });
 
         if (transactionsResult.isSuccess()) {
           const { transactions } = transactionsResult.getValue();
@@ -491,14 +479,14 @@ export class GetDashboardMetricsUseCase {
             const periodBalance = this.calculatePeriodBalance(
               computedTransactions,
               query.currency,
-              categories,
+              categories
             );
 
             // Format the month label properly based on the trend date
             const trendStartDate = new Date(trendRange.startDate);
             const monthLabel = trendStartDate.toLocaleDateString('en-US', {
               month: 'short',
-              year: 'numeric'
+              year: 'numeric',
             });
 
             trends.push({
@@ -531,22 +519,23 @@ export class GetDashboardMetricsUseCase {
     const date = new Date(year, month - 1, day); // month is 0-indexed in Date constructor
 
     switch (period) {
-      case "week":
-        return `Week of ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-      case "month":
-        return date.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
+      case 'week':
+        return `Week of ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      case 'month':
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
         });
-      case "quarter":
+      case 'quarter': {
         const quarter = Math.floor(date.getMonth() / 3) + 1;
         return `Q${quarter} ${date.getFullYear()}`;
-      case "year":
+      }
+      case 'year':
         return date.getFullYear().toString();
       default:
-        return date.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
         });
     }
   }
@@ -560,7 +549,7 @@ export class GetDashboardMetricsUseCase {
     }
 
     // Filter out transactions with NO_COMPUTE category type
-    return transactions.filter(transaction => {
+    return transactions.filter((transaction) => {
       const snapshot = transaction.toSnapshot ? transaction.toSnapshot() : transaction;
 
       // If transaction has no category, include it
@@ -581,7 +570,7 @@ export class GetDashboardMetricsUseCase {
         avgTransactionAmount: 0,
         largestTransaction: 0,
         smallestTransaction: 0,
-        mostFrequentMerchant: "N/A",
+        mostFrequentMerchant: 'N/A',
         transactionCountByType: {
           income: 0,
           expense: 0,
@@ -623,7 +612,7 @@ export class GetDashboardMetricsUseCase {
     }
 
     // Find most frequent merchant
-    let mostFrequentMerchant = "N/A";
+    let mostFrequentMerchant = 'N/A';
     let maxCount = 0;
     for (const [merchant, count] of merchantCounts.entries()) {
       if (count > maxCount) {
@@ -636,8 +625,7 @@ export class GetDashboardMetricsUseCase {
       totalCount: transactions.length,
       avgTransactionAmount: totalAmount / transactions.length,
       largestTransaction,
-      smallestTransaction:
-        smallestTransaction === Number.MAX_VALUE ? 0 : smallestTransaction,
+      smallestTransaction: smallestTransaction === Number.MAX_VALUE ? 0 : smallestTransaction,
       mostFrequentMerchant,
       transactionCountByType: typeCounts,
     };

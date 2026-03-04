@@ -1,6 +1,6 @@
-import { Result } from "@domain/shared/Result";
-import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
-import { TransactionType } from "@domain/entities/TransactionType";
+import { Result } from '@domain/shared/Result';
+import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
+import { TransactionType } from '@domain/entities/TransactionType';
 
 export interface LinkSplitTransactionsRequest {
   sourceTransactionId: string; // Can be expense or income
@@ -24,7 +24,7 @@ export class LinkSplitTransactionsUseCase {
 
       // Validate split percentage
       if (splitPercentage < 0 || splitPercentage > 100) {
-        return Result.failWithMessage("Split percentage must be between 0 and 100");
+        return Result.failWithMessage('Split percentage must be between 0 and 100');
       }
 
       // Get both transactions
@@ -38,7 +38,7 @@ export class LinkSplitTransactionsUseCase {
 
       const sourceTransaction = sourceResult.getValue();
       if (!sourceTransaction) {
-        return Result.failWithMessage("Source transaction not found");
+        return Result.failWithMessage('Source transaction not found');
       }
 
       const targetResult = await this.transactionRepository.findById({
@@ -51,7 +51,7 @@ export class LinkSplitTransactionsUseCase {
 
       const targetTransaction = targetResult.getValue();
       if (!targetTransaction) {
-        return Result.failWithMessage("Target transaction not found");
+        return Result.failWithMessage('Target transaction not found');
       }
 
       // Determine which is expense and which is income
@@ -70,9 +70,7 @@ export class LinkSplitTransactionsUseCase {
         expenseTransaction = targetTransaction;
         reimbursementTransaction = sourceTransaction;
       } else {
-        return Result.failWithMessage(
-          "Transactions must be one EXPENSE and one INCOME"
-        );
+        return Result.failWithMessage('Transactions must be one EXPENSE and one INCOME');
       }
 
       // Set split percentage on expense
@@ -88,21 +86,14 @@ export class LinkSplitTransactionsUseCase {
       reimbursementTransaction.markAsReimbursement();
       reimbursementTransaction.linkToTransaction(expenseTransaction.id);
 
-      console.log('[LinkSplit] Before save:', {
-        expenseId: expenseTransaction.id.value,
-        expenseSplit: (expenseTransaction as any).splitPercentage,
-        reimbursementId: reimbursementTransaction.id.value,
-        reimbursementIsReimbursement: (reimbursementTransaction as any).isReimbursement,
-        reimbursementSnapshot: reimbursementTransaction.toSnapshot()
-      });
-
       // Save both transactions
       const saveExpenseResult = await this.transactionRepository.save(expenseTransaction);
       if (saveExpenseResult.isFailure()) {
         return Result.fail(saveExpenseResult.getError());
       }
 
-      const saveReimbursementResult = await this.transactionRepository.save(reimbursementTransaction);
+      const saveReimbursementResult =
+        await this.transactionRepository.save(reimbursementTransaction);
       if (saveReimbursementResult.isFailure()) {
         return Result.fail(saveReimbursementResult.getError());
       }
@@ -110,7 +101,7 @@ export class LinkSplitTransactionsUseCase {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to link split transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to link split transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

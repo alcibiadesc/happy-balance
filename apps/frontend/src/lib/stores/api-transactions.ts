@@ -1,36 +1,12 @@
 import { writable, derived } from 'svelte/store';
 import type { Transaction, Category } from '$lib/types/transaction';
 import { getApiUrl, getAuthHeaders, getAuthHeadersForUpload } from '$lib/utils/api-helpers';
-import {
-  mapApiToTransaction,
-  mapApiToCategory,
-  prepareTransactionUpdatePayload,
-} from '$lib/utils/transaction-mapper';
+import { mapApiToTransaction, mapApiToCategory } from '$lib/utils/transaction-mapper';
 
 const API_BASE = getApiUrl();
 
 // Transaction Store using Backend APIs
 function createApiTransactionStore() {
-  // Start with fake data for debugging
-  const _fakeTransaction: Transaction = {
-    id: 'fake-1',
-    amount: -50,
-    date: '2025-01-15',
-    merchant: 'Test Store',
-    description: 'Test transaction',
-    createdAt: new Date('2025-01-15T00:00:00Z'),
-    time: '12:00:00',
-    categoryId: undefined,
-    category: undefined,
-    status: 'completed' as const,
-    tags: [],
-    patternHash: undefined,
-    hash: undefined,
-    updatedAt: new Date('2025-01-15T00:00:00Z'),
-    hidden: false,
-    observations: undefined,
-  };
-
   const { subscribe, set, update } = writable<Transaction[]>([]);
 
   return {

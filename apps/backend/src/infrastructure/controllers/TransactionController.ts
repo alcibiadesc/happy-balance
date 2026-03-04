@@ -191,10 +191,6 @@ export class TransactionController {
         transactionDescription: snapshot.description || undefined,
         transactionCounterparty: snapshot.merchant || undefined,
       });
-
-      console.log(
-        `📈 Investment synced for transaction ${snapshot.id} → category ${category.name}`
-      );
     } catch (error) {
       console.error('Failed to sync investment from transaction:', error);
     }

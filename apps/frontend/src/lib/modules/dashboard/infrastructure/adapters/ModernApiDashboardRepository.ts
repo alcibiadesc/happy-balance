@@ -80,15 +80,6 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
       const result: ApiResponse<any> = await response.json();
 
-      console.log('[Dashboard API] Response for', url, ':', {
-        success: result.success,
-        hasData: !!result.data,
-        dataKeys: result.data ? Object.keys(result.data) : [],
-        summary: result.data?.summary,
-        hasTrend: !!result.data?.monthlyTrend,
-        trendCount: result.data?.monthlyTrend?.length,
-      });
-
       if (!result.success || !result.data) {
         return this.getEmptyDashboardData(period, currency);
       }
@@ -206,13 +197,6 @@ export class ModernApiDashboardRepository implements DashboardRepository {
       // Backend wraps as { success, data: { months, count, data: [...] } }
       const payload = result.data;
       const items = Array.isArray(payload) ? payload : payload?.data || [];
-      console.log('[Dashboard API] getHistory:', {
-        payloadType: typeof payload,
-        isArray: Array.isArray(payload),
-        payloadKeys: payload && !Array.isArray(payload) ? Object.keys(payload) : 'array',
-        itemsCount: items.length,
-        firstItem: items[0] ? JSON.stringify(items[0]).substring(0, 200) : 'none',
-      });
       return items;
     } catch (_error) {
       console.error('[Dashboard] Error fetching history:', _error);

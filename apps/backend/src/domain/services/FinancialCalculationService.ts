@@ -1,9 +1,9 @@
-import { Transaction } from "../entities/Transaction";
-import { Money } from "../value-objects/Money";
-import { SignedMoney } from "../value-objects/SignedMoney";
-import { TransactionDate } from "../value-objects/TransactionDate";
-import { TransactionType } from "../entities/TransactionType";
-import { Result } from "../shared/Result";
+import { Transaction } from '../entities/Transaction';
+import { Money } from '../value-objects/Money';
+import { SignedMoney } from '../value-objects/SignedMoney';
+import { TransactionDate } from '../value-objects/TransactionDate';
+import { TransactionType } from '../entities/TransactionType';
+import { Result } from '../shared/Result';
 
 export interface FinancialSummary {
   totalIncome: Money;
@@ -49,12 +49,10 @@ export class FinancialCalculationService {
     transactions: Transaction[],
     period: DatePeriod,
     currency: string,
-    categories?: Map<string, any>, // categoryId -> category object
+    categories?: Map<string, any> // categoryId -> category object
   ): Result<FinancialSummary> {
     const filteredTransactions = transactions.filter(
-      (t) =>
-        t.isInDateRange(period.startDate, period.endDate) &&
-        t.amount.currency === currency,
+      (t) => t.isInDateRange(period.startDate, period.endDate) && t.amount.currency === currency
     );
 
     const zeroMoney = Money.zero(currency);
@@ -77,61 +75,45 @@ export class FinancialCalculationService {
         effectiveAmount.currency
       ).getValue();
 
-      // Debug: Log split transactions
-      if ((transaction as any).isReimbursement || (transaction as any).splitPercentage) {
-        console.log('[FinancialCalc] Split/Reimb transaction:', {
-          id: transaction.id.value,
-          type: transaction.type,
-          originalAmount: transaction.amount.amount,
-          effectiveAmount: effectiveAmount.amount,
-          isReimbursement: (transaction as any).isReimbursement,
-          splitPercentage: (transaction as any).splitPercentage,
-          linkedTransactionId: (transaction as any).linkedTransactionId?.value
-        });
-      }
-
       switch (transaction.type) {
-        case TransactionType.INCOME:
+        case TransactionType.INCOME: {
           // Reimbursements return 0 from getEffectiveSplitAmount, so they won't count as income
           const incomeResult = totalIncome.add(absoluteAmount);
-          if (incomeResult.isFailure())
-            return Result.fail(incomeResult.getError());
+          if (incomeResult.isFailure()) return Result.fail(incomeResult.getError());
           totalIncome = incomeResult.getValue();
           break;
+        }
 
-        case TransactionType.EXPENSE:
+        case TransactionType.EXPENSE: {
           // Check if this expense is a debt payment
           const isDebtPayment =
             categories &&
             transaction.categoryId &&
-            categories.get(transaction.categoryId.value)?.type ===
-              "debt_payment";
+            categories.get(transaction.categoryId.value)?.type === 'debt_payment';
 
           if (isDebtPayment) {
             const debtResult = totalDebtPayments.add(absoluteAmount);
-            if (debtResult.isFailure())
-              return Result.fail(debtResult.getError());
+            if (debtResult.isFailure()) return Result.fail(debtResult.getError());
             totalDebtPayments = debtResult.getValue();
           } else {
             const expenseResult = totalExpenses.add(absoluteAmount);
-            if (expenseResult.isFailure())
-              return Result.fail(expenseResult.getError());
+            if (expenseResult.isFailure()) return Result.fail(expenseResult.getError());
             totalExpenses = expenseResult.getValue();
           }
           break;
+        }
 
-        case TransactionType.INVESTMENT:
+        case TransactionType.INVESTMENT: {
           const investmentResult = totalInvestments.add(absoluteAmount);
-          if (investmentResult.isFailure())
-            return Result.fail(investmentResult.getError());
+          if (investmentResult.isFailure()) return Result.fail(investmentResult.getError());
           totalInvestments = investmentResult.getValue();
           break;
+        }
       }
     }
 
     // Calculate balance (income - expenses - investments - debt payments)
     // Use SignedMoney to allow negative balances
-    console.log("About to calculate balance with SignedMoney...");
     const signedIncome = SignedMoney.fromMoney(totalIncome);
     const balanceStep1 = signedIncome.subtract(totalExpenses);
     if (balanceStep1.isFailure()) return Result.fail(balanceStep1.getError());
@@ -147,7 +129,7 @@ export class FinancialCalculationService {
       totalIncome,
       totalExpenses,
       totalInvestments,
-      totalDebtPayments,
+      totalDebtPayments
     );
 
     return Result.ok({
@@ -169,14 +151,14 @@ export class FinancialCalculationService {
     categories: Map<string, string>, // categoryId -> categoryName
     period: DatePeriod,
     currency: string,
-    transactionType: TransactionType = TransactionType.EXPENSE,
+    transactionType: TransactionType = TransactionType.EXPENSE
   ): Result<CategoryBreakdown[]> {
     const filteredTransactions = transactions.filter(
       (t) =>
         t.isInDateRange(period.startDate, period.endDate) &&
         t.amount.currency === currency &&
         t.type === transactionType &&
-        t.categoryId,
+        t.categoryId
     );
 
     const categoryTotals = new Map<
@@ -223,11 +205,9 @@ export class FinancialCalculationService {
     const breakdown: CategoryBreakdown[] = [];
 
     for (const [categoryId, data] of categoryTotals.entries()) {
-      const categoryName = categories.get(categoryId) || "Unknown Category";
+      const categoryName = categories.get(categoryId) || 'Unknown Category';
       const percentage =
-        totalAmount.amount > 0
-          ? (data.amount.amount / totalAmount.amount) * 100
-          : 0;
+        totalAmount.amount > 0 ? (data.amount.amount / totalAmount.amount) * 100 : 0;
 
       breakdown.push({
         categoryName,
@@ -250,17 +230,12 @@ export class FinancialCalculationService {
     transactions: Transaction[],
     periods: DatePeriod[],
     currency: string,
-    categories?: Map<string, any>,
+    categories?: Map<string, any>
   ): Result<TrendData[]> {
     const trends: TrendData[] = [];
 
     for (const period of periods) {
-      const summaryResult = this.calculateSummary(
-        transactions,
-        period,
-        currency,
-        categories,
-      );
+      const summaryResult = this.calculateSummary(transactions, period, currency, categories);
       if (summaryResult.isFailure()) {
         return Result.fail(summaryResult.getError());
       }
@@ -282,19 +257,13 @@ export class FinancialCalculationService {
   /**
    * Calculate spending rate (how much of income is spent)
    */
-  calculateSpendingRate(
-    income: Money,
-    expenses: Money,
-    baseAmount = 10,
-  ): Result<number> {
+  calculateSpendingRate(income: Money, expenses: Money, baseAmount = 10): Result<number> {
     if (income.amount <= 0) {
       return Result.ok(0);
     }
 
     if (income.currency !== expenses.currency) {
-      return Result.failWithMessage(
-        "Cannot calculate spending rate for different currencies",
-      );
+      return Result.failWithMessage('Cannot calculate spending rate for different currencies');
     }
 
     const rate = (expenses.amount / income.amount) * baseAmount;
@@ -309,7 +278,7 @@ export class FinancialCalculationService {
     essentialCategoryIds: Set<string>,
     period: DatePeriod,
     currency: string,
-    categories?: Map<string, any>,
+    categories?: Map<string, any>
   ): Result<{
     essential: Money;
     discretionary: Money;
@@ -322,7 +291,7 @@ export class FinancialCalculationService {
       (t) =>
         t.type === TransactionType.EXPENSE &&
         t.isInDateRange(period.startDate, period.endDate) &&
-        t.amount.currency === currency,
+        t.amount.currency === currency
     );
 
     const zero = Money.zero(currency);
@@ -336,7 +305,7 @@ export class FinancialCalculationService {
       const isDebtPayment =
         categories &&
         transaction.categoryId &&
-        categories.get(transaction.categoryId.value)?.type === "debt_payment";
+        categories.get(transaction.categoryId.value)?.type === 'debt_payment';
 
       if (isDebtPayment) {
         const result = debtPaymentTotal.add(transaction.amount);
@@ -344,8 +313,7 @@ export class FinancialCalculationService {
         debtPaymentTotal = result.getValue();
       } else {
         const isEssential =
-          transaction.categoryId &&
-          essentialCategoryIds.has(transaction.categoryId.value);
+          transaction.categoryId && essentialCategoryIds.has(transaction.categoryId.value);
 
         if (isEssential) {
           const result = essentialTotal.add(transaction.amount);
@@ -360,15 +328,13 @@ export class FinancialCalculationService {
     }
 
     const totalExpensesStep1 = essentialTotal.add(discretionaryTotal);
-    if (totalExpensesStep1.isFailure())
-      return Result.fail(totalExpensesStep1.getError());
+    if (totalExpensesStep1.isFailure()) return Result.fail(totalExpensesStep1.getError());
 
     const totalExpenses = totalExpensesStep1.getValue().add(debtPaymentTotal);
     if (totalExpenses.isFailure()) return Result.fail(totalExpenses.getError());
 
     const total = totalExpenses.getValue();
-    const essentialPercentage =
-      total.amount > 0 ? (essentialTotal.amount / total.amount) * 100 : 0;
+    const essentialPercentage = total.amount > 0 ? (essentialTotal.amount / total.amount) * 100 : 0;
     const discretionaryPercentage =
       total.amount > 0 ? (discretionaryTotal.amount / total.amount) * 100 : 0;
     const debtPaymentPercentage =
@@ -390,7 +356,7 @@ export class FinancialCalculationService {
   generatePeriods(
     startDate: TransactionDate,
     endDate: TransactionDate,
-    periodType: "month" | "quarter" | "year",
+    periodType: 'month' | 'quarter' | 'year'
   ): Result<DatePeriod[]> {
     const periods: DatePeriod[] = [];
     let currentDate = startDate;
@@ -400,46 +366,46 @@ export class FinancialCalculationService {
       let label: string;
 
       switch (periodType) {
-        case "month":
+        case 'month': {
           const monthEnd = new Date(currentDate.value);
           monthEnd.setMonth(monthEnd.getMonth() + 1);
           monthEnd.setDate(0); // Last day of current month
 
           const monthEndResult = TransactionDate.create(monthEnd);
-          if (monthEndResult.isFailure())
-            return Result.fail(monthEndResult.getError());
+          if (monthEndResult.isFailure()) return Result.fail(monthEndResult.getError());
           nextDate = monthEndResult.getValue();
 
-          label = currentDate.value.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
+          label = currentDate.value.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
           });
           break;
+        }
 
-        case "quarter":
+        case 'quarter': {
           const quarterEnd = new Date(currentDate.value);
           quarterEnd.setMonth(quarterEnd.getMonth() + 3);
           quarterEnd.setDate(0);
 
           const quarterEndResult = TransactionDate.create(quarterEnd);
-          if (quarterEndResult.isFailure())
-            return Result.fail(quarterEndResult.getError());
+          if (quarterEndResult.isFailure()) return Result.fail(quarterEndResult.getError());
           nextDate = quarterEndResult.getValue();
 
           const quarter = Math.ceil(currentDate.getMonth() / 3);
           label = `Q${quarter} ${currentDate.getYear()}`;
           break;
+        }
 
-        case "year":
+        case 'year': {
           const yearEnd = new Date(currentDate.getYear(), 11, 31);
 
           const yearEndResult = TransactionDate.create(yearEnd);
-          if (yearEndResult.isFailure())
-            return Result.fail(yearEndResult.getError());
+          if (yearEndResult.isFailure()) return Result.fail(yearEndResult.getError());
           nextDate = yearEndResult.getValue();
 
           label = currentDate.getYear().toString();
           break;
+        }
       }
 
       periods.push({
@@ -461,7 +427,7 @@ export class FinancialCalculationService {
     income: Money,
     expenses: Money,
     investments: Money,
-    debtPayments: Money,
+    debtPayments: Money
   ): number {
     if (income.amount <= 0) {
       return 0;

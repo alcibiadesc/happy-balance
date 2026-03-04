@@ -27,15 +27,6 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     try {
       const snapshot = transaction.toSnapshot();
 
-      console.log('[PrismaRepo] Saving transaction:', {
-        id: snapshot.id,
-        type: snapshot.type,
-        amount: snapshot.amount,
-        splitPercentage: snapshot.splitPercentage,
-        linkedTransactionId: snapshot.linkedTransactionId,
-        isReimbursement: snapshot.isReimbursement,
-      });
-
       await this.prisma.transaction.upsert({
         where: { id: snapshot.id },
         update: {
@@ -788,17 +779,6 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       linkedTransactionId: prismaTransaction.linkedTransactionId || undefined,
       isReimbursement: prismaTransaction.isReimbursement,
     };
-
-    if (snapshot.isReimbursement || snapshot.splitPercentage) {
-      console.log('[PrismaRepo] Mapped split/reimbursement transaction:', {
-        id: snapshot.id,
-        type: snapshot.type,
-        amount: snapshot.amount,
-        splitPercentage: snapshot.splitPercentage,
-        linkedTransactionId: snapshot.linkedTransactionId,
-        isReimbursement: snapshot.isReimbursement,
-      });
-    }
 
     const result = Transaction.fromSnapshot(snapshot);
     if (result.isSuccess()) {

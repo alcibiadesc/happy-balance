@@ -120,7 +120,7 @@ export const exportTypeLabels: Record<ExportType, string> = {
 // Store Factory
 // ============================================================================
 
-export function createSettingsStore(apiBase: string) {
+export function createSettingsStore(_apiBase: string) {
   // Store values
   let currentTheme = $state(get(effectiveTheme));
   let currentLangCode = $state(get(currentLanguage));

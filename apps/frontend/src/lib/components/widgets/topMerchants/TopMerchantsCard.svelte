@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Store, DollarSign, TrendingUp } from 'lucide-svelte';
-  import type { ComponentType } from 'svelte';
   import { t } from '$lib/stores/i18n';
 
   interface CategoryData {

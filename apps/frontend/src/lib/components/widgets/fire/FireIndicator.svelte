@@ -37,7 +37,7 @@
   // User-adjustable settings with persistence
   let withdrawalRateInput = $state('4');
   let customMonthlyExpenses = $state<number | null>(null);
-  let settingsLoaded = $state(false);
+  let _settingsLoaded = $state(false);
 
   // Load from widget settings on mount
   onMount(async () => {
@@ -50,7 +50,7 @@
         customMonthlyExpenses = saved.targetExpenses;
       }
     }
-    settingsLoaded = true;
+    _settingsLoaded = true;
   });
 
   // Save settings (debounced)
