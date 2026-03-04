@@ -16,6 +16,7 @@ import {
   successResponse,
   createdResponse,
 } from '@infrastructure/errors';
+import { mapCategoryToDTO } from '@infrastructure/mappers/CategoryMapper';
 
 // Validation schemas
 const CreateCategorySchema = z.object({
@@ -89,9 +90,8 @@ export class CategoryController {
 
     const result = await this.categoryRepository.findWithFilters(filters);
     const categories = handleResult(result, 'Failed to fetch categories');
-    const categorySnapshots = categories.map((cat) => cat.toSnapshot());
 
-    successResponse(res, categorySnapshots);
+    successResponse(res, categories.map(mapCategoryToDTO));
   }
 
   /**
@@ -104,7 +104,7 @@ export class CategoryController {
     const result = await this.categoryRepository.findById(categoryId);
     const category = handleFindResult(result, 'Category');
 
-    successResponse(res, category.toSnapshot());
+    successResponse(res, mapCategoryToDTO(category));
   }
 
   /**
@@ -158,7 +158,7 @@ export class CategoryController {
       }
     }
 
-    createdResponse(res, category.toSnapshot());
+    createdResponse(res, mapCategoryToDTO(category));
   }
 
   /**
@@ -191,7 +191,7 @@ export class CategoryController {
       await this.syncService.onCategoryUpdated(updatedCategory);
     }
 
-    successResponse(res, updatedCategory.toSnapshot());
+    successResponse(res, mapCategoryToDTO(updatedCategory));
   }
 
   /**

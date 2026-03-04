@@ -6,6 +6,7 @@ import { IUserRepository } from '@domain/repositories/IUserRepository';
 import { User, UserRole } from '@domain/entities/User';
 import { AuthRequest } from '@infrastructure/middleware/auth';
 import { UserPreferencesRepository } from '@domain/repositories/UserPreferencesRepository';
+import { mapUserToDTO } from '@infrastructure/mappers/UserMapper';
 
 const CreateUserSchema = z.object({
   username: z.string().min(3).max(50),
@@ -44,7 +45,7 @@ export class UserManagementController {
         });
       }
 
-      const users = usersResult.getValue().map((user) => user.toDTO());
+      const users = usersResult.getValue().map((user) => mapUserToDTO(user));
 
       res.json({
         success: true,
@@ -143,7 +144,7 @@ export class UserManagementController {
       res.status(201).json({
         success: true,
         data: {
-          user: createdUser.toDTO(),
+          user: mapUserToDTO(createdUser),
           tempPassword: password, // Return temp password to admin
         },
       });
@@ -214,7 +215,7 @@ export class UserManagementController {
 
       res.json({
         success: true,
-        data: updateResult.getValue().toDTO(),
+        data: mapUserToDTO(updateResult.getValue()),
       });
     } catch (error) {
       console.error('Update user error:', error);

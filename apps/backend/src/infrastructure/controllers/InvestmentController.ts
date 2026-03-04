@@ -26,6 +26,7 @@ import {
   successResponse,
   createdResponse,
 } from '@infrastructure/errors';
+// Mappers available at @infrastructure/mappers/InvestmentMapper for future DTO adoption
 
 // Validation Schemas
 const CreateInvestmentSchema = z.object({

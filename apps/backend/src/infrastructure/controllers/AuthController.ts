@@ -3,25 +3,26 @@ import { z } from 'zod';
 import { AuthenticationService } from '@domain/services/AuthenticationService';
 import { IUserRepository } from '@domain/repositories/IUserRepository';
 import { User } from '@domain/entities/User';
+import { mapUserToDTO } from '@infrastructure/mappers/UserMapper';
 
 const LoginSchema = z.object({
   username: z.string().min(1).max(50),
-  password: z.string().min(1)
+  password: z.string().min(1),
 });
 
 const RefreshTokenSchema = z.object({
-  refreshToken: z.string()
+  refreshToken: z.string(),
 });
 
 const ChangePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(4).max(100)
+  newPassword: z.string().min(4).max(100),
 });
 
 const ResetPasswordChangeSchema = z.object({
   userId: z.string(),
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(4).max(100)
+  newPassword: z.string().min(4).max(100),
 });
 
 export class AuthController {
@@ -38,7 +39,7 @@ export class AuthController {
         return res.status(400).json({
           success: false,
           error: 'Invalid request data',
-          details: validationResult.error.errors
+          details: validationResult.error.errors,
         });
       }
 
@@ -49,7 +50,7 @@ export class AuthController {
       if (userResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to process login'
+          error: 'Failed to process login',
         });
       }
 
@@ -57,7 +58,7 @@ export class AuthController {
       if (!user) {
         return res.status(401).json({
           success: false,
-          error: 'Invalid credentials'
+          error: 'Invalid credentials',
         });
       }
 
@@ -65,7 +66,7 @@ export class AuthController {
       if (!user.isActive) {
         return res.status(403).json({
           success: false,
-          error: 'Account is disabled'
+          error: 'Account is disabled',
         });
       }
 
@@ -74,7 +75,7 @@ export class AuthController {
       if (passwordResult.isFailure() || !passwordResult.getValue()) {
         return res.status(401).json({
           success: false,
-          error: 'Invalid credentials'
+          error: 'Invalid credentials',
         });
       }
 
@@ -86,8 +87,8 @@ export class AuthController {
           message: 'Password change required',
           data: {
             userId: user.id,
-            username: user.username
-          }
+            username: user.username,
+          },
         });
       }
 
@@ -96,7 +97,7 @@ export class AuthController {
       if (tokensResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to generate tokens'
+          error: 'Failed to generate tokens',
         });
       }
 
@@ -109,14 +110,14 @@ export class AuthController {
         data: {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
-          user: user.toDTO()
-        }
+          user: mapUserToDTO(user),
+        },
       });
     } catch (error) {
       console.error('Login error:', error);
       return res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -128,7 +129,7 @@ export class AuthController {
         return res.status(400).json({
           success: false,
           error: 'Invalid request data',
-          details: validationResult.error.errors
+          details: validationResult.error.errors,
         });
       }
 
@@ -139,7 +140,7 @@ export class AuthController {
       if (payloadResult.isFailure()) {
         return res.status(401).json({
           success: false,
-          error: 'Invalid or expired refresh token'
+          error: 'Invalid or expired refresh token',
         });
       }
 
@@ -150,7 +151,7 @@ export class AuthController {
       if (userResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to process refresh'
+          error: 'Failed to process refresh',
         });
       }
 
@@ -158,7 +159,7 @@ export class AuthController {
       if (!user || !user.isActive) {
         return res.status(403).json({
           success: false,
-          error: 'User not found or inactive'
+          error: 'User not found or inactive',
         });
       }
 
@@ -167,7 +168,7 @@ export class AuthController {
       if (tokensResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to generate tokens'
+          error: 'Failed to generate tokens',
         });
       }
 
@@ -176,14 +177,14 @@ export class AuthController {
         success: true,
         data: {
           accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken
-        }
+          refreshToken: tokens.refreshToken,
+        },
       });
     } catch (error) {
       console.error('Token refresh error:', error);
       return res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -195,7 +196,7 @@ export class AuthController {
         return res.status(400).json({
           success: false,
           error: 'Invalid request data',
-          details: validationResult.error.errors
+          details: validationResult.error.errors,
         });
       }
 
@@ -205,7 +206,7 @@ export class AuthController {
       if (!userId) {
         return res.status(401).json({
           success: false,
-          error: 'Unauthorized'
+          error: 'Unauthorized',
         });
       }
 
@@ -214,7 +215,7 @@ export class AuthController {
       if (userResult.isFailure() || !userResult.getValue()) {
         return res.status(404).json({
           success: false,
-          error: 'User not found'
+          error: 'User not found',
         });
       }
 
@@ -225,7 +226,7 @@ export class AuthController {
       if (passwordResult.isFailure() || !passwordResult.getValue()) {
         return res.status(401).json({
           success: false,
-          error: 'Current password is incorrect'
+          error: 'Current password is incorrect',
         });
       }
 
@@ -234,7 +235,7 @@ export class AuthController {
       if (hashResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to update password'
+          error: 'Failed to update password',
         });
       }
 
@@ -243,26 +244,26 @@ export class AuthController {
         ...user.toDTO(),
         password: hashResult.getValue(),
         mustChangePassword: false,
-        passwordResetAt: undefined
+        passwordResetAt: undefined,
       });
 
       const updateResult = await this.userRepository.update(updatedUser);
       if (updateResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to update password'
+          error: 'Failed to update password',
         });
       }
 
       return res.json({
         success: true,
-        message: 'Password changed successfully'
+        message: 'Password changed successfully',
       });
     } catch (error) {
       console.error('Change password error:', error);
       return res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -274,7 +275,7 @@ export class AuthController {
         return res.status(400).json({
           success: false,
           error: 'Invalid request data',
-          details: validationResult.error.errors
+          details: validationResult.error.errors,
         });
       }
 
@@ -285,7 +286,7 @@ export class AuthController {
       if (userResult.isFailure() || !userResult.getValue()) {
         return res.status(404).json({
           success: false,
-          error: 'User not found'
+          error: 'User not found',
         });
       }
 
@@ -295,7 +296,7 @@ export class AuthController {
       if (!user.mustChangePassword) {
         return res.status(400).json({
           success: false,
-          error: 'Password change not required'
+          error: 'Password change not required',
         });
       }
 
@@ -304,7 +305,7 @@ export class AuthController {
       if (passwordResult.isFailure() || !passwordResult.getValue()) {
         return res.status(401).json({
           success: false,
-          error: 'Current password is incorrect'
+          error: 'Current password is incorrect',
         });
       }
 
@@ -313,7 +314,7 @@ export class AuthController {
       if (hashResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to update password'
+          error: 'Failed to update password',
         });
       }
 
@@ -322,14 +323,14 @@ export class AuthController {
         ...user.toDTO(),
         password: hashResult.getValue(),
         mustChangePassword: false,
-        passwordResetAt: undefined
+        passwordResetAt: undefined,
       });
 
       const updateResult = await this.userRepository.update(updatedUser);
       if (updateResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to update password'
+          error: 'Failed to update password',
         });
       }
 
@@ -338,7 +339,7 @@ export class AuthController {
       if (tokensResult.isFailure()) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to generate tokens'
+          error: 'Failed to generate tokens',
         });
       }
 
@@ -352,14 +353,14 @@ export class AuthController {
         data: {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
-          user: updatedUser.toDTO()
-        }
+          user: mapUserToDTO(updatedUser),
+        },
       });
     } catch (error) {
       console.error('Reset password change error:', error);
       return res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -369,7 +370,7 @@ export class AuthController {
     // by removing the tokens. This endpoint is for audit/tracking purposes.
     return res.json({
       success: true,
-      message: 'Logged out successfully'
+      message: 'Logged out successfully',
     });
   }
 
@@ -380,7 +381,7 @@ export class AuthController {
       if (!userId) {
         return res.status(401).json({
           success: false,
-          error: 'Unauthorized'
+          error: 'Unauthorized',
         });
       }
 
@@ -388,20 +389,20 @@ export class AuthController {
       if (userResult.isFailure() || !userResult.getValue()) {
         return res.status(404).json({
           success: false,
-          error: 'User not found'
+          error: 'User not found',
         });
       }
 
       const user = userResult.getValue()!;
       return res.json({
         success: true,
-        data: user.toDTO()
+        data: mapUserToDTO(user),
       });
     } catch (error) {
       console.error('Get current user error:', error);
       return res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }

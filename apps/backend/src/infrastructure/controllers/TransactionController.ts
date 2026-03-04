@@ -29,6 +29,7 @@ import {
   successResponse,
   createdResponse,
 } from '@infrastructure/errors';
+import { mapTransactionToDTO } from '@infrastructure/mappers/TransactionMapper';
 
 // Validation Schemas
 const CreateTransactionSchema = z.object({
@@ -226,16 +227,11 @@ export class TransactionController {
   }
 
   /**
-   * Format transaction response with hidden field
+   * Format transaction response using shared TransactionDTO type.
+   * Amount is ALWAYS positive; `type` determines sign semantics.
    */
-  private formatTransactionResponse(transaction: Transaction): any {
-    return {
-      ...transaction.toSnapshot(),
-      hidden: (transaction as any).hidden || false,
-      splitPercentage: (transaction as any).splitPercentage,
-      linkedTransactionId: (transaction as any).linkedTransactionId,
-      isReimbursement: (transaction as any).isReimbursement || false,
-    };
+  private formatTransactionResponse(transaction: Transaction) {
+    return mapTransactionToDTO(transaction);
   }
 
   async createTransaction(req: Request, res: Response): Promise<void> {
