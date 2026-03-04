@@ -4,7 +4,7 @@
   interface Investment {
     id: string;
     name: string;
-    symbol?: string;
+    symbol?: string | null;
     icon: string;
     color: string;
     currentValue: number;

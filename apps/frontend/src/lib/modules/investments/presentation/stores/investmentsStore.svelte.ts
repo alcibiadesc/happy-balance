@@ -95,7 +95,7 @@ export function createInvestmentsStore() {
     amount: number;
     date: string;
     notes: string;
-    type: string;
+    type: InvestmentHistoryType;
   } | null>(null);
 
   // Constants
@@ -414,7 +414,7 @@ export function createInvestmentsStore() {
   // History entry editing
   function startEditHistoryEntry(
     investmentId: string,
-    entry: { id: string; amount: number; date: string; notes?: string; type: string }
+    entry: { id: string; amount: number; date: string; notes?: string; type: InvestmentHistoryType }
   ) {
     editingHistoryEntry = {
       investmentId,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Infinity } from 'lucide-svelte';
+  import { Infinity as InfinityIcon } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
   import { widgetSettings } from '$lib/stores/widget-settings';
   import { onMount } from 'svelte';
@@ -36,7 +36,6 @@
   // User-adjustable settings with persistence
   let withdrawalRateInput = $state('4');
   let customMonthlyExpenses = $state<number | null>(null);
-  let _settingsLoaded = $state(false);
 
   // Load from widget settings on mount
   onMount(async () => {
@@ -49,7 +48,6 @@
         customMonthlyExpenses = saved.targetExpenses;
       }
     }
-    _settingsLoaded = true;
   });
 
   // Save settings (debounced)
@@ -164,7 +162,7 @@
   <div class="header">
     <div class="title-section">
       <div class="icon-wrapper">
-        <Infinity size={18} strokeWidth={1.5} />
+        <InfinityIcon size={18} strokeWidth={1.5} />
       </div>
       <div class="title-text">
         <h3>{$t('dashboard.fire.title') || 'FIRE'}</h3>

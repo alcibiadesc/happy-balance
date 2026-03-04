@@ -11,13 +11,15 @@
     ExternalLink,
   } from 'lucide-svelte';
 
+  type InvestmentHistoryType = 'CONTRIBUTION' | 'WITHDRAWAL' | 'VALUE_UPDATE';
+
   interface HistoryEntry {
     id: string;
     date: string;
-    type: 'CONTRIBUTION' | 'WITHDRAWAL' | 'VALUE_UPDATE';
+    type: InvestmentHistoryType;
     amount: number;
-    notes?: string;
-    transactionId?: string;
+    notes?: string | null;
+    transactionId?: string | null;
   }
 
   interface Investment {
@@ -25,7 +27,7 @@
     name: string;
     icon: string;
     color: string;
-    symbol?: string;
+    symbol?: string | null;
     currentValue: number;
     netContributions: number;
     profit: number;
@@ -36,7 +38,7 @@
   interface EditingHistoryEntry {
     historyId: string;
     date: string;
-    type: 'CONTRIBUTION' | 'WITHDRAWAL' | 'VALUE_UPDATE';
+    type: InvestmentHistoryType;
     amount: number;
     notes: string;
   }
@@ -47,8 +49,8 @@
     formatCurrency: (amount: number) => string;
     formatPercentage: (value: number) => string;
     formatDate: (date: string) => string;
-    getHistoryTypeLabel: (type: string) => string;
-    getHistoryTypeColor: (type: string) => string;
+    getHistoryTypeLabel: (type: InvestmentHistoryType) => string;
+    getHistoryTypeColor: (type: InvestmentHistoryType) => string;
     onBack: () => void;
     onAddHistory: () => void;
     onStartEditHistoryEntry: (entry: HistoryEntry) => void;

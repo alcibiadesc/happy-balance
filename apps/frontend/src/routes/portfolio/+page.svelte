@@ -15,7 +15,7 @@
   import ConfirmModal from '$lib/components/organisms/ConfirmModal.svelte';
 
   // Store
-  import { createInvestmentsStore } from '$lib/modules/investments/presentation/stores/investmentsStore.svelte.ts';
+  import { createInvestmentsStore } from '$lib/modules/investments/presentation/stores/investmentsStore.svelte';
 
   const store = createInvestmentsStore();
 
