@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import { AuthController } from '@infrastructure/controllers/AuthController';
+import { MagicLinkController } from '@infrastructure/controllers/MagicLinkController';
 import { authenticate } from '@infrastructure/middleware/auth';
 
-export function createAuthRoutes(authController: AuthController): Router {
+export function createAuthRoutes(
+  authController: AuthController,
+  magicLinkController?: MagicLinkController
+): Router {
   const router = Router();
 
   /**
@@ -110,7 +114,9 @@ export function createAuthRoutes(authController: AuthController): Router {
    *       200:
    *         description: Password changed successfully
    */
-  router.post('/change-password', authenticate, (req, res) => authController.changePassword(req, res));
+  router.post('/change-password', authenticate, (req, res) =>
+    authController.changePassword(req, res)
+  );
 
   /**
    * @swagger
@@ -154,6 +160,56 @@ export function createAuthRoutes(authController: AuthController): Router {
    *         description: Current user info
    */
   router.get('/me', authenticate, (req, res) => authController.me(req, res));
+
+  // Magic link routes (only if controller is provided)
+  if (magicLinkController) {
+    /**
+     * @swagger
+     * /api/auth/magic-link:
+     *   post:
+     *     tags: [Auth]
+     *     summary: Request a magic link
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - email
+     *             properties:
+     *               email:
+     *                 type: string
+     *                 format: email
+     *     responses:
+     *       200:
+     *         description: Magic link sent
+     */
+    router.post('/magic-link', (req, res) => magicLinkController.requestMagicLink(req, res));
+
+    /**
+     * @swagger
+     * /api/auth/verify-magic-link:
+     *   post:
+     *     tags: [Auth]
+     *     summary: Verify a magic link token
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - token
+     *             properties:
+     *               token:
+     *                 type: string
+     *     responses:
+     *       200:
+     *         description: Token verified
+     */
+    router.post('/verify-magic-link', (req, res) => magicLinkController.verifyMagicLink(req, res));
+  }
 
   return router;
 }

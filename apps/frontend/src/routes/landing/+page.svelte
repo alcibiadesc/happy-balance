@@ -21,7 +21,7 @@
       salud financiera en un solo lugar.
     </p>
     <div class="hero-actions">
-      <a href="/login" class="btn-primary">Empezar gratis</a>
+      <a href="/login" class="btn-primary">Acceder</a>
     </div>
   </div>
 </section>
