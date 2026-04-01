@@ -6,6 +6,7 @@ import { Money } from '@domain/value-objects/Money';
 import { Merchant } from '@domain/value-objects/Merchant';
 import { TransactionType } from '@domain/entities/TransactionType';
 import { Transaction } from '@domain/entities/Transaction';
+import { CategoryId } from '@domain/entities/Category';
 import { CategoryType } from '@domain/entities/CategoryType';
 import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
 import { ICategoryRepository } from '@domain/repositories/ICategoryRepository';
@@ -171,22 +172,52 @@ export class TransactionController {
     categoryId: string | undefined
   ): Promise<void> {
     if (!this.syncInvestmentUseCase || !this.categoryRepository || !categoryId || !this.userId) {
+      if (!categoryId) return; // No category to sync - expected, not an error
+      console.warn('[InvestmentSync] Skipped: missing dependencies', {
+        hasSyncUseCase: !!this.syncInvestmentUseCase,
+        hasCategoryRepo: !!this.categoryRepository,
+        hasUserId: !!this.userId,
+        categoryId,
+      });
       return;
     }
 
     try {
-      const categoryResult = await this.categoryRepository.findById({ value: categoryId } as any);
-      if (categoryResult.isFailure() || !categoryResult.getValue()) {
+      const categoryIdVO = CategoryId.create(categoryId);
+      if (categoryIdVO.isFailure()) {
+        console.error('[InvestmentSync] Invalid categoryId:', categoryId, categoryIdVO.getError());
         return;
       }
 
-      const category = categoryResult.getValue()!;
-      if (category.type !== CategoryType.INVESTMENT) {
+      const categoryResult = await this.categoryRepository.findById(categoryIdVO.getValue());
+      if (categoryResult.isFailure()) {
+        console.error(
+          '[InvestmentSync] Failed to fetch category:',
+          categoryId,
+          categoryResult.getError()
+        );
         return;
+      }
+
+      const category = categoryResult.getValue();
+      if (!category) {
+        console.warn('[InvestmentSync] Category not found:', categoryId);
+        return;
+      }
+
+      if (category.type !== CategoryType.INVESTMENT) {
+        return; // Not an investment category - normal flow, no log needed
       }
 
       const snapshot = transaction.toSnapshot();
-      await this.syncInvestmentUseCase.execute({
+      console.log('[InvestmentSync] Syncing transaction to portfolio:', {
+        transactionId: snapshot.id,
+        categoryId,
+        categoryName: category.name,
+        amount: snapshot.amount,
+      });
+
+      const syncResult = await this.syncInvestmentUseCase.execute({
         transactionId: snapshot.id,
         amount: snapshot.amount,
         date: new Date(snapshot.date),
@@ -196,8 +227,22 @@ export class TransactionController {
         transactionDescription: snapshot.description || undefined,
         transactionCounterparty: snapshot.merchant || undefined,
       });
+
+      if (syncResult.isFailure()) {
+        console.error('[InvestmentSync] Use case failed:', {
+          transactionId: snapshot.id,
+          categoryId,
+          error: syncResult.getError(),
+        });
+      } else {
+        console.log('[InvestmentSync] Success for transaction:', snapshot.id);
+      }
     } catch (error) {
-      console.error('Failed to sync investment from transaction:', error);
+      console.error('[InvestmentSync] Unexpected error:', {
+        transactionId: transaction.toSnapshot().id,
+        categoryId,
+        error: error instanceof Error ? error.message : error,
+      });
     }
   }
 
@@ -500,18 +545,46 @@ export class TransactionController {
       this.syncInvestmentUseCase &&
       this.categoryRepository
     ) {
+      let syncSuccessCount = 0;
+      let syncFailCount = 0;
       for (const affectedId of result.affectedTransactionIds) {
         try {
           const txId = TransactionId.create(affectedId);
-          if (txId.isSuccess()) {
-            const txResult = await this.transactionRepository.findById(txId.getValue());
-            if (txResult.isSuccess() && txResult.getValue()) {
-              await this.syncInvestmentIfNeeded(txResult.getValue()!, data.categoryId);
-            }
+          if (txId.isFailure()) {
+            console.warn('[SmartCategorize] Invalid transaction ID for sync:', affectedId);
+            syncFailCount++;
+            continue;
           }
+          const txResult = await this.transactionRepository.findById(txId.getValue());
+          if (txResult.isFailure()) {
+            console.warn(
+              '[SmartCategorize] Failed to fetch transaction for sync:',
+              affectedId,
+              txResult.getError()
+            );
+            syncFailCount++;
+            continue;
+          }
+          const tx = txResult.getValue();
+          if (!tx) {
+            console.warn('[SmartCategorize] Transaction not found for sync:', affectedId);
+            syncFailCount++;
+            continue;
+          }
+          await this.syncInvestmentIfNeeded(tx, data.categoryId);
+          syncSuccessCount++;
         } catch (error) {
-          console.error(`Failed to sync investment for transaction ${affectedId}:`, error);
+          syncFailCount++;
+          console.error(
+            `[SmartCategorize] Failed to sync investment for transaction ${affectedId}:`,
+            error instanceof Error ? error.message : error
+          );
         }
+      }
+      if (syncFailCount > 0) {
+        console.warn(
+          `[SmartCategorize] Investment sync: ${syncSuccessCount} succeeded, ${syncFailCount} failed out of ${result.affectedTransactionIds.length}`
+        );
       }
     }
 

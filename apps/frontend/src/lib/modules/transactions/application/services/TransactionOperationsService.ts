@@ -1,14 +1,11 @@
-import type { Transaction, Category } from '$lib/types/transaction';
+import type { Transaction } from '$lib/types/transaction';
 import { apiTransactions as apiTransactionsStore } from '$lib/stores/api-transactions';
 import { get } from 'svelte/store';
 
 type ApiTransactionsStore = typeof apiTransactionsStore;
 
 export class TransactionOperationsService {
-  constructor(
-    private apiTransactions: ApiTransactionsStore,
-    private getCategory: (id: string) => Category | undefined
-  ) {}
+  constructor(private apiTransactions: ApiTransactionsStore) {}
 
   async deleteSelected(selectedIds: Set<string>): Promise<void> {
     const ids = Array.from(selectedIds);
@@ -52,28 +49,9 @@ export class TransactionOperationsService {
     applyToAll: boolean = false
   ): Promise<void> {
     try {
-      const selectedCategory = categoryId ? this.getCategory(categoryId) : null;
-
       const updates: Partial<Transaction> = {
         categoryId: categoryId, // null to remove, string to set
       };
-
-      // Handle amount conversion based on category type
-      if (selectedCategory) {
-        if (selectedCategory.type === 'income' && transaction.amount < 0) {
-          updates.amount = Math.abs(transaction.amount);
-        } else if (
-          (selectedCategory.type === 'essential' ||
-            selectedCategory.type === 'discretionary' ||
-            selectedCategory.type === 'investment') &&
-          transaction.amount > 0
-        ) {
-          updates.amount = -Math.abs(transaction.amount);
-        }
-      } else if (!categoryId && transaction.amount < 0) {
-        // Uncategorizing an expense - it stays as expense
-        updates.amount = transaction.amount;
-      }
 
       await this.apiTransactions.update(transaction.id, updates);
 

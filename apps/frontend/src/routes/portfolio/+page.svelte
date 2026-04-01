@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
-  import { Plus, Wallet, RefreshCw } from 'lucide-svelte';
+  import { Plus, Wallet, RefreshCw, ArrowRight, Zap, Clock } from 'lucide-svelte';
 
   // Components
   import PageContainer from '$lib/components/atoms/PageContainer.svelte';
@@ -26,10 +26,28 @@
   // Sync notification
   let syncNotification = $state<string | null>(null);
 
+  // Refreshing indicator for afterNavigate
+  let isRefreshing = $state(false);
+
+  // Last sync timestamp
+  let lastSyncTime = $state<Date | null>(null);
+
+  function formatRelativeTime(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'hace un momento';
+    if (diffMin < 60) return `hace ${diffMin} min`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `hace ${diffHours}h`;
+    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  }
+
   async function handleSync() {
     try {
       const result = await store.syncWithCategories();
       if (result) {
+        lastSyncTime = new Date();
         syncNotification = result.message;
         setTimeout(() => {
           syncNotification = null;
@@ -143,7 +161,9 @@
   });
 
   afterNavigate(async () => {
+    isRefreshing = true;
     await store.loadAll();
+    isRefreshing = false;
   });
 </script>
 
@@ -153,6 +173,13 @@
 
 <PageContainer>
   <div class="portfolio-page">
+    <!-- Refreshing indicator -->
+    {#if isRefreshing}
+      <div class="refresh-bar" role="status">
+        <div class="refresh-bar-progress"></div>
+      </div>
+    {/if}
+
     {#if viewMode === 'grid'}
       <!-- Header -->
       <PortfolioHeader
@@ -172,33 +199,49 @@
         onPeriodChange={handlePeriodChange}
       />
 
+      <!-- Sync CTA Banner -->
+      <section class="sync-banner">
+        <div class="sync-banner-content">
+          <div class="sync-banner-icon">
+            <Zap size={20} />
+          </div>
+          <div class="sync-banner-text">
+            <strong>Sincronizar con transacciones</strong>
+            <span>Conecta tus transacciones categorizadas como inversion con tu portfolio</span>
+          </div>
+        </div>
+        <div class="sync-banner-actions">
+          {#if lastSyncTime}
+            <span class="last-sync-time">
+              <Clock size={12} />
+              {formatRelativeTime(lastSyncTime)}
+            </span>
+          {/if}
+          <button class="sync-banner-btn" onclick={handleSync} disabled={store.isSyncing}>
+            <RefreshCw size={16} class={store.isSyncing ? 'spinning' : ''} />
+            {store.isSyncing ? 'Sincronizando...' : 'Sincronizar ahora'}
+          </button>
+        </div>
+      </section>
+
+      {#if syncNotification}
+        <div class="sync-notification" role="status">
+          <RefreshCw size={14} />
+          <span>{syncNotification}</span>
+          <button class="dismiss-btn" onclick={() => (syncNotification = null)}>x</button>
+        </div>
+      {/if}
+
       <!-- Investments -->
       <section class="investments-section">
         <div class="section-header">
           <h2><Wallet size={18} /> Inversiones</h2>
           <div class="header-actions">
-            <button
-              class="sync-btn"
-              onclick={handleSync}
-              disabled={store.isSyncing}
-              title="Sincronizar inversiones ↔ categorías"
-            >
-              <RefreshCw size={14} class={store.isSyncing ? 'spinning' : ''} />
-              {store.isSyncing ? 'Sincronizando...' : 'Sincronizar'}
-            </button>
             <button class="add-btn" onclick={() => store.startNewInvestment()}>
-              <Plus size={16} /> Añadir
+              <Plus size={16} /> Anadir
             </button>
           </div>
         </div>
-
-        {#if syncNotification}
-          <div class="sync-notification" role="status">
-            <RefreshCw size={14} />
-            <span>{syncNotification}</span>
-            <button class="dismiss-btn" onclick={() => (syncNotification = null)}>×</button>
-          </div>
-        {/if}
 
         {#if store.showNewForm}
           <NewInvestmentForm
@@ -211,11 +254,49 @@
         {/if}
 
         {#if store.isLoading}
-          <div class="loading">Cargando...</div>
+          <div class="loading">
+            <div class="loading-spinner"></div>
+            <span>Cargando inversiones...</span>
+          </div>
         {:else if store.investments.length === 0 && !store.showNewForm}
           <div class="empty-state">
-            <Wallet size={48} strokeWidth={1} />
-            <p>Añade tu primera inversión</p>
+            <div class="empty-state-icon">
+              <Wallet size={48} strokeWidth={1} />
+            </div>
+            <h3>Sin inversiones todavia</h3>
+            <p>Hay dos formas de empezar:</p>
+            <div class="empty-state-actions">
+              <a href="/transactions" class="empty-action-card">
+                <div class="action-icon categorize">
+                  <Zap size={20} />
+                </div>
+                <div class="action-text">
+                  <strong>Categoriza transacciones</strong>
+                  <span>Marca transacciones como "inversion" y sincroniza</span>
+                </div>
+                <ArrowRight size={16} class="action-arrow" />
+              </a>
+              <a href="/transactions/tinder" class="empty-action-card">
+                <div class="action-icon tinder">
+                  <ArrowRight size={20} />
+                </div>
+                <div class="action-text">
+                  <strong>Tinder de transacciones</strong>
+                  <span>Categoriza rapidamente deslizando</span>
+                </div>
+                <ArrowRight size={16} class="action-arrow" />
+              </a>
+              <button class="empty-action-card" onclick={() => store.startNewInvestment()}>
+                <div class="action-icon manual">
+                  <Plus size={20} />
+                </div>
+                <div class="action-text">
+                  <strong>Anadir manualmente</strong>
+                  <span>Crea una inversion desde cero</span>
+                </div>
+                <ArrowRight size={16} class="action-arrow" />
+              </button>
+            </div>
           </div>
         {:else}
           <div class="investments-grid">
@@ -304,64 +385,141 @@
 <style>
   .portfolio-page {
     width: 100%;
+    position: relative;
   }
 
-  .investments-section {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1.25rem;
+  /* Refresh bar */
+  .refresh-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 100;
+    background: var(--surface-muted);
+    overflow: hidden;
   }
 
-  .section-header {
+  .refresh-bar-progress {
+    height: 100%;
+    width: 30%;
+    background: var(--primary);
+    border-radius: 0 2px 2px 0;
+    animation: refreshSlide 1.2s ease-in-out infinite;
+  }
+
+  @keyframes refreshSlide {
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(250%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  /* Sync Banner */
+  .sync-banner {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(
+      135deg,
+      var(--primary),
+      color-mix(in srgb, var(--primary) 80%, var(--accent))
+    );
+    border-radius: 12px;
+    color: white;
   }
 
-  .section-header h2 {
+  .sync-banner-content {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 1rem;
-    font-weight: 500;
-    margin: 0;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
   }
 
-  .header-actions {
+  .sync-banner-icon {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    flex-shrink: 0;
   }
 
-  .sync-btn {
+  .sync-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+  }
+
+  .sync-banner-text strong {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .sync-banner-text span {
+    font-size: 0.75rem;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sync-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .last-sync-time {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--surface-muted);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 500;
+    font-size: 0.6875rem;
+    opacity: 0.75;
+    white-space: nowrap;
+  }
+
+  .sync-banner-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
   }
 
-  .sync-btn:hover:not(:disabled) {
-    background: var(--surface-elevated);
-    color: var(--text-primary);
-    border-color: var(--primary);
+  .sync-banner-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.35);
+    border-color: rgba(255, 255, 255, 0.5);
   }
 
-  .sync-btn:disabled {
+  .sync-banner-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
 
-  .sync-btn :global(.spinning) {
+  .sync-banner-btn :global(.spinning) {
     animation: spin 1s linear infinite;
   }
 
@@ -374,6 +532,7 @@
     }
   }
 
+  /* Sync notification */
   .sync-notification {
     display: flex;
     align-items: center;
@@ -382,7 +541,7 @@
     background: var(--acapulco-alpha-15, rgba(122, 186, 165, 0.15));
     border: 1px solid var(--acapulco);
     border-radius: 8px;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
     font-size: 0.8125rem;
     color: var(--acapulco);
     animation: slideIn 0.3s ease;
@@ -422,6 +581,36 @@
     }
   }
 
+  /* Investments Section */
+  .investments-section {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .section-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .add-btn {
     display: flex;
     align-items: center;
@@ -434,6 +623,11 @@
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .add-btn:hover {
+    filter: brightness(1.1);
   }
 
   .investments-grid {
@@ -442,21 +636,166 @@
     gap: 0.5rem;
   }
 
-  .loading,
-  .empty-state {
+  /* Loading */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
     text-align: center;
-    padding: 2rem;
+    padding: 2.5rem;
     color: var(--text-muted);
+    font-size: 0.875rem;
   }
 
+  .loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2.5px solid var(--border-color);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* Empty State */
   .empty-state {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    color: var(--text-muted);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
   }
 
+  .empty-state-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    background: var(--surface-muted);
+    border-radius: 50%;
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+  }
+
+  .empty-state h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .empty-state > p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0 0 1rem 0;
+  }
+
+  .empty-state-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .empty-action-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+    font: inherit;
+  }
+
+  .empty-action-card:hover {
+    border-color: var(--primary);
+    background: var(--surface-muted);
+  }
+
+  .action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .action-icon.categorize {
+    background: rgba(245, 121, 108, 0.15);
+    color: var(--accent, #f5796c);
+  }
+
+  .action-icon.tinder {
+    background: rgba(122, 186, 165, 0.15);
+    color: var(--success, #7abaa5);
+  }
+
+  .action-icon.manual {
+    background: rgba(2, 60, 70, 0.1);
+    color: var(--primary, #023c46);
+  }
+
+  .action-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .action-text strong {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .action-text span {
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+  }
+
+  .empty-action-card :global(.action-arrow) {
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+
+  .empty-action-card:hover :global(.action-arrow) {
+    transform: translateX(2px);
+    color: var(--primary);
+  }
+
+  /* Responsive */
   @media (max-width: 640px) {
+    .sync-banner {
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem;
+    }
+
+    .sync-banner-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .sync-banner-btn {
+      flex: 1;
+      justify-content: center;
+    }
+
     .investments-section {
       padding: 1rem;
       border-radius: 10px;
@@ -474,11 +813,6 @@
       gap: 0.375rem;
     }
 
-    .sync-btn {
-      padding: 0.375rem 0.5rem;
-      font-size: 0.6875rem;
-    }
-
     .add-btn {
       padding: 0.375rem 0.625rem;
       font-size: 0.75rem;
@@ -490,6 +824,35 @@
   }
 
   @media (max-width: 360px) {
+    .sync-banner {
+      padding: 0.75rem;
+      border-radius: 10px;
+    }
+
+    .sync-banner-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .sync-banner-icon :global(svg) {
+      width: 16px;
+      height: 16px;
+    }
+
+    .sync-banner-text strong {
+      font-size: 0.8125rem;
+    }
+
+    .sync-banner-text span {
+      font-size: 0.6875rem;
+    }
+
+    .sync-banner-btn {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
     .investments-section {
       padding: 0.75rem;
       border-radius: 8px;
@@ -505,17 +868,6 @@
       height: 14px;
     }
 
-    .sync-btn {
-      padding: 0.25rem 0.375rem;
-      font-size: 0.625rem;
-      border-radius: 4px;
-    }
-
-    .sync-btn :global(svg) {
-      width: 10px;
-      height: 10px;
-    }
-
     .add-btn {
       padding: 0.375rem 0.5rem;
       font-size: 0.6875rem;
@@ -528,16 +880,36 @@
     }
 
     .empty-state {
-      padding: 1.5rem;
+      padding: 1.5rem 1rem;
     }
 
-    .empty-state :global(svg) {
-      width: 36px;
-      height: 36px;
+    .empty-state-icon {
+      width: 56px;
+      height: 56px;
     }
 
-    .empty-state p {
-      font-size: 0.8125rem;
+    .empty-state-icon :global(svg) {
+      width: 32px;
+      height: 32px;
+    }
+
+    .empty-state h3 {
+      font-size: 1rem;
+    }
+
+    .empty-action-card {
+      padding: 0.75rem;
+    }
+
+    .action-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+    }
+
+    .action-icon :global(svg) {
+      width: 16px;
+      height: 16px;
     }
   }
 </style>

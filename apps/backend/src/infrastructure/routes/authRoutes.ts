@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '@infrastructure/controllers/AuthController';
 import { authenticate } from '@infrastructure/middleware/auth';
+import { asyncHandler } from '@infrastructure/errors';
 
 export function createAuthRoutes(authController: AuthController): Router {
   const router = Router();
@@ -45,7 +46,10 @@ export function createAuthRoutes(authController: AuthController): Router {
    *                     user:
    *                       type: object
    */
-  router.post('/login', (req, res) => authController.login(req, res));
+  router.post(
+    '/login',
+    asyncHandler((req, res) => authController.login(req, res))
+  );
 
   /**
    * @swagger
@@ -68,7 +72,10 @@ export function createAuthRoutes(authController: AuthController): Router {
    *       200:
    *         description: Token refreshed successfully
    */
-  router.post('/refresh', (req, res) => authController.refresh(req, res));
+  router.post(
+    '/refresh',
+    asyncHandler((req, res) => authController.refresh(req, res))
+  );
 
   /**
    * @swagger
@@ -110,8 +117,10 @@ export function createAuthRoutes(authController: AuthController): Router {
    *       200:
    *         description: Password changed successfully
    */
-  router.post('/change-password', authenticate, (req, res) =>
-    authController.changePassword(req, res)
+  router.post(
+    '/change-password',
+    authenticate,
+    asyncHandler((req, res) => authController.changePassword(req, res))
   );
 
   /**
@@ -141,7 +150,10 @@ export function createAuthRoutes(authController: AuthController): Router {
    *       200:
    *         description: Password changed successfully and user logged in
    */
-  router.post('/reset-password-change', (req, res) => authController.resetPasswordChange(req, res));
+  router.post(
+    '/reset-password-change',
+    asyncHandler((req, res) => authController.resetPasswordChange(req, res))
+  );
 
   /**
    * @swagger
@@ -155,7 +167,11 @@ export function createAuthRoutes(authController: AuthController): Router {
    *       200:
    *         description: Current user info
    */
-  router.get('/me', authenticate, (req, res) => authController.me(req, res));
+  router.get(
+    '/me',
+    authenticate,
+    asyncHandler((req, res) => authController.me(req, res))
+  );
 
   return router;
 }

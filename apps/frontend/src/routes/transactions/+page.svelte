@@ -61,9 +61,7 @@
   // Initialize page store
   const pageStore = createTransactionsPageStore();
   const dateNavigationService = createDateNavigationService();
-  const transactionOps = new TransactionOperationsService(apiTransactions, (id) =>
-    getCategoryById($apiCategories, id)
-  );
+  const transactionOps = new TransactionOperationsService(apiTransactions);
   const observationsHandler = createObservationsHandler((id, updates) =>
     apiTransactions.update(id, updates)
   );

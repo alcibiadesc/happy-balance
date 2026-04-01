@@ -67,7 +67,7 @@ export const calculatePeriodStats = (
   // Helper to get effective amount considering split percentage
   const getEffectiveAmount = (t: Transaction): number => {
     const amount = Math.abs(t.amount);
-    const splitPercent = t.splitPercentage ?? 100;
+    const splitPercent = Math.max(0, Math.min(100, t.splitPercentage ?? 100));
     return (amount * splitPercent) / 100;
   };
 

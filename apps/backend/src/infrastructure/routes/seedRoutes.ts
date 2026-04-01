@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { ControllerFactory } from '../factories/ControllerFactory';
 import { authenticate } from '../middleware/auth';
+import { asyncHandler } from '@infrastructure/errors';
 
 export const createSeedRoutes = (controllerFactory: ControllerFactory): Router => {
   const router = Router();
@@ -22,11 +23,14 @@ export const createSeedRoutes = (controllerFactory: ControllerFactory): Router =
    *       403:
    *         description: Forbidden - Admin access required
    */
-  router.post('/', async (req: Request, res: Response) => {
-    const userId = req.user?.userId || 'default';
-    const controller = controllerFactory.createSeedController(userId);
-    await controller.resetToDefaults(req, res);
-  });
+  router.post(
+    '/',
+    asyncHandler(async (req: Request, res: Response) => {
+      const userId = req.user?.userId || 'default';
+      const controller = controllerFactory.createSeedController(userId);
+      await controller.resetToDefaults(req, res);
+    })
+  );
 
   return router;
 };

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { UserManagementController } from '@infrastructure/controllers/UserManagementController';
 import { authenticate, requireAdmin, AuthRequest } from '@infrastructure/middleware/auth';
+import { asyncHandler } from '@infrastructure/errors';
 
 export function createUserManagementRoutes(controller: UserManagementController): Router {
   const router = Router();
@@ -21,7 +22,10 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *       200:
    *         description: List of users
    */
-  router.get('/', (req, res) => controller.listUsers(req as AuthRequest, res));
+  router.get(
+    '/',
+    asyncHandler((req, res) => controller.listUsers(req as AuthRequest, res))
+  );
 
   /**
    * @swagger
@@ -53,7 +57,41 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *       201:
    *         description: User created successfully
    */
-  router.post('/', (req, res) => controller.createUser(req as AuthRequest, res));
+  router.post(
+    '/',
+    asyncHandler((req, res) => controller.createUser(req as AuthRequest, res))
+  );
+
+  /**
+   * @swagger
+   * /api/admin/users/reset-password:
+   *   post:
+   *     tags: [Admin]
+   *     summary: Reset user password (Admin only)
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - userId
+   *             properties:
+   *               userId:
+   *                 type: string
+   *               tempPassword:
+   *                 type: string
+   *                 description: Optional new password (generated if not provided)
+   *     responses:
+   *       200:
+   *         description: Password reset successfully
+   */
+  router.post(
+    '/reset-password',
+    asyncHandler((req, res) => controller.resetPassword(req as AuthRequest, res))
+  );
 
   /**
    * @swagger
@@ -85,7 +123,10 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *       200:
    *         description: User updated successfully
    */
-  router.put('/:id', (req, res) => controller.updateUser(req as AuthRequest, res));
+  router.put(
+    '/:id',
+    asyncHandler((req, res) => controller.updateUser(req as AuthRequest, res))
+  );
 
   /**
    * @swagger
@@ -105,35 +146,10 @@ export function createUserManagementRoutes(controller: UserManagementController)
    *       200:
    *         description: User deleted successfully
    */
-  router.delete('/:id', (req, res) => controller.deleteUser(req as AuthRequest, res));
-
-  /**
-   * @swagger
-   * /api/admin/users/reset-password:
-   *   post:
-   *     tags: [Admin]
-   *     summary: Reset user password (Admin only)
-   *     security:
-   *       - bearerAuth: []
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             type: object
-   *             required:
-   *               - userId
-   *             properties:
-   *               userId:
-   *                 type: string
-   *               tempPassword:
-   *                 type: string
-   *                 description: Optional new password (generated if not provided)
-   *     responses:
-   *       200:
-   *         description: Password reset successfully
-   */
-  router.post('/reset-password', (req, res) => controller.resetPassword(req as AuthRequest, res));
+  router.delete(
+    '/:id',
+    asyncHandler((req, res) => controller.deleteUser(req as AuthRequest, res))
+  );
 
   return router;
 }
