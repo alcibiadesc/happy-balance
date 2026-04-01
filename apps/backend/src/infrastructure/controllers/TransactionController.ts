@@ -20,6 +20,7 @@ import { UnlinkSplitTransactionsUseCase } from '@application/use-cases/UnlinkSpl
 import { SyncInvestmentFromTransactionUseCase } from '@application/use-cases/SyncInvestmentFromTransactionUseCase';
 import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/UnsyncInvestmentFromTransactionUseCase';
 import { AutoCategorizeTransactionsUseCase } from '@application/use-cases/AutoCategorizeTransactionsUseCase';
+import { GetCategorySuggestionsUseCase } from '@application/use-cases/GetCategorySuggestionsUseCase';
 import {
   BadRequestError,
   validateBody,
@@ -118,6 +119,10 @@ const LinkSplitTransactionsSchema = z.object({
   splitPercentage: z.number().min(0).max(100),
 });
 
+const TinderSuggestionsSchema = z.object({
+  limit: z.coerce.number().min(1).max(200).optional().default(50),
+});
+
 const PaginatedTransactionSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(200).default(50),
@@ -153,6 +158,7 @@ export class TransactionController {
     private readonly syncInvestmentUseCase?: SyncInvestmentFromTransactionUseCase,
     private readonly unsyncInvestmentUseCase?: UnsyncInvestmentFromTransactionUseCase,
     private readonly autoCategorizeUseCase?: AutoCategorizeTransactionsUseCase,
+    private readonly getCategorySuggestionsUseCase?: GetCategorySuggestionsUseCase,
     private readonly categoryRepository?: ICategoryRepository,
     private readonly userId?: string
   ) {}
@@ -459,6 +465,16 @@ export class TransactionController {
     const { id } = req.params;
     const data = validateBody(SmartCategorizeSchema, req);
 
+    console.log('[SmartCategorize] Request:', {
+      transactionId: id,
+      categoryId: data.categoryId,
+      applyToAll: data.applyToAll,
+      applyToFuture: data.applyToFuture,
+      createPattern: data.createPattern,
+      selectedTransactionIds: data.selectedTransactionIds?.length ?? 0,
+      userId: this.userId,
+    });
+
     const result = await this.smartCategorizeUseCase.execute({
       transactionId: id,
       categoryId: data.categoryId,
@@ -469,7 +485,12 @@ export class TransactionController {
     });
 
     if (!result.success) {
-      console.error('[SmartCategorize] Failed:', result.message);
+      console.error('[SmartCategorize] Failed:', {
+        transactionId: id,
+        categoryId: data.categoryId,
+        message: result.message,
+        userId: this.userId,
+      });
       throw new BadRequestError(result.message || 'Failed to categorize transaction');
     }
 
@@ -609,6 +630,21 @@ export class TransactionController {
     handleResult(result, 'Failed to unlink transactions');
 
     successResponse(res, { message: 'Transactions unlinked successfully' });
+  }
+
+  async getSuggestionsForTinderMode(req: Request, res: Response): Promise<void> {
+    if (!this.getCategorySuggestionsUseCase) {
+      throw new BadRequestError('Category suggestions feature is not configured');
+    }
+
+    const query = validateQuery(TinderSuggestionsSchema, req);
+
+    const result = await this.getCategorySuggestionsUseCase.execute({
+      userId: this.userId || 'default',
+      limit: query.limit,
+    });
+
+    successResponse(res, result);
   }
 
   async autoCategorizeTransactions(_req: Request, res: Response): Promise<void> {

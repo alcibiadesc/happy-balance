@@ -342,14 +342,21 @@ export class CategorizationService {
     categoryType: CategoryType,
     transactionType: TransactionType
   ): boolean {
+    // NO_COMPUTE categories can be applied to any transaction type
+    if (categoryType === CategoryType.NO_COMPUTE) {
+      return true;
+    }
+
     switch (transactionType) {
       case TransactionType.INCOME:
         return categoryType === CategoryType.INCOME;
       case TransactionType.EXPENSE:
+        // INVESTMENT is allowed because buying investments is technically an expense
         return (
           categoryType === CategoryType.ESSENTIAL ||
           categoryType === CategoryType.DISCRETIONARY ||
-          categoryType === CategoryType.DEBT_PAYMENT
+          categoryType === CategoryType.DEBT_PAYMENT ||
+          categoryType === CategoryType.INVESTMENT
         );
       case TransactionType.INVESTMENT:
         return categoryType === CategoryType.INVESTMENT;

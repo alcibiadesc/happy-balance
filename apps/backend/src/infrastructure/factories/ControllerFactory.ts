@@ -32,10 +32,12 @@ import { DuplicateDetectionService } from '@domain/services/DuplicateDetectionSe
 import { CategorizationService } from '@domain/services/CategorizationService';
 import { FinancialCalculationService } from '@domain/services/FinancialCalculationService';
 import { SmartCategorizationService } from '@domain/services/SmartCategorizationService';
+import { Transaction } from '@domain/entities/Transaction';
 import { TransactionFactory } from '@domain/factories/TransactionFactory';
 import { SyncInvestmentFromTransactionUseCase } from '@application/use-cases/SyncInvestmentFromTransactionUseCase';
 import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/UnsyncInvestmentFromTransactionUseCase';
 import { AutoCategorizeTransactionsUseCase } from '@application/use-cases/AutoCategorizeTransactionsUseCase';
+import { GetCategorySuggestionsUseCase } from '@application/use-cases/GetCategorySuggestionsUseCase';
 
 /**
  * Factory that creates controller instances with user-specific repositories
@@ -60,9 +62,36 @@ export class ControllerFactory {
 
     // Domain services
     const financialCalculationService = new FinancialCalculationService();
+
+    // Adapter: wraps PrismaTransactionRepository to match SmartCategorizationService's
+    // ITransactionRepository interface (plain strings instead of value objects,
+    // plain arrays instead of Result wrappers)
+    const smartCategorizationTransactionRepo = {
+      findByMerchant: async (merchant: string) => {
+        const result = await transactionRepository.findByMerchant(merchant);
+        return result.isSuccess() ? result.getValue() : [];
+      },
+      findByPattern: async (pattern: string) => {
+        return transactionRepository.findByPattern(pattern);
+      },
+      findByNormalizedMerchant: async (normalizedMerchant: string) => {
+        // PrismaTransactionRepository doesn't have findByNormalizedMerchant,
+        // fall back to findByMerchant
+        const result = await transactionRepository.findByMerchant(normalizedMerchant);
+        return result.isSuccess() ? result.getValue() : [];
+      },
+      updateMany: async (transactions: Transaction[]) => {
+        return transactionRepository.updateMany(transactions);
+      },
+      findById: async (id: string) => {
+        const result = await transactionRepository.findById({ value: id } as any);
+        return result.isSuccess() ? result.getValue() : null;
+      },
+    };
+
     const smartCategorizationService = new SmartCategorizationService(
       categoryPatternRepository,
-      transactionRepository as any,
+      smartCategorizationTransactionRepo as any,
       merchantAliasRepository
     );
 
@@ -146,6 +175,12 @@ export class ControllerFactory {
       smartCategorizationService
     );
 
+    const getCategorySuggestionsUseCase = new GetCategorySuggestionsUseCase(
+      transactionRepository,
+      categoryRepository,
+      smartCategorizationService
+    );
+
     return new TransactionController(
       transactionRepository,
       getDashboardDataUseCase,
@@ -158,6 +193,7 @@ export class ControllerFactory {
       syncInvestmentUseCase,
       unsyncInvestmentUseCase,
       autoCategorizeUseCase,
+      getCategorySuggestionsUseCase,
       categoryRepository,
       userId
     );
