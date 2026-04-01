@@ -505,5 +505,29 @@
     "view_on_github": "Ver en GitHub",
     "view_all_on_github": "Ver todas en GitHub",
     "latest": "Última"
+  },
+  "tinder": {
+    "title": "Modo Tinder",
+    "remaining": "{current} de {total} restantes",
+    "accept": "Aceptar",
+    "reject": "Rechazar",
+    "skip": "Omitir",
+    "accept_label": "Aceptar",
+    "reject_label": "Rechazar",
+    "confidence": "conf.",
+    "no_suggestion": "Sin sugerencia de categoría",
+    "pick_category": "Elegir categoría",
+    "complete_title": "Sesión completada",
+    "complete_subtitle": "Has revisado todas las transacciones",
+    "accepted": "Aceptadas",
+    "rejected": "Corregidas",
+    "skipped": "Omitidas",
+    "total_processed": "{count} transacciones procesadas",
+    "back_to_transactions": "Volver a transacciones",
+    "no_uncategorized": "Todo categorizado",
+    "all_done": "No hay transacciones pendientes de categorizar",
+    "retry": "Reintentar",
+    "enter_tinder": "Modo Tinder",
+    "enter_tinder_desc": "Categoriza rápidamente con swipe"
   }
 }

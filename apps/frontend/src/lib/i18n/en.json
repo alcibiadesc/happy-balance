@@ -505,5 +505,29 @@
     "view_on_github": "View on GitHub",
     "view_all_on_github": "View all on GitHub",
     "latest": "Latest"
+  },
+  "tinder": {
+    "title": "Tinder Mode",
+    "remaining": "{current} of {total} remaining",
+    "accept": "Accept",
+    "reject": "Reject",
+    "skip": "Skip",
+    "accept_label": "Accept",
+    "reject_label": "Reject",
+    "confidence": "conf.",
+    "no_suggestion": "No category suggestion",
+    "pick_category": "Pick a category",
+    "complete_title": "Session complete",
+    "complete_subtitle": "You reviewed all transactions",
+    "accepted": "Accepted",
+    "rejected": "Corrected",
+    "skipped": "Skipped",
+    "total_processed": "{count} transactions processed",
+    "back_to_transactions": "Back to transactions",
+    "no_uncategorized": "All categorized",
+    "all_done": "No uncategorized transactions remaining",
+    "retry": "Retry",
+    "enter_tinder": "Tinder Mode",
+    "enter_tinder_desc": "Quick categorization with swipe"
   }
 }

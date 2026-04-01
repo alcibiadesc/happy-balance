@@ -37,7 +37,16 @@
   import { TransactionOperationsService } from '$lib/modules/transactions/application/services/TransactionOperationsService';
 
   // Icons
-  import { Filter, Download, Plus, Trash2, Minimize2, Maximize2, EyeOff } from 'lucide-svelte';
+  import {
+    Filter,
+    Download,
+    Plus,
+    Trash2,
+    Minimize2,
+    Maximize2,
+    EyeOff,
+    Sparkles,
+  } from 'lucide-svelte';
 
   // Stores
   import {
@@ -389,6 +398,15 @@
               <div class="toolbar-separator"></div>
             {/if}
 
+            <a
+              href="/transactions/tinder"
+              class="toolbar-btn tinder-btn"
+              title={$t('tinder.enter_tinder_desc')}
+              aria-label={$t('tinder.enter_tinder')}
+            >
+              <Sparkles size={14} />
+            </a>
+            <div class="toolbar-separator"></div>
             <button
               class="toolbar-btn"
               onclick={() => pageStore.toggleSelectionMode()}
@@ -557,5 +575,15 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem 0 0 0;
+  }
+
+  :global(.tinder-btn) {
+    text-decoration: none !important;
+    color: var(--primary, #023c46) !important;
+  }
+
+  :global(.tinder-btn:hover) {
+    color: var(--primary, #023c46) !important;
+    background: rgba(2, 60, 70, 0.08) !important;
   }
 </style>
