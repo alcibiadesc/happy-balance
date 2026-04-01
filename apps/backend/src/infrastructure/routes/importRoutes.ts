@@ -2,12 +2,7 @@ import { Router, Request, Response } from 'express';
 import { ControllerFactory } from '../factories/ControllerFactory';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '@infrastructure/errors';
-import multer from 'multer';
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-});
+import { upload } from '../middleware/upload';
 
 export const createImportRoutes = (controllerFactory: ControllerFactory): Router => {
   const router = Router();

@@ -216,8 +216,11 @@ export function createEnhancedDashboardStore(apiBase: string) {
     await loadDashboardData();
   }
 
-  // Start initialization
-  initialize();
+  // Start initialization (catch to prevent unhandled promise rejection)
+  initialize().catch((err) => {
+    console.error('[Dashboard] Initialization failed:', err);
+    loading = false;
+  });
 
   // Currency change handler
   async function changeCurrency(currency: string) {

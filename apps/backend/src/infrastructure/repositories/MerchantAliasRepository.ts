@@ -3,7 +3,7 @@ import { MerchantAlias, AliasSource } from '../../domain/entities/MerchantAlias'
 import { Result } from '../../domain/shared/Result';
 
 export interface IMerchantAliasRepository {
-  findById(id: string): Promise<MerchantAlias | null>;
+  findById(id: string, userId?: string | null): Promise<MerchantAlias | null>;
   findByRawPattern(pattern: string, userId?: string | null): Promise<MerchantAlias | null>;
   findByCanonicalName(canonicalName: string, userId?: string | null): Promise<MerchantAlias[]>;
   findAllForUser(userId: string | null): Promise<MerchantAlias[]>;
@@ -16,12 +16,17 @@ export interface IMerchantAliasRepository {
 export class MerchantAliasRepository implements IMerchantAliasRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async findById(id: string): Promise<MerchantAlias | null> {
+  async findById(id: string, userId?: string | null): Promise<MerchantAlias | null> {
     const record = await this.prisma.merchantAlias.findUnique({
       where: { id },
     });
 
     if (!record) return null;
+
+    // Verify ownership: allow access if alias is global (userId=null) or belongs to the requesting user
+    if (userId !== undefined && record.userId !== null && record.userId !== userId) {
+      return null;
+    }
 
     const result = MerchantAlias.fromSnapshot({
       id: record.id,

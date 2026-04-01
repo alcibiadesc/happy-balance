@@ -56,6 +56,7 @@ export function exportTransactionsToCSV(
     'Comercio',
     'Categoría',
     'Tipo de Categoría',
+    'Tipo',
     'Importe',
     'Estado',
   ];
@@ -66,15 +67,24 @@ export function exportTransactionsToCSV(
   filteredTransactions.forEach((transaction) => {
     const category = transaction.categoryId ? categoryLookup.get(transaction.categoryId) : null;
 
+    // Derive display status from both `hidden` flag and `status` field
+    const displayStatus =
+      transaction.hidden || transaction.status === 'hidden'
+        ? 'Oculto'
+        : transaction.status === 'pending'
+          ? 'Pendiente'
+          : 'Visible';
+
     const row = [
       transaction.date,
       transaction.time || '',
-      transaction.description,
+      transaction.description || '',
       transaction.merchant,
       category?.name || '',
       category?.type || '',
+      transaction.type || '',
       formatAmount(transaction.amount),
-      transaction.hidden ? 'Oculto' : 'Visible',
+      displayStatus,
     ];
 
     csvLines.push(row.map((field) => escapeCSVField(field)).join(','));

@@ -486,24 +486,24 @@ export class ModernApiDashboardRepository implements DashboardRepository {
 
     const expenseDistribution = {
       essential:
-        distribution.essential?._amount !== undefined
-          ? distribution.essential._amount
+        distribution.essential?.amount !== undefined
+          ? distribution.essential.amount
           : distribution.essential !== undefined
             ? distribution.essential
             : hasDistribution
               ? 0
               : totalExpensesValue * 0.6,
       discretionary:
-        distribution.discretionary?._amount !== undefined
-          ? distribution.discretionary._amount
+        distribution.discretionary?.amount !== undefined
+          ? distribution.discretionary.amount
           : distribution.discretionary !== undefined
             ? distribution.discretionary
             : hasDistribution
               ? 0
               : totalExpensesValue * 0.35,
       debtPayments:
-        distribution.debtPayments?._amount !== undefined
-          ? distribution.debtPayments._amount
+        distribution.debtPayments?.amount !== undefined
+          ? distribution.debtPayments.amount
           : distribution.debtPayments !== undefined
             ? distribution.debtPayments
             : 0,

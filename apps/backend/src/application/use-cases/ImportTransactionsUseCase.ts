@@ -326,15 +326,22 @@ export class ImportTransactionsUseCase {
 
   /**
    * Parse amount string to number
+   * Throws if the amount cannot be parsed to a valid number
    */
   private parseAmount(amountStr: string): number {
-    if (!amountStr) return 0;
+    if (!amountStr || !amountStr.trim()) {
+      throw new Error('Amount is empty');
+    }
 
     const cleaned = amountStr.replace(/[^\d.,+-]/g, '');
     const normalized = cleaned.replace(/,/g, '.');
     const parsed = parseFloat(normalized);
 
-    return isNaN(parsed) ? 0 : parsed;
+    if (isNaN(parsed)) {
+      throw new Error(`Invalid amount: "${amountStr}"`);
+    }
+
+    return parsed;
   }
 
   /**

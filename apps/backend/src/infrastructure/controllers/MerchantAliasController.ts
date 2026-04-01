@@ -41,7 +41,7 @@ export class MerchantAliasController {
   async getById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const alias = await this.aliasRepository.findById(id);
+      const alias = await this.aliasRepository.findById(id, this.userId);
 
       if (!alias) {
         res.status(404).json({
@@ -131,7 +131,7 @@ export class MerchantAliasController {
       const { id } = req.params;
       const { canonicalName, confidence } = req.body;
 
-      const alias = await this.aliasRepository.findById(id);
+      const alias = await this.aliasRepository.findById(id, this.userId);
 
       if (!alias) {
         res.status(404).json({
@@ -194,7 +194,7 @@ export class MerchantAliasController {
     try {
       const { id } = req.params;
 
-      const alias = await this.aliasRepository.findById(id);
+      const alias = await this.aliasRepository.findById(id, this.userId);
 
       if (!alias) {
         res.status(404).json({

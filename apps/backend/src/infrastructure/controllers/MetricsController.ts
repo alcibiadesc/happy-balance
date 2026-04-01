@@ -277,33 +277,29 @@ export class MetricsController {
           },
           summary: {
             totalIncome: {
-              _amount: data.periodBalance.income,
-              _currency: data.periodBalance.currency,
+              amount: data.periodBalance.income,
+              currency: data.periodBalance.currency,
             },
             totalExpenses: {
-              _amount: data.periodBalance.expenses,
-              _currency: data.periodBalance.currency,
+              amount: data.periodBalance.expenses,
+              currency: data.periodBalance.currency,
             },
             totalInvestments: {
-              _amount: data.periodBalance.investments,
-              _currency: data.periodBalance.currency,
+              amount: data.periodBalance.investments,
+              currency: data.periodBalance.currency,
             },
             totalDebtPayments: {
-              _amount: data.periodBalance.debtPayments,
-              _currency: data.periodBalance.currency,
+              amount: data.periodBalance.debtPayments,
+              currency: data.periodBalance.currency,
             },
             balance: {
-              _amount: data.periodBalance.balance,
-              _currency: data.periodBalance.currency,
+              amount: data.periodBalance.balance,
+              currency: data.periodBalance.currency,
             },
             savingsRate: savingsRate,
             period: {
-              startDate: {
-                _date: new Date(data.periodInfo.startDate).toISOString(),
-              },
-              endDate: {
-                _date: new Date(data.periodInfo.endDate).toISOString(),
-              },
+              startDate: new Date(data.periodInfo.startDate).toISOString(),
+              endDate: new Date(data.periodInfo.endDate).toISOString(),
               label: this.formatPeriodLabel(data.periodInfo.startDate, data.periodInfo.periodType),
             },
           },
@@ -311,16 +307,16 @@ export class MetricsController {
           spendingRate: spendingRate,
           expenseDistribution: {
             essential: {
-              _amount: data.expenseDistribution.essential,
-              _currency: data.expenseDistribution.currency,
+              amount: data.expenseDistribution.essential,
+              currency: data.expenseDistribution.currency,
             },
             discretionary: {
-              _amount: data.expenseDistribution.discretionary,
-              _currency: data.expenseDistribution.currency,
+              amount: data.expenseDistribution.discretionary,
+              currency: data.expenseDistribution.currency,
             },
             debtPayments: {
-              _amount: data.periodBalance.debtPayments || 0,
-              _currency: data.expenseDistribution.currency,
+              amount: data.periodBalance.debtPayments || 0,
+              currency: data.expenseDistribution.currency,
             },
             essentialPercentage: essentialPercentage,
             discretionaryPercentage: discretionaryPercentage,

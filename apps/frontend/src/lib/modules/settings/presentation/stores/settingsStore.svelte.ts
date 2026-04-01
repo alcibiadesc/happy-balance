@@ -501,7 +501,23 @@ export function createSettingsStore(_apiBase: string) {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string) as ImportData;
+        const raw = JSON.parse(e.target?.result as string);
+
+        // Validate structure: must be an object with recognized import fields
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+          importError = get(t)('settings.parse_error');
+          return;
+        }
+
+        const hasNewFormat = raw.data && typeof raw.data === 'object';
+        const hasLegacyFormat = Array.isArray(raw.transactions);
+
+        if (!hasNewFormat && !hasLegacyFormat) {
+          importError = get(t)('settings.parse_error');
+          return;
+        }
+
+        const data = raw as ImportData;
         prepareImport(data);
       } catch (error) {
         console.error('Parse error:', error);

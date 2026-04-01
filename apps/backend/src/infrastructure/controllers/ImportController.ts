@@ -140,6 +140,10 @@ export class ImportController {
       throw new BadRequestError('No file uploaded');
     }
 
+    if (!req.file.originalname.toLowerCase().endsWith('.csv')) {
+      throw new BadRequestError('Only CSV files are accepted');
+    }
+
     const config = validateBody(ImportConfigSchema, req);
     const csvContent = req.file.buffer.toString('utf-8');
 
@@ -175,6 +179,10 @@ export class ImportController {
       throw new BadRequestError('No file uploaded');
     }
 
+    if (!req.file.originalname.toLowerCase().endsWith('.csv')) {
+      throw new BadRequestError('Only CSV files are accepted');
+    }
+
     const csvContent = req.file.buffer.toString('utf-8');
     const currency = ((req.body.currency as string) || 'EUR').toUpperCase();
 
@@ -204,6 +212,10 @@ export class ImportController {
   async validateCsv(req: Request, res: Response): Promise<void> {
     if (!req.file) {
       throw new BadRequestError('No file uploaded');
+    }
+
+    if (!req.file.originalname.toLowerCase().endsWith('.csv')) {
+      throw new BadRequestError('Only CSV files are accepted');
     }
 
     const csvContent = req.file.buffer.toString('utf-8');

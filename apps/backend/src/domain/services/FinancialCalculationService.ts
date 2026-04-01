@@ -424,18 +424,16 @@ export class FinancialCalculationService {
   private calculateSavingsRate(
     income: Money,
     expenses: Money,
-    investments: Money,
-    debtPayments: Money
+    _investments: Money,
+    _debtPayments: Money
   ): number {
     if (income.amount <= 0) {
       return 0;
     }
 
-    const totalSaved = investments.amount;
-    const totalSpent = expenses.amount + debtPayments.amount;
-    const netSavings = Math.max(0, income.amount - totalSpent);
-    const totalSavings = totalSaved + netSavings;
-
-    return Math.round((totalSavings / income.amount) * 100 * 100) / 100; // Round to 2 decimal places
+    // Savings rate = (income - expenses) / income * 100
+    // Investments are not subtracted from balance, so they don't affect savings rate
+    const savings = income.amount - expenses.amount;
+    return Math.round((savings / income.amount) * 100 * 100) / 100; // Round to 2 decimal places
   }
 }

@@ -76,6 +76,7 @@ model Transaction {
   @@index([hidden])
   @@index([userId])
   @@index([userId, date])
+  @@index([userId, categoryId])
   @@index([linkedTransactionId])
   @@index([isReimbursement])
   @@map("transactions")
@@ -192,6 +193,7 @@ model CategoryPattern {
   updatedAt     DateTime @updatedAt
   category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
+  @@unique([categoryId, pattern])
   @@index([categoryId])
   @@index([patternType])
   @@index([isActive])
@@ -268,6 +270,7 @@ model InvestmentHistory {
   investment      Investment  @relation(fields: [investmentId], references: [id], onDelete: Cascade)
 
   @@index([investmentId])
+  @@index([investmentId, date])
   @@index([date])
   @@index([type])
   @@index([transactionId])

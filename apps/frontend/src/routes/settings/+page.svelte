@@ -63,13 +63,18 @@
   function getImportMessage(): string {
     const data = store.pendingImportData;
     if (!data) return '';
-    if (data.data) {
-      const tx = data.data.transactions?.length || 0;
-      const cat = data.data.categories?.length || 0;
-      const inv = data.data.investments?.length || 0;
+
+    // New complete export format
+    if (data.data && typeof data.data === 'object') {
+      const tx = Array.isArray(data.data.transactions) ? data.data.transactions.length : 0;
+      const cat = Array.isArray(data.data.categories) ? data.data.categories.length : 0;
+      const inv = Array.isArray(data.data.investments) ? data.data.investments.length : 0;
       return `Import ${tx} transactions, ${cat} categories, ${inv} investments?`;
     }
-    return `Import ${data.transactions?.length || 0} transactions?`;
+
+    // Legacy format
+    const txCount = Array.isArray(data.transactions) ? data.transactions.length : 0;
+    return `Import ${txCount} transactions?`;
   }
 </script>
 

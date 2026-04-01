@@ -19,7 +19,7 @@ export class DashboardMetrics {
     expenses: Money,
     investments: Money
   ): DashboardMetrics {
-    const balance = income.subtract(expenses).subtract(investments);
+    const balance = income.subtract(expenses);
     const totalIncome = income.getValue();
     const spendingRate = totalIncome > 0 ? (expenses.getValue() / totalIncome) * 100 : 0;
     // Savings = Income - Expenses (investments are not expenses, they're where you put savings)

@@ -8,11 +8,15 @@ import { Money } from '../../domain/value-objects/Money';
 import { SignedMoney } from '../../domain/value-objects/SignedMoney';
 
 export class PrismaMetricsRepository implements MetricsRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly userId?: string
+  ) {}
 
   async getCurrentMetrics(period: MetricsPeriod, _currency: Currency): Promise<MetricSnapshot> {
     const transactions = await this.prisma.transaction.findMany({
       where: {
+        userId: this.userId || 'default',
         date: {
           gte: period.startDate,
           lte: period.endDate,
@@ -31,24 +35,38 @@ export class PrismaMetricsRepository implements MetricsRepository {
     periods: MetricsPeriod[],
     _currency: Currency
   ): Promise<MetricSnapshot[]> {
-    const snapshots: MetricSnapshot[] = [];
+    if (periods.length === 0) return [];
 
+    // Fetch all transactions for the entire date range in a single query to avoid N+1
+    const allStartDates = periods.map((p) => p.startDate);
+    const allEndDates = periods.map((p) => p.endDate);
+    const minDate = new Date(Math.min(...allStartDates.map((d) => d.getTime())));
+    const maxDate = new Date(Math.max(...allEndDates.map((d) => d.getTime())));
+
+    const allTransactions = await this.prisma.transaction.findMany({
+      where: {
+        userId: this.userId || 'default',
+        date: {
+          gte: minDate,
+          lte: maxDate,
+        },
+        hidden: false,
+      },
+      include: {
+        category: true,
+      },
+    });
+
+    // Partition transactions into periods
+    const snapshots: MetricSnapshot[] = [];
     for (const period of periods) {
-      const transactions = await this.prisma.transaction.findMany({
-        where: {
-          date: {
-            gte: period.startDate,
-            lte: period.endDate,
-          },
-          hidden: false,
-        },
-        include: {
-          category: true,
-        },
+      const periodTransactions = allTransactions.filter((t) => {
+        const d = t.date.getTime();
+        return d >= period.startDate.getTime() && d <= period.endDate.getTime();
       });
 
       const snapshot = this.calculateMetricsFromTransactions(
-        transactions,
+        periodTransactions,
         period,
         MetricsType.historical()
       );
@@ -80,6 +98,7 @@ export class PrismaMetricsRepository implements MetricsRepository {
   ): Promise<Array<{ categoryName: string; amount: Money; percentage: number }>> {
     const transactions = await this.prisma.transaction.findMany({
       where: {
+        userId: this.userId || 'default',
         date: {
           gte: period.startDate,
           lte: period.endDate,
@@ -158,10 +177,9 @@ export class PrismaMetricsRepository implements MetricsRepository {
       }
     });
 
-    const balance = totalIncome - totalExpenses - totalInvestments - totalDebtPayments;
-    const spendingRate =
-      totalIncome > 0 ? ((totalExpenses + totalDebtPayments) / totalIncome) * 100 : 0;
-    const savingsRate = totalIncome > 0 ? Math.max(0, (balance / totalIncome) * 100) : 0;
+    const balance = totalIncome - totalExpenses;
+    const spendingRate = totalIncome > 0 ? (totalExpenses / totalIncome) * 100 : 0;
+    const savingsRate = totalIncome > 0 ? (balance / totalIncome) * 100 : 0;
 
     const totalIncomeResult = Money.create(totalIncome, 'EUR');
     const totalExpensesResult = Money.create(totalExpenses, 'EUR');

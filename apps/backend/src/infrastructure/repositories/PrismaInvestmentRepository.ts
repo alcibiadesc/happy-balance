@@ -301,6 +301,13 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
   async update(investment: Investment): Promise<Result<void>> {
     try {
       const { id, userId, ...updateData } = this.domainToPrisma(investment);
+      // Verify ownership before updating
+      const existing = await this.prisma.investment.findFirst({
+        where: { id: investment.id.value, userId: this.userId },
+      });
+      if (!existing) {
+        return Result.failWithMessage('Investment not found or not owned by user');
+      }
       await this.prisma.investment.update({
         where: { id: investment.id.value },
         data: updateData,
@@ -315,6 +322,13 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
 
   async delete(id: InvestmentId): Promise<Result<void>> {
     try {
+      // Verify ownership before soft-deleting
+      const existing = await this.prisma.investment.findFirst({
+        where: { id: id.value, userId: this.userId },
+      });
+      if (!existing) {
+        return Result.failWithMessage('Investment not found or not owned by user');
+      }
       await this.prisma.investment.update({
         where: { id: id.value },
         data: { isActive: false },
@@ -329,6 +343,13 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
 
   async permanentDelete(id: InvestmentId): Promise<Result<void>> {
     try {
+      // Verify ownership before deleting
+      const existing = await this.prisma.investment.findFirst({
+        where: { id: id.value, userId: this.userId },
+      });
+      if (!existing) {
+        return Result.failWithMessage('Investment not found or not owned by user');
+      }
       await this.prisma.investment.delete({
         where: { id: id.value },
       });
@@ -393,6 +414,14 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
 
   async updateSortOrder(sortOrders: { id: string; sortOrder: number }[]): Promise<Result<void>> {
     try {
+      // Verify all investments belong to this user before updating
+      const ids = sortOrders.map((item) => item.id);
+      const owned = await this.prisma.investment.count({
+        where: { id: { in: ids }, userId: this.userId },
+      });
+      if (owned !== ids.length) {
+        return Result.failWithMessage('One or more investments not found or not owned by user');
+      }
       await this.prisma.$transaction(
         sortOrders.map((item) =>
           this.prisma.investment.update({
@@ -428,9 +457,15 @@ export class PrismaInvestmentRepository implements IInvestmentRepository {
     try {
       const history = await this.prisma.investmentHistory.findUnique({
         where: { id: id.value },
+        include: { investment: { select: { userId: true } } },
       });
 
       if (!history) {
+        return Result.ok(null);
+      }
+
+      // Verify the history entry belongs to an investment owned by this user
+      if ((history as any).investment?.userId !== this.userId) {
         return Result.ok(null);
       }
 

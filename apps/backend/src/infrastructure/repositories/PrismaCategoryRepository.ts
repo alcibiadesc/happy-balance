@@ -107,9 +107,10 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async findById(id: CategoryId): Promise<Result<Category | null>> {
     try {
-      const category = await this.prisma.category.findUnique({
+      const category = await this.prisma.category.findFirst({
         where: {
           id: id.value,
+          OR: [{ isGlobal: true }, { userId: this.userId || 'default' }],
         },
       });
 
@@ -213,6 +214,16 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     try {
       const { id, userId, isGlobal, ...updateData } = this.domainToPrisma(category);
       // Don't update userId or isGlobal - keep original values
+      // Verify ownership before updating
+      const existing = await this.prisma.category.findFirst({
+        where: {
+          id: category.id.value,
+          userId: this.userId || 'default',
+        },
+      });
+      if (!existing) {
+        return Result.failWithMessage('Category not found or not owned by user');
+      }
       await this.prisma.category.update({
         where: {
           id: category.id.value,
@@ -229,6 +240,16 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async delete(id: CategoryId): Promise<Result<void>> {
     try {
+      // Verify ownership before soft-deleting
+      const existing = await this.prisma.category.findFirst({
+        where: {
+          id: id.value,
+          userId: this.userId || 'default',
+        },
+      });
+      if (!existing) {
+        return Result.failWithMessage('Category not found or not owned by user');
+      }
       await this.prisma.category.update({
         where: {
           id: id.value,
@@ -247,6 +268,16 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async permanentDelete(id: CategoryId): Promise<Result<void>> {
     try {
+      // Verify ownership before deleting
+      const existing = await this.prisma.category.findFirst({
+        where: {
+          id: id.value,
+          userId: this.userId || 'default',
+        },
+      });
+      if (!existing) {
+        return Result.failWithMessage('Category not found or not owned by user');
+      }
       await this.prisma.category.delete({
         where: {
           id: id.value,
@@ -265,6 +296,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       const count = await this.prisma.category.count({
         where: {
           id: id.value,
+          OR: [{ isGlobal: true }, { userId: this.userId || 'default' }],
         },
       });
       return Result.ok(count > 0);
@@ -281,7 +313,8 @@ export class PrismaCategoryRepository implements ICategoryRepository {
         where: {
           name,
           type,
-          isActive: true, // Only check active categories
+          isActive: true,
+          OR: [{ isGlobal: true }, { userId: this.userId || 'default' }],
         },
       });
       return Result.ok(count > 0);
@@ -335,7 +368,9 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async count(filters?: CategoryFilters): Promise<Result<number>> {
     try {
-      const where: any = {};
+      const where: any = {
+        OR: [{ isGlobal: true }, { userId: this.userId || 'default' }],
+      };
 
       if (filters?.type) {
         where.type = filters.type;
@@ -382,6 +417,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       const stats = await this.prisma.transaction.aggregate({
         where: {
           categoryId: id.value,
+          userId: this.userId || 'default',
         },
         _count: true,
         _sum: {
