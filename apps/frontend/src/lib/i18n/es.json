@@ -528,6 +528,7 @@
     "all_done": "No hay transacciones pendientes de categorizar",
     "retry": "Reintentar",
     "enter_tinder": "Modo Tinder",
-    "enter_tinder_desc": "Categoriza rápidamente con swipe"
+    "enter_tinder_desc": "Categoriza rápidamente con swipe",
+    "suggested_category": "Categoría sugerida"
   }
 }

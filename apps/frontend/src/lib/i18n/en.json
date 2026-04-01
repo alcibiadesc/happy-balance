@@ -528,6 +528,7 @@
     "all_done": "No uncategorized transactions remaining",
     "retry": "Retry",
     "enter_tinder": "Tinder Mode",
-    "enter_tinder_desc": "Quick categorization with swipe"
+    "enter_tinder_desc": "Quick categorization with swipe",
+    "suggested_category": "Suggested category"
   }
 }
