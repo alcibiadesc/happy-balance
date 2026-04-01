@@ -88,7 +88,28 @@ export const smartCategorize = async (
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to smart categorize: ${response.statusText}`);
+      // Parse actual error message from backend
+      let errorMsg = response.statusText;
+      try {
+        const errorBody = await response.json();
+        errorMsg = errorBody.error || errorBody.message || errorMsg;
+      } catch {
+        // ignore parse errors
+      }
+      console.error(`Smart categorize failed (${response.status}): ${errorMsg}`);
+
+      // Fallback to simple PUT update if smart categorize fails
+      const fallbackResponse = await fetch(`${apiUrl}/transactions/${transactionId}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ categoryId }),
+      });
+
+      if (fallbackResponse.ok) {
+        return { success: true, categorizedCount: 1, patternCreated: false };
+      }
+
+      throw new Error(`Failed to categorize: ${errorMsg}`);
     }
 
     const result = await response.json();

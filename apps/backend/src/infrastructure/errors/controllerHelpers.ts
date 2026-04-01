@@ -67,7 +67,12 @@ export function validateParams<T>(schema: ZodSchema<T>, req: Request): T {
 export function handleResult<T>(result: Result<T>, errorMessage?: string): T {
   if (result.isFailure()) {
     const error = result.getError();
-    const message = typeof error === 'string' ? error : errorMessage || 'Operation failed';
+    const message =
+      typeof error === 'string'
+        ? error
+        : error instanceof Error
+          ? error.message
+          : errorMessage || 'Operation failed';
     throw new BadRequestError(message);
   }
   return result.getValue();

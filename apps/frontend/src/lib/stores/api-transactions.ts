@@ -208,14 +208,36 @@ function createApiTransactionStore() {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Failed to categorize transaction');
+          let errorMsg = 'Failed to categorize transaction';
+          try {
+            const error = await response.json();
+            errorMsg = error.error || errorMsg;
+          } catch {
+            // ignore parse errors
+          }
+          console.warn(
+            `Smart categorize failed (${response.status}): ${errorMsg}, falling back to simple update`
+          );
+
+          // Fallback to simple PUT update
+          const fallbackResponse = await fetch(`${API_BASE}/transactions/${transactionId}`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ categoryId }),
+          });
+
+          if (fallbackResponse.ok) {
+            await this.load();
+            return { success: true, categorizedCount: 1 };
+          }
+
+          throw new Error(errorMsg);
         }
 
         const result = await response.json();
 
         // Reload transactions to reflect changes
-        if (result.success && result.categorizedCount > 0) {
+        if (result.success && result.data?.categorizedCount > 0) {
           await this.load();
         }
 
