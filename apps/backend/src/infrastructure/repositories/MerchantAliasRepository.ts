@@ -9,7 +9,7 @@ export interface IMerchantAliasRepository {
   findAllForUser(userId: string | null): Promise<MerchantAlias[]>;
   findBestMatch(merchant: string, userId?: string | null): Promise<MerchantAlias | null>;
   save(alias: MerchantAlias): Promise<void>;
-  delete(id: string): Promise<void>;
+  delete(id: string, userId?: string | null): Promise<void>;
   deleteByUserId(userId: string): Promise<number>;
 }
 
@@ -180,7 +180,16 @@ export class MerchantAliasRepository implements IMerchantAliasRepository {
     });
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string, userId?: string | null): Promise<void> {
+    // Verify ownership before deleting if userId provided
+    if (userId !== undefined) {
+      const record = await this.prisma.merchantAlias.findUnique({
+        where: { id },
+      });
+      if (!record || (record.userId !== null && record.userId !== userId)) {
+        throw new Error('Alias not found or not owned by user');
+      }
+    }
     await this.prisma.merchantAlias.delete({
       where: { id },
     });

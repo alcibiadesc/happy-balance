@@ -213,7 +213,7 @@ export class MerchantAliasController {
         return;
       }
 
-      await this.aliasRepository.delete(id);
+      await this.aliasRepository.delete(id, this.userId);
 
       res.json({
         success: true,

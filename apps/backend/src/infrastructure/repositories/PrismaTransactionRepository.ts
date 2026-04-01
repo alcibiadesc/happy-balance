@@ -459,6 +459,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       const prismaTransactions = await this.prisma.transaction.findMany({
         where: {
+          userId: this.userId || 'default',
           id: { not: transaction.id.value },
           amount: transaction.amount.amount,
           currency: transaction.amount.currency,
