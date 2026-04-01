@@ -137,15 +137,37 @@
         return;
       }
 
-      // Always open smart categorization modal for intelligent tagging options
       const category = getCategoryById($apiCategories, categoryId);
-      if (category) {
-        // Fetch matching transactions in background
-        const matchingTransactions = await findMatchingTransactions(transaction, $apiTransactions);
-        pageStore.openSmartCategorization(transaction, category, matchingTransactions);
+      if (!category) {
+        pageStore.closeCategoryModal();
+        return;
       }
 
-      pageStore.closeCategoryModal();
+      // Fetch matching transactions
+      const matchingTransactions = await findMatchingTransactions(transaction, $apiTransactions);
+
+      if (matchingTransactions.length === 0) {
+        // No similar transactions — skip the second modal,
+        // apply category directly with applyToFuture enabled
+        pageStore.closeCategoryModal();
+        try {
+          const result = await smartCategorize(transaction.id, category.id, {
+            applyToAll: false,
+            applyToFuture: true,
+            createPattern: true,
+          });
+          if (result.success) {
+            await apiTransactions.load();
+          }
+        } catch (error) {
+          console.error('Failed to smart categorize:', error);
+          await transactionOps.categorize(transaction, category.id, false);
+        }
+      } else {
+        // Show smart categorization modal with matching transactions
+        pageStore.openSmartCategorization(transaction, category, matchingTransactions);
+        pageStore.closeCategoryModal();
+      }
     } catch (error) {
       console.error('Failed to categorize transaction:', error);
       pageStore.closeCategoryModal();
