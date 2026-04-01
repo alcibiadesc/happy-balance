@@ -360,7 +360,7 @@ export class PrismaDashboardRepository {
   async getSavingsMetrics(startDate: Date, endDate: Date) {
     const metrics = await this.getAggregatedMetrics(startDate, endDate);
 
-    const savings = metrics.income - metrics.expenses - metrics.investments;
+    const savings = metrics.income - metrics.expenses;
     const savingsRate = metrics.income > 0 ? (savings / metrics.income) * 100 : 0;
     const expenseRatio = metrics.income > 0 ? (metrics.expenses / metrics.income) * 100 : 0;
 

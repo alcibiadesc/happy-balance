@@ -228,7 +228,7 @@ export class GetDashboardMetricsUseCase {
       expenses,
       investments,
       debtPayments: 0,
-      balance: income - expenses - investments,
+      balance: income - expenses,
       currency,
     };
   }

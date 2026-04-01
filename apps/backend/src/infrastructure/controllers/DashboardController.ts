@@ -233,11 +233,9 @@ export class DashboardController {
           income: Math.round(h.income * 100) / 100,
           expenses: Math.round(h.expenses * 100) / 100,
           investments: Math.round(h.investments * 100) / 100,
-          balance: Math.round((h.income - h.expenses - h.investments) * 100) / 100,
+          balance: Math.round((h.income - h.expenses) * 100) / 100,
           savingsRate:
-            h.income > 0
-              ? Math.round(((h.income - h.expenses - h.investments) / h.income) * 1000) / 10
-              : 0,
+            h.income > 0 ? Math.round(((h.income - h.expenses) / h.income) * 1000) / 10 : 0,
           currency: 'EUR',
         },
         transactionCount: h.transactionCount,
@@ -430,7 +428,7 @@ export class DashboardController {
         income: Math.round(h.income * 100) / 100,
         expenses: Math.round(h.expenses * 100) / 100,
         investments: Math.round(h.investments * 100) / 100,
-        balance: Math.round((h.income - h.expenses - h.investments) * 100) / 100,
+        balance: Math.round((h.income - h.expenses) * 100) / 100,
       })),
     });
   }

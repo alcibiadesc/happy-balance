@@ -4,6 +4,7 @@ import { browser } from '$app/environment';
 export type NavItemId =
   | 'dashboard'
   | 'transactions'
+  | 'tinder'
   | 'categories'
   | 'portfolio'
   | 'settings'
@@ -49,12 +50,21 @@ const DEFAULT_NAV_ITEMS: NavItemConfig[] = [
     position: 'top',
   },
   {
+    id: 'tinder',
+    href: '/transactions/tinder',
+    icon: 'sparkles',
+    labelKey: 'tinder.enter_tinder',
+    visible: true,
+    order: 2,
+    position: 'top',
+  },
+  {
     id: 'categories',
     href: '/categories',
     icon: 'tag',
     labelKey: 'navigation.categories',
     visible: true,
-    order: 2,
+    order: 3,
     position: 'top',
   },
   {
@@ -63,7 +73,7 @@ const DEFAULT_NAV_ITEMS: NavItemConfig[] = [
     icon: 'trending-up',
     labelKey: 'navigation.portfolio',
     visible: true,
-    order: 3,
+    order: 4,
     position: 'top',
   },
   {

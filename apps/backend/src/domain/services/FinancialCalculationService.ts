@@ -112,16 +112,14 @@ export class FinancialCalculationService {
       }
     }
 
-    // Calculate balance (income - expenses - investments - debt payments)
+    // Calculate balance (income - expenses - debt payments)
+    // Investments are tracked separately and NOT subtracted from balance
     // Use SignedMoney to allow negative balances
     const signedIncome = SignedMoney.fromMoney(totalIncome);
     const balanceStep1 = signedIncome.subtract(totalExpenses);
     if (balanceStep1.isFailure()) return Result.fail(balanceStep1.getError());
 
-    const balanceStep2 = balanceStep1.getValue().subtract(totalInvestments);
-    if (balanceStep2.isFailure()) return Result.fail(balanceStep2.getError());
-
-    const balance = balanceStep2.getValue().subtract(totalDebtPayments);
+    const balance = balanceStep1.getValue().subtract(totalDebtPayments);
     if (balance.isFailure()) return Result.fail(balance.getError());
 
     // Calculate savings rate
