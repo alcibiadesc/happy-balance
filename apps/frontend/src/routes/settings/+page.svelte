@@ -158,12 +158,16 @@
               <option value={type}>{exportTypeLabels[type]}</option>
             {/each}
           </select>
-          <button class="action-btn" onclick={() => store.exportData(selectedExportType)}>
+          <button
+            class="action-btn"
+            onclick={() => store.exportData(selectedExportType)}
+            aria-label="Export data"
+          >
             <Download size={16} />
             Export
           </button>
         </div>
-        <label class="action-btn">
+        <label class="action-btn" aria-label="Import data from JSON file">
           <Upload size={16} />
           Import
           <input
@@ -173,11 +177,15 @@
             onchange={store.handleFileImport}
           />
         </label>
-        <button class="action-btn warning" onclick={store.resetData}>
+        <button class="action-btn warning" onclick={store.resetData} aria-label="Reset all data">
           <RotateCcw size={16} />
           Reset
         </button>
-        <button class="action-btn danger" onclick={store.deleteAllData}>
+        <button
+          class="action-btn danger"
+          onclick={store.deleteAllData}
+          aria-label="Delete all data permanently"
+        >
           <Trash2 size={16} />
           Delete All
         </button>

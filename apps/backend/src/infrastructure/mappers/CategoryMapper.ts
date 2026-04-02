@@ -20,6 +20,7 @@ export function mapCategoryToDTO(category: Category): CategoryDTO {
     type: mapCategoryType(snapshot.type),
     color: snapshot.color,
     icon: snapshot.icon,
+    isActive: snapshot.isActive,
     annualBudget: snapshot.annualBudget ?? null,
     monthlyBudget: snapshot.annualBudget ? snapshot.annualBudget / 12 : null,
     isDefault: false,

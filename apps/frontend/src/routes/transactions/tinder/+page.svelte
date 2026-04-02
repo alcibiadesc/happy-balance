@@ -153,6 +153,7 @@
       <!-- Actions -->
       <TinderActions
         hasSuggestion={store.currentSuggestion.suggestion !== null}
+        disabled={store.showCategoryPicker}
         onAccept={handleAccept}
         onReject={handleReject}
         onSkip={handleSkip}

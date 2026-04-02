@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import { apiLimiter } from './rateLimiter';
+import { logger } from '@infrastructure/logging/logger';
 
 export function setupMiddleware(app: express.Application): void {
   // Security middleware
@@ -42,7 +43,7 @@ export function setupMiddleware(app: express.Application): void {
           return callback(null, true);
         }
 
-        console.warn(`CORS rejected origin: ${origin}`);
+        logger.warn({ origin }, 'CORS rejected origin');
         callback(new Error('CORS policy violation'), false);
       },
       credentials: true,

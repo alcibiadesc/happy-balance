@@ -14,6 +14,7 @@ class TinderPageStore {
   showCategoryPicker = $state(false);
   totalUncategorized = $state(0);
   error = $state<string | null>(null);
+  hasLoaded = $state(false);
 
   // Stats
   acceptedCount = $state(0);
@@ -25,7 +26,9 @@ class TinderPageStore {
     this.currentIndex < this.suggestions.length ? this.suggestions[this.currentIndex] : null
   );
 
-  isComplete = $derived(this.currentIndex >= this.suggestions.length && !this.isLoading);
+  isComplete = $derived(
+    this.hasLoaded && this.currentIndex >= this.suggestions.length && !this.isLoading
+  );
 
   remaining = $derived(Math.max(0, this.suggestions.length - this.currentIndex));
 
@@ -46,8 +49,10 @@ class TinderPageStore {
       this.acceptedCount = 0;
       this.rejectedCount = 0;
       this.skippedCount = 0;
+      this.hasLoaded = true;
     } catch (e) {
       this.error = e instanceof Error ? e.message : 'Failed to load suggestions';
+      this.hasLoaded = true;
       console.error('Failed to load tinder suggestions:', e);
     } finally {
       this.isLoading = false;

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { AuthenticationService } from '@domain/services/AuthenticationService';
 import { UserRole } from '@domain/entities/User';
+import { logger } from '@infrastructure/logging/logger';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -61,7 +62,7 @@ export const authenticate: RequestHandler = (
 
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    logger.error({ err: error }, 'Authentication error');
     res.status(500).json({
       success: false,
       error: 'Authentication failed',

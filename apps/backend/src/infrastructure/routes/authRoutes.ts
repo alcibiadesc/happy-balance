@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { AuthController } from '@infrastructure/controllers/AuthController';
 import { authenticate } from '@infrastructure/middleware/auth';
 import { asyncHandler } from '@infrastructure/errors';
+import { authLimiter } from '@infrastructure/middleware/rateLimiter';
 
 export function createAuthRoutes(authController: AuthController): Router {
   const router = Router();
@@ -48,6 +49,7 @@ export function createAuthRoutes(authController: AuthController): Router {
    */
   router.post(
     '/login',
+    authLimiter,
     asyncHandler((req, res) => authController.login(req, res))
   );
 
@@ -74,6 +76,7 @@ export function createAuthRoutes(authController: AuthController): Router {
    */
   router.post(
     '/refresh',
+    authLimiter,
     asyncHandler((req, res) => authController.refresh(req, res))
   );
 
@@ -120,6 +123,7 @@ export function createAuthRoutes(authController: AuthController): Router {
   router.post(
     '/change-password',
     authenticate,
+    authLimiter,
     asyncHandler((req, res) => authController.changePassword(req, res))
   );
 
@@ -152,6 +156,7 @@ export function createAuthRoutes(authController: AuthController): Router {
    */
   router.post(
     '/reset-password-change',
+    authLimiter,
     asyncHandler((req, res) => authController.resetPasswordChange(req, res))
   );
 

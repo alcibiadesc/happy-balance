@@ -59,7 +59,6 @@ export type {
 
 // Investment contract
 export type {
-  InvestmentType,
   InvestmentHistoryType,
   InvestmentDTO,
   InvestmentWithMetricsDTO,

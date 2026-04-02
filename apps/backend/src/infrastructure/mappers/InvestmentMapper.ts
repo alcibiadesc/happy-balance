@@ -2,7 +2,6 @@ import type {
   InvestmentDTO,
   InvestmentWithMetricsDTO,
   InvestmentHistoryEntryDTO,
-  InvestmentType as SharedInvestmentType,
   InvestmentHistoryType as SharedHistoryType,
 } from '@happy-balance/shared-types';
 import { Investment } from '@domain/entities/Investment';
@@ -15,16 +14,19 @@ export function mapInvestmentToDTO(investment: Investment): InvestmentDTO {
   return {
     id: snapshot.id,
     name: snapshot.name,
-    type: (snapshot.symbol ? 'STOCKS' : 'OTHER') as SharedInvestmentType,
-    symbol: snapshot.symbol ?? undefined,
+    symbol: snapshot.symbol,
     currentValue: snapshot.currentValue,
-    totalContributed: snapshot.totalContributions ?? 0,
+    totalContributed: snapshot.totalContributions,
     currency: snapshot.currency,
-    categoryId: snapshot.categoryId ?? undefined,
-    notes: snapshot.notes ?? undefined,
+    categoryId: snapshot.categoryId,
+    highlight: snapshot.highlight,
+    color: snapshot.color,
+    icon: snapshot.icon,
+    notes: snapshot.notes,
     isActive: snapshot.isActive,
+    sortOrder: snapshot.sortOrder,
     createdAt: snapshot.createdAt,
-    updatedAt: snapshot.createdAt,
+    updatedAt: snapshot.createdAt, // Investment entity doesn't track updatedAt separately
   };
 }
 
@@ -35,8 +37,10 @@ export function mapInvestmentWithMetricsToDTO(investment: Investment): Investmen
   const snapshot = investment.toSnapshot();
   return {
     ...mapInvestmentToDTO(investment),
-    profit: snapshot.profit ?? 0,
-    profitPercentage: snapshot.profitPercentage ?? 0,
+    profit: snapshot.profit,
+    profitPercentage: snapshot.profitPercentage,
+    totalWithdrawals: snapshot.totalWithdrawals,
+    netContributions: snapshot.netContributions,
     history: snapshot.history?.map((entry) => mapHistoryEntryToDTO(entry)),
   };
 }
@@ -55,7 +59,7 @@ function mapHistoryEntryToDTO(entry: {
     id: entry.id,
     amount: entry.amount,
     date: entry.date,
-    notes: entry.notes ?? undefined,
+    notes: entry.notes ?? null,
     type: entry.type as SharedHistoryType,
   };
 }

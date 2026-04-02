@@ -4,14 +4,27 @@
 
   interface Props {
     hasSuggestion: boolean;
+    disabled?: boolean;
     onAccept: () => void;
     onReject: () => void;
     onSkip: () => void;
   }
 
-  const { hasSuggestion, onAccept, onReject, onSkip }: Props = $props();
+  const { hasSuggestion, disabled = false, onAccept, onReject, onSkip }: Props = $props();
 
   function handleKeydown(e: KeyboardEvent) {
+    if (disabled) return;
+
+    // Ignore keyboard shortcuts when typing in an input
+    const target = e.target as HTMLElement;
+    if (
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.tagName === 'SELECT'
+    ) {
+      return;
+    }
+
     if (e.key === 'ArrowRight' && hasSuggestion) {
       e.preventDefault();
       onAccept();

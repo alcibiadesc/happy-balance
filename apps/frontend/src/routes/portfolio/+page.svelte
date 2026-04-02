@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
-  import { Plus, Wallet, RefreshCw, ArrowRight, Zap, Clock } from 'lucide-svelte';
+  import { Plus, Wallet, RefreshCw, ArrowRight, Zap, Clock, X } from 'lucide-svelte';
 
   // Components
   import PageContainer from '$lib/components/atoms/PageContainer.svelte';
@@ -217,7 +217,12 @@
               {formatRelativeTime(lastSyncTime)}
             </span>
           {/if}
-          <button class="sync-banner-btn" onclick={handleSync} disabled={store.isSyncing}>
+          <button
+            class="sync-banner-btn"
+            onclick={handleSync}
+            disabled={store.isSyncing}
+            aria-label="Sync investments with transactions"
+          >
             <RefreshCw size={16} class={store.isSyncing ? 'spinning' : ''} />
             {store.isSyncing ? 'Sincronizando...' : 'Sincronizar ahora'}
           </button>
@@ -228,7 +233,13 @@
         <div class="sync-notification" role="status">
           <RefreshCw size={14} />
           <span>{syncNotification}</span>
-          <button class="dismiss-btn" onclick={() => (syncNotification = null)}>x</button>
+          <button
+            class="dismiss-btn"
+            onclick={() => (syncNotification = null)}
+            aria-label="Dismiss notification"
+          >
+            <X size={14} />
+          </button>
         </div>
       {/if}
 
@@ -237,7 +248,11 @@
         <div class="section-header">
           <h2><Wallet size={18} /> Inversiones</h2>
           <div class="header-actions">
-            <button class="add-btn" onclick={() => store.startNewInvestment()}>
+            <button
+              class="add-btn"
+              onclick={() => store.startNewInvestment()}
+              aria-label="Add new investment"
+            >
               <Plus size={16} /> Anadir
             </button>
           </div>
@@ -556,14 +571,17 @@
   }
 
   .dismiss-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
     color: var(--acapulco);
-    font-size: 1.25rem;
     cursor: pointer;
-    padding: 0;
-    line-height: 1;
+    padding: 0.25rem;
+    border-radius: 50%;
     opacity: 0.7;
+    transition: opacity 0.15s;
   }
 
   .dismiss-btn:hover {

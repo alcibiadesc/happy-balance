@@ -485,7 +485,11 @@
     </main>
 
     <!-- FAB -->
-    <button class="fab" onclick={() => pageStore.openAddModal()}>
+    <button
+      class="fab"
+      onclick={() => pageStore.openAddModal()}
+      aria-label={$t('transactions.add_transaction')}
+    >
       <Plus size={16} />
     </button>
   </div>

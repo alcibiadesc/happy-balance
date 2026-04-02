@@ -19,9 +19,12 @@ export interface CategoryDTO {
   type: CategoryType;
   color: string;
   icon: string;
+  isActive: boolean;
   parentId?: string | null;
   annualBudget?: number | null;
+  /** Computed: annualBudget / 12. Not stored in DB. */
   monthlyBudget?: number | null;
+  isGlobal?: boolean;
   isDefault?: boolean;
   sortOrder?: number;
 }
