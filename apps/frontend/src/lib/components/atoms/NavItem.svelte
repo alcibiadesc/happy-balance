@@ -1,6 +1,14 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { LayoutDashboard, Settings, Receipt, Tag, TrendingUp, Upload } from 'lucide-svelte';
+  import {
+    LayoutDashboard,
+    Settings,
+    Receipt,
+    Tag,
+    TrendingUp,
+    Upload,
+    Sparkles,
+  } from 'lucide-svelte';
 
   interface Props {
     href: string;
@@ -26,6 +34,7 @@
   const iconMap = {
     'layout-dashboard': LayoutDashboard,
     receipt: Receipt,
+    sparkles: Sparkles,
     tag: Tag,
     'trending-up': TrendingUp,
     settings: Settings,

@@ -403,9 +403,7 @@
               aria-label={$t('tinder.enter_tinder')}
             >
               <Sparkles size={14} />
-              <span class="tinder-label">{$t('tinder.enter_tinder')}</span>
             </a>
-            <div class="toolbar-separator"></div>
             <button
               class="toolbar-btn"
               onclick={() => pageStore.toggleSelectionMode()}
@@ -583,26 +581,10 @@
   :global(.tinder-btn) {
     text-decoration: none !important;
     color: var(--primary, #023c46) !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 0.375rem !important;
-    font-size: 0.8125rem !important;
-    font-weight: 500 !important;
-    white-space: nowrap !important;
   }
 
   :global(.tinder-btn:hover) {
     color: var(--primary, #023c46) !important;
     background: rgba(2, 60, 70, 0.08) !important;
-  }
-
-  .tinder-label {
-    display: inline;
-  }
-
-  @media (max-width: 480px) {
-    .tinder-label {
-      display: none;
-    }
   }
 </style>
