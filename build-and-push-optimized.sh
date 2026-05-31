@@ -13,13 +13,30 @@ NC='\033[0m' # No Color
 # Configuration
 DOCKER_USER="alcibiadesc"
 REPO="happy-balance"
-PLATFORMS="linux/amd64,linux/arm64"
+PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
+
+# Version metadata — passed as build args so /version reports real values.
+VERSION="${VERSION:-$(node -p "require('./package.json').version" 2>/dev/null || echo 'dev')}"
+COMMIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
+  COMMIT_SHA="${COMMIT_SHA}-dirty"
+fi
+BUILD_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+
+echo -e "${BLUE}Version metadata${NC}"
+echo "  VERSION         = ${VERSION}"
+echo "  COMMIT_SHA      = ${COMMIT_SHA}"
+echo "  BUILD_TIMESTAMP = ${BUILD_TIMESTAMP}"
+echo ""
 
 echo -e "${BLUE}📦 Step 1: Building Backend Optimized Image${NC}"
 echo "Building for platforms: $PLATFORMS"
 docker buildx build \
   --platform $PLATFORMS \
   -f Dockerfile.backend.optimized \
+  --build-arg VERSION="${VERSION}" \
+  --build-arg COMMIT_SHA="${COMMIT_SHA}" \
+  --build-arg BUILD_TIMESTAMP="${BUILD_TIMESTAMP}" \
   -t ${DOCKER_USER}/${REPO}:backend-optimized \
   -t ${DOCKER_USER}/${REPO}:backend-latest \
   --push \
@@ -37,6 +54,9 @@ echo -e "${BLUE}📦 Step 2: Building Frontend Optimized Image${NC}"
 docker buildx build \
   --platform $PLATFORMS \
   -f Dockerfile.frontend.optimized \
+  --build-arg VERSION="${VERSION}" \
+  --build-arg COMMIT_SHA="${COMMIT_SHA}" \
+  --build-arg BUILD_TIMESTAMP="${BUILD_TIMESTAMP}" \
   -t ${DOCKER_USER}/${REPO}:frontend-optimized \
   -t ${DOCKER_USER}/${REPO}:frontend-latest \
   --push \

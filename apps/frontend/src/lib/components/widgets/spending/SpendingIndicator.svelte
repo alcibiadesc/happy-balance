@@ -10,7 +10,8 @@
   const { income, expenses }: Props = $props();
 
   // Calculate spending rate (de cada 10€ cuántos gasto)
-  const spendingRate = $derived(income > 0 ? Math.round((expenses / income) * 10) : 0);
+  // Keep one decimal so 10.884 / 41.715 → 2.6 (not rounded to 3)
+  const spendingRate = $derived(income > 0 ? Math.round((expenses / income) * 10 * 10) / 10 : 0);
 
   // Determine status based on spending rate
   const spendingStatus = $derived.by(() => {
@@ -28,12 +29,14 @@
     if (!currency) return 'Loading...';
 
     // Use proper currency formatting with Intl.NumberFormat
+    // Show one decimal so values like 2,6 € are visible (not rounded up to 3 €)
     const formatCurrencyAmount = (amount: number) => {
+      const isInt = Number.isInteger(amount);
       return new Intl.NumberFormat(currency.locale, {
         style: 'currency',
         currency: currency.code,
-        minimumFractionDigits: currency.code === 'JPY' ? 0 : 0,
-        maximumFractionDigits: currency.code === 'JPY' ? 0 : 0,
+        minimumFractionDigits: currency.code === 'JPY' ? 0 : isInt ? 0 : 1,
+        maximumFractionDigits: currency.code === 'JPY' ? 0 : 1,
       }).format(amount);
     };
 

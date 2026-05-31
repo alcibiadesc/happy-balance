@@ -62,6 +62,10 @@
     store.skip();
   }
 
+  function handleUndo() {
+    store.undo();
+  }
+
   function handleCategorySelect(categoryId: string) {
     store.reject(categoryId);
   }
@@ -154,9 +158,11 @@
       <TinderActions
         hasSuggestion={store.currentSuggestion.suggestion !== null}
         disabled={store.showCategoryPicker}
+        canUndo={store.canUndo}
         onAccept={handleAccept}
         onReject={handleReject}
         onSkip={handleSkip}
+        onUndo={handleUndo}
       />
     {:else}
       <div class="empty-state">

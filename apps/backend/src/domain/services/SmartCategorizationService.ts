@@ -332,10 +332,14 @@ export class SmartCategorizationService {
         }
       }
 
-      // Filter by same transaction type and validate with normalizer
+      // Filter by same transaction type, amount magnitude, and normalizer.
+      // Amount magnitude (order-of-magnitude bucket) prevents cascading a
+      // category from a 4 000 € Mapfre tx to a 125 € Mapfre tx, which is the
+      // canonical "investment vs insurance" disambiguation case.
+      const sourceBucket = this.bucketAmount(transaction.amount.amount);
       for (const tx of allMatches) {
         if (tx.type === sourceType) {
-          // Additional check: normalize and compare
+          if (this.bucketAmount(tx.amount.amount) !== sourceBucket) continue;
           const txNorm = this.normalizer.normalize(tx.merchant.name);
           if (
             txNorm.canonical === pattern.canonicalMerchant ||
@@ -489,7 +493,13 @@ export class SmartCategorizationService {
       }
     }
 
-    // Find best matching pattern
+    // Amount-aware boost: prefer patterns whose past matches happened on
+    // transactions with a similar amount magnitude (e.g. "Mapfre 4000 €"
+    // → investment vs "Mapfre 125 €" → insurance). Cheap heuristic: bucket
+    // the amount by order of magnitude before pattern matching.
+    const amountBucket = this.bucketAmount(transaction.amount.amount);
+
+    // Find best matching pattern (skip wrong-type ones up-front)
     for (const pattern of activePatterns) {
       const matches =
         pattern.matches(transaction.merchant.name, transaction.description) ||
@@ -497,6 +507,12 @@ export class SmartCategorizationService {
         pattern.matches(canonicalName, transaction.description);
 
       if (matches) {
+        // If pattern is bound to a specific amount bucket via metadata, skip
+        // when current tx falls in a different bucket. (Optional metadata.)
+        const patternBucket = (pattern as any).amountBucket as number | undefined;
+        if (patternBucket !== undefined && patternBucket !== amountBucket) {
+          continue;
+        }
         // Calculate confidence based on multiple factors
         const patternUsage = Math.min(pattern.matchCount / 100, 0.3); // Max 30% boost from usage
         const normConfidence = txNorm.confidence * 0.3; // 30% from normalization
@@ -559,6 +575,18 @@ export class SmartCategorizationService {
       default:
         return false;
     }
+  }
+
+  /**
+   * Bucket an amount by order of magnitude. Used to disambiguate patterns
+   * for the same merchant at very different amounts (e.g. Mapfre 4 000 €
+   * vs 125 €). Returns the floor of log10(|amount|), so:
+   *   0–9 → 0, 10–99 → 1, 100–999 → 2, 1000–9999 → 3, …
+   */
+  private bucketAmount(amount: number): number {
+    const abs = Math.abs(amount);
+    if (!isFinite(abs) || abs < 1) return 0;
+    return Math.floor(Math.log10(abs));
   }
 
   /**

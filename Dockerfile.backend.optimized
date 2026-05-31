@@ -30,16 +30,20 @@ RUN pnpm deploy --filter=happy-balance-backend --prod /prod/backend
 WORKDIR /prod/backend
 RUN npx prisma generate
 
-# Production stage - minimal runtime image
-FROM base AS production
+# Production stage - minimal runtime image.
+# Using debian-slim (not alpine) to avoid the Synology NAS busybox-trigger bug
+# that kills `apk add` mid-install during DSM container builds. Same fix the
+# frontend Dockerfile already applies.
+FROM node:20-slim AS production
 
 # Re-declare ARGs for this stage
 ARG VERSION=unknown
 ARG COMMIT_SHA=unknown
 ARG BUILD_TIMESTAMP=unknown
 
-RUN apk add --no-cache wget dumb-init && \
-    rm -rf /root/.npm
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget dumb-init && \
+    rm -rf /var/lib/apt/lists/* /root/.npm
 
 WORKDIR /app
 
@@ -52,10 +56,10 @@ COPY --from=build /usr/src/app/apps/backend/dist ./dist
 # Create version file with build metadata
 RUN echo "{\"version\":\"${VERSION}\",\"commit\":\"${COMMIT_SHA}\",\"buildTimestamp\":\"${BUILD_TIMESTAMP}\",\"component\":\"backend\"}" > /app/.version.json
 
-# Create uploads directory and set permissions
+# Create uploads directory and non-root user
 RUN mkdir -p uploads && \
-    addgroup -g 1001 -S nodejs && \
-    adduser -S backend -u 1001 -G nodejs && \
+    groupadd -g 1001 nodejs && \
+    useradd -u 1001 -g nodejs -m -s /bin/sh backend && \
     chown -R backend:nodejs /app
 
 USER backend

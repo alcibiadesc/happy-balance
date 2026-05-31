@@ -1,16 +1,26 @@
 <script lang="ts">
-  import { X, Check, ArrowDown } from 'lucide-svelte';
+  import { X, Check, ArrowDown, Undo2 } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
 
   interface Props {
     hasSuggestion: boolean;
     disabled?: boolean;
+    canUndo?: boolean;
     onAccept: () => void;
     onReject: () => void;
     onSkip: () => void;
+    onUndo?: () => void;
   }
 
-  const { hasSuggestion, disabled = false, onAccept, onReject, onSkip }: Props = $props();
+  const {
+    hasSuggestion,
+    disabled = false,
+    canUndo = false,
+    onAccept,
+    onReject,
+    onSkip,
+    onUndo,
+  }: Props = $props();
 
   function handleKeydown(e: KeyboardEvent) {
     if (disabled) return;
@@ -34,6 +44,12 @@
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       onSkip();
+    } else if (e.key === 'ArrowUp' && canUndo && onUndo) {
+      e.preventDefault();
+      onUndo();
+    } else if ((e.key === 'z' || e.key === 'Z') && (e.metaKey || e.ctrlKey) && canUndo && onUndo) {
+      e.preventDefault();
+      onUndo();
     }
   }
 </script>
@@ -41,6 +57,16 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="tinder-actions">
+  <button
+    class="action-btn undo-btn"
+    onclick={onUndo}
+    disabled={!canUndo || !onUndo}
+    title="Deshacer (↑)"
+    aria-label="Deshacer"
+  >
+    <Undo2 size={20} strokeWidth={2.5} />
+  </button>
+
   <button
     class="action-btn reject-btn"
     onclick={onReject}
@@ -110,16 +136,23 @@
     box-shadow: 0 4px 16px rgba(245, 121, 108, 0.3);
   }
 
-  .skip-btn {
+  .skip-btn,
+  .undo-btn {
     width: 44px;
     height: 44px;
     border-color: var(--text-muted);
     color: var(--text-muted);
   }
 
-  .skip-btn:hover {
+  .skip-btn:hover,
+  .undo-btn:hover:not(:disabled) {
     background: var(--surface-muted);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .undo-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 
   .accept-btn {
@@ -152,7 +185,8 @@
       height: 50px;
     }
 
-    .skip-btn {
+    .skip-btn,
+    .undo-btn {
       width: 40px;
       height: 40px;
     }

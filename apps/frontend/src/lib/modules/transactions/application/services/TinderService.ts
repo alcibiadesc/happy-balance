@@ -34,7 +34,9 @@ export async function acceptSuggestion(transactionId: string, categoryId: string
       categoryId,
       applyToFuture: true,
       createPattern: true,
-      applyToAll: false,
+      // Cascade to similar uncategorized transactions so the algorithm
+      // visibly "learns" — one swipe categorizes the whole merchant family.
+      applyToAll: true,
     }),
   });
   if (!response.ok) {
@@ -56,7 +58,9 @@ export async function rejectSuggestion(transactionId: string, categoryId: string
       categoryId,
       applyToFuture: true,
       createPattern: true,
-      applyToAll: false,
+      // Apply to all matching uncategorized transactions so the user
+      // doesn't have to swipe Mapfre 30 times.
+      applyToAll: true,
     }),
   });
   if (!response.ok) {
@@ -66,4 +70,19 @@ export async function rejectSuggestion(transactionId: string, categoryId: string
       body: JSON.stringify({ categoryId }),
     });
   }
+}
+
+/**
+ * Undo a tinder action: restore the transaction to its previous category
+ * (or null = uncategorized). Done via simple PUT — we can't fully undo
+ * the side-effects of `applyToAll` here, but reverting the visible card is
+ * the high-value piece for the user.
+ */
+export async function undoCategorization(transactionId: string, previousCategoryId: string | null) {
+  const apiUrl = getApiUrl();
+  await fetch(`${apiUrl}/transactions/${transactionId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ categoryId: previousCategoryId }),
+  });
 }

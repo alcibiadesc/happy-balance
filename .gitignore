@@ -47,3 +47,7 @@ test_wt*
 # Database data
 data/
 /data
+
+# Logs
+*-logs.txt
+*.log

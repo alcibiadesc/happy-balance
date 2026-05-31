@@ -34,9 +34,9 @@
       </button>
     </header>
 
-    <!-- Mobile Navigation -->
+    <!-- Mobile Navigation (incluye Importar y Ajustes en mobile) -->
     <nav class="mobile-sidebar-navigation">
-      <NavList collapsed={false} onItemClick={onClose} />
+      <NavList collapsed={false} isMobile includeBottom onItemClick={onClose} />
     </nav>
   </div>
 </aside>

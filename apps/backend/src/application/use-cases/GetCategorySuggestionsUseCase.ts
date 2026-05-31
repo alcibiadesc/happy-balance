@@ -1,8 +1,40 @@
 import { TransactionSnapshot } from '../../domain/entities/Transaction';
 import { Category, CategoryId } from '../../domain/entities/Category';
+import { CategoryType } from '../../domain/entities/CategoryType';
+import { TransactionType } from '../../domain/entities/TransactionType';
 import { SmartCategorizationService } from '../../domain/services/SmartCategorizationService';
 import { ITransactionRepository } from '../../domain/repositories/ITransactionRepository';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
+
+/**
+ * Whether a category type is compatible with a transaction type.
+ * INCOME txs → only INCOME categories; INVESTMENT txs → only INVESTMENT;
+ * EXPENSE txs → ESSENTIAL/DISCRETIONARY/DEBT_PAYMENT/INVESTMENT.
+ * NO_COMPUTE is always allowed.
+ */
+function isCategoryTypeCompatible(
+  txType: TransactionType | string,
+  catType: CategoryType | string
+): boolean {
+  if (catType === CategoryType.NO_COMPUTE || catType === 'no_compute') return true;
+  if (txType === TransactionType.INCOME || txType === 'INCOME') {
+    return catType === CategoryType.INCOME || catType === 'income';
+  }
+  if (txType === TransactionType.INVESTMENT || txType === 'INVESTMENT') {
+    return catType === CategoryType.INVESTMENT || catType === 'investment';
+  }
+  // EXPENSE
+  return (
+    catType === CategoryType.ESSENTIAL ||
+    catType === 'essential' ||
+    catType === CategoryType.DISCRETIONARY ||
+    catType === 'discretionary' ||
+    catType === CategoryType.DEBT_PAYMENT ||
+    catType === 'debt_payment' ||
+    catType === CategoryType.INVESTMENT ||
+    catType === 'investment'
+  );
+}
 
 export interface GetCategorySuggestionsRequest {
   userId: string;
@@ -77,15 +109,20 @@ export class GetCategorySuggestionsUseCase {
 
         if (category) {
           const catSnapshot = category.toSnapshot();
-          suggestionItem = {
-            categoryId: catSnapshot.id,
-            categoryName: catSnapshot.name,
-            categoryIcon: catSnapshot.icon,
-            categoryColor: catSnapshot.color,
-            categoryType: catSnapshot.type,
-            confidence: categorySuggestion.confidence,
-            matchedOn: categorySuggestion.matchedOn,
-          };
+          // Drop suggestions whose category type doesn't match the tx type
+          // (e.g. an INCOME suggestion for an EXPENSE tx). The user explicitly
+          // asked us to respect income vs expense in tinder mode.
+          if (isCategoryTypeCompatible(transaction.type, catSnapshot.type)) {
+            suggestionItem = {
+              categoryId: catSnapshot.id,
+              categoryName: catSnapshot.name,
+              categoryIcon: catSnapshot.icon,
+              categoryColor: catSnapshot.color,
+              categoryType: catSnapshot.type,
+              confidence: categorySuggestion.confidence,
+              matchedOn: categorySuggestion.matchedOn,
+            };
+          }
         }
       }
 
