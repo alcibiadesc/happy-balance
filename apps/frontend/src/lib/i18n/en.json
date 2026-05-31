@@ -533,6 +533,7 @@
     "shared_expense": "Shared expense",
     "link_label": "Link",
     "link_action": "Link",
-    "linked": "Linked"
+    "linked": "Linked",
+    "undo": "Undo"
   }
 }

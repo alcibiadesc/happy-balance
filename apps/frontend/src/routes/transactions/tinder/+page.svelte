@@ -10,7 +10,7 @@
   import { createTinderPageStore } from '$lib/modules/transactions/infrastructure/stores/tinderPageStore.svelte';
   import TinderTransactionCard from '$lib/components/molecules/TinderTransactionCard.svelte';
   import TinderReimbursementCard from '$lib/components/molecules/TinderReimbursementCard.svelte';
-  import { Link2, SkipForward } from 'lucide-svelte';
+  import { Link2, SkipForward, Undo2 } from 'lucide-svelte';
   import TinderActions from '$lib/components/molecules/TinderActions.svelte';
   import TinderProgress from '$lib/components/molecules/TinderProgress.svelte';
   import TinderCategoryPicker from '$lib/components/molecules/TinderCategoryPicker.svelte';
@@ -177,6 +177,14 @@
 
       <!-- Reimbursement actions -->
       <div class="reimburse-actions">
+        <button
+          class="reimburse-btn undo"
+          onclick={() => store.undoReimburse()}
+          disabled={!store.canUndoReimburse}
+          aria-label={$t('tinder.undo')}
+        >
+          <Undo2 size={18} />
+        </button>
         <button class="reimburse-btn skip" onclick={() => store.skipReimbursement()}>
           <SkipForward size={18} />
           <span>{$t('tinder.skip')}</span>
@@ -365,6 +373,18 @@
 
   .reimburse-btn:active {
     transform: scale(0.97);
+  }
+
+  .reimburse-btn.undo {
+    flex: 0 0 auto;
+    background: var(--surface-elevated);
+    color: var(--text-secondary);
+    padding: var(--space-md, 0.875rem);
+  }
+
+  .reimburse-btn.undo:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .reimburse-btn.skip {

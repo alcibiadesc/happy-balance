@@ -5,6 +5,7 @@ import {
   undoCategorization,
   fetchReimbursementSuggestions,
   linkReimbursement,
+  unlinkReimbursement,
   type TinderSuggestion,
   type ReimbursementSuggestion,
 } from '../../application/services/TinderService';
@@ -37,6 +38,8 @@ class TinderPageStore {
   reimbursements = $state<ReimbursementSuggestion[]>([]);
   reimburseIndex = $state(0);
   reimbursePhaseStarted = $state(false);
+  // History of confirmed links, so the shared-expense phase can be undone.
+  reimburseHistory = $state<{ index: number; incomeId: string }[]>([]);
 
   // Stats
   acceptedCount = $state(0);
@@ -87,6 +90,8 @@ class TinderPageStore {
 
   canUndo = $derived(this.history.length > 0);
 
+  canUndoReimburse = $derived(this.reimburseHistory.length > 0);
+
   progress = $derived(this.total > 0 ? (this.currentCardIndex / this.total) * 100 : 0);
 
   async loadSuggestions(limit = 50) {
@@ -106,6 +111,7 @@ class TinderPageStore {
       this.reimbursements = [];
       this.reimburseIndex = 0;
       this.reimbursePhaseStarted = false;
+      this.reimburseHistory = [];
       this.hasLoaded = true;
     } catch (e) {
       this.error = e instanceof Error ? e.message : 'Failed to load suggestions';
@@ -201,12 +207,13 @@ class TinderPageStore {
         current.expense.id,
         current.suggestedSplitPercentage
       );
+      this.reimburseHistory.push({ index: this.reimburseIndex, incomeId: current.income.id });
       this.linkedCount++;
+      this.reimburseIndex++;
     } catch (e) {
       console.error('Failed to link reimbursement:', e);
       this.error = e instanceof Error ? e.message : 'Failed to link reimbursement';
-    } finally {
-      this.reimburseIndex++;
+      // On failure we do NOT advance, so the user can retry or skip.
     }
   }
 
@@ -214,6 +221,22 @@ class TinderPageStore {
   skipReimbursement() {
     this.skippedCount++;
     this.reimburseIndex++;
+  }
+
+  /**
+   * Undo the last confirmed shared-expense link: unlinks it on the server and
+   * returns to that card so the user can re-decide.
+   */
+  async undoReimburse() {
+    const last = this.reimburseHistory.pop();
+    if (!last) return;
+    this.linkedCount = Math.max(0, this.linkedCount - 1);
+    try {
+      await unlinkReimbursement(last.incomeId);
+    } catch (e) {
+      console.error('Failed to undo reimbursement link:', e);
+    }
+    this.reimburseIndex = last.index;
   }
 
   skip() {

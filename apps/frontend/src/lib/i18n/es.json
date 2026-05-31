@@ -533,6 +533,7 @@
     "shared_expense": "Gasto compartido",
     "link_label": "Vincular",
     "link_action": "Vincular",
-    "linked": "Vinculados"
+    "linked": "Vinculados",
+    "undo": "Deshacer"
   }
 }
