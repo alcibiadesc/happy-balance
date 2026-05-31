@@ -5,6 +5,7 @@ import {
   PatternType,
 } from '../../domain/entities/CategoryPattern';
 import { ICategoryPatternRepository } from '../../domain/services/SmartCategorizationService';
+import { logger } from '@infrastructure/logging/logger';
 export class CategoryPatternRepository implements ICategoryPatternRepository {
   constructor(
     private readonly prisma: PrismaClient,
@@ -23,7 +24,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
 
       return patterns.map((p) => this.toDomain(p)).filter((p) => p !== null) as CategoryPattern[];
     } catch (error) {
-      console.error('Error finding patterns by category:', error);
+      logger.error({ error }, 'Error finding patterns by category');
       return [];
     }
   }
@@ -39,7 +40,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
 
       return patterns.map((p) => this.toDomain(p)).filter((p) => p !== null) as CategoryPattern[];
     } catch (error) {
-      console.error('Error finding active patterns:', error);
+      logger.error({ error }, 'Error finding active patterns');
       return [];
     }
   }
@@ -70,7 +71,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         },
       });
     } catch (error) {
-      console.error('Error saving category pattern:', error);
+      logger.error({ error }, 'Error saving category pattern');
       throw error;
     }
   }
@@ -87,7 +88,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
 
       return this.toDomain(pattern);
     } catch (error) {
-      console.error('Error finding pattern by id:', error);
+      logger.error({ error }, 'Error finding pattern by id');
       return null;
     }
   }
@@ -98,7 +99,7 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         where: { id },
       });
     } catch (error) {
-      console.error('Error deleting category pattern:', error);
+      logger.error({ error }, 'Error deleting category pattern');
       throw error;
     }
   }
@@ -122,10 +123,10 @@ export class CategoryPatternRepository implements ICategoryPatternRepository {
         return result.getValue();
       }
 
-      console.error('Failed to convert pattern to domain:', result.getError());
+      logger.error({ error: result.getError() }, 'Failed to convert pattern to domain');
       return null;
     } catch (error) {
-      console.error('Error converting pattern to domain:', error);
+      logger.error({ error }, 'Error converting pattern to domain');
       return null;
     }
   }

@@ -259,7 +259,7 @@
                       </div>
                       {#if r.matchReasons.length > 0}
                         <div class="match-reasons">
-                          {#each r.matchReasons as reason}
+                          {#each r.matchReasons as reason, ri (ri)}
                             <span class="reason-badge">{reason}</span>
                           {/each}
                         </div>

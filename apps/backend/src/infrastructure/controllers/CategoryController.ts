@@ -17,6 +17,7 @@ import {
   createdResponse,
 } from '@infrastructure/errors';
 import { mapCategoryToDTO } from '@infrastructure/mappers/CategoryMapper';
+import { logger } from '@infrastructure/logging/logger';
 
 // Validation schemas
 const CreateCategorySchema = z.object({
@@ -154,7 +155,7 @@ export class CategoryController {
     if (this.syncService && categoryType === CategoryType.INVESTMENT) {
       const syncResult = await this.syncService.onCategoryCreated(category);
       if (syncResult.isFailure()) {
-        console.warn('Failed to sync investment from category:', syncResult.getError());
+        logger.warn({ error: syncResult.getError() }, 'Failed to sync investment from category');
       }
     }
 

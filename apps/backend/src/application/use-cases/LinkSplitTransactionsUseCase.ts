@@ -1,6 +1,7 @@
 import { Result } from '@domain/shared/Result';
 import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
 import { TransactionType } from '@domain/entities/TransactionType';
+import { TransactionId } from '@domain/value-objects/TransactionId';
 
 export interface LinkSplitTransactionsRequest {
   sourceTransactionId: string; // Can be expense or income
@@ -28,9 +29,12 @@ export class LinkSplitTransactionsUseCase {
       }
 
       // Get both transactions
-      const sourceResult = await this.transactionRepository.findById({
-        value: sourceTransactionId,
-      } as any);
+      const sourceIdResult = TransactionId.create(sourceTransactionId);
+      if (sourceIdResult.isFailure()) {
+        return Result.fail(sourceIdResult.getError());
+      }
+
+      const sourceResult = await this.transactionRepository.findById(sourceIdResult.getValue());
 
       if (sourceResult.isFailure()) {
         return Result.fail(sourceResult.getError());
@@ -41,9 +45,12 @@ export class LinkSplitTransactionsUseCase {
         return Result.failWithMessage('Source transaction not found');
       }
 
-      const targetResult = await this.transactionRepository.findById({
-        value: targetTransactionId,
-      } as any);
+      const targetIdResult = TransactionId.create(targetTransactionId);
+      if (targetIdResult.isFailure()) {
+        return Result.fail(targetIdResult.getError());
+      }
+
+      const targetResult = await this.transactionRepository.findById(targetIdResult.getValue());
 
       if (targetResult.isFailure()) {
         return Result.fail(targetResult.getError());

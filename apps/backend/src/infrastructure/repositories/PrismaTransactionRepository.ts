@@ -4,6 +4,7 @@ import { Transaction, TransactionSnapshot } from '@domain/entities/Transaction';
 import { TransactionId } from '@domain/value-objects/TransactionId';
 import { TransactionDate } from '@domain/value-objects/TransactionDate';
 import { TransactionType } from '@domain/entities/TransactionType';
+import { logger } from '@infrastructure/logging/logger';
 import {
   ITransactionRepository,
   TransactionFilters,
@@ -819,7 +820,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       return transactions;
     } catch (error) {
-      console.error('Error finding transactions by pattern:', error);
+      logger.error({ error }, 'Error finding transactions by pattern');
       return [];
     }
   }
@@ -840,7 +841,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
       await this.prisma.$transaction(updates);
     } catch (error) {
-      console.error('Error updating multiple transactions:', error);
+      logger.error({ error }, 'Error updating multiple transactions');
       throw error;
     }
   }

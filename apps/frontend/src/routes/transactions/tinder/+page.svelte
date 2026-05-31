@@ -81,7 +81,6 @@
   onMount(async () => {
     if (browser) {
       await apiCategories.load();
-      store.setCategories($apiCategories);
       await store.loadSuggestions();
     }
   });

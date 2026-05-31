@@ -20,13 +20,15 @@
     return 'regular';
   });
 
-  // Generate dynamic spending summary with current currency
-  const spendingSummaryText = $derived.by(() => {
+  // Generate dynamic spending summary with current currency.
+  // Splits the i18n template on its {amount} placeholder so the amount can be
+  // rendered inside a literal <strong> element (no @html / injection risk).
+  const spendingSummary = $derived.by(() => {
     const currencyCode = $currentCurrency;
     const rate = spendingRate;
 
     const currency = currencies[currencyCode];
-    if (!currency) return 'Loading...';
+    if (!currency) return { loading: true as const, before: 'Loading...', amount: '', after: '' };
 
     // Use proper currency formatting with Intl.NumberFormat
     // Show one decimal so values like 2,6 € are visible (not rounded up to 3 €)
@@ -40,9 +42,10 @@
       }).format(amount);
     };
 
-    // Use the i18n translation from the store
+    // Use the i18n translation from the store and split around the placeholder
     const template = $t('dashboard.spending_summary');
-    return template.replace('{amount}', `<strong>${formatCurrencyAmount(rate)}</strong>`);
+    const [before, after = ''] = template.split('{amount}');
+    return { loading: false as const, before, amount: formatCurrencyAmount(rate), after };
   });
 </script>
 
@@ -50,7 +53,11 @@
   <div class="spending-indicator">
     <span class="spending-dot"></span>
     <span class="spending-text">
-      {@html spendingSummaryText}
+      {#if spendingSummary.loading}
+        {spendingSummary.before}
+      {:else}
+        {spendingSummary.before}<strong>{spendingSummary.amount}</strong>{spendingSummary.after}
+      {/if}
     </span>
   </div>
 </div>

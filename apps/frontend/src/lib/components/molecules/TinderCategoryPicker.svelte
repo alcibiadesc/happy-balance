@@ -104,7 +104,7 @@
     </div>
 
     <div class="picker-content">
-      {#each Object.entries(groupedCategories) as [type, categoryList]}
+      {#each Object.entries(groupedCategories) as [type, categoryList] (type)}
         {#if categoryList.length > 0}
           <div class="category-group">
             <h4 class="group-title">{typeDisplayNames[type] || type}</h4>

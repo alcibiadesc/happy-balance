@@ -46,7 +46,7 @@
         </div>
       {:else if subtext}
         <div class="metric-subtext">
-          {@html subtext}
+          {subtext}
         </div>
       {/if}
     {/if}

@@ -1,17 +1,11 @@
 import { Request, Response } from 'express';
-import { PrismaCategoryRepository } from '@infrastructure/repositories/PrismaCategoryRepository';
-import { PrismaUserPreferencesRepository } from '@infrastructure/repositories/PrismaUserPreferencesRepository';
 import { prisma } from '@infrastructure/database/prisma';
 import { randomUUID } from 'crypto';
 
 export class SeedController {
   private userId: string;
 
-  constructor(
-    _categoryRepository: PrismaCategoryRepository,
-    _userPreferencesRepository: PrismaUserPreferencesRepository,
-    userId: string = 'default'
-  ) {
+  constructor(userId: string = 'default') {
     this.userId = userId;
   }
 

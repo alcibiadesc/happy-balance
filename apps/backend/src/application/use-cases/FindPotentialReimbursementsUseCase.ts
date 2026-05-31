@@ -3,6 +3,7 @@ import { ITransactionRepository } from '@domain/repositories/ITransactionReposit
 import { Transaction } from '@domain/entities/Transaction';
 import { TransactionType } from '@domain/entities/TransactionType';
 import { TransactionDate } from '@domain/value-objects/TransactionDate';
+import { TransactionId } from '@domain/value-objects/TransactionId';
 
 export interface PotentialReimbursementQuery {
   transactionId: string; // The transaction to find matches for (expense -> income OR income -> expense)
@@ -32,9 +33,14 @@ export class FindPotentialReimbursementsUseCase {
       const { transactionId, toleranceDays = 30, amountTolerancePercent = 5 } = query;
 
       // Get the source transaction
-      const sourceTransactionResult = await this.transactionRepository.findById({
-        value: transactionId,
-      } as any);
+      const sourceIdResult = TransactionId.create(transactionId);
+      if (sourceIdResult.isFailure()) {
+        return Result.fail(sourceIdResult.getError());
+      }
+
+      const sourceTransactionResult = await this.transactionRepository.findById(
+        sourceIdResult.getValue()
+      );
 
       if (sourceTransactionResult.isFailure()) {
         return Result.fail(sourceTransactionResult.getError());

@@ -5,6 +5,7 @@ import { IInvestmentRepository } from '@domain/repositories/IInvestmentRepositor
 import { Transaction } from '@domain/entities/Transaction';
 import { Category } from '@domain/entities/Category';
 import { Investment, InvestmentHistory } from '@domain/entities/Investment';
+import { logger } from '@infrastructure/logging/logger';
 
 export interface ExportData {
   exportDate: string;
@@ -152,7 +153,7 @@ export class ExportController {
         data: exportData,
       });
     } catch (error) {
-      console.error('Error exporting data:', error);
+      logger.error({ error }, 'Error exporting data');
       res.status(500).json({
         success: false,
         error: 'Failed to export data',
@@ -311,11 +312,11 @@ export class ExportController {
               }
               results.categories.imported++;
             } else {
-              console.warn('Failed to import category:', categoryResult.getError());
+              logger.warn({ error: categoryResult.getError() }, 'Failed to import category');
               results.categories.failed++;
             }
           } catch (error) {
-            console.warn('Error importing category:', error);
+            logger.warn({ error }, 'Error importing category');
             results.categories.failed++;
           }
         }
@@ -343,11 +344,11 @@ export class ExportController {
               }
               results.transactions.imported++;
             } else {
-              console.warn('Failed to import transaction:', transactionResult.getError());
+              logger.warn({ error: transactionResult.getError() }, 'Failed to import transaction');
               results.transactions.failed++;
             }
           } catch (error) {
-            console.warn('Error importing transaction:', error);
+            logger.warn({ error }, 'Error importing transaction');
             results.transactions.failed++;
           }
         }
@@ -381,15 +382,14 @@ export class ExportController {
               }
               results.investments.imported++;
             } else {
-              console.warn(
-                'Failed to import investment:',
-                invSnapshot.name,
-                investmentResult.getError()
+              logger.warn(
+                { name: invSnapshot.name, error: investmentResult.getError() },
+                'Failed to import investment'
               );
               results.investments.failed++;
             }
           } catch (error) {
-            console.warn('Error importing investment:', invSnapshot.name, error);
+            logger.warn({ name: invSnapshot.name, error }, 'Error importing investment');
             results.investments.failed++;
           }
         }
@@ -415,11 +415,11 @@ export class ExportController {
               }
               results.investmentHistory.imported++;
             } else {
-              console.warn('Failed to import history entry:', historyResult.getError());
+              logger.warn({ error: historyResult.getError() }, 'Failed to import history entry');
               results.investmentHistory.failed++;
             }
           } catch (error) {
-            console.warn('Error importing history entry:', error);
+            logger.warn({ error }, 'Error importing history entry');
             results.investmentHistory.failed++;
           }
         }
@@ -431,7 +431,7 @@ export class ExportController {
         message: `Import complete: ${results.categories.imported} categories, ${results.transactions.imported} transactions, ${results.investments.imported} investments, ${results.investmentHistory.imported} history entries`,
       });
     } catch (error) {
-      console.error('Error importing data:', error);
+      logger.error({ error }, 'Error importing data');
       res.status(500).json({
         success: false,
         error: 'Failed to import data',

@@ -98,7 +98,7 @@
             </span>
           </div>
           <ul class="changes">
-            {#each parseChangelog(release.body) as change}
+            {#each parseChangelog(release.body) as change, ci (ci)}
               <li>{change}</li>
             {/each}
           </ul>

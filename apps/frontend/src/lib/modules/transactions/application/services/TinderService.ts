@@ -1,7 +1,8 @@
 import { getApiUrl, getAuthHeaders } from '$lib/utils/api-helpers';
+import type { TransactionDTO } from '@happy-balance/shared-types';
 
 export interface TinderSuggestion {
-  transaction: any; // TransactionDTO from backend
+  transaction: TransactionDTO;
   suggestion: {
     categoryId: string;
     categoryName: string;

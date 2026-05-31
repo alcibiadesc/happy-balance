@@ -43,9 +43,8 @@ export interface CategoryWithStatsDTO extends CategoryDTO {
 export interface CreateCategoryRequest {
   name: string;
   type: CategoryType;
-  color: string;
-  icon: string;
-  parentId?: string;
+  color?: string;
+  icon?: string;
   annualBudget?: number;
 }
 
@@ -54,9 +53,8 @@ export interface CreateCategoryRequest {
  */
 export interface UpdateCategoryRequest {
   name?: string;
-  type?: CategoryType;
   color?: string;
   icon?: string;
-  parentId?: string | null;
   annualBudget?: number | null;
+  isActive?: boolean;
 }

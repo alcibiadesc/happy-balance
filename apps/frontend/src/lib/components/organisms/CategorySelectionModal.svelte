@@ -188,7 +188,7 @@
             </button>
           </div>
         {:else}
-          {#each Object.entries(groupedCategories) as [type, categoryList]}
+          {#each Object.entries(groupedCategories) as [type, categoryList] (type)}
             {#if categoryList.length > 0}
               <div class="category-group">
                 <h3 class="group-title">{typeDisplayNames[type]}</h3>

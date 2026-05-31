@@ -1,5 +1,6 @@
-import { Result } from "@domain/shared/Result";
-import { ITransactionRepository } from "@domain/repositories/ITransactionRepository";
+import { Result } from '@domain/shared/Result';
+import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
+import { TransactionId } from '@domain/value-objects/TransactionId';
 
 export interface UnlinkSplitTransactionsRequest {
   transactionId: string; // Either the expense or reimbursement transaction
@@ -17,9 +18,12 @@ export class UnlinkSplitTransactionsUseCase {
       const { transactionId } = request;
 
       // Get the source transaction
-      const sourceResult = await this.transactionRepository.findById({
-        value: transactionId,
-      } as any);
+      const sourceIdResult = TransactionId.create(transactionId);
+      if (sourceIdResult.isFailure()) {
+        return Result.fail(sourceIdResult.getError());
+      }
+
+      const sourceResult = await this.transactionRepository.findById(sourceIdResult.getValue());
 
       if (sourceResult.isFailure()) {
         return Result.fail(sourceResult.getError());
@@ -27,14 +31,14 @@ export class UnlinkSplitTransactionsUseCase {
 
       const sourceTransaction = sourceResult.getValue();
       if (!sourceTransaction) {
-        return Result.failWithMessage("Transaction not found");
+        return Result.failWithMessage('Transaction not found');
       }
 
       // Get linked transaction if it exists
       let linkedTransaction = null;
       if (sourceTransaction.linkedTransactionId) {
         const linkedResult = await this.transactionRepository.findById(
-          sourceTransaction.linkedTransactionId,
+          sourceTransaction.linkedTransactionId
         );
 
         if (linkedResult.isSuccess()) {
@@ -68,7 +72,7 @@ export class UnlinkSplitTransactionsUseCase {
       return Result.ok(undefined);
     } catch (error) {
       return Result.failWithMessage(
-        `Failed to unlink split transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to unlink split transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

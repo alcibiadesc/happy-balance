@@ -37,6 +37,7 @@ function createCategoryDTO(overrides: Partial<CategoryDTO> = {}): CategoryDTO {
     type: 'essential',
     color: '#000000',
     icon: '📁',
+    isActive: true,
     ...overrides,
   };
 }

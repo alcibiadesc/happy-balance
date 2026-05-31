@@ -8,7 +8,10 @@ import { TransactionType } from '@domain/entities/TransactionType';
 import { Transaction } from '@domain/entities/Transaction';
 import { CategoryId } from '@domain/entities/Category';
 import { CategoryType } from '@domain/entities/CategoryType';
-import { ITransactionRepository } from '@domain/repositories/ITransactionRepository';
+import {
+  ITransactionRepository,
+  TransactionFilters,
+} from '@domain/repositories/ITransactionRepository';
 import { ICategoryRepository } from '@domain/repositories/ICategoryRepository';
 import { GetDashboardDataUseCase } from '@application/use-cases/GetDashboardDataUseCase';
 import { DashboardQuery } from '@application/queries/DashboardQuery';
@@ -249,8 +252,18 @@ export class TransactionController {
   /**
    * Build domain filters from validated query params
    */
-  private buildDomainFilters(filters: any): any {
-    const domainFilters: any = {};
+  private buildDomainFilters(filters: {
+    startDate?: string;
+    endDate?: string;
+    type?: TransactionType | string;
+    categoryId?: string;
+    merchantName?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    currency?: string;
+    includeHidden?: boolean;
+  }): TransactionFilters {
+    const domainFilters: TransactionFilters = {};
 
     if (filters.startDate) {
       const dateResult = TransactionDate.fromString(filters.startDate);
@@ -266,7 +279,7 @@ export class TransactionController {
       }
     }
 
-    if (filters.type) domainFilters.type = filters.type;
+    if (filters.type) domainFilters.type = filters.type as TransactionType;
     if (filters.categoryId) domainFilters.categoryId = filters.categoryId;
     if (filters.merchantName) domainFilters.merchantName = filters.merchantName;
     if (filters.minAmount !== undefined) domainFilters.minAmount = filters.minAmount;
@@ -275,14 +288,6 @@ export class TransactionController {
     if (filters.includeHidden !== undefined) domainFilters.includeHidden = filters.includeHidden;
 
     return domainFilters;
-  }
-
-  /**
-   * Format transaction response using shared TransactionDTO type.
-   * Amount is ALWAYS positive; `type` determines sign semantics.
-   */
-  private formatTransactionResponse(transaction: Transaction) {
-    return mapTransactionToDTO(transaction);
   }
 
   async createTransaction(req: Request, res: Response): Promise<void> {
@@ -330,7 +335,7 @@ export class TransactionController {
     const { transactions, totalCount } = handleResult(result, 'Failed to fetch transactions');
 
     successResponse(res, {
-      transactions: transactions.map((t) => this.formatTransactionResponse(t)),
+      transactions: transactions.map((t) => mapTransactionToDTO(t)),
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -372,7 +377,7 @@ export class TransactionController {
     const totalPages = Math.ceil(totalCount / limitNum);
 
     successResponse(res, {
-      transactions: transactions.map((t) => this.formatTransactionResponse(t)),
+      transactions: transactions.map((t) => mapTransactionToDTO(t)),
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -392,7 +397,7 @@ export class TransactionController {
     const result = await this.transactionRepository.findById(transactionId);
     const transaction = handleFindResult(result, 'Transaction');
 
-    successResponse(res, this.formatTransactionResponse(transaction));
+    successResponse(res, mapTransactionToDTO(transaction));
   }
 
   async updateTransaction(req: Request, res: Response): Promise<void> {
@@ -430,7 +435,7 @@ export class TransactionController {
       await this.syncInvestmentIfNeeded(transaction, data.categoryId);
     }
 
-    successResponse(res, this.formatTransactionResponse(transaction));
+    successResponse(res, mapTransactionToDTO(transaction));
   }
 
   async deleteTransaction(req: Request, res: Response): Promise<void> {
@@ -622,9 +627,9 @@ export class TransactionController {
     const similarTransactions = handleResult(similarResult, 'Failed to find similar transactions');
 
     successResponse(res, {
-      sourceTransaction: this.formatTransactionResponse(transaction),
+      sourceTransaction: mapTransactionToDTO(transaction),
       similarTransactions: similarTransactions.map((item) => ({
-        transaction: this.formatTransactionResponse(item.transaction),
+        transaction: mapTransactionToDTO(item.transaction),
         similarity: item.similarity,
       })),
       totalFound: similarTransactions.length,

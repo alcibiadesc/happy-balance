@@ -493,12 +493,6 @@ export class SmartCategorizationService {
       }
     }
 
-    // Amount-aware boost: prefer patterns whose past matches happened on
-    // transactions with a similar amount magnitude (e.g. "Mapfre 4000 €"
-    // → investment vs "Mapfre 125 €" → insurance). Cheap heuristic: bucket
-    // the amount by order of magnitude before pattern matching.
-    const amountBucket = this.bucketAmount(transaction.amount.amount);
-
     // Find best matching pattern (skip wrong-type ones up-front)
     for (const pattern of activePatterns) {
       const matches =
@@ -507,12 +501,6 @@ export class SmartCategorizationService {
         pattern.matches(canonicalName, transaction.description);
 
       if (matches) {
-        // If pattern is bound to a specific amount bucket via metadata, skip
-        // when current tx falls in a different bucket. (Optional metadata.)
-        const patternBucket = (pattern as any).amountBucket as number | undefined;
-        if (patternBucket !== undefined && patternBucket !== amountBucket) {
-          continue;
-        }
         // Calculate confidence based on multiple factors
         const patternUsage = Math.min(pattern.matchCount / 100, 0.3); // Max 30% boost from usage
         const normConfidence = txNorm.confidence * 0.3; // 30% from normalization
