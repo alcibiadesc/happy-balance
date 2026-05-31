@@ -17,7 +17,9 @@ _Take control of your financial data. No cloud, no tracking, no compromises._
 
 **⚠️ EXPERIMENTAL PROJECT - NOT PRODUCTION READY ⚠️**
 
-[Features](#-features) • [Screenshots](#-screenshots) • [Quick Start](#-quick-start) • [Docker](#-docker) • [Development](#-development) • [License](#-license)
+**🎮 [Try the live demo →](https://alci.es/tools)** — interactive preview with placeholder data, no install needed.
+
+[Demo](https://alci.es/tools) • [Features](#-features) • [Screenshots](#-screenshots) • [Quick Start](#-quick-start) • [Docker](#-docker) • [Development](#-development) • [License](#-license)
 
 </div>
 

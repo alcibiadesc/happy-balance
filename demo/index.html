@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>happy-balance — interactive demo</title>
+  <meta name="description" content="Interactive demo of happy-balance, a self-hosted personal finance app with smart categorization and shared-expense detection. Placeholder data only." />
+  <meta name="color-scheme" content="light" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <div class="brand">
+        <span class="logo">💰</span>
+        happy-balance
+      </div>
+      <span class="demo-pill">Live demo</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="wrap">
+        <h1>Your money, <span class="hl">finally clear.</span></h1>
+        <p>
+          A self-hosted personal-finance app with a smart, swipe-to-categorize
+          workflow and automatic shared-expense detection. Try it below with
+          placeholder data — then spin up the real thing in Docker.
+        </p>
+        <div class="cta">
+          <a class="btn btn-primary" href="#tinder">Try Tinder mode</a>
+          <a class="btn btn-ghost" href="https://github.com/alcibiadesc/happy-balance" target="_blank" rel="noopener">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Dashboard</span>
+          <h2>A snapshot of this month</h2>
+          <p>Balance, cash flow and where the money actually went.</p>
+        </div>
+
+        <div class="dash-grid">
+          <div class="card stat">
+            <div class="label">Current balance</div>
+            <div class="value mono">8.412,67 €</div>
+            <div class="sub">across 2 accounts</div>
+          </div>
+          <div class="card stat">
+            <div class="label">Income · May</div>
+            <div class="value pos mono">+3.281,00 €</div>
+            <div class="sub">salary + reimbursements</div>
+          </div>
+          <div class="card stat">
+            <div class="label">Expenses · May</div>
+            <div class="value neg mono">-1.964,38 €</div>
+            <div class="sub">58 transactions</div>
+          </div>
+        </div>
+
+        <div class="dash-lower">
+          <div class="card panel">
+            <h3>Income vs expense</h3>
+            <div class="ie-row">
+              <div class="ie-top">
+                <span>Income</span>
+                <span class="amt mono">+3.281,00 €</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill income" style="width:100%"></div></div>
+            </div>
+            <div class="ie-row">
+              <div class="ie-top">
+                <span>Expense</span>
+                <span class="amt mono">-1.964,38 €</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill expense" style="width:60%"></div></div>
+            </div>
+            <div class="ie-row">
+              <div class="ie-top">
+                <span>Net saved</span>
+                <span class="amt mono" style="color:var(--success)">+1.316,62 €</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill income" style="width:40%"></div></div>
+            </div>
+          </div>
+
+          <div class="card panel">
+            <h3>Top categories</h3>
+            <div class="cat-row">
+              <div class="cat-icon">🛒</div>
+              <div class="cat-mid">
+                <div class="name">Groceries</div>
+                <div class="bar-track"><div class="bar-fill expense" style="width:90%"></div></div>
+              </div>
+              <div class="cat-amt mono">512,80 €</div>
+            </div>
+            <div class="cat-row">
+              <div class="cat-icon">🏠</div>
+              <div class="cat-mid">
+                <div class="name">Housing</div>
+                <div class="bar-track"><div class="bar-fill expense" style="width:78%"></div></div>
+              </div>
+              <div class="cat-amt mono">450,00 €</div>
+            </div>
+            <div class="cat-row">
+              <div class="cat-icon">🍽️</div>
+              <div class="cat-mid">
+                <div class="name">Eating out</div>
+                <div class="bar-track"><div class="bar-fill expense" style="width:48%"></div></div>
+              </div>
+              <div class="cat-amt mono">274,15 €</div>
+            </div>
+            <div class="cat-row">
+              <div class="cat-icon">📺</div>
+              <div class="cat-mid">
+                <div class="name">Subscriptions</div>
+                <div class="bar-track"><div class="bar-fill expense" style="width:22%"></div></div>
+              </div>
+              <div class="cat-amt mono">61,96 €</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRANSACTIONS -->
+    <section id="transactions">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Transactions</span>
+          <h2>Every move, neatly tagged</h2>
+          <p>Color-coded badges for income, expense and investments.</p>
+        </div>
+
+        <div class="card tx-list">
+          <div class="tx">
+            <div class="tx-icon">💼</div>
+            <div class="tx-main">
+              <div class="merchant">Nómina Northius</div>
+              <div class="meta"><span class="badge income">Income</span> Salary · 01 may</div>
+            </div>
+            <div class="tx-amt pos mono">+2.150,00 €</div>
+          </div>
+          <div class="tx">
+            <div class="tx-icon">🛒</div>
+            <div class="tx-main">
+              <div class="merchant">Mercadona</div>
+              <div class="meta"><span class="badge expense">Expense</span> Groceries · 28 may</div>
+            </div>
+            <div class="tx-amt neg mono">-64,20 €</div>
+          </div>
+          <div class="tx">
+            <div class="tx-icon">📈</div>
+            <div class="tx-main">
+              <div class="merchant">MyInvestor · S&amp;P 500</div>
+              <div class="meta"><span class="badge investment">Investment</span> ETF · 27 may</div>
+            </div>
+            <div class="tx-amt inv mono">-300,00 €</div>
+          </div>
+          <div class="tx">
+            <div class="tx-icon">🎬</div>
+            <div class="tx-main">
+              <div class="merchant">Netflix</div>
+              <div class="meta"><span class="badge expense">Expense</span> Subscriptions · 26 may</div>
+            </div>
+            <div class="tx-amt neg mono">-13,99 €</div>
+          </div>
+          <div class="tx">
+            <div class="tx-icon">💸</div>
+            <div class="tx-main">
+              <div class="merchant">Isabel González Matos</div>
+              <div class="meta"><span class="badge income">Income</span> Reimbursement · 29 may</div>
+            </div>
+            <div class="tx-amt pos mono">+72,25 €</div>
+          </div>
+          <div class="tx">
+            <div class="tx-icon">☕</div>
+            <div class="tx-main">
+              <div class="merchant">Starbucks</div>
+              <div class="meta"><span class="badge expense">Expense</span> Coffee &amp; snacks · 25 may</div>
+            </div>
+            <div class="tx-amt neg mono">-4,85 €</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TINDER MODE (headline) -->
+    <section id="tinder" class="tinder-section">
+      <div class="wrap">
+        <div class="section-head" style="text-align:center;">
+          <span class="eyebrow">The headline feature</span>
+          <h2>Tinder mode</h2>
+          <p>Swipe, drag or tap to triage suggestions in seconds.</p>
+        </div>
+
+        <div style="text-align:center;">
+          <div class="tinder-tabs" role="tablist">
+            <button class="tab active" id="tab-categorize" type="button">✨ Categorize</button>
+            <button class="tab" id="tab-reimbursement" type="button">🔗 Shared expense</button>
+          </div>
+        </div>
+
+        <div class="tinder-progress" id="tinder-progress">1 of 5</div>
+
+        <div class="tinder-stage" id="tinder-stage" aria-live="polite"></div>
+
+        <div class="tinder-actions">
+          <div class="action-col">
+            <button class="action-btn skip" id="act-skip" type="button" aria-label="Skip">✕</button>
+            <span class="action-caption" id="cap-skip">Skip</span>
+          </div>
+          <div class="action-col">
+            <button class="action-btn accept" id="act-accept" type="button" aria-label="Accept">✓</button>
+            <span class="action-caption" id="cap-accept">Accept</span>
+          </div>
+        </div>
+
+        <p class="caption">
+          <strong>Tip:</strong> drag the card left or right, or use the buttons.
+          In <em>Shared expense</em> mode the app auto-detects reimbursements —
+          e.g. an income from <em>Isa</em> that is about 50% of a Mercadona
+          expense — and offers to link them at the right split.
+        </p>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Why happy-balance</span>
+          <h2>Built for real life, not spreadsheets</h2>
+        </div>
+        <div class="features">
+          <div class="card feature">
+            <div class="ic">✨</div>
+            <h3>Smart categorization</h3>
+            <p>Learns from your swipes and auto-tags new transactions by merchant and pattern.</p>
+          </div>
+          <div class="card feature">
+            <div class="ic">🔗</div>
+            <h3>Shared expenses</h3>
+            <p>Detects reimbursements from a partner at ~50% and links income to the original expense.</p>
+          </div>
+          <div class="card feature">
+            <div class="ic">📊</div>
+            <h3>Clear dashboard</h3>
+            <p>Cash flow, category breakdowns and balance trends at a glance.</p>
+          </div>
+          <div class="card feature">
+            <div class="ic">📈</div>
+            <h3>Investment tracking</h3>
+            <p>Tag ETF and stock purchases so saving and investing stay separate from spending.</p>
+          </div>
+          <div class="card feature">
+            <div class="ic">📥</div>
+            <h3>CSV import</h3>
+            <p>Bring in your bank exports and deduplicate automatically.</p>
+          </div>
+          <div class="card feature">
+            <div class="ic">🔒</div>
+            <h3>Self-hosted</h3>
+            <p>Runs in your own Docker stack — your data never leaves your machine.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="note">This is a demo with placeholder data — no real accounts.</div>
+      <p>
+        happy-balance · open source on
+        <a href="https://github.com/alcibiadesc/happy-balance" target="_blank" rel="noopener">GitHub</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
