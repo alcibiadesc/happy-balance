@@ -10,7 +10,6 @@
   import { createTinderPageStore } from '$lib/modules/transactions/infrastructure/stores/tinderPageStore.svelte';
   import TinderTransactionCard from '$lib/components/molecules/TinderTransactionCard.svelte';
   import TinderReimbursementCard from '$lib/components/molecules/TinderReimbursementCard.svelte';
-  import { Link2, SkipForward, Undo2 } from 'lucide-svelte';
   import TinderActions from '$lib/components/molecules/TinderActions.svelte';
   import TinderProgress from '$lib/components/molecules/TinderProgress.svelte';
   import TinderCategoryPicker from '$lib/components/molecules/TinderCategoryPicker.svelte';
@@ -175,25 +174,15 @@
         </div>
       </div>
 
-      <!-- Reimbursement actions -->
-      <div class="reimburse-actions">
-        <button
-          class="reimburse-btn undo"
-          onclick={() => store.undoReimburse()}
-          disabled={!store.canUndoReimburse}
-          aria-label={$t('tinder.undo')}
-        >
-          <Undo2 size={18} />
-        </button>
-        <button class="reimburse-btn skip" onclick={() => store.skipReimbursement()}>
-          <SkipForward size={18} />
-          <span>{$t('tinder.skip')}</span>
-        </button>
-        <button class="reimburse-btn link" onclick={() => store.linkCurrent()}>
-          <Link2 size={18} />
-          <span>{$t('tinder.link_action')}</span>
-        </button>
-      </div>
+      <!-- Reimbursement actions (same circular bar as categorize, link mode) -->
+      <TinderActions
+        mode="reimburse"
+        hasSuggestion={true}
+        canUndo={store.canUndoReimburse}
+        onAccept={() => store.linkCurrent()}
+        onSkip={() => store.skipReimbursement()}
+        onUndo={() => store.undoReimburse()}
+      />
     {:else if store.currentSuggestion}
       <!-- Progress -->
       <div class="progress-section">
@@ -343,63 +332,6 @@
     width: 100%;
     display: flex;
     justify-content: center;
-  }
-
-  /* Reimbursement phase actions */
-  .reimburse-actions {
-    display: flex;
-    gap: var(--space-md, 0.75rem);
-    width: 100%;
-    max-width: 400px;
-    margin-top: var(--space-lg, 1rem);
-  }
-
-  .reimburse-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-xs, 0.375rem);
-    padding: var(--space-md, 0.875rem);
-    border-radius: var(--radius-md, 0.75rem);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1.5px solid var(--border-color);
-    transition:
-      transform 0.12s ease,
-      opacity 0.2s;
-  }
-
-  .reimburse-btn:active {
-    transform: scale(0.97);
-  }
-
-  .reimburse-btn.undo {
-    flex: 0 0 auto;
-    background: var(--surface-elevated);
-    color: var(--text-secondary);
-    padding: var(--space-md, 0.875rem);
-  }
-
-  .reimburse-btn.undo:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .reimburse-btn.skip {
-    background: var(--surface-elevated);
-    color: var(--text-secondary);
-  }
-
-  .reimburse-btn.link {
-    background: var(--primary, #023c46);
-    color: white;
-    border-color: var(--primary, #023c46);
-  }
-
-  .reimburse-btn.link:hover {
-    opacity: 0.92;
   }
 
   /* Loading */

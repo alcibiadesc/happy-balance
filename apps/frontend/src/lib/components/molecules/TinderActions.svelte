@@ -1,13 +1,15 @@
 <script lang="ts">
-  import { X, Check, ArrowDown, Undo2 } from 'lucide-svelte';
+  import { X, Check, ArrowDown, Undo2, Link2 } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
 
   interface Props {
     hasSuggestion: boolean;
     disabled?: boolean;
     canUndo?: boolean;
+    /** 'categorize' (default) shows reject; 'reimburse' replaces accept with a link action and hides reject. */
+    mode?: 'categorize' | 'reimburse';
     onAccept: () => void;
-    onReject: () => void;
+    onReject?: () => void;
     onSkip: () => void;
     onUndo?: () => void;
   }
@@ -16,11 +18,14 @@
     hasSuggestion,
     disabled = false,
     canUndo = false,
+    mode = 'categorize',
     onAccept,
     onReject,
     onSkip,
     onUndo,
   }: Props = $props();
+
+  const isReimburse = $derived(mode === 'reimburse');
 
   function handleKeydown(e: KeyboardEvent) {
     if (disabled) return;
@@ -40,7 +45,8 @@
       onAccept();
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      onReject();
+      if (isReimburse) onSkip();
+      else onReject?.();
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       onSkip();
@@ -67,14 +73,16 @@
     <Undo2 size={20} strokeWidth={2.5} />
   </button>
 
-  <button
-    class="action-btn reject-btn"
-    onclick={onReject}
-    title="{$t('tinder.reject')} (←)"
-    aria-label={$t('tinder.reject')}
-  >
-    <X size={24} strokeWidth={2.5} />
-  </button>
+  {#if !isReimburse}
+    <button
+      class="action-btn reject-btn"
+      onclick={onReject}
+      title="{$t('tinder.reject')} (←)"
+      aria-label={$t('tinder.reject')}
+    >
+      <X size={24} strokeWidth={2.5} />
+    </button>
+  {/if}
 
   <button
     class="action-btn skip-btn"
@@ -89,10 +97,14 @@
     class="action-btn accept-btn"
     onclick={onAccept}
     disabled={!hasSuggestion}
-    title="{$t('tinder.accept')} (→)"
-    aria-label={$t('tinder.accept')}
+    title="{isReimburse ? $t('tinder.link_action') : $t('tinder.accept')} (→)"
+    aria-label={isReimburse ? $t('tinder.link_action') : $t('tinder.accept')}
   >
-    <Check size={24} strokeWidth={2.5} />
+    {#if isReimburse}
+      <Link2 size={24} strokeWidth={2.5} />
+    {:else}
+      <Check size={24} strokeWidth={2.5} />
+    {/if}
   </button>
 </div>
 

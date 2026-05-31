@@ -124,6 +124,46 @@ describe('GetReimbursementSuggestionsUseCase', () => {
     expect(result.getValue().suggestions).toHaveLength(0);
   });
 
+  it('learns from past links: a known reimburser merchant is boosted and flagged', async () => {
+    // Already-confirmed reimbursement from this payer (the "learning" source).
+    const confirmed = buildTransaction({
+      id: 'inc-old',
+      amount: 30,
+      type: TransactionType.INCOME,
+      date: '2026-04-01',
+      merchant: 'Isabel González Matos',
+      isReimbursement: true,
+      linkedTransactionId: 'exp-old',
+    });
+    // New, unlinked income from the SAME payer.
+    const income = buildTransaction({
+      id: 'inc-new',
+      amount: 72.25,
+      type: TransactionType.INCOME,
+      date: '2026-05-28',
+      merchant: 'Isabel González Matos',
+      description: 'Lo que me debes de Mercadona',
+    });
+    const expense = buildTransaction({
+      id: 'exp-new',
+      amount: 144.51,
+      type: TransactionType.EXPENSE,
+      date: '2026-05-27',
+      merchant: 'MERCADONA SANTIDAD',
+    });
+
+    setup([confirmed, income], [income, expense]);
+
+    const result = await useCase.execute();
+    expect(result.isSuccess()).toBe(true);
+    const { suggestions } = result.getValue();
+    const found = suggestions.find((s) => s.income.id === 'inc-new');
+    expect(found).toBeTruthy();
+    expect(found!.matchReasons).toContain('Pagador recurrente (aprendido)');
+    // Confirmed reimbursement itself is not re-suggested.
+    expect(suggestions.find((s) => s.income.id === 'inc-old')).toBeUndefined();
+  });
+
   it('respects minScore: a weak match below threshold is dropped', async () => {
     const income = buildTransaction({
       id: 'inc-3',
