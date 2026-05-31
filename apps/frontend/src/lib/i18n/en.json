@@ -529,6 +529,10 @@
     "retry": "Retry",
     "enter_tinder": "Tinder Mode",
     "enter_tinder_desc": "Quick categorization with swipe",
-    "suggested_category": "Suggested category"
+    "suggested_category": "Suggested category",
+    "shared_expense": "Shared expense",
+    "link_label": "Link",
+    "link_action": "Link",
+    "linked": "Linked"
   }
 }

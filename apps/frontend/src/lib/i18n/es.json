@@ -529,6 +529,10 @@
     "retry": "Reintentar",
     "enter_tinder": "Modo Tinder",
     "enter_tinder_desc": "Categoriza rápidamente con swipe",
-    "suggested_category": "Categoría sugerida"
+    "suggested_category": "Categoría sugerida",
+    "shared_expense": "Gasto compartido",
+    "link_label": "Vincular",
+    "link_action": "Vincular",
+    "linked": "Vinculados"
   }
 }

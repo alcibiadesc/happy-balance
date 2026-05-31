@@ -3,7 +3,10 @@ import {
   acceptSuggestion,
   rejectSuggestion,
   undoCategorization,
+  fetchReimbursementSuggestions,
+  linkReimbursement,
   type TinderSuggestion,
+  type ReimbursementSuggestion,
 } from '../../application/services/TinderService';
 import type { Category } from '$lib/types/transaction';
 
@@ -17,6 +20,8 @@ interface TinderHistoryEntry {
   kind: 'accept' | 'reject' | 'skip';
 }
 
+type Phase = 'categorize' | 'reimburse';
+
 class TinderPageStore {
   suggestions = $state<TinderSuggestion[]>([]);
   categories = $state<Category[]>([]);
@@ -27,10 +32,17 @@ class TinderPageStore {
   error = $state<string | null>(null);
   hasLoaded = $state(false);
 
+  // Reimbursement (shared-expense) phase
+  phase = $state<Phase>('categorize');
+  reimbursements = $state<ReimbursementSuggestion[]>([]);
+  reimburseIndex = $state(0);
+  reimbursePhaseStarted = $state(false);
+
   // Stats
   acceptedCount = $state(0);
   rejectedCount = $state(0);
   skippedCount = $state(0);
+  linkedCount = $state(0);
 
   // Action history — used to power Undo.
   history = $state<TinderHistoryEntry[]>([]);
@@ -40,19 +52,42 @@ class TinderPageStore {
     this.currentIndex < this.suggestions.length ? this.suggestions[this.currentIndex] : null
   );
 
-  isComplete = $derived(
-    this.hasLoaded && this.currentIndex >= this.suggestions.length && !this.isLoading
+  currentReimbursement = $derived(
+    this.phase === 'reimburse' && this.reimburseIndex < this.reimbursements.length
+      ? this.reimbursements[this.reimburseIndex]
+      : null
   );
 
-  remaining = $derived(Math.max(0, this.suggestions.length - this.currentIndex));
+  /** Categorize deck exhausted — time to move on to the reimburse phase. */
+  categorizeDone = $derived(
+    this.hasLoaded &&
+      this.phase === 'categorize' &&
+      this.currentIndex >= this.suggestions.length &&
+      !this.isLoading
+  );
 
-  total = $derived(this.suggestions.length);
+  isComplete = $derived(
+    this.phase === 'reimburse' &&
+      this.reimbursePhaseStarted &&
+      this.reimburseIndex >= this.reimbursements.length &&
+      !this.isLoading
+  );
+
+  remaining = $derived(
+    this.phase === 'reimburse'
+      ? Math.max(0, this.reimbursements.length - this.reimburseIndex)
+      : Math.max(0, this.suggestions.length - this.currentIndex)
+  );
+
+  total = $derived(
+    this.phase === 'reimburse' ? this.reimbursements.length : this.suggestions.length
+  );
+
+  currentCardIndex = $derived(this.phase === 'reimburse' ? this.reimburseIndex : this.currentIndex);
 
   canUndo = $derived(this.history.length > 0);
 
-  progress = $derived(
-    this.suggestions.length > 0 ? (this.currentIndex / this.suggestions.length) * 100 : 0
-  );
+  progress = $derived(this.total > 0 ? (this.currentCardIndex / this.total) * 100 : 0);
 
   async loadSuggestions(limit = 50) {
     this.isLoading = true;
@@ -65,12 +100,39 @@ class TinderPageStore {
       this.acceptedCount = 0;
       this.rejectedCount = 0;
       this.skippedCount = 0;
+      this.linkedCount = 0;
       this.history = [];
+      this.phase = 'categorize';
+      this.reimbursements = [];
+      this.reimburseIndex = 0;
+      this.reimbursePhaseStarted = false;
       this.hasLoaded = true;
     } catch (e) {
       this.error = e instanceof Error ? e.message : 'Failed to load suggestions';
       this.hasLoaded = true;
       console.error('Failed to load tinder suggestions:', e);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  /**
+   * Move from the categorize deck to the shared-expense (reimbursement) deck.
+   * Loads the suggestions lazily; if there are none, the completion screen shows.
+   */
+  async enterReimbursePhase(limit = 50) {
+    if (this.reimbursePhaseStarted) return;
+    this.reimbursePhaseStarted = true;
+    this.phase = 'reimburse';
+    this.isLoading = true;
+    try {
+      const data = await fetchReimbursementSuggestions(limit);
+      this.reimbursements = data.suggestions;
+      this.reimburseIndex = 0;
+    } catch (e) {
+      // Non-fatal: just skip the phase if it fails.
+      this.reimbursements = [];
+      console.error('Failed to load reimbursement suggestions:', e);
     } finally {
       this.isLoading = false;
     }
@@ -129,6 +191,31 @@ class TinderPageStore {
     }
   }
 
+  /** Confirm the current shared-expense link (income ↔ expense). */
+  async linkCurrent() {
+    const current = this.currentReimbursement;
+    if (!current) return;
+    try {
+      await linkReimbursement(
+        current.income.id,
+        current.expense.id,
+        current.suggestedSplitPercentage
+      );
+      this.linkedCount++;
+    } catch (e) {
+      console.error('Failed to link reimbursement:', e);
+      this.error = e instanceof Error ? e.message : 'Failed to link reimbursement';
+    } finally {
+      this.reimburseIndex++;
+    }
+  }
+
+  /** Skip the current shared-expense suggestion without linking. */
+  skipReimbursement() {
+    this.skippedCount++;
+    this.reimburseIndex++;
+  }
+
   skip() {
     const current = this.currentSuggestion;
     if (current) {
@@ -147,8 +234,10 @@ class TinderPageStore {
    * Revert the last action and restore the previous card. For accept/reject
    * we also try to roll back the server categorization (best-effort: doesn't
    * cascade to other transactions that may have been touched by applyToAll).
+   * Undo only applies to the categorize phase.
    */
   async undo() {
+    if (this.phase !== 'categorize') return;
     const last = this.history.pop();
     if (!last) return;
 

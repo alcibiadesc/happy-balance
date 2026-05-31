@@ -14,6 +14,58 @@ export interface TinderSuggestion {
   } | null;
 }
 
+export interface ReimbursementSuggestion {
+  income: TransactionDTO;
+  expense: TransactionDTO;
+  matchScore: number;
+  matchReasons: string[];
+  suggestedSplitPercentage: number;
+}
+
+export async function fetchReimbursementSuggestions(
+  limit = 50,
+  minScore = 50
+): Promise<{ suggestions: ReimbursementSuggestion[]; totalScanned: number }> {
+  const apiUrl = getApiUrl();
+  const response = await fetch(
+    `${apiUrl}/transactions/reimbursement-suggestions?limit=${limit}&minScore=${minScore}`,
+    { headers: getAuthHeaders() }
+  );
+  if (!response.ok) throw new Error('Failed to fetch reimbursement suggestions');
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Confirm a shared-expense link: marks the income as a reimbursement of the
+ * expense and records the split % the user actually bears. Source is the income
+ * (any of the two works — the backend detects roles by type).
+ */
+export async function linkReimbursement(
+  incomeId: string,
+  expenseId: string,
+  splitPercentage: number
+) {
+  const apiUrl = getApiUrl();
+  const response = await fetch(`${apiUrl}/transactions/${incomeId}/link-split`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ targetTransactionId: expenseId, splitPercentage }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error || 'Failed to link reimbursement');
+  }
+}
+
+export async function unlinkReimbursement(transactionId: string) {
+  const apiUrl = getApiUrl();
+  await fetch(`${apiUrl}/transactions/${transactionId}/unlink-split`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+}
+
 export async function fetchTinderSuggestions(
   limit = 50
 ): Promise<{ suggestions: TinderSuggestion[]; totalUncategorized: number }> {

@@ -25,6 +25,7 @@ import { SyncInvestmentFromTransactionUseCase } from '@application/use-cases/Syn
 import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/UnsyncInvestmentFromTransactionUseCase';
 import { AutoCategorizeTransactionsUseCase } from '@application/use-cases/AutoCategorizeTransactionsUseCase';
 import { GetCategorySuggestionsUseCase } from '@application/use-cases/GetCategorySuggestionsUseCase';
+import { GetReimbursementSuggestionsUseCase } from '@application/use-cases/GetReimbursementSuggestionsUseCase';
 import {
   BadRequestError,
   validateBody,
@@ -128,6 +129,11 @@ const TinderSuggestionsSchema = z.object({
   limit: z.coerce.number().min(1).max(200).optional().default(50),
 });
 
+const ReimbursementSuggestionsSchema = z.object({
+  limit: z.coerce.number().min(1).max(200).optional().default(50),
+  minScore: z.coerce.number().min(0).max(100).optional().default(50),
+});
+
 const PaginatedTransactionSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(200).default(50),
@@ -165,7 +171,8 @@ export class TransactionController {
     private readonly autoCategorizeUseCase?: AutoCategorizeTransactionsUseCase,
     private readonly getCategorySuggestionsUseCase?: GetCategorySuggestionsUseCase,
     private readonly categoryRepository?: ICategoryRepository,
-    private readonly userId?: string
+    private readonly userId?: string,
+    private readonly getReimbursementSuggestionsUseCase?: GetReimbursementSuggestionsUseCase
   ) {}
 
   /**
@@ -724,6 +731,22 @@ export class TransactionController {
     });
 
     successResponse(res, result);
+  }
+
+  async getReimbursementSuggestionsForTinder(req: Request, res: Response): Promise<void> {
+    if (!this.getReimbursementSuggestionsUseCase) {
+      throw new BadRequestError('Reimbursement suggestions feature is not configured');
+    }
+
+    const query = validateQuery(ReimbursementSuggestionsSchema, req);
+
+    const result = await this.getReimbursementSuggestionsUseCase.execute({
+      limit: query.limit,
+      minScore: query.minScore,
+    });
+
+    const data = handleResult(result, 'Failed to get reimbursement suggestions');
+    successResponse(res, data);
   }
 
   async autoCategorizeTransactions(_req: Request, res: Response): Promise<void> {

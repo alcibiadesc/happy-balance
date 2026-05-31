@@ -81,6 +81,15 @@ export const createTransactionRoutes = (controllerFactory: ControllerFactory): R
     })
   );
 
+  router.get(
+    '/reimbursement-suggestions',
+    asyncHandler(async (req: Request, res: Response) => {
+      const userId = req.user?.userId || 'default';
+      const controller = controllerFactory.createTransactionController(userId);
+      await controller.getReimbursementSuggestionsForTinder(req, res);
+    })
+  );
+
   router.post(
     '/auto-categorize',
     asyncHandler(async (req: Request, res: Response) => {

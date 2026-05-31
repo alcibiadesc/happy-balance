@@ -1,17 +1,18 @@
 <script lang="ts">
-  import { Check, X, ArrowDown, ArrowLeft } from 'lucide-svelte';
+  import { Check, X, ArrowDown, ArrowLeft, Link2 } from 'lucide-svelte';
   import { t } from '$lib/stores/i18n';
 
   interface Props {
     acceptedCount: number;
     rejectedCount: number;
     skippedCount: number;
+    linkedCount?: number;
     onBack: () => void;
   }
 
-  const { acceptedCount, rejectedCount, skippedCount, onBack }: Props = $props();
+  const { acceptedCount, rejectedCount, skippedCount, linkedCount = 0, onBack }: Props = $props();
 
-  const totalProcessed = $derived(acceptedCount + rejectedCount + skippedCount);
+  const totalProcessed = $derived(acceptedCount + rejectedCount + skippedCount + linkedCount);
 </script>
 
 <div class="completion-screen">
@@ -37,6 +38,13 @@
       <div class="stat-value">{skippedCount}</div>
       <div class="stat-label">{$t('tinder.skipped')}</div>
     </div>
+    {#if linkedCount > 0}
+      <div class="stat-card linked">
+        <div class="stat-icon"><Link2 size={20} /></div>
+        <div class="stat-value">{linkedCount}</div>
+        <div class="stat-label">{$t('tinder.linked')}</div>
+      </div>
+    {/if}
   </div>
 
   <div class="total-processed">

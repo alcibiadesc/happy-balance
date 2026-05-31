@@ -38,6 +38,7 @@ import { SyncInvestmentFromTransactionUseCase } from '@application/use-cases/Syn
 import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/UnsyncInvestmentFromTransactionUseCase';
 import { AutoCategorizeTransactionsUseCase } from '@application/use-cases/AutoCategorizeTransactionsUseCase';
 import { GetCategorySuggestionsUseCase } from '@application/use-cases/GetCategorySuggestionsUseCase';
+import { GetReimbursementSuggestionsUseCase } from '@application/use-cases/GetReimbursementSuggestionsUseCase';
 
 /**
  * Factory that creates controller instances with user-specific repositories
@@ -181,6 +182,11 @@ export class ControllerFactory {
       smartCategorizationService
     );
 
+    const getReimbursementSuggestionsUseCase = new GetReimbursementSuggestionsUseCase(
+      transactionRepository,
+      findPotentialReimbursementsUseCase
+    );
+
     return new TransactionController(
       transactionRepository,
       getDashboardDataUseCase,
@@ -195,7 +201,8 @@ export class ControllerFactory {
       autoCategorizeUseCase,
       getCategorySuggestionsUseCase,
       categoryRepository,
-      userId
+      userId,
+      getReimbursementSuggestionsUseCase
     );
   }
 

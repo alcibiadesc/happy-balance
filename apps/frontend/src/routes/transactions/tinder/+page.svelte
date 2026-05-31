@@ -9,6 +9,8 @@
 
   import { createTinderPageStore } from '$lib/modules/transactions/infrastructure/stores/tinderPageStore.svelte';
   import TinderTransactionCard from '$lib/components/molecules/TinderTransactionCard.svelte';
+  import TinderReimbursementCard from '$lib/components/molecules/TinderReimbursementCard.svelte';
+  import { Link2, SkipForward } from 'lucide-svelte';
   import TinderActions from '$lib/components/molecules/TinderActions.svelte';
   import TinderProgress from '$lib/components/molecules/TinderProgress.svelte';
   import TinderCategoryPicker from '$lib/components/molecules/TinderCategoryPicker.svelte';
@@ -31,13 +33,21 @@
   function handleSwipeRight() {
     dragX = 0;
     isDragging = false;
-    store.accept();
+    if (store.phase === 'reimburse') {
+      store.linkCurrent();
+    } else {
+      store.accept();
+    }
   }
 
   function handleSwipeLeft() {
     dragX = 0;
     isDragging = false;
-    store.openCategoryPicker();
+    if (store.phase === 'reimburse') {
+      store.skipReimbursement();
+    } else {
+      store.openCategoryPicker();
+    }
   }
 
   function handleMove(delta: number) {
@@ -89,6 +99,13 @@
   $effect(() => {
     store.setCategories($apiCategories);
   });
+
+  // When the categorize deck is exhausted, move on to shared-expense linking.
+  $effect(() => {
+    if (store.categorizeDone) {
+      store.enterReimbursePhase();
+    }
+  });
 </script>
 
 <div class="tinder-page">
@@ -124,13 +141,56 @@
         acceptedCount={store.acceptedCount}
         rejectedCount={store.rejectedCount}
         skippedCount={store.skippedCount}
+        linkedCount={store.linkedCount}
         onBack={handleBack}
       />
+    {:else if store.currentReimbursement}
+      <!-- Progress -->
+      <div class="progress-section">
+        <TinderProgress
+          current={store.currentCardIndex}
+          total={store.total}
+          progress={store.progress}
+        />
+      </div>
+
+      <!-- Reimbursement card area -->
+      <div class="card-area">
+        <div
+          class="card-wrapper"
+          use:swipeable={{
+            onSwipeLeft: handleSwipeLeft,
+            onSwipeRight: handleSwipeRight,
+            onMove: handleMove,
+            onEnd: handleEnd,
+            threshold: 100,
+            enabled: true,
+          }}
+        >
+          <TinderReimbursementCard
+            reimbursement={store.currentReimbursement}
+            {dragX}
+            {isDragging}
+          />
+        </div>
+      </div>
+
+      <!-- Reimbursement actions -->
+      <div class="reimburse-actions">
+        <button class="reimburse-btn skip" onclick={() => store.skipReimbursement()}>
+          <SkipForward size={18} />
+          <span>{$t('tinder.skip')}</span>
+        </button>
+        <button class="reimburse-btn link" onclick={() => store.linkCurrent()}>
+          <Link2 size={18} />
+          <span>{$t('tinder.link_action')}</span>
+        </button>
+      </div>
     {:else if store.currentSuggestion}
       <!-- Progress -->
       <div class="progress-section">
         <TinderProgress
-          current={store.currentIndex}
+          current={store.currentCardIndex}
           total={store.total}
           progress={store.progress}
         />
@@ -275,6 +335,51 @@
     width: 100%;
     display: flex;
     justify-content: center;
+  }
+
+  /* Reimbursement phase actions */
+  .reimburse-actions {
+    display: flex;
+    gap: var(--space-md, 0.75rem);
+    width: 100%;
+    max-width: 400px;
+    margin-top: var(--space-lg, 1rem);
+  }
+
+  .reimburse-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs, 0.375rem);
+    padding: var(--space-md, 0.875rem);
+    border-radius: var(--radius-md, 0.75rem);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid var(--border-color);
+    transition:
+      transform 0.12s ease,
+      opacity 0.2s;
+  }
+
+  .reimburse-btn:active {
+    transform: scale(0.97);
+  }
+
+  .reimburse-btn.skip {
+    background: var(--surface-elevated);
+    color: var(--text-secondary);
+  }
+
+  .reimburse-btn.link {
+    background: var(--primary, #023c46);
+    color: white;
+    border-color: var(--primary, #023c46);
+  }
+
+  .reimburse-btn.link:hover {
+    opacity: 0.92;
   }
 
   /* Loading */
