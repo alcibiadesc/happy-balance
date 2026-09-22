@@ -21,7 +21,9 @@ export {
   getCategoryById,
   formatAmount,
   autoCategorizeTransactions,
+  aiCategorizeTransactions,
 } from './CategoryService';
+export type { AiProposal, AiCategorizeResult } from './CategoryService';
 
 // Transaction operations
 export { TransactionOperationsService } from './TransactionOperationsService';

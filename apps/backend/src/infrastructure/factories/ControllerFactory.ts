@@ -38,6 +38,8 @@ import { SyncInvestmentFromTransactionUseCase } from '@application/use-cases/Syn
 import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/UnsyncInvestmentFromTransactionUseCase';
 import { AutoCategorizeTransactionsUseCase } from '@application/use-cases/AutoCategorizeTransactionsUseCase';
 import { GetCategorySuggestionsUseCase } from '@application/use-cases/GetCategorySuggestionsUseCase';
+import { AiCategorizeTransactionsUseCase } from '@application/use-cases/AiCategorizeTransactionsUseCase';
+import { AnthropicCategorizationProvider } from '@infrastructure/services/AnthropicCategorizationProvider';
 import { GetReimbursementSuggestionsUseCase } from '@application/use-cases/GetReimbursementSuggestionsUseCase';
 
 /**
@@ -90,10 +92,23 @@ export class ControllerFactory {
       },
     };
 
+    // Lets the bulk pattern pass reject a pattern whose category type doesn't
+    // match the transaction (income category on an expense row, and so on).
+    const categoryLookup = {
+      findById: async (id: string) => {
+        const result = await categoryRepository.findById({ value: id } as any);
+        const category = result.isSuccess() ? result.getValue() : null;
+        if (!category) return null;
+        const snapshot = category.toSnapshot();
+        return { id: snapshot.id, type: snapshot.type };
+      },
+    };
+
     const smartCategorizationService = new SmartCategorizationService(
       categoryPatternRepository,
       smartCategorizationTransactionRepo as any,
-      merchantAliasRepository
+      merchantAliasRepository,
+      categoryLookup
     );
 
     // Use cases
@@ -187,6 +202,13 @@ export class ControllerFactory {
       findPotentialReimbursementsUseCase
     );
 
+    const aiCategorizeUseCase = new AiCategorizeTransactionsUseCase(
+      transactionRepository,
+      categoryRepository,
+      new AnthropicCategorizationProvider(),
+      categoryPatternRepository
+    );
+
     return new TransactionController(
       transactionRepository,
       getDashboardDataUseCase,
@@ -202,7 +224,8 @@ export class ControllerFactory {
       getCategorySuggestionsUseCase,
       categoryRepository,
       userId,
-      getReimbursementSuggestionsUseCase
+      getReimbursementSuggestionsUseCase,
+      aiCategorizeUseCase
     );
   }
 

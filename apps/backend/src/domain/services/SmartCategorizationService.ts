@@ -7,6 +7,10 @@ import { CategoryType } from '../entities/CategoryType';
 import { Result } from '../shared/Result';
 import { MerchantNormalizer } from './MerchantNormalizer';
 
+export interface ICategoryLookup {
+  findById(id: string): Promise<{ id: string; type: string } | null>;
+}
+
 export interface ICategoryPatternRepository {
   findByCategory(categoryId: string): Promise<CategoryPattern[]>;
   findActivePatterns(): Promise<CategoryPattern[]>;
@@ -53,9 +57,31 @@ export class SmartCategorizationService {
   constructor(
     private readonly patternRepository: ICategoryPatternRepository,
     private readonly transactionRepository: ITransactionRepository,
-    private readonly aliasRepository?: IMerchantAliasRepository
+    private readonly aliasRepository?: IMerchantAliasRepository,
+    private readonly categoryLookup?: ICategoryLookup
   ) {
     this.normalizer = new MerchantNormalizer();
+  }
+
+  /**
+   * Whether a pattern's category may be applied to this transaction.
+   *
+   * categorizeTransaction() has always validated this, but the bulk pattern
+   * pass did not: an income pattern such as "isabel gonz lez matos" -> a
+   * shared-income category would land on her EXPENSE rows too, producing
+   * income categories on expenses that the UI then refuses to display.
+   * Without a lookup configured we stay permissive rather than silently
+   * skipping every pattern.
+   */
+  private async patternTypeAllowed(transaction: Transaction, categoryId: string): Promise<boolean> {
+    if (!this.categoryLookup) return true;
+
+    const category = await this.categoryLookup.findById(categoryId);
+    if (!category) return false;
+
+    return this.isTransactionCompatibleWithCategory(transaction, {
+      type: category.type,
+    } as Category);
   }
 
   /**
@@ -413,6 +439,9 @@ export class SmartCategorizationService {
           for (const pattern of activePatterns) {
             // Match against canonical name
             if (pattern.matches(canonicalName, transaction.description)) {
+              if (!(await this.patternTypeAllowed(transaction, pattern.categoryId.value))) {
+                continue;
+              }
               transaction.setCategoryId(pattern.categoryId.value);
               pattern.incrementMatchCount();
               alias.recordMatch();
@@ -447,6 +476,9 @@ export class SmartCategorizationService {
           pattern.matches(txNorm.canonical, transaction.description);
 
         if (matches) {
+          if (!(await this.patternTypeAllowed(transaction, pattern.categoryId.value))) {
+            continue;
+          }
           transaction.setCategoryId(pattern.categoryId.value);
           pattern.incrementMatchCount();
           await this.patternRepository.save(pattern);

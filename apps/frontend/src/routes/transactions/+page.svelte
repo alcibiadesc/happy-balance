@@ -12,6 +12,7 @@
   import SmartCategorizationModal from '$lib/components/organisms/SmartCategorizationModal.svelte';
   import CategorySelectionModal from '$lib/components/organisms/CategorySelectionModal.svelte';
   import SplitTransactionModal from '$lib/components/organisms/SplitTransactionModal.svelte';
+  import AiCategorizeModal from '$lib/components/organisms/AiCategorizeModal.svelte';
   import PeriodStats from '$lib/components/molecules/PeriodStats.svelte';
   import DateSelector from '$lib/components/molecules/DateSelector.svelte';
   import SearchBar from '$lib/components/molecules/SearchBar.svelte';
@@ -46,6 +47,7 @@
     Maximize2,
     EyeOff,
     Sparkles,
+    BrainCircuit,
   } from 'lucide-svelte';
 
   // Stores
@@ -57,6 +59,16 @@
   import type { Transaction } from '$lib/types/transaction';
   import { t } from '$lib/stores/i18n';
   import { exportTransactionsToCSV, downloadCSV, generateFilename } from '$lib/utils/csv-export';
+
+  // AI categorization: opens a dry-run review before anything is written.
+  let showAiModal = $state(false);
+
+  async function handleAiApplied(count: number) {
+    if (count > 0) {
+      await apiTransactions.load();
+      await apiCategories.load();
+    }
+  }
 
   // Initialize page store
   const pageStore = createTransactionsPageStore();
@@ -405,6 +417,14 @@
               <Sparkles size={14} />
             </a>
             <button
+              class="toolbar-btn ai-btn"
+              onclick={() => (showAiModal = true)}
+              title="Clasificar con IA los movimientos sin categoría"
+              aria-label="Clasificar con IA"
+            >
+              <BrainCircuit size={14} />
+            </button>
+            <button
               class="toolbar-btn"
               onclick={() => pageStore.toggleSelectionMode()}
               aria-label={$t('accessibility.select_transactions')}
@@ -512,6 +532,12 @@
   onCancel={handleSmartCategorizationCancel}
 />
 
+<AiCategorizeModal
+  open={showAiModal}
+  onClose={() => (showAiModal = false)}
+  onApplied={handleAiApplied}
+/>
+
 <SplitTransactionModal
   isOpen={pageStore.modalState.showSplitModal}
   transaction={pageStore.modalState.splitModalTransaction}
@@ -576,6 +602,14 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem 0 0 0;
+  }
+
+  :global(.ai-btn) {
+    color: var(--color-primary, #4f46e5);
+  }
+
+  :global(.ai-btn:hover) {
+    background: color-mix(in srgb, var(--color-primary, #4f46e5) 12%, transparent);
   }
 
   :global(.tinder-btn) {

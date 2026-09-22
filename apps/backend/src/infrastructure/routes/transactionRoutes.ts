@@ -100,6 +100,15 @@ export const createTransactionRoutes = (controllerFactory: ControllerFactory): R
   );
 
   router.post(
+    '/ai-categorize',
+    asyncHandler(async (req: Request, res: Response) => {
+      const userId = req.user?.userId || 'default';
+      const controller = controllerFactory.createTransactionController(userId);
+      await controller.aiCategorizeTransactions(req, res);
+    })
+  );
+
+  router.post(
     '/:id/categorize',
     asyncHandler(async (req: Request, res: Response) => {
       const userId = req.user?.userId || 'default';

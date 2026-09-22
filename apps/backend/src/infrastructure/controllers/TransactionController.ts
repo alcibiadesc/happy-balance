@@ -26,6 +26,7 @@ import { UnsyncInvestmentFromTransactionUseCase } from '@application/use-cases/U
 import { AutoCategorizeTransactionsUseCase } from '@application/use-cases/AutoCategorizeTransactionsUseCase';
 import { GetCategorySuggestionsUseCase } from '@application/use-cases/GetCategorySuggestionsUseCase';
 import { GetReimbursementSuggestionsUseCase } from '@application/use-cases/GetReimbursementSuggestionsUseCase';
+import { AiCategorizeTransactionsUseCase } from '@application/use-cases/AiCategorizeTransactionsUseCase';
 import {
   BadRequestError,
   validateBody,
@@ -55,6 +56,15 @@ const UpdateTransactionSchema = z.object({
   categoryId: z.string().nullable().optional(),
   hidden: z.boolean().optional(),
   splitPercentage: z.number().min(0).max(100).optional(),
+});
+
+const AiCategorizeSchema = z.object({
+  /** Defaults to a dry run: propose, don't write. */
+  apply: z.boolean().optional().default(false),
+  limit: z.number().int().positive().max(2000).optional(),
+  minConfidence: z.number().min(0).max(1).optional(),
+  transactionIds: z.array(z.string()).max(2000).optional(),
+  learnPatterns: z.boolean().optional().default(false),
 });
 
 const TransactionFiltersSchema = z.object({
@@ -172,7 +182,8 @@ export class TransactionController {
     private readonly getCategorySuggestionsUseCase?: GetCategorySuggestionsUseCase,
     private readonly categoryRepository?: ICategoryRepository,
     private readonly userId?: string,
-    private readonly getReimbursementSuggestionsUseCase?: GetReimbursementSuggestionsUseCase
+    private readonly getReimbursementSuggestionsUseCase?: GetReimbursementSuggestionsUseCase,
+    private readonly aiCategorizeUseCase?: AiCategorizeTransactionsUseCase
   ) {}
 
   /**
@@ -762,5 +773,29 @@ export class TransactionController {
       normalizedMatches: result.normalizedMatches,
       message: result.message,
     });
+  }
+
+  /**
+   * Categorize with an LLM what the rule engine could not.
+   * Dry run by default: the caller reviews the proposals and re-posts with
+   * `apply: true` (optionally narrowed to `transactionIds`).
+   */
+  async aiCategorizeTransactions(req: Request, res: Response): Promise<void> {
+    if (!this.aiCategorizeUseCase) {
+      throw new BadRequestError('AI categorization is not configured');
+    }
+
+    const body = validateBody(AiCategorizeSchema, req);
+
+    const result = await this.aiCategorizeUseCase.execute({
+      userId: this.userId || 'default',
+      apply: body.apply,
+      limit: body.limit,
+      minConfidence: body.minConfidence,
+      transactionIds: body.transactionIds,
+      learnPatterns: body.learnPatterns,
+    });
+
+    successResponse(res, result);
   }
 }

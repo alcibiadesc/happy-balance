@@ -51,6 +51,10 @@ services:
       # CORS: Allow all origins by default (works on any IP/hostname)
       # For production, set CORS_ORIGIN in .env to your specific domain
       CORS_ORIGIN: "${CORS_ORIGIN:-*}"
+      # AI categorization (optional). Without a key the AI button reports
+      # "not configured" and the rule engine keeps working as before.
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      AI_CATEGORIZATION_MODEL: "${AI_CATEGORIZATION_MODEL:-claude-haiku-4-5}"
     ports:
       - "${BACKEND_PORT:-14040}:14040"
     depends_on:

@@ -170,6 +170,108 @@ export const autoCategorizeTransactions = async (): Promise<{
   }
 };
 
+export interface AiProposal {
+  transactionId: string;
+  date: string;
+  merchant: string;
+  description: string;
+  amount: number;
+  currency: string;
+  type: string;
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string;
+  categoryColor: string;
+  categoryType: string;
+  confidence: number;
+  reason: string;
+  applied: boolean;
+}
+
+export interface AiCategorizeResult {
+  success: boolean;
+  configured: boolean;
+  model: string;
+  examined: number;
+  proposals: AiProposal[];
+  appliedCount: number;
+  patternsLearned: number;
+  undecided: number;
+  usage: { inputTokens: number; outputTokens: number; batches: number };
+  warnings: string[];
+  message: string;
+}
+
+/**
+ * Ask the backend's LLM pass to categorize what the rule engine left behind.
+ *
+ * Defaults to a dry run so the caller can show the proposals for review;
+ * pass `apply` (usually together with the reviewed `transactionIds`) to write.
+ */
+export const aiCategorizeTransactions = async (
+  opts: {
+    apply?: boolean;
+    limit?: number;
+    minConfidence?: number;
+    transactionIds?: string[];
+    learnPatterns?: boolean;
+  } = {}
+): Promise<AiCategorizeResult> => {
+  const empty: AiCategorizeResult = {
+    success: false,
+    configured: false,
+    model: '',
+    examined: 0,
+    proposals: [],
+    appliedCount: 0,
+    patternsLearned: 0,
+    undecided: 0,
+    usage: { inputTokens: 0, outputTokens: 0, batches: 0 },
+    warnings: [],
+    message: '',
+  };
+
+  try {
+    const apiUrl = getApiUrl();
+    const response = await fetch(`${apiUrl}/transactions/ai-categorize`, {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apply: opts.apply ?? false,
+        learnPatterns: opts.learnPatterns ?? false,
+        ...(opts.limit ? { limit: opts.limit } : {}),
+        ...(opts.minConfidence !== undefined ? { minConfidence: opts.minConfidence } : {}),
+        ...(opts.transactionIds ? { transactionIds: opts.transactionIds } : {}),
+      }),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      return { ...empty, message: `Error ${response.status}: ${detail.slice(0, 200)}` };
+    }
+
+    const result = await response.json();
+    const data = result.data ?? {};
+
+    return {
+      success: true,
+      configured: data.configured ?? false,
+      model: data.model ?? '',
+      examined: data.examined ?? 0,
+      proposals: data.proposals ?? [],
+      appliedCount: data.appliedCount ?? 0,
+      patternsLearned: data.patternsLearned ?? 0,
+      undecided: data.undecided ?? 0,
+      usage: data.usage ?? { inputTokens: 0, outputTokens: 0, batches: 0 },
+      warnings: data.warnings ?? [],
+      message: '',
+    };
+  } catch (error) {
+    console.error('Error in ai-categorize:', error);
+    return { ...empty, message: 'No se pudo contactar con el backend' };
+  }
+};
+
 export const formatAmount = (amount: number): string => {
   if (isNaN(amount)) return '€0.00';
   const abs = Math.abs(amount);
