@@ -1,0 +1,459 @@
+#!/bin/sh
+# hb — clasificación de movimientos de Happy Balance desde la línea de comandos.
+#
+# Pensado para que un agente (o el owner) clasifique un mes entero en dos
+# llamadas: `hb comercios` para leer lo pendiente agregado por comercio, y
+# `hb aplicar` para escribir un fichero de reglas «patrón → categoría».
+# Cada regla aplicada deja además un patrón persistido, así que el mes
+# siguiente el motor de reglas ya lo hace solo.
+#
+# Uso:
+#   hb pendientes [--desde FECHA] [--hasta FECHA]  movimientos sin categoría, uno por línea
+#   hb comercios  [--desde FECHA] [--hasta FECHA]  lo mismo agregado por comercio (compacto)
+#   hb catalogo                                    categorías activas + comercios de ejemplo
+#   hb reglas                                      aplica los patrones ya guardados
+#   hb aplicar     [fichero|-]                     aplica reglas «patrón<TAB>categoría[<TAB>tipo]»
+#   hb aplicar-ids [fichero|-]                     aplica «idTransaccion<TAB>categoría»
+#   hb traspasos                                   marca los pares espejo entre cuentas propias
+#   hb resumen    [--desde FECHA]                  resumen por mes y categoría
+#   hb cuadre     [--desde FECHA]                  ingresos/gastos/neto por mes
+#   hb dudas                                       lo que sigue sin categoría
+#   hb backup                                      pg_dump comprimido antes de tocar nada
+#
+# Formato de `aplicar` (TAB entre campos, # para comentarios):
+#   SUPABASE           Archivo Abisal - Infra
+#   %DEEPSEERWEA%      Archivo Abisal - Infra
+#   Cuenta Principal   Movimiento entre cuentas
+#   desc:%Civitatis%   Viaje
+#   STRIPE             Archivo Abisal            INCOME
+#
+#   - El patrón se compara con ILIKE, así que sin comodines es coincidencia
+#     exacta y con %…% es «contiene».
+#   - `desc:` compara contra la descripción en vez del comercio.
+#   - La tercera columna restringe a INCOME / EXPENSE / INVESTMENT.
+#   - Una categoría incompatible con el tipo del movimiento se rechaza y se
+#     informa: nunca se escribe una categoría de ingreso sobre un gasto.
+
+set -eu
+
+CONTAINER="${HB_CONTAINER:-happy-balance-postgres}"
+DB="${HB_DB:-happy_balance}"
+DBUSER="${HB_DBUSER:-postgres}"
+BACKUP_DIR="${HB_BACKUP_DIR:-/volume1/Timemachine/db_backups/happy-balance}"
+
+DESDE=""
+HASTA=""
+
+# -q evita que psql escupa el «CREATE FUNCTION» del preludio por delante de
+# los datos, que ensucia la salida tabular que consume quien llama al script.
+psql_raw() {
+  docker exec -i "$CONTAINER" psql -q -U "$DBUSER" -d "$DB" "$@"
+}
+
+# Salida tabular sin adornos: una línea por fila, campos separados por TAB.
+psql_tsv() {
+  psql_raw -At -F "$(printf '\t')" "$@"
+}
+
+usage() {
+  sed -n '2,/^set -eu/p' "$0" | sed 's/^# \{0,1\}//; /^set -eu/d'
+}
+
+# Cláusula de rango de fechas reutilizable.
+rango() {
+  _r=""
+  [ -n "$DESDE" ] && _r="$_r AND t.date >= DATE '$DESDE'"
+  [ -n "$HASTA" ] && _r="$_r AND t.date <= DATE '$HASTA'"
+  printf '%s' "$_r"
+}
+
+# Consume --desde / --hasta de la lista de argumentos y deja el resto en REST.
+parse_rango() {
+  REST=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --desde) DESDE="$2"; shift 2 ;;
+      --hasta) HASTA="$2"; shift 2 ;;
+      --mes)
+        DESDE="$2-01"
+        HASTA="$(date -d "$2-01 +1 month -1 day" +%F 2>/dev/null || echo "$2-31")"
+        shift 2 ;;
+      *) REST="$REST $1"; shift ;;
+    esac
+  done
+}
+
+# Funciones SQL de apoyo: resolución de categoría por nombre y compatibilidad
+# de tipos. Se crean en cada sesión porque son temporales.
+PRELUDIO="
+CREATE OR REPLACE FUNCTION pg_temp.cat_id(nombre text) RETURNS text AS \$\$
+  SELECT id FROM categories
+  WHERE lower(name) = lower(btrim(nombre)) AND \"isActive\"
+  ORDER BY \"createdAt\" LIMIT 1;
+\$\$ LANGUAGE sql STABLE;
+
+CREATE OR REPLACE FUNCTION pg_temp.compatible(tx_type text, cat_type text) RETURNS boolean AS \$\$
+  SELECT CASE
+    WHEN cat_type = 'no_compute' THEN true
+    WHEN tx_type = 'INCOME'      THEN cat_type = 'income'
+    WHEN tx_type = 'INVESTMENT'  THEN cat_type = 'investment'
+    WHEN tx_type = 'EXPENSE'     THEN cat_type IN ('essential','discretionary','debt_payment','investment')
+    ELSE false
+  END;
+\$\$ LANGUAGE sql IMMUTABLE;
+"
+
+cmd_pendientes() {
+  psql_tsv <<SQL
+$PRELUDIO
+SELECT t.id, t.date, t.type, t.amount, t.currency, t.merchant,
+       coalesce(nullif(btrim(t.description), ''), '-')
+FROM transactions t
+WHERE t."categoryId" IS NULL $(rango)
+ORDER BY t.merchant, t.date;
+SQL
+}
+
+cmd_comercios() {
+  echo "# comercio	tipo	n	total	primera	ultima	descripciones"
+  psql_tsv <<SQL
+$PRELUDIO
+SELECT t.merchant,
+       t.type,
+       count(*),
+       round(sum(t.amount), 2),
+       min(t.date),
+       max(t.date),
+       coalesce(
+         left(string_agg(DISTINCT nullif(btrim(t.description), ''), ' | '), 160),
+         '-'
+       )
+FROM transactions t
+WHERE t."categoryId" IS NULL $(rango)
+GROUP BY t.merchant, t.type
+ORDER BY count(*) DESC, sum(t.amount) DESC;
+SQL
+}
+
+cmd_catalogo() {
+  echo "# categoria	tipo	n_movs	comercios_ejemplo"
+  psql_tsv <<SQL
+$PRELUDIO
+WITH ejemplos AS (
+  SELECT c.id,
+         t.merchant,
+         row_number() OVER (PARTITION BY c.id ORDER BY max(t.date) DESC) AS rn
+  FROM categories c
+  JOIN transactions t ON t."categoryId" = c.id
+  WHERE c."isActive" AND lower(t.merchant) <> 'unknown merchant'
+  GROUP BY c.id, t.merchant
+)
+SELECT c.name,
+       c.type,
+       (SELECT count(*) FROM transactions t WHERE t."categoryId" = c.id),
+       coalesce((SELECT string_agg(e.merchant, ', ' ORDER BY e.rn)
+                 FROM ejemplos e WHERE e.id = c.id AND e.rn <= 8), '-')
+FROM categories c
+WHERE c."isActive"
+ORDER BY c.type, c.name;
+SQL
+}
+
+cmd_reglas() {
+  # Los patrones guardados, aplicados a lo pendiente y respetando el tipo.
+  psql_raw <<SQL
+$PRELUDIO
+BEGIN;
+WITH candidatos AS (
+  SELECT DISTINCT ON (t.id) t.id AS tx_id, p."categoryId" AS cat_id, p.id AS pat_id
+  FROM transactions t
+  JOIN category_patterns p ON p."isActive"
+  JOIN categories c ON c.id = p."categoryId" AND c."isActive"
+  WHERE t."categoryId" IS NULL $(rango)
+    AND (t.merchant ILIKE '%' || p.pattern || '%'
+         OR t.description ILIKE '%' || p.pattern || '%')
+    AND pg_temp.compatible(t.type, c.type)
+  ORDER BY t.id, p.priority DESC, p."matchCount" DESC
+),
+aplicado AS (
+  UPDATE transactions t
+  SET "categoryId" = k.cat_id, "updatedAt" = now()
+  FROM candidatos k WHERE t.id = k.tx_id
+  RETURNING t.id, k.pat_id
+)
+UPDATE category_patterns p
+SET "matchCount" = p."matchCount" + s.n, "updatedAt" = now()
+FROM (SELECT pat_id, count(*) AS n FROM aplicado GROUP BY pat_id) s
+WHERE p.id = s.pat_id;
+COMMIT;
+
+SELECT count(*) AS pendientes_restantes FROM transactions WHERE "categoryId" IS NULL;
+SQL
+}
+
+# Carga el fichero de reglas en una tabla temporal y lo aplica.
+cmd_aplicar() {
+  origen="${1:--}"
+  if [ "$origen" = "-" ]; then tmp="$(mktemp)"; cat > "$tmp"; else tmp="$origen"; fi
+
+  # Normaliza: quita comentarios y líneas vacías, deja TAB como separador.
+  reglas="$(mktemp)"
+  sed 's/#.*$//' "$tmp" | awk -F'\t' 'NF>=2 {
+    gsub(/^[ \t]+|[ \t]+$/, "", $1);
+    gsub(/^[ \t]+|[ \t]+$/, "", $2);
+    gsub(/^[ \t]+|[ \t]+$/, "", $3);
+    if ($1 != "" && $2 != "") print $1 "\t" $2 "\t" $3;
+  }' > "$reglas"
+
+  n="$(wc -l < "$reglas" | tr -d ' ')"
+  [ "$n" -eq 0 ] && { echo "No hay reglas que aplicar." >&2; return 1; }
+  echo "Aplicando $n reglas…" >&2
+
+  {
+    echo "$PRELUDIO"
+    echo "BEGIN;"
+    echo "CREATE TEMP TABLE reglas(patron text, categoria text, tipo text);"
+    echo "COPY reglas FROM STDIN;"
+    cat "$reglas"
+    echo "\\."
+    cat <<'SQL'
+
+-- Reglas cuya categoría no existe: se avisa y no se tocan.
+SELECT r.patron AS "patron_sin_categoria", r.categoria AS "categoria_desconocida"
+FROM reglas r WHERE pg_temp.cat_id(r.categoria) IS NULL;
+
+-- Una transacción puede encajar en varias reglas; gana la más específica
+-- (el patrón más largo), que es la que el autor escribió con más intención.
+CREATE TEMP TABLE asignado AS
+SELECT DISTINCT ON (t.id)
+       t.id AS tx_id,
+       pg_temp.cat_id(r.categoria) AS cat_id,
+       r.patron,
+       r.categoria
+FROM transactions t
+JOIN reglas r ON true
+JOIN categories c ON c.id = pg_temp.cat_id(r.categoria)
+WHERE t."categoryId" IS NULL
+  AND (r.tipo IS NULL OR r.tipo = '' OR t.type = r.tipo)
+  AND CASE
+        WHEN r.patron LIKE 'desc:%' THEN t.description ILIKE substr(r.patron, 6)
+        ELSE t.merchant ILIKE r.patron
+      END
+  AND pg_temp.compatible(t.type, c.type)
+ORDER BY t.id, length(r.patron) DESC;
+
+-- Lo que encajó por patrón pero choca con el tipo: se informa en vez de
+-- escribirlo mal en silencio.
+SELECT r.patron, r.categoria, c.type AS tipo_categoria, t.type AS tipo_movimiento,
+       count(*) AS rechazados
+FROM transactions t
+JOIN reglas r ON true
+JOIN categories c ON c.id = pg_temp.cat_id(r.categoria)
+WHERE t."categoryId" IS NULL
+  AND (r.tipo IS NULL OR r.tipo = '' OR t.type = r.tipo)
+  AND CASE
+        WHEN r.patron LIKE 'desc:%' THEN t.description ILIKE substr(r.patron, 6)
+        ELSE t.merchant ILIKE r.patron
+      END
+  AND NOT pg_temp.compatible(t.type, c.type)
+GROUP BY 1, 2, 3, 4;
+
+UPDATE transactions t
+SET "categoryId" = a.cat_id, "updatedAt" = now()
+FROM asignado a WHERE t.id = a.tx_id;
+
+-- Persistimos cada patrón que ha servido, para que el motor de reglas
+-- resuelva estos comercios la próxima vez sin que nadie escriba nada.
+INSERT INTO category_patterns
+  (id, pattern, "patternType", priority, "applyToFuture", "categoryId",
+   "isActive", "matchCount", "createdAt", "updatedAt")
+SELECT gen_random_uuid()::text,
+       lower(trim(both '%' from CASE WHEN a.patron LIKE 'desc:%'
+                                     THEN substr(a.patron, 6) ELSE a.patron END)),
+       CASE WHEN a.patron LIKE 'desc:%' THEN 'description' ELSE 'merchant' END,
+       60,
+       true,
+       a.cat_id,
+       true,
+       count(*),
+       now(),
+       now()
+FROM asignado a
+GROUP BY 1, 2, 3, 4, 5, 6, 7
+ON CONFLICT DO NOTHING;
+
+-- Colapsa duplicados exactos (mismo patrón, misma categoría) conservando la
+-- fila con más aciertos, que es la que guarda la señal de uso real.
+DELETE FROM category_patterns p
+WHERE p.id NOT IN (
+  SELECT DISTINCT ON (pattern, "categoryId") id
+  FROM category_patterns
+  ORDER BY pattern, "categoryId", "matchCount" DESC, priority DESC, id
+);
+
+SELECT a.categoria, count(*) AS aplicados, round(sum(t.amount), 2) AS importe
+FROM asignado a JOIN transactions t ON t.id = a.tx_id
+GROUP BY 1 ORDER BY 2 DESC;
+
+SELECT count(*) AS pendientes_restantes FROM transactions WHERE "categoryId" IS NULL;
+COMMIT;
+SQL
+  } | psql_raw -v ON_ERROR_STOP=1
+}
+
+cmd_aplicar_ids() {
+  origen="${1:--}"
+  if [ "$origen" = "-" ]; then tmp="$(mktemp)"; cat > "$tmp"; else tmp="$origen"; fi
+  pares="$(mktemp)"
+  sed 's/#.*$//' "$tmp" | awk -F'\t' 'NF>=2 {
+    gsub(/^[ \t]+|[ \t]+$/, "", $1); gsub(/^[ \t]+|[ \t]+$/, "", $2);
+    if ($1 != "" && $2 != "") print $1 "\t" $2;
+  }' > "$pares"
+
+  {
+    echo "$PRELUDIO"
+    echo "BEGIN;"
+    echo "CREATE TEMP TABLE pares(tx_id text, categoria text);"
+    echo "COPY pares FROM STDIN;"
+    cat "$pares"
+    echo "\\."
+    cat <<'SQL'
+SELECT p.tx_id, p.categoria AS "rechazado_por_tipo_o_categoria"
+FROM pares p
+JOIN transactions t ON t.id = p.tx_id
+LEFT JOIN categories c ON c.id = pg_temp.cat_id(p.categoria)
+WHERE c.id IS NULL OR NOT pg_temp.compatible(t.type, c.type);
+
+UPDATE transactions t
+SET "categoryId" = pg_temp.cat_id(p.categoria), "updatedAt" = now()
+FROM pares p, categories c
+WHERE t.id = p.tx_id
+  AND c.id = pg_temp.cat_id(p.categoria)
+  AND pg_temp.compatible(t.type, c.type);
+
+SELECT count(*) AS pendientes_restantes FROM transactions WHERE "categoryId" IS NULL;
+COMMIT;
+SQL
+  } | psql_raw -v ON_ERROR_STOP=1
+}
+
+cmd_traspasos() {
+  # Pares espejo entre cuentas propias: mismo importe, ±3 días, signos opuestos
+  # y contrapartida con nombre de cuenta. Se marcan «no computa», que es lo que
+  # son: el dinero no entra ni sale del patrimonio, solo cambia de bolsillo.
+  psql_raw <<SQL
+$PRELUDIO
+BEGIN;
+WITH cuentas AS (
+  SELECT unnest(ARRAY['Cuenta Principal','Cuenta de Ahorro','Cuenta Autónomos','Isalci']) AS nombre
+),
+espejos AS (
+  SELECT t.id
+  FROM transactions t
+  JOIN cuentas cu ON t.merchant ILIKE cu.nombre
+  WHERE t."categoryId" IS NULL $(rango)
+    AND EXISTS (
+      SELECT 1 FROM transactions o
+      JOIN cuentas cu2 ON o.merchant ILIKE cu2.nombre
+      WHERE o.id <> t.id
+        AND o.amount = t.amount
+        AND o.type <> t.type
+        AND abs(o.date - t.date) <= 3
+    )
+)
+UPDATE transactions t
+SET "categoryId" = pg_temp.cat_id('Movimiento entre cuentas'), "updatedAt" = now()
+FROM espejos e
+WHERE t.id = e.id AND pg_temp.cat_id('Movimiento entre cuentas') IS NOT NULL;
+COMMIT;
+
+SELECT count(*) AS pendientes_restantes FROM transactions WHERE "categoryId" IS NULL;
+SQL
+}
+
+cmd_resumen() {
+  psql_raw <<SQL
+$PRELUDIO
+SELECT to_char(t.date, 'YYYY-MM') AS mes,
+       c.type AS tipo,
+       c.name AS categoria,
+       count(*) AS n,
+       round(sum(t.amount), 2) AS bruto,
+       round(sum(CASE
+         WHEN t."isReimbursement" THEN 0
+         WHEN t."splitPercentage" IS NOT NULL THEN t.amount * t."splitPercentage" / 100
+         ELSE t.amount END), 2) AS neto
+FROM transactions t
+JOIN categories c ON c.id = t."categoryId"
+WHERE c.type <> 'no_compute' $(rango)
+GROUP BY 1, 2, 3
+ORDER BY 1, 2, neto DESC;
+SQL
+}
+
+cmd_cuadre() {
+  psql_raw <<SQL
+$PRELUDIO
+WITH m AS (
+  SELECT to_char(t.date, 'YYYY-MM') AS mes,
+         c.type AS tipo,
+         sum(CASE
+           WHEN t."isReimbursement" THEN 0
+           WHEN t."splitPercentage" IS NOT NULL THEN t.amount * t."splitPercentage" / 100
+           ELSE t.amount END) AS neto
+  FROM transactions t
+  JOIN categories c ON c.id = t."categoryId"
+  WHERE c.type <> 'no_compute' $(rango)
+  GROUP BY 1, 2
+)
+SELECT mes,
+       round(coalesce(sum(neto) FILTER (WHERE tipo = 'income'), 0), 2) AS ingresos,
+       round(coalesce(sum(neto) FILTER (WHERE tipo IN ('essential','discretionary','debt_payment')), 0), 2) AS gastos,
+       round(coalesce(sum(neto) FILTER (WHERE tipo = 'investment'), 0), 2) AS inversion,
+       round(coalesce(sum(neto) FILTER (WHERE tipo = 'income'), 0)
+           - coalesce(sum(neto) FILTER (WHERE tipo IN ('essential','discretionary','debt_payment')), 0), 2) AS neto
+FROM m GROUP BY mes ORDER BY mes;
+SQL
+}
+
+cmd_dudas() {
+  psql_raw <<SQL
+$PRELUDIO
+SELECT t.date, t.type, t.amount, t.merchant,
+       coalesce(nullif(btrim(t.description), ''), '-') AS descripcion
+FROM transactions t
+WHERE t."categoryId" IS NULL $(rango)
+ORDER BY t.amount DESC;
+SQL
+}
+
+cmd_backup() {
+  destino="$BACKUP_DIR/happy-balance_hb-$(date +%Y%m%d_%H%M%S).sql.gz"
+  mkdir -p "$BACKUP_DIR"
+  docker exec "$CONTAINER" pg_dump -U "$DBUSER" "$DB" | gzip > "$destino"
+  echo "$destino"
+  ls -l "$destino"
+}
+
+[ $# -eq 0 ] && { usage; exit 1; }
+
+sub="$1"; shift
+parse_rango "$@"
+# shellcheck disable=SC2086
+set -- $REST
+
+case "$sub" in
+  pendientes)   cmd_pendientes ;;
+  comercios)    cmd_comercios ;;
+  catalogo)     cmd_catalogo ;;
+  reglas)       cmd_reglas ;;
+  aplicar)      cmd_aplicar "${1:--}" ;;
+  aplicar-ids)  cmd_aplicar_ids "${1:--}" ;;
+  traspasos)    cmd_traspasos ;;
+  resumen)      cmd_resumen ;;
+  cuadre)       cmd_cuadre ;;
+  dudas)        cmd_dudas ;;
+  backup)       cmd_backup ;;
+  -h|--help|help) usage ;;
+  *) echo "Subcomando desconocido: $sub" >&2; usage; exit 1 ;;
+esac
