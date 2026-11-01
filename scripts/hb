@@ -101,6 +101,11 @@ CREATE OR REPLACE FUNCTION pg_temp.compatible(tx_type text, cat_type text) RETUR
     ELSE false
   END;
 \$\$ LANGUAGE sql IMMUTABLE;
+
+-- Aproximación a MerchantNormalizer: minúsculas y lo que no es [a-z0-9] a un espacio.
+CREATE OR REPLACE FUNCTION pg_temp.normalizado(texto text) RETURNS text AS \$\$
+  SELECT btrim(regexp_replace(lower(texto), '[^a-z0-9]+', ' ', 'g'));
+\$\$ LANGUAGE sql IMMUTABLE;
 "
 
 cmd_pendientes() {
@@ -171,7 +176,10 @@ WITH candidatos AS (
   JOIN categories c ON c.id = p."categoryId" AND c."isActive"
   WHERE t."categoryId" IS NULL $(rango)
     AND (t.merchant ILIKE '%' || p.pattern || '%'
-         OR t.description ILIKE '%' || p.pattern || '%')
+         OR t.description ILIKE '%' || p.pattern || '%'
+         -- Los patrones que aprende la UI van normalizados («fundaci n eoi f s p»,
+         -- «pepe mobile s l u»): sin esto no casan con el comercio tal cual.
+         OR pg_temp.normalizado(t.merchant) LIKE '%' || p.pattern || '%')
     AND pg_temp.compatible(t.type, c.type)
   ORDER BY t.id, p.priority DESC, p."matchCount" DESC
 ),

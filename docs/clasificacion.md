@@ -75,6 +75,28 @@ heredado, por debajo de los patrones de negocio (90–100). El mes que viene eso
 comercios los resuelve `hb reglas` sin que nadie escriba nada. El trabajo de
 clasificar un comercio se hace una vez.
 
+### Cómo casa un patrón guardado
+
+Un patrón es un «contiene» sin mayúsculas, y se busca en este orden:
+
+1. **El comercio**, tal cual y normalizado (minúsculas, signos a espacio). Los
+   patrones que aprende la UI se guardan normalizados (`fundaci n eoi f s p`,
+   `pepe mobile s l u`) y no casarían con `SPAIN - FUNDACI N EOI, F.S.P.` sin
+   esa segunda forma.
+2. **El comercio citado en el concepto**, cuando el movimiento es entre
+   personas: `Lo que me debes de Mercadona` o `Bizum:DECATHLON PEDIDO 26`
+   tienen como comercio a Isa o `Unknown Merchant`, y quien decide la
+   categoría es la tienda.
+
+En los dos pasos se salta cualquier patrón de tipo incompatible: el patrón
+`isabel gonz` → «Compartido Isa» (ingreso) sigue sirviendo para sus
+devoluciones, pero un Bizum *a* Isa por «Festival» cae en el siguiente patrón
+que encaje («Ocio»).
+
+Los intereses y su retención de N26 llegan sin contraparte ni concepto; el
+importador les pone `Intereses cuenta N26` / `Retención IRPF N26` como concepto
+para que una regla `description` pueda clasificarlos.
+
 ## Comprobar el resultado
 
 ```sh

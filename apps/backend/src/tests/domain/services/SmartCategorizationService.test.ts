@@ -432,4 +432,58 @@ describe('SmartCategorizationService', () => {
       expect(aliasRepo.save).toHaveBeenCalledWith(alias);
     });
   });
+
+  // ----- type-aware matching and referenced merchants -------------------------
+
+  describe('with a category lookup', () => {
+    const shared = makeCategory(CategoryType.INCOME, 'Compartido');
+    const grocery = makeCategory(CategoryType.ESSENTIAL, 'Supermercado');
+    const leisure = makeCategory(CategoryType.DISCRETIONARY, 'Ocio');
+    let typed: SmartCategorizationService;
+
+    beforeEach(() => {
+      const types = new Map([shared, grocery, leisure].map((c) => [c.id.value, c.type]));
+      typed = new SmartCategorizationService(patternRepo, transactionRepo, aliasRepo, {
+        findById: async (id) => (types.has(id) ? { id, type: types.get(id)! } : null),
+      });
+      patternRepo.findActivePatterns.mockResolvedValue([
+        makePattern(shared.id, 'isabel', { priority: 60 }),
+        makePattern(grocery.id, 'mercadona', { priority: 60 }),
+        makePattern(leisure.id, 'festival', { priority: 60, patternType: PatternType.DESCRIPTION }),
+      ]);
+    });
+
+    it('suggestCategory skips an income pattern for an expense to the same person', async () => {
+      const tx = makeTransaction(76, TransactionType.EXPENSE, 'Isabel', 'Festival');
+
+      const s = await typed.suggestCategory(tx);
+
+      expect(s?.categoryId).toBe(leisure.id.value);
+    });
+
+    it('keeps the person category for an incoming reimbursement', async () => {
+      const tx = makeTransaction(60, TransactionType.INCOME, 'Isabel', 'Lo que me debes de Mercadona');
+
+      const s = await typed.suggestCategory(tx);
+
+      expect(s?.categoryId).toBe(shared.id.value);
+    });
+
+    it('falls back to the merchant named in "Lo que me debes de …"', async () => {
+      const tx = makeTransaction(13.81, TransactionType.EXPENSE, 'Isabel', 'Lo que me debes de MERCADONA SANTIDAD');
+
+      const s = await typed.suggestCategory(tx);
+
+      expect(s?.categoryId).toBe(grocery.id.value);
+    });
+
+    it('falls back to the merchant named in a Bizum concept', async () => {
+      const tx = makeTransaction(20, TransactionType.EXPENSE, 'Unknown Merchant', 'Bizum:MERCADONA PEDIDO 12');
+
+      const result = await typed.applyPatternsToTransactions([tx]);
+
+      expect(result.categorizedCount).toBe(1);
+      expect(tx.categoryId?.value).toBe(grocery.id.value);
+    });
+  });
 });

@@ -85,6 +85,65 @@ export class SmartCategorizationService {
   }
 
   /**
+   * Highest-priority type-compatible pattern matching any of the given
+   * merchant spellings. Patterns must already be sorted.
+   */
+  private async findPattern(
+    transaction: Transaction,
+    patterns: CategoryPattern[],
+    merchantCandidates: string[]
+  ): Promise<CategoryPattern | null> {
+    for (const pattern of patterns) {
+      const matches = merchantCandidates.some((candidate) =>
+        pattern.matches(candidate, transaction.description)
+      );
+      if (matches && (await this.patternTypeAllowed(transaction, pattern.categoryId.value))) {
+        return pattern;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Person-to-person rows ("Lo que me debes de Mercadona", "Bizum:DECATHLON
+   * PEDIDO 26") carry a person or "Unknown Merchant" as merchant; the shop
+   * that decides the category is named in the description.
+   */
+  private referencedMerchant(description: string): string | null {
+    const match = /^\s*(?:lo que me debes de|bizum:)\s*(.+)$/i.exec(description || '');
+    return match ? match[1].trim() : null;
+  }
+
+  /**
+   * Pattern for a transaction: its own merchant first, so a person's shared
+   * expenses still go to that person's category when types allow; then the merchant
+   * referenced in the description.
+   */
+  private async findPatternForTransaction(
+    transaction: Transaction,
+    patterns: CategoryPattern[],
+    canonicalName?: string
+  ): Promise<CategoryPattern | null> {
+    const txNorm = this.normalizer.normalize(transaction.merchant.name);
+    const own = await this.findPattern(transaction, patterns, [
+      transaction.merchant.name,
+      txNorm.normalized,
+      canonicalName ?? txNorm.canonical,
+    ]);
+    if (own) return own;
+
+    const referenced = this.referencedMerchant(transaction.description);
+    if (!referenced) return null;
+
+    const refNorm = this.normalizer.normalize(referenced);
+    return this.findPattern(transaction, patterns, [
+      referenced,
+      refNorm.normalized,
+      refNorm.canonical,
+    ]);
+  }
+
+  /**
    * Extract a pattern from a transaction for smart categorization
    * Uses intelligent normalization to extract clean, canonical patterns
    */
@@ -425,9 +484,6 @@ export class SmartCategorizationService {
         continue;
       }
 
-      // Normalize the transaction's merchant
-      const txNorm = this.normalizer.normalize(transaction.merchant.name);
-
       // First, try to find alias match
       if (this.aliasRepository) {
         const alias = await this.aliasRepository.findBestMatch(transaction.merchant.name, userId);
@@ -465,30 +521,15 @@ export class SmartCategorizationService {
       }
 
       // Fall back to pattern matching with normalized merchant
-      for (const pattern of activePatterns) {
-        // Try matching against:
-        // 1. Original merchant name
-        // 2. Normalized merchant name
-        // 3. Canonical merchant name
-        const matches =
-          pattern.matches(transaction.merchant.name, transaction.description) ||
-          pattern.matches(txNorm.normalized, transaction.description) ||
-          pattern.matches(txNorm.canonical, transaction.description);
+      const pattern = await this.findPatternForTransaction(transaction, activePatterns);
+      if (pattern) {
+        transaction.setCategoryId(pattern.categoryId.value);
+        pattern.incrementMatchCount();
+        await this.patternRepository.save(pattern);
 
-        if (matches) {
-          if (!(await this.patternTypeAllowed(transaction, pattern.categoryId.value))) {
-            continue;
-          }
-          transaction.setCategoryId(pattern.categoryId.value);
-          pattern.incrementMatchCount();
-          await this.patternRepository.save(pattern);
-
-          results.categorizedCount++;
-          const appliedCount = results.patternsApplied.get(pattern.id.value) || 0;
-          results.patternsApplied.set(pattern.id.value, appliedCount + 1);
-
-          break; // Apply only the highest priority matching pattern
-        }
+        results.categorizedCount++;
+        const appliedCount = results.patternsApplied.get(pattern.id.value) || 0;
+        results.patternsApplied.set(pattern.id.value, appliedCount + 1);
       }
     }
 
@@ -525,37 +566,31 @@ export class SmartCategorizationService {
       }
     }
 
-    // Find best matching pattern (skip wrong-type ones up-front)
-    for (const pattern of activePatterns) {
-      const matches =
-        pattern.matches(transaction.merchant.name, transaction.description) ||
-        pattern.matches(txNorm.normalized, transaction.description) ||
-        pattern.matches(canonicalName, transaction.description);
+    // Find best matching pattern, skipping wrong-type ones: suggesting a
+    // shared-income category for an outgoing transfer to the same person is
+    // the same bug the bulk pass had.
+    const pattern = await this.findPatternForTransaction(transaction, activePatterns, canonicalName);
+    if (!pattern) return null;
 
-      if (matches) {
-        // Calculate confidence based on multiple factors
-        const patternUsage = Math.min(pattern.matchCount / 100, 0.3); // Max 30% boost from usage
-        const normConfidence = txNorm.confidence * 0.3; // 30% from normalization
-        const aliasBoost = aliasConfidence * 0.2; // 20% from alias
-        const baseConfidence = 0.5; // Base 50%
+    // Calculate confidence based on multiple factors
+    const patternUsage = Math.min(pattern.matchCount / 100, 0.3); // Max 30% boost from usage
+    const normConfidence = txNorm.confidence * 0.3; // 30% from normalization
+    const aliasBoost = aliasConfidence * 0.2; // 20% from alias
+    const baseConfidence = 0.5; // Base 50%
 
-        const totalConfidence = Math.min(
-          baseConfidence + patternUsage + normConfidence + aliasBoost,
-          1.0
-        );
+    const totalConfidence = Math.min(
+      baseConfidence + patternUsage + normConfidence + aliasBoost,
+      1.0
+    );
 
-        return {
-          categoryId: pattern.categoryId.value,
-          patternId: pattern.id.value,
-          confidence: totalConfidence,
-          matchedOn: canonicalName !== txNorm.canonical ? 'alias' : 'pattern',
-          normalizedMerchant: txNorm.normalized,
-          canonicalMerchant: canonicalName,
-        };
-      }
-    }
-
-    return null;
+    return {
+      categoryId: pattern.categoryId.value,
+      patternId: pattern.id.value,
+      confidence: totalConfidence,
+      matchedOn: canonicalName !== txNorm.canonical ? 'alias' : 'pattern',
+      normalizedMerchant: txNorm.normalized,
+      canonicalMerchant: canonicalName,
+    };
   }
 
   /**
