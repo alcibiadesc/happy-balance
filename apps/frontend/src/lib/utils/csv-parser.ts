@@ -150,6 +150,14 @@ function detectFieldMapping(headers: string[]): Record<string, number> {
   return mapping;
 }
 
+// N26 leaves interest and its tax withholding with no partner and no
+// reference: without this they import as a blank "Unknown Merchant" that no
+// rule can ever match. The labels are what the category patterns look for.
+const N26_TYPE_DESCRIPTIONS: Record<string, string> = {
+  Interest: 'Intereses cuenta N26',
+  Tax: 'Retención IRPF N26',
+};
+
 // Map CSV values to transaction object
 function mapToTransaction(
   values: string[],
@@ -162,7 +170,9 @@ function mapToTransaction(
     const amountStr = values[mapping.amountEur] || '0';
     const amount = parseAmount(amountStr);
     let partner = cleanString(values[mapping.partnerName] || '');
-    const description = cleanString(values[mapping.paymentReference] || '');
+    const type = cleanString(values[mapping.type] || '');
+    const description =
+      cleanString(values[mapping.paymentReference] || '') || N26_TYPE_DESCRIPTIONS[type] || '';
 
     // Handle empty or special-character-only merchants (like ".")
     // This ensures consistent handling with backend normalization
@@ -185,7 +195,7 @@ function mapToTransaction(
       valueDate: valueDate?.toISOString().split('T')[0],
       partner,
       iban: cleanString(values[mapping.partnerIban] || ''),
-      type: cleanString(values[mapping.type] || ''),
+      type,
       description,
       account: cleanString(values[mapping.accountName] || ''),
       amount,
